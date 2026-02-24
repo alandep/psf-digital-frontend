@@ -1,0 +1,300 @@
+<div class="recebimentos-container">
+  <!-- Header -->
+  <div class="recebimentos-header">
+    <h1>
+      <mat-icon>trending_up</mat-icon>
+      Contas a Receber
+    </h1>
+    <p>Gestão completa de recebimentos e controle cambial</p>
+  </div>
+
+  <!-- KPIs Cards -->
+  <div class="kpis-section">
+    <div class="kpis-grid">
+      <mat-card class="kpi-card total">
+        <mat-card-content>
+          <div class="kpi-content">
+            <div class="kpi-icon">
+              <mat-icon>account_balance</mat-icon>
+            </div>
+            <div class="kpi-info">
+              <div class="kpi-label">Total Geral</div>
+              <div class="kpi-value">{{formatCurrency(totalAmount, 'BRL')}}</div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="kpi-card pending">
+        <mat-card-content>
+          <div class="kpi-content">
+            <div class="kpi-icon">
+              <mat-icon>schedule</mat-icon>
+            </div>
+            <div class="kpi-info">
+              <div class="kpi-label">Pendente</div>
+              <div class="kpi-value">{{formatCurrency(pendingAmount, 'BRL')}}</div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="kpi-card completed">
+        <mat-card-content>
+          <div class="kpi-content">
+            <div class="kpi-icon">
+              <mat-icon>check_circle</mat-icon>
+            </div>
+            <div class="kpi-info">
+              <div class="kpi-label">Recebido</div>
+              <div class="kpi-value">{{formatCurrency(completedAmount, 'BRL')}}</div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="kpi-card count">
+        <mat-card-content>
+          <div class="kpi-content">
+            <div class="kpi-icon">
+              <mat-icon>receipt_long</mat-icon>
+            </div>
+            <div class="kpi-info">
+              <div class="kpi-label">Total Recebimentos</div>
+              <div class="kpi-value">{{recebimentos.length}}</div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <mat-card class="filtros-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>filter_list</mat-icon>
+        Filtros
+      </mat-card-title>
+      <div class="header-actions">
+        <button mat-raised-button color="primary" (click)="openCreateDialog()">
+          <mat-icon>add</mat-icon>
+          Novo Recebimento
+        </button>
+      </div>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <form [formGroup]="filtroForm" class="filtros-form">
+        <div class="filtro-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status" multiple>
+              <mat-option *ngFor="let status of filtroOptions?.statuses" [value]="status.value">
+                {{status.label}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Moeda</mat-label>
+            <mat-select formControlName="currency" multiple>
+              <mat-option *ngFor="let currency of filtroOptions?.currencies" [value]="currency">
+                {{currency}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Forma de Pagamento</mat-label>
+            <mat-select formControlName="payment_method" multiple>
+              <mat-option *ngFor="let method of filtroOptions?.paymentMethods" [value]="method.value">
+                {{method.label}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Contrato</mat-label>
+            <mat-select formControlName="contract" multiple>
+              <mat-option *ngFor="let contract of filtroOptions?.contracts" [value]="contract.id">
+                {{contract.number}} - {{contract.client_name}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="filtro-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Data Início</mat-label>
+            <input matInput [matDatepicker]="pickerInicio" formControlName="date_from">
+            <mat-datepicker-toggle matIconSuffix [for]="pickerInicio"></mat-datepicker-toggle>
+            <mat-datepicker #pickerInicio></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Data Fim</mat-label>
+            <input matInput [matDatepicker]="pickerFim" formControlName="date_to">
+            <mat-datepicker-toggle matIconSuffix [for]="pickerFim"></mat-datepicker-toggle>
+            <mat-datepicker #pickerFim></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Valor Mínimo</mat-label>
+            <input matInput type="number" formControlName="amount_min" min="0">
+            <mat-icon matSuffix>attach_money</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Valor Máximo</mat-label>
+            <input matInput type="number" formControlName="amount_max" min="0">
+            <mat-icon matSuffix>attach_money</mat-icon>
+          </mat-form-field>
+
+          <button mat-raised-button color="warn" (click)="clearFilters()" type="button">
+            <mat-icon>clear</mat-icon>
+            Limpar Filtros
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
+    <p>Carregando recebimentos...</p>
+  </div>
+
+  <!-- Tabela de Recebimentos -->
+  <div *ngIf="!isLoading" class="table-section">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>list</mat-icon>
+          Recebimentos ({{recebimentos.length}})
+        </mat-card-title>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <div class="table-container">
+          <table mat-table [dataSource]="recebimentos" class="recebimentos-table">
+
+            <!-- Contrato -->
+            <ng-container matColumnDef="contract">
+              <th mat-header-cell *matHeaderCellDef>Contrato</th>
+              <td mat-cell *matCellDef="let recebimento">
+                <div class="contract-info">
+                  <strong>{{getContractName(recebimento.contract).split(' - ')[0]}}</strong>
+                  <small>{{getContractName(recebimento.contract).split(' - ')[1]}}</small>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Valor -->
+            <ng-container matColumnDef="amount">
+              <th mat-header-cell *matHeaderCellDef>Valor</th>
+              <td mat-cell *matCellDef="let recebimento">
+                <div class="amount-info">
+                  <strong>{{formatCurrency(recebimento.amount, recebimento.currency)}}</strong>
+                  <small *ngIf="recebimento.currency !== 'BRL' && recebimento.exchange_rate">
+                    ≈ {{formatCurrency(recebimento.amount * recebimento.exchange_rate, 'BRL')}}
+                  </small>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Moeda -->
+            <ng-container matColumnDef="currency">
+              <th mat-header-cell *matHeaderCellDef>Moeda</th>
+              <td mat-cell *matCellDef="let recebimento">
+                <mat-chip class="currency-chip">{{recebimento.currency}}</mat-chip>
+                <div *ngIf="recebimento.exchange_rate" class="exchange-rate">
+                  Taxa: {{recebimento.exchange_rate | number:'1.4-4'}}
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Data de Pagamento -->
+            <ng-container matColumnDef="payment_date">
+              <th mat-header-cell *matHeaderCellDef>Data Pagamento</th>
+              <td mat-cell *matCellDef="let recebimento">{{formatDate(recebimento.payment_date)}}</td>
+            </ng-container>
+
+            <!-- Status -->
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Status</th>
+              <td mat-cell *matCellDef="let recebimento">
+                <mat-chip [class]="getStatusClass(recebimento.status)">
+                  {{getStatusLabel(recebimento.status)}}
+                </mat-chip>
+              </td>
+            </ng-container>
+
+            <!-- Forma de Pagamento -->
+            <ng-container matColumnDef="payment_method">
+              <th mat-header-cell *matHeaderCellDef>Forma Pagamento</th>
+              <td mat-cell *matCellDef="let recebimento">
+                {{getPaymentMethodLabel(recebimento.payment_method)}}
+              </td>
+            </ng-container>
+
+            <!-- Banco -->
+            <ng-container matColumnDef="bank_name">
+              <th mat-header-cell *matHeaderCellDef>Banco</th>
+              <td mat-cell *matCellDef="let recebimento">
+                <div class="bank-info">
+                  <strong>{{recebimento.bank_name}}</strong>
+                  <small *ngIf="recebimento.transaction_id">{{recebimento.transaction_id}}</small>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Ações -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Ações</th>
+              <td mat-cell *matCellDef="let recebimento">
+                <div class="action-buttons">
+                  <button mat-icon-button 
+                          matTooltip="Editar" 
+                          (click)="openEditDialog(recebimento)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  
+                  <button mat-icon-button 
+                          matTooltip="Processar Pagamento" 
+                          [disabled]="recebimento.status !== 'pending'"
+                          (click)="processarPagamento(recebimento)"
+                          color="primary">
+                    <mat-icon>send</mat-icon>
+                  </button>
+                  
+                  <button mat-icon-button 
+                          matTooltip="Excluir" 
+                          (click)="deleteRecebimento(recebimento)"
+                          color="warn">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+          </table>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Estado vazio -->
+  <div *ngIf="!isLoading && recebimentos.length === 0" class="empty-state">
+    <mat-icon>inbox</mat-icon>
+    <h3>Nenhum recebimento encontrado</h3>
+    <p>Não há recebimentos que atendam aos filtros aplicados.</p>
+    <button mat-raised-button color="primary" (click)="openCreateDialog()">
+      <mat-icon>add</mat-icon>
+      Criar Primeiro Recebimento
+    </button>
+  </div>
+</div>

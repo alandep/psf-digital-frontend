@@ -1,7 +1,6 @@
-import { bootstrapApplication } from '@angular/platform-browser';
-import { App } from './app/app';
-import { config } from './app/app.config.server';
+// This file is not used in SPA mode
+// Keeping minimal structure to avoid build errors
 
-const bootstrap = () => bootstrapApplication(App, config);
-
-export default bootstrap;
+export default function() {
+  return Promise.resolve();
+}

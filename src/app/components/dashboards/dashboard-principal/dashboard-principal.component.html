@@ -1,0 +1,250 @@
+<div class="dashboard-container">
+  
+  <!-- Header -->
+  <div class="dashboard-header">
+    <h1>
+      <mat-icon>dashboard</mat-icon>
+      Dashboard Principal
+    </h1>
+    <p>Visão executiva geral das exportações</p>
+  </div>
+
+  <!-- Filtros -->
+  <mat-card class="filtros-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>filter_list</mat-icon>
+        Filtros
+      </mat-card-title>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <form [formGroup]="filtroForm" class="filtros-form">
+        <div class="filtro-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Data Início</mat-label>
+            <input matInput [matDatepicker]="pickerInicio" formControlName="dataInicio">
+            <mat-datepicker-toggle matIconSuffix [for]="pickerInicio"></mat-datepicker-toggle>
+            <mat-datepicker #pickerInicio></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Data Fim</mat-label>
+            <input matInput [matDatepicker]="pickerFim" formControlName="dataFim">
+            <mat-datepicker-toggle matIconSuffix [for]="pickerFim"></mat-datepicker-toggle>
+            <mat-datepicker #pickerFim></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Países</mat-label>
+            <mat-select formControlName="paises" multiple>
+              <mat-option *ngFor="let pais of optionsFilters?.paises" [value]="pais">
+                {{pais}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Produtos</mat-label>
+            <mat-select formControlName="produtos" multiple>
+              <mat-option *ngFor="let produto of optionsFilters?.produtos" [value]="produto">
+                {{produto}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Clientes</mat-label>
+            <mat-select formControlName="clientes" multiple>
+              <mat-option *ngFor="let cliente of optionsFilters?.clientes" [value]="cliente">
+                {{cliente}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <button mat-raised-button color="warn" (click)="clearFilters()" type="button">
+            <mat-icon>clear</mat-icon>
+            Limpar Filtros
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
+    <p>Carregando dados do dashboard...</p>
+  </div>
+
+  <!-- Conteúdo Principal -->
+  <div *ngIf="!isLoading && dashboardData" class="dashboard-content">
+
+    <!-- Cards KPI -->
+    <div class="kpis-section">
+      <h2>
+        <mat-icon>analytics</mat-icon>
+        Indicadores Principais
+      </h2>
+      
+      <div class="kpis-grid">
+        <mat-card class="kpi-card total">
+          <mat-card-content>
+            <div class="kpi-content">
+              <div class="kpi-icon">
+                <mat-icon>account_balance</mat-icon>
+              </div>
+              <div class="kpi-info">
+                <div class="kpi-label">Total Exportações</div>
+                <div class="kpi-value">{{formatCurrency(dashboardData.kpis.total_exportacoes)}}</div>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="kpi-card embarcado">
+          <mat-card-content>
+            <div class="kpi-content">
+              <div class="kpi-icon">
+                <mat-icon>local_shipping</mat-icon>
+              </div>
+              <div class="kpi-info">
+                <div class="kpi-label">Total Embarcado</div>
+                <div class="kpi-value">{{formatCurrency(dashboardData.kpis.total_embarcado)}}</div>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="kpi-card pendente">
+          <mat-card-content>
+            <div class="kpi-content">
+              <div class="kpi-icon">
+                <mat-icon>schedule</mat-icon>
+              </div>
+              <div class="kpi-info">
+                <div class="kpi-label">Total Pendente</div>
+                <div class="kpi-value">{{formatCurrency(dashboardData.kpis.total_pendente)}}</div>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="kpi-card lucro">
+          <mat-card-content>
+            <div class="kpi-content">
+              <div class="kpi-icon">
+                <mat-icon>trending_up</mat-icon>
+              </div>
+              <div class="kpi-info">
+                <div class="kpi-label">Lucro Estimado</div>
+                <div class="kpi-value">{{formatCurrency(dashboardData.kpis.lucro_estimado)}}</div>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="kpi-card margem">
+          <mat-card-content>
+            <div class="kpi-content">
+              <div class="kpi-icon">
+                <mat-icon>percent</mat-icon>
+              </div>
+              <div class="kpi-info">
+                <div class="kpi-label">Margem Média</div>
+                <div class="kpi-value">{{formatPercentage(dashboardData.kpis.margem_media)}}</div>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="kpi-card contratos">
+          <mat-card-content>
+            <div class="kpi-content">
+              <div class="kpi-icon">
+                <mat-icon>description</mat-icon>
+              </div>
+              <div class="kpi-info">
+                <div class="kpi-label">Contratos Ativos</div>
+                <div class="kpi-value">{{formatNumber(dashboardData.kpis.contratos_ativos)}}</div>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="kpi-card alertas">
+          <mat-card-content>
+            <div class="kpi-content">
+              <div class="kpi-icon">
+                <mat-icon [class.alert]="dashboardData.kpis.alertas_compliance > 0">warning</mat-icon>
+              </div>
+              <div class="kpi-info">
+                <div class="kpi-label">Alertas Compliance</div>
+                <div class="kpi-value" [class.alert]="dashboardData.kpis.alertas_compliance > 0">
+                  {{formatNumber(dashboardData.kpis.alertas_compliance)}}
+                </div>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="charts-section">
+      <h2>
+        <mat-icon>bar_chart</mat-icon>
+        Análises Gráficas
+      </h2>
+
+      <div class="charts-grid">
+        <!-- Gráfico Linha - Exportações por Mês -->
+        <mat-card class="chart-card">
+          <mat-card-header>
+            <mat-card-title>Exportações por Mês</mat-card-title>
+            <mat-card-subtitle>Evolução mensal das exportações</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="chart-container">
+              <canvas #chartExportacoesMes></canvas>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Gráfico Pizza - Exportações por País -->
+        <mat-card class="chart-card">
+          <mat-card-header>
+            <mat-card-title>Distribuição por País</mat-card-title>
+            <mat-card-subtitle>Participação de cada país no total</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="chart-container">
+              <canvas #chartExportacoesPais></canvas>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Gráfico Barras - Exportações por Produto -->
+        <mat-card class="chart-card full-width">
+          <mat-card-header>
+            <mat-card-title>Exportações por Produto</mat-card-title>
+            <mat-card-subtitle>Ranking de produtos por valor exportado</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="chart-container">
+              <canvas #chartExportacoesProduto></canvas>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estado vazio -->
+  <div *ngIf="!isLoading && !dashboardData" class="empty-state">
+    <mat-icon>info</mat-icon>
+    <h3>Nenhum dado encontrado</h3>
+    <p>Não foi possível carregar os dados do dashboard. Tente novamente.</p>
+  </div>
+
+</div>

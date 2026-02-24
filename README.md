@@ -2,15 +2,25 @@
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.2.0.
 
+This project is the **Shell** for a microfrontend architecture using Angular and Webpack Module Federation.
+
 ## Development server
 
-To start a local development server, run:
+To start the local development server for the **Shell** application, run:
 
 ```bash
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Alternatively, you can use the npm script configured in `package.json`:
+
+```bash
+npm start
+```
+
+This will start the shell application, typically on `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+
+**Note:** For the microfrontends (e.g., `mfe1`) to be loaded, their respective development servers must also be running. For example, `mfe1` is expected to be running on `http://localhost:4201/`.
 
 ## Code scaffolding
 

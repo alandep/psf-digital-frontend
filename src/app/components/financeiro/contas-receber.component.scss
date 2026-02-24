@@ -1,0 +1,340 @@
+.recebimentos-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+
+  .recebimentos-header {
+    margin-bottom: 24px;
+    
+    h1 {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 8px 0;
+      color: #1976d2;
+      font-size: 2rem;
+      font-weight: 500;
+
+      mat-icon {
+        font-size: 2rem;
+        width: 2rem;
+        height: 2rem;
+      }
+    }
+
+    p {
+      margin: 0;
+      color: #666;
+      font-size: 1.1rem;
+    }
+  }
+
+  .kpis-section {
+    margin-bottom: 24px;
+
+    .kpis-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+
+      .kpi-card {
+        transition: transform 0.2s ease-in-out;
+
+        &:hover {
+          transform: translateY(-2px);
+        }
+
+        &.total {
+          .kpi-icon {
+            background-color: rgba(25, 118, 210, 0.1);
+            color: #1976d2;
+          }
+        }
+
+        &.pending {
+          .kpi-icon {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+          }
+        }
+
+        &.completed {
+          .kpi-icon {
+            background-color: rgba(76, 175, 80, 0.1);
+            color: #4caf50;
+          }
+        }
+
+        &.count {
+          .kpi-icon {
+            background-color: rgba(156, 39, 176, 0.1);
+            color: #9c27b0;
+          }
+        }
+
+        .kpi-content {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+
+          .kpi-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+
+            mat-icon {
+              font-size: 32px;
+              width: 32px;
+              height: 32px;
+            }
+          }
+
+          .kpi-info {
+            flex: 1;
+
+            .kpi-label {
+              color: #666;
+              font-size: 0.875rem;
+              margin-bottom: 4px;
+            }
+
+            .kpi-value {
+              font-size: 1.5rem;
+              font-weight: 600;
+              color: #333;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .filtros-card {
+    margin-bottom: 24px;
+
+    mat-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+
+      mat-card-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #333;
+        flex: 1;
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 8px;
+      }
+    }
+
+    .filtros-form {
+      .filtro-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 16px;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        button {
+          height: fit-content;
+          align-self: end;
+          margin-bottom: 1.34375em;
+        }
+      }
+    }
+  }
+
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+
+    mat-progress-spinner {
+      margin-bottom: 20px;
+    }
+
+    p {
+      color: #666;
+      margin: 0;
+    }
+  }
+
+  .table-section {
+    .table-container {
+      overflow-x: auto;
+      
+      .recebimentos-table {
+        width: 100%;
+        
+        .contract-info {
+          display: flex;
+          flex-direction: column;
+          
+          strong {
+            color: #333;
+            font-weight: 500;
+          }
+          
+          small {
+            color: #666;
+            font-size: 0.75rem;
+          }
+        }
+        
+        .amount-info {
+          display: flex;
+          flex-direction: column;
+          
+          strong {
+            color: #333;
+            font-weight: 600;
+          }
+          
+          small {
+            color: #666;
+            font-size: 0.75rem;
+          }
+        }
+        
+        .currency-chip {
+          font-size: 0.75rem;
+          height: 24px;
+        }
+        
+        .exchange-rate {
+          font-size: 0.75rem;
+          color: #666;
+          margin-top: 2px;
+        }
+        
+        .status-completed {
+          background-color: #e8f5e8;
+          color: #2e7d32;
+        }
+        
+        .status-processing {
+          background-color: #fff3e0;
+          color: #f57c00;
+        }
+        
+        .status-pending {
+          background-color: #fff8e1;
+          color: #f9a825;
+        }
+        
+        .status-cancelled {
+          background-color: #ffebee;
+          color: #c62828;
+        }
+        
+        .bank-info {
+          display: flex;
+          flex-direction: column;
+          
+          strong {
+            color: #333;
+          }
+          
+          small {
+            color: #666;
+            font-size: 0.75rem;
+            font-family: 'Courier New', monospace;
+          }
+        }
+        
+        .action-buttons {
+          display: flex;
+          gap: 4px;
+          
+          button {
+            &:disabled {
+              opacity: 0.5;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+    color: #666;
+
+    mat-icon {
+      font-size: 72px;
+      width: 72px;
+      height: 72px;
+      color: #ccc;
+      margin-bottom: 16px;
+    }
+
+    h3 {
+      margin: 0 0 8px 0;
+      color: #333;
+    }
+
+    p {
+      margin: 0 0 24px 0;
+      color: #666;
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .recebimentos-container {
+    padding: 16px;
+
+    .kpis-section .kpis-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .filtros-form .filtro-row {
+      grid-template-columns: 1fr;
+    }
+
+    .table-container {
+      .recebimentos-table {
+        font-size: 0.875rem;
+      }
+    }
+
+    .filtros-card mat-card-header {
+      flex-direction: column;
+      gap: 16px;
+      align-items: flex-start;
+    }
+  }
+}
+
+// Snackbar Styles
+:host ::ng-deep {
+  .snackbar-success {
+    background-color: #4caf50;
+    color: white;
+  }
+
+  .snackbar-error {
+    background-color: #f44336;
+    color: white;
+  }
+}

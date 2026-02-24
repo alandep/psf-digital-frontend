@@ -4,6 +4,11 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/app",
+    "baseUrl": "./src",
+    "paths": {
+      "@types/*": ["types/*"],
+      "@services/*": ["services/*"]
+    },
     "types": [
       "node"
     ]

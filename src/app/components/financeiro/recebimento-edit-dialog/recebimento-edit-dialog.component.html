@@ -1,0 +1,238 @@
+<div class="recebimento-dialog">
+  <h2 mat-dialog-title>
+    <mat-icon>{{ data.isEdit ? 'edit' : 'add' }}</mat-icon>
+    {{ data.isEdit ? 'Editar' : 'Novo' }} Recebimento
+  </h2>
+
+  <mat-dialog-content>
+    <form [formGroup]="recebimentoForm" class="recebimento-form">
+      
+      <!-- Informações Básicas -->
+      <mat-card class="form-section">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>info</mat-icon>
+            Informações Básicas
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Contrato *</mat-label>
+              <mat-select formControlName="contract" required>
+                <mat-option *ngFor="let contract of data.filtroOptions.contracts" [value]="contract.id">
+                  {{contract.number}} - {{contract.client_name}} 
+                  ({{formatCurrency(contract.total_amount, contract.currency)}})
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="recebimentoForm.get('contract')?.hasError('required')">
+                Contrato é obrigatório
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Valor *</mat-label>
+              <input matInput 
+                     type="number" 
+                     formControlName="amount" 
+                     min="0.01" 
+                     step="0.01"
+                     required>
+              <mat-error *ngIf="recebimentoForm.get('amount')?.hasError('required')">
+                Valor é obrigatório
+              </mat-error>
+              <mat-error *ngIf="recebimentoForm.get('amount')?.hasError('min')">
+                Valor deve ser maior que zero
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Moeda *</mat-label>
+              <mat-select formControlName="currency" required>
+                <mat-option *ngFor="let currency of currencyList" [value]="currency">
+                  {{currency}}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="recebimentoForm.get('currency')?.hasError('required')">
+                Moeda é obrigatória
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Data de Pagamento *</mat-label>
+              <input matInput 
+                     [matDatepicker]="picker" 
+                     formControlName="payment_date"
+                     required>
+              <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+              <mat-datepicker #picker></mat-datepicker>
+              <mat-error *ngIf="recebimentoForm.get('payment_date')?.hasError('required')">
+                Data de pagamento é obrigatória
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Forma de Pagamento *</mat-label>
+              <mat-select formControlName="payment_method" required>
+                <mat-option *ngFor="let method of paymentMethods" [value]="method.value">
+                  {{method.label}}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="recebimentoForm.get('payment_method')?.hasError('required')">
+                Forma de pagamento é obrigatória
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Status *</mat-label>
+              <mat-select formControlName="status" required>
+                <mat-option *ngFor="let status of statusList" [value]="status.value">
+                  {{status.label}}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="recebimentoForm.get('status')?.hasError('required')">
+                Status é obrigatório
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Controle Cambial -->
+      <mat-card class="form-section" *ngIf="recebimentoForm.get('currency')?.value !== 'BRL'">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>currency_exchange</mat-icon>
+            Controle Cambial
+          </mat-card-title>
+          <div class="header-actions">
+            <button mat-icon-button 
+                    type="button"
+                    matTooltip="Atualizar Taxa de Câmbio"
+                    (click)="refreshExchangeRate()">
+              <mat-icon>refresh</mat-icon>
+            </button>
+          </div>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Taxa de Câmbio</mat-label>
+              <input matInput 
+                     type="number" 
+                     formControlName="exchange_rate" 
+                     step="0.0001"
+                     min="0">
+              <mat-hint *ngIf="currentExchangeRate">
+                Taxa atual: 1 {{currentExchangeRate.from_currency}} = {{currentExchangeRate.rate}} {{currentExchangeRate.to_currency}}
+                ({{currentExchangeRate.source}})
+              </mat-hint>
+            </mat-form-field>
+
+            <div class="conversion-display" *ngIf="convertedAmount > 0">
+              <div class="conversion-label">Valor em BRL:</div>
+              <div class="conversion-value">{{formatCurrency(convertedAmount, 'BRL')}}</div>
+            </div>
+          </div>
+
+          <div class="form-row" *ngIf="currentExchangeRate">
+            <div class="exchange-info">
+              <mat-icon>info</mat-icon>
+              <div>
+                <strong>Fonte:</strong> {{currentExchangeRate.source}} <br>
+                <strong>Data:</strong> {{currentExchangeRate.date | date:'dd/MM/yyyy'}}
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Informações Bancárias -->
+      <mat-card class="form-section">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>account_balance</mat-icon>
+            Informações Bancárias
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Conta Bancária</mat-label>
+              <mat-select formControlName="bank_account">
+                <mat-option value="">Selecionar conta...</mat-option>
+                <mat-option *ngFor="let account of data.filtroOptions.bankAccounts" [value]="account.id">
+                  {{account.bank_name}} - {{account.account_number}} ({{account.currency}})
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>ID da Transação</mat-label>
+              <input matInput 
+                     formControlName="transaction_id" 
+                     placeholder="Ex: TXN-20240223001">
+              <mat-hint>ID único da transação bancária</mat-hint>
+            </mat-form-field>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Metadados -->
+      <mat-card class="form-section">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>person</mat-icon>
+            Informações do Sistema
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Criado por</mat-label>
+              <input matInput 
+                     formControlName="created_by" 
+                     readonly>
+            </mat-form-field>
+
+            <div class="readonly-info" *ngIf="data.isEdit && data.recebimento">
+              <div class="info-item">
+                <strong>Criado em:</strong> 
+                {{data.recebimento.created_at | date:'dd/MM/yyyy HH:mm'}}
+              </div>
+              <div class="info-item" *ngIf="data.recebimento.updated_at !== data.recebimento.created_at">
+                <strong>Última atualização:</strong> 
+                {{data.recebimento.updated_at | date:'dd/MM/yyyy HH:mm'}}
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+    </form>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button 
+            type="button" 
+            (click)="onCancel()" 
+            [disabled]="isSubmitting">
+      Cancelar
+    </button>
+    
+    <button mat-raised-button 
+            color="primary" 
+            (click)="onSubmit()" 
+            [disabled]="isSubmitting || recebimentoForm.invalid">
+      <mat-icon *ngIf="isSubmitting">
+        <mat-progress-spinner diameter="20" mode="indeterminate"></mat-progress-spinner>
+      </mat-icon>
+      <mat-icon *ngIf="!isSubmitting">{{ data.isEdit ? 'save' : 'add' }}</mat-icon>
+      {{ data.isEdit ? 'Salvar' : 'Criar' }} Recebimento
+    </button>
+  </mat-dialog-actions>
+</div>
