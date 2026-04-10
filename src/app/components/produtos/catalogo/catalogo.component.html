@@ -1,0 +1,1006 @@
+<div class="catalog-container">
+  
+  <!-- 🌾 HEADER DO CATÁLOGO -->
+  <mat-card style="margin-bottom: 24px; background: linear-gradient(135deg, #2e7d32, #4caf50); color: white;">
+    <mat-card-header style="color: white;">
+      <mat-card-title style="color: white; font-size: 28px; display: flex; align-items: center; gap: 12px;">
+        <mat-icon style="font-size: 32px; color: white;">inventory</mat-icon>
+        🌾 Catálogo de Produtos EIP
+      </mat-card-title>
+      <mat-card-subtitle style="color: rgba(255,255,255,0.9); font-size: 14px;">
+        Gestão inteligente de produtos para exportação com IA e automação
+      </mat-card-subtitle>
+    </mat-card-header>
+  </mat-card>
+
+  <!-- 📊 KPIs DO CATÁLOGO -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    
+    <mat-card class="kpi-card" style="text-align: center; padding: 16px;">
+      <div style="font-size: 32px; font-weight: bold; color: #2e7d32;">{{totalProducts}}</div>
+      <div style="color: #666; font-size: 14px;">Total de Produtos</div>
+      <mat-icon style="color: #4caf50; font-size: 20px;">inventory</mat-icon>
+    </mat-card>
+
+    <mat-card class="kpi-card" style="text-align: center; padding: 16px;">
+      <div style="font-size: 32px; font-weight: bold; color: #1976d2;">{{activeProducts}}</div>
+      <div style="color: #666; font-size: 14px;">Produtos Ativos</div>
+      <mat-icon style="color: #2196f3; font-size: 20px;">check_circle</mat-icon>
+    </mat-card>
+
+    <mat-card class="kpi-card" style="text-align: center; padding: 16px;">
+      <div style="font-size: 32px; font-weight: bold; color: #ed6c02;">{{aiGeneratedProducts}}</div>
+      <div style="color: #666; font-size: 14px;">Gerados por IA</div>
+      <mat-icon style="color: #ff9800; font-size: 20px;">smart_toy</mat-icon>
+    </mat-card>
+
+    <mat-card class="kpi-card" style="text-align: center; padding: 16px;">
+      <div style="font-size: 32px; font-weight: bold; color: #7b1fa2;">{{uniqueCommodities}}</div>
+      <div style="color: #666; font-size: 14px;">Tipos Commodities</div>
+      <mat-icon style="color: #9c27b0; font-size: 20px;">category</mat-icon>
+    </mat-card>
+
+  </div>
+
+  <!-- 🔍 FILTROS E AÇÕES -->
+  <mat-card style="margin-bottom: 24px;">
+    <mat-card-header>
+      <mat-card-title style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <span style="display: flex; align-items: center; gap: 12px;">
+          <mat-icon>search</mat-icon>
+          Filtros e Busca
+        </span>
+        
+        <div style="display: flex; gap: 12px;">
+          <!-- 🤖 CRIAÇÃO COM IA -->
+          <button mat-raised-button color="accent" (click)="createProductWithAI()" style="background: linear-gradient(45deg, #ff6b6b, #ff8e53);">
+            <mat-icon>auto_awesome</mat-icon>
+            Criar com IA
+          </button>
+          
+          <!-- ➕ CRIAÇÃO MANUAL -->
+          <button mat-raised-button color="primary" (click)="createProduct()">
+            <mat-icon>add</mat-icon>
+            Novo Produto
+          </button>
+
+          <!-- 📤 IMPORTAR -->
+          <button mat-stroked-button (click)="importProducts()">
+            <mat-icon>file_upload</mat-icon>
+            Importar CSV
+          </button>
+        </div>
+      </mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="filtroForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 16px;">
+        
+        <mat-form-field appearance="outline">
+          <mat-label>🔍 Busca Inteligente</mat-label>
+          <input matInput formControlName="search" placeholder="Nome, código, NCM, nome científico...">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de Commodity</mat-label>
+          <mat-select formControlName="commodity_types" multiple>
+            <mat-option *ngFor="let type of filterOptions?.commodity_types" [value]="type">
+              {{getCommodityTypeLabel(type)}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Moeda</mat-label>
+          <mat-select formControlName="currencies" multiple>
+            <mat-option *ngFor="let currency of filterOptions?.currencies" [value]="currency">
+              {{getCurrencyLabel(currency)}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let status of filterOptions?.status_options" [value]="status">
+              {{getProductStatusLabel(status)}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>País de Origem</mat-label>
+          <mat-select formControlName="origin_countries" multiple>
+            <mat-option *ngFor="let country of filterOptions?.origin_countries" [value]="country">
+              🌍 {{country}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <div style="display: flex; align-items: center; gap: 16px; padding-top: 8px;">
+          <mat-slide-toggle formControlName="active" color="primary">
+            Apenas Ativos
+          </mat-slide-toggle>
+          
+          <mat-slide-toggle formControlName="ai_generated" color="accent">
+            Gerados por IA
+          </mat-slide-toggle>
+        </div>
+
+      </form>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e0e0e0;">
+        <div style="display: flex; gap: 12px;">
+          <button mat-raised-button color="primary" (click)="applyFilters()">
+            <mat-icon>filter_alt</mat-icon>
+            Aplicar Filtros
+          </button>
+          
+          <button mat-stroked-button (click)="clearFilters()">
+            <mat-icon>clear</mat-icon>
+            Limpar
+          </button>
+        </div>
+        
+        <div style="color: #666; font-size: 14px;">
+          {{products.length}} produto(s) encontrado(s)
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- 📋 LISTAGEM DE PRODUTOS -->
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title style="display: flex; align-items: center; gap: 12px;">
+        <mat-icon>view_list</mat-icon>
+        Lista de Produtos
+      </mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content style="padding: 0; overflow: hidden;">
+      
+      <!-- LOADING -->
+      <div *ngIf="isLoading" style="padding: 40px; text-align: center;">
+        <mat-progress-spinner mode="indeterminate" diameter="60" color="primary"></mat-progress-spinner>
+        <p style="margin-top: 16px; color: #666;">Carregando produtos...</p>
+      </div>
+
+      <!-- GRID DE PRODUTOS -->
+      <div *ngIf="!isLoading && products.length > 0" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; padding: 16px;">
+        
+        <mat-card *ngFor="let product of products" class="product-card" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; border: 1px solid #e0e0e0; position: relative;">
+          
+          <!-- STATUS BADGE -->
+          <div style="position: absolute; top: 8px; right: 8px; display: flex; gap: 4px;">
+            <mat-icon *ngIf="product.ai_config.ai_generated" 
+                     style="color: #ff9800; font-size: 18px;" 
+                     matTooltip="Gerado por IA">
+              smart_toy
+            </mat-icon>
+            <span [style.background]="product.active ? '#4caf50' : '#f44336'" 
+                  style="color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: bold;">
+              {{product.active ? 'ATIVO' : 'INATIVO'}}
+            </span>
+          </div>
+
+          <!-- HEADER DO PRODUTO -->
+          <mat-card-header style="margin-bottom: 16px;">
+            <mat-card-title style="font-size: 18px; margin-bottom: 4px; padding-right: 60px;">
+              {{product.name}}
+            </mat-card-title>
+            <mat-card-subtitle style="display: flex; align-items: center; gap: 8px;">
+              <span style="background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">
+                {{getCommodityTypeLabel(product.commodity_type)}}
+              </span>
+              <span style="color: #666; font-size: 12px;">{{product.product_code}}</span>
+            </mat-card-subtitle>
+          </mat-card-header>
+
+          <!-- INFORMAÇÕES PRINCIPAIS -->
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">
+            
+            <div class="detail-item" style="background: white; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #f0f0f0;">
+              <div style="font-size: 11px; color: #666; margin-bottom: 4px;">NCM</div>
+              <div style="font-weight: bold; font-size: 14px; color: #2196f3;">{{product.ncm_code}}</div>
+            </div>
+
+            <div class="detail-item" style="background: white; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #f0f0f0;">
+              <div style="font-size: 11px; color: #666; margin-bottom: 4px;">HS Code</div>
+              <div style="font-weight: bold; font-size: 14px; color: #4caf50;">{{product.hs_code}}</div>
+            </div>
+
+            <div class="detail-item" style="background: white; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #f0f0f0;">
+              <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Unidade</div>
+              <div style="font-weight: bold; font-size: 14px;">{{getUnitLabel(product.unit)}}</div>
+            </div>
+
+            <div class="detail-item" style="background: white; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #f0f0f0;">
+              <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Origem</div>
+              <div style="font-weight: bold; font-size: 14px; color: #ff5722;">🌍 {{product.origin_country}}</div>
+            </div>
+
+          </div>
+
+          <!-- PREÇO E IA -->
+          <div *ngIf="product.standard_price" style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 11px; color: #666;">Preço Padrão</div>
+                <div style="font-size: 18px; font-weight: bold; color: #2e7d32;">
+                  {{formatCurrency(product.standard_price, product.currency)}} / {{getPriceUnitLabel(product.price_unit)}}
+                </div>
+              </div>
+              <div *ngIf="product.ai_config.ai_confidence_score" style="text-align: center;">
+                <div style="font-size: 11px; color: #666;">IA Score</div>
+                <div style="font-size: 14px; font-weight: bold;" 
+                     [style.color]="product.ai_config.ai_confidence_score > 90 ? '#4caf50' : product.ai_config.ai_confidence_score > 70 ? '#ff9800' : '#f44336'">
+                  {{product.ai_config.ai_confidence_score}}%
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AÇÇÕES -->
+          <mat-card-actions style="padding: 0; justify-content: space-between; align-items: center;">
+            <div style="display: flex; gap: 4px;">
+              <button mat-icon-button (click)="viewProduct(product)" matTooltip="Visualizar">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              
+              <button mat-icon-button (click)="editProduct(product)" matTooltip="Editar" color="primary">
+                <mat-icon>edit</mat-icon>
+              </button>
+
+              <button mat-icon-button [matMenuTriggerFor]="productMenu" matTooltip="Mais opções">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span *ngIf="product.scientific_name" style="font-size: 11px; color: #666; font-style: italic; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                {{product.scientific_name}}
+              </span>
+            </div>
+
+            <!-- MENU DE OPÇÕES -->
+            <mat-menu #productMenu="matMenu">
+              <button mat-menu-item (click)="duplicateProduct(product)">
+                <mat-icon>content_copy</mat-icon>
+                <span>Duplicar</span>
+              </button>
+              
+              <button mat-menu-item (click)="enrichWithAI(product)">
+                <mat-icon>auto_awesome</mat-icon>
+                <span>Enriquecer com IA</span>
+              </button>
+              
+              <button mat-menu-item (click)="validateProduct(product)">
+                <mat-icon>verified</mat-icon>
+                <span>Validar NCM</span>
+              </button>
+              
+              <button mat-menu-item (click)="toggleActive(product)" 
+                      [style.color]="product.active ? '#f44336' : '#4caf50'">
+                <mat-icon>{{product.active ? 'toggle_off' : 'toggle_on'}}</mat-icon>
+                <span>{{product.active ? 'Desativar' : 'Ativar'}}</span>
+              </button>
+              
+              <mat-divider></mat-divider>
+              
+              <button mat-menu-item (click)="deleteProduct(product)" style="color: #f44336;">
+                <mat-icon>delete</mat-icon>
+                <span>Excluir</span>
+              </button>
+            </mat-menu>
+
+          </mat-card-actions>
+        </mat-card>
+
+      </div>
+
+      <!-- EMPTY STATE -->
+      <div *ngIf="!isLoading && products.length === 0" style="padding: 60px; text-align: center;">
+        <mat-icon style="font-size: 64px; color: #ccc; margin-bottom: 16px;">inventory_2</mat-icon>
+        <h3 style="margin: 0 0 8px 0; color: #999;">Nenhum produto encontrado</h3>
+        <p style="margin: 0 0 16px 0;">Crie seu primeiro produto ou ajuste os filtros.</p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button mat-raised-button color="accent" (click)="createProductWithAI()">
+            <mat-icon>auto_awesome</mat-icon>
+            Criar com IA
+          </button>
+          <button mat-raised-button color="primary" (click)="createProduct()">
+            <mat-icon>add</mat-icon>
+            Criar Produto
+          </button>
+        </div>
+      </div>
+
+    </mat-card-content>
+  </mat-card>
+
+  <!-- 🎯 FORMULÁRIO INLINE DAS 7 ABAS (SEMELHANTE AO TEMPLATES) -->
+  <mat-card *ngIf="showProductForm" id="product-form-container" style="margin-top: 24px; border: 3px solid #4caf50; box-shadow: 0 8px 24px rgba(76, 175, 80, 0.2);">
+    
+    <mat-card-header style="background: linear-gradient(135deg, #4caf50, #66bb6a); color: white;">
+      <mat-card-title style="display: flex; justify-content: space-between; align-items: center; width: 100%; color: white;">
+        <span style="display: flex; align-items: center; gap: 12px;">
+          <mat-icon style="color: white;">{{editingProduct ? 'edit' : 'add'}}</mat-icon>
+          {{editingProduct ? 'Editar Produto' : 'Novo Produto'}}
+          <mat-icon *ngIf="editingProduct?.ai_config?.ai_generated" style="color: #ffeb3b; font-size: 20px;" matTooltip="Produto gerado por IA">smart_toy</mat-icon>
+        </span>
+
+        <div style="display: flex; gap: 8px;">
+          <!-- BOTÕES ÚTEIS -->
+          <button mat-icon-button style="color: white;" matTooltip="Preencher com IA">
+            <mat-icon>auto_awesome</mat-icon>
+          </button>
+          <button mat-icon-button style="color: white;" matTooltip="Validar NCM">
+            <mat-icon>verified</mat-icon>
+          </button>
+          <button mat-icon-button (click)="closeProductForm()" style="color: white;" matTooltip="Fechar">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content style="padding: 0;">
+      <form [formGroup]="productForm" (ngSubmit)="saveProduct()">
+        
+        <!-- 📋 ABAS DO PRODUTO -->
+        <mat-tab-group [(selectedIndex)]="selectedTabIndex" style="background: white;">
+          
+          <!-- 📋 ABA 1: GERAL -->
+          <mat-tab label="📋 GERAL">
+            <div style="padding: 24px;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                
+                <mat-form-field appearance="outline">
+                  <mat-label>Código do Produto *</mat-label>
+                  <input matInput formControlName="product_code" placeholder="EX: SOJA_EXP_001">
+                  <mat-icon matSuffix>qr_code</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Nome do Produto *</mat-label>
+                  <input matInput formControlName="name" placeholder="EX: Soja em Grão Premium">
+                  <mat-icon matSuffix>label</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Nome Científico</mat-label>
+                  <input matInput formControlName="scientific_name" placeholder="EX: Glycine max">
+                  <mat-icon matSuffix>science</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Tipo de Commodity *</mat-label>
+                  <mat-select formControlName="commodity_type">
+                    <mat-option value="GRAO">🌾 Grão</mat-option>
+                    <mat-option value="FARELO">🥜 Farelo</mat-option>
+                    <mat-option value="OLEO">🛢️ Óleo</mat-option>
+                    <mat-option value="FIBRA">🧵 Fibra</mat-option>
+                    <mat-option value="ANIMAL">🐄 Animal</mat-option>
+                    <mat-option value="PROCESSADO">⚙️ Processado</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>País de Origem</mat-label>
+                  <input matInput formControlName="origin_country" placeholder="EX: Brasil">
+                  <mat-icon matSuffix>flag</mat-icon>
+                </mat-form-field>
+
+                <mat-slide-toggle formControlName="active" color="primary">
+                  <mat-icon>{{productForm.get('active')?.value ? 'check_circle' : 'cancel'}}</mat-icon>
+                  {{productForm.get('active')?.value ? 'Produto Ativo' : 'Produto Inativo'}}
+                </mat-slide-toggle>
+
+              </div>
+
+              <mat-form-field appearance="outline" style="width: 100%; margin-top: 16px;">
+                <mat-label>Descrição Detalhada</mat-label>
+                <textarea matInput formControlName="description" rows="4" 
+                         placeholder="Descrição completa do produto, características, especificações..."></textarea>
+                <mat-icon matSuffix>description</mat-icon>
+              </mat-form-field>
+            </div>
+          </mat-tab>
+
+          <!-- 💰 ABA 2: FISCAL -->
+          <mat-tab label="💰 FISCAL">
+            <div style="padding: 24px;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                
+                <mat-form-field appearance="outline">
+                  <mat-label>Código NCM *</mat-label>
+                  <input matInput formControlName="ncm_code" placeholder="0000.00.00" 
+                         pattern="[0-9]{4}\.[0-9]{2}\.[0-9]{2}">
+                  <mat-icon matSuffix>assignment</mat-icon>
+                  <mat-hint>Formato: 0000.00.00</mat-hint>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Descrição NCM</mat-label>
+                  <input matInput formControlName="ncm_description" readonly>
+                  <mat-icon matSuffix>description</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Código HS *</mat-label>
+                  <input matInput formControlName="hs_code" placeholder="0000">
+                  <mat-icon matSuffix>language</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Taxa de Exportação (%)</mat-label>
+                  <input matInput type="number" formControlName="export_tax" min="0" max="100" step="0.01">
+                  <mat-icon matSuffix>percent</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>CFOP</mat-label>
+                  <input matInput formControlName="cfop" placeholder="7102">
+                  <mat-icon matSuffix>code</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>CEST</mat-label>
+                  <input matInput formControlName="cest" placeholder="01.001.00">
+                  <mat-icon matSuffix>inventory_2</mat-icon>
+                </mat-form-field>
+
+                <mat-slide-toggle formControlName="requires_export_license" color="primary">
+                  <mat-icon>{{productForm.get('requires_export_license')?.value ? 'verified_user' : 'security'}}</mat-icon>
+                  Requer Licença de Exportação
+                </mat-slide-toggle>
+
+                <mat-form-field appearance="outline" *ngIf="productForm.get('requires_export_license')?.value">
+                  <mat-label>Tipo de Licença</mat-label>
+                  <mat-select formControlName="export_license_type">
+                    <mat-option value="AUTOMATIC">Automática</mat-option>
+                    <mat-option value="NON_AUTOMATIC">Não Automática</mat-option>
+                    <mat-option value="PROHIBITED">Proibida</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- 📦 ABA 3: LOGÍSTICA -->
+          <mat-tab label="📦 LOGÍSTICA">
+            <div style="padding: 24px;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                
+                <mat-form-field appearance="outline">
+                  <mat-label>Unidade de Medida *</mat-label>
+                  <mat-select formControlName="unit">
+                    <mat-option value="MT">MT - Tonelada Métrica</mat-option>
+                    <mat-option value="KG">KG - Quilograma</mat-option>
+                    <mat-option value="TON">TON - Tonelada</mat-option>
+                    <mat-option value="BUSHEL">BUSHEL - Bushel</mat-option>
+                    <mat-option value="SACAS">SACAS - Sacas</mat-option>
+                    <mat-option value="LB">LB - Libras</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Peso Líquido (kg)</mat-label>
+                  <input matInput type="number" formControlName="net_weight" min="0" step="0.01">
+                  <mat-icon matSuffix>scale</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Peso Bruto (kg)</mat-label>
+                  <input matInput type="number" formControlName="gross_weight" min="0" step="0.01">
+                  <mat-icon matSuffix>fitness_center</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Volume (m³)</mat-label>
+                  <input matInput type="number" formControlName="volume" min="0" step="0.001">
+                  <mat-icon matSuffix>view_in_ar</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Tipo de Embalagem</mat-label>
+                  <mat-select formControlName="package_type">
+                    <mat-option value="BULK">🚛 Granel (Bulk)</mat-option>
+                    <mat-option value="BAG">🛍️ Big Bag</mat-option>
+                    <mat-option value="CONTAINER">📦 Container</mat-option>
+                    <mat-option value="GRANEL">🚚 Granel</mat-option>
+                    <mat-option value="EMBALAGEM">📋 Embalagem</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Tipo de Armazenamento</mat-label>
+                  <mat-select formControlName="storage_type">
+                    <mat-option value="DRY">🌵 Seco</mat-option>
+                    <mat-option value="REFRIGERATED">❄️ Refrigerado</mat-option>
+                    <mat-option value="AMBIENT">🌡️ Ambiente</mat-option>
+                    <mat-option value="CONTROLLED">🎛️ Controlado</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Densidade (kg/m³)</mat-label>
+                  <input matInput type="number" formControlName="density" readonly>
+                  <mat-icon matSuffix>analytics</mat-icon>
+                  <mat-hint>Calculado automaticamente</mat-hint>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Tara (%)</mat-label>
+                  <input matInput type="number" formControlName="tare_percentage" min="0" max="100" step="0.01">
+                  <mat-icon matSuffix>remove_circle</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Fator de Estiva</mat-label>
+                  <input matInput type="number" formControlName="stowage_factor" min="0" step="0.01">
+                  <mat-icon matSuffix>layers</mat-icon>
+                </mat-form-field>
+
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- 💵 ABA 4: COMERCIAL -->
+          <mat-tab label="💵 COMERCIAL">
+            <div style="padding: 24px;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                
+                <mat-form-field appearance="outline">
+                  <mat-label>Preço Padrão</mat-label>
+                  <input matInput type="number" formControlName="standard_price" min="0" step="0.01">
+                  <mat-icon matSuffix>attach_money</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Moeda</mat-label>
+                  <mat-select formControlName="currency">
+                    <mat-option value="USD">💵 USD - Dólar Americano</mat-option>
+                    <mat-option value="BRL">💰 BRL - Real Brasileiro</mat-option>
+                    <mat-option value="EUR">💶 EUR - Euro</mat-option>
+                    <mat-option value="CNY">💴 CNY - Yuan Chinês</mat-option>
+                    <mat-option value="ARS">💸 ARS - Peso Argentino</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Unidade de Preço</mat-label>
+                  <mat-select formControlName="price_unit">
+                    <mat-option value="USD_MT">USD/MT</mat-option>
+                    <mat-option value="USD_BUSHEL">USD/BUSHEL</mat-option>
+                    <mat-option value="BRL_MT">BRL/MT</mat-option>
+                    <mat-option value="USD_TON">USD/TON</mat-option>
+                    <mat-option value="EUR_MT">EUR/MT</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Quantidade Mínima</mat-label>
+                  <input matInput type="number" formControlName="min_order_quantity" min="0" step="1">
+                  <mat-icon matSuffix>minimize</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Quantidade Máxima</mat-label>
+                  <input matInput type="number" formControlName="max_order_quantity" min="0" step="1">
+                  <mat-icon matSuffix>maximize</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Bolsa de Futuros</mat-label>
+                  <mat-select formControlName="futures_exchange">
+                    <mat-option value="CBOT">📈 CBOT - Chicago Board of Trade</mat-option>
+                    <mat-option value="CME">📊 CME - Chicago Mercantile Exchange</mat-option>
+                    <mat-option value="ICE">🧊 ICE - Intercontinental Exchange</mat-option>
+                    <mat-option value="EUREX">🇪🇺 EUREX - European Exchange</mat-option>
+                    <mat-option value="BM&F">🇧🇷 B3 - BM&F Bovespa</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Preço Futuro Atual</mat-label>
+                  <input matInput type="number" formControlName="current_futures_price" readonly>
+                  <mat-icon matSuffix>trending_up</mat-icon>
+                  <mat-hint>Atualizado automaticamente</mat-hint>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Última Atualização Preço</mat-label>
+                  <input matInput formControlName="price_last_update" readonly>
+                  <mat-icon matSuffix>schedule</mat-icon>
+                </mat-form-field>
+
+              </div>
+
+              <!-- SIMULAÇÃO DE PREÇOS EM TEMPO REAL -->
+              <mat-card style="margin-top: 24px; background: linear-gradient(135deg, #e3f2fd, #bbdefb);">
+                <mat-card-header>
+                  <mat-card-title style="display: flex; align-items: center; gap: 8px; color: #1976d2;">
+                    <mat-icon>timeline</mat-icon>
+                    Simulação de Preços em Tempo Real
+                  </mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                    <div style="text-align: center; padding: 16px; background: rgba(25, 118, 210, 0.1); border-radius: 8px;">
+                      <div style="font-size: 24px; font-weight: bold; color: #1976d2;">$485.50</div>
+                      <div style="font-size: 12px; color: #666;">USD/MT</div>
+                      <div style="font-size: 10px; color: #4caf50;">▲ +2.5%</div>
+                    </div>
+                    <div style="text-align: center; padding: 16px; background: rgba(25, 118, 210, 0.1); border-radius: 8px;">
+                      <div style="font-size: 24px; font-weight: bold; color: #1976d2;">€455.20</div>
+                      <div style="font-size: 12px; color: #666;">EUR/MT</div>
+                      <div style="font-size: 10px; color: #f44336;">▼ -1.2%</div>
+                    </div>
+                    <div style="text-align: center; padding: 16px; background: rgba(25, 118, 210, 0.1); border-radius: 8px;">
+                      <div style="font-size: 24px; font-weight: bold; color: #1976d2;">R$ 2.485</div>
+                      <div style="font-size: 12px; color: #666;">BRL/MT</div>
+                      <div style="font-size: 10px; color: #4caf50;">▲ +0.8%</div>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            </div>
+          </mat-tab>
+
+          <!-- 🔬 ABA 5: QUALIDADE -->
+          <mat-tab label="🔬 QUALIDADE">
+            <div style="padding: 24px;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                
+                <!-- ESPECIFICAÇÕES TÉCNICAS -->
+                <mat-form-field appearance="outline">
+                  <mat-label>Umidade (%)</mat-label>
+                  <input matInput type="number" formControlName="moisture_content" min="0" max="100" step="0.1">
+                  <mat-icon matSuffix>water_drop</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Proteína (%)</mat-label>
+                  <input matInput type="number" formControlName="protein_content" min="0" max="100" step="0.1">
+                  <mat-icon matSuffix>biotech</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Óleo (%)</mat-label>
+                  <input matInput type="number" formControlName="oil_content" min="0" max="100" step="0.1">
+                  <mat-icon matSuffix>opacity</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Material Estranho (%)</mat-label>
+                  <input matInput type="number" formControlName="foreign_matter" min="0" max="100" step="0.1">
+                  <mat-icon matSuffix>warning</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Grãos Quebrados (%)</mat-label>
+                  <input matInput type="number" formControlName="broken_grains" min="0" max="100" step="0.1">
+                  <mat-icon matSuffix>broken_image</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Padrão de Inspeção</mat-label>
+                  <mat-select formControlName="inspection_standard">
+                    <mat-option value="SGS">🔍 SGS - Société Générale de Surveillance</mat-option>
+                    <mat-option value="INTERTEK">🔬 INTERTEK</mat-option>
+                    <mat-option value="COTECNA">⚖️ COTECNA</mat-option>
+                    <mat-option value="BUREAU_VERITAS">📋 Bureau Veritas</mat-option>
+                    <mat-option value="TUV">🛡️ TÜV</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Certificação de Qualidade</mat-label>
+                  <input matInput formControlName="quality_certification" placeholder="ISO 9001, HACCP, etc.">
+                  <mat-icon matSuffix>verified</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Validade da Análise</mat-label>
+                  <input matInput type="date" formControlName="analysis_expiry_date">
+                  <mat-icon matSuffix>event</mat-icon>
+                </mat-form-field>
+
+              </div>
+
+              <!-- ANÁLISE AUTOMÁTICA -->
+              <mat-card style="margin-top: 24px; background: linear-gradient(135deg, #f3e5f5, #e1bee7);">
+                <mat-card-header>
+                  <mat-card-title style="display: flex; align-items: center; gap: 8px; color: #7b1fa2;">
+                    <mat-icon>auto_awesome</mat-icon>
+                    Análise Automática de Qualidade
+                  </mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                    <div style="text-align: center; padding: 16px; background: rgba(123, 31, 162, 0.1); border-radius: 8px;">
+                      <div style="font-size: 24px; font-weight: bold; color: #4caf50;">A+</div>
+                      <div style="font-size: 12px; color: #666;">Classificação</div>
+                    </div>
+                    <div style="text-align: center; padding: 16px; background: rgba(123, 31, 162, 0.1); border-radius: 8px;">
+                      <div style="font-size: 24px; font-weight: bold; color: #2196f3;">95.5</div>
+                      <div style="font-size: 12px; color: #666;">Score IA</div>
+                    </div>
+                    <div style="text-align: center; padding: 16px; background: rgba(123, 31, 162, 0.1); border-radius: 8px;">
+                      <div style="font-size: 18px; font-weight: bold; color: #4caf50;">APROVADO</div>
+                      <div style="font-size: 12px; color: #666;">Status</div>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            </div>
+          </mat-tab>
+
+          <!-- 🤖 ABA 6: INTELIGÊNCIA ARTIFICIAL -->
+          <mat-tab label="🤖 IA">
+            <div style="padding: 24px;">
+              
+              <!-- CONFIGURAÇÕES DE AUTOMAÇÃO -->
+              <mat-card style="margin-bottom: 24px; background: linear-gradient(135deg, #fff3e0, #ffe0b2);">
+                <mat-card-header>
+                  <mat-card-title style="display: flex; align-items: center; gap: 8px; color: #ed6c02;">
+                    <mat-icon>settings</mat-icon>
+                    Configurações de Automação
+                  </mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+                    
+                    <mat-slide-toggle formControlName="ai_auto_update" color="primary">
+                      <mat-icon>update</mat-icon>
+                      Atualização Automática
+                    </mat-slide-toggle>
+
+                    <mat-slide-toggle formControlName="ai_auto_classify" color="primary">
+                      <mat-icon>category</mat-icon>
+                      Classificação Automática
+                    </mat-slide-toggle>
+
+                    <mat-slide-toggle formControlName="ai_price_prediction" color="primary">
+                      <mat-icon>trending_up</mat-icon>
+                      Predição de Preços
+                    </mat-slide-toggle>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>Nível de Confiança IA</mat-label>
+                      <mat-select formControlName="ai_confidence_level">
+                        <mat-option value="HIGH">🟢 Alto (90-100%)</mat-option>
+                        <mat-option value="MEDIUM">🟡 Médio (70-89%)</mat-option>
+                        <mat-option value="LOW">🔴 Baixo (50-69%)</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <!-- ESTATÍSTICAS DA IA -->
+              <mat-card style="margin-bottom: 24px; background: linear-gradient(135deg, #e8f5e8, #c8e6c9);">
+                <mat-card-header>
+                  <mat-card-title style="display: flex; align-items: center; gap: 8px; color: #2e7d32;">
+                    <mat-icon>analytics</mat-icon>
+                    Estatísticas da Inteligência Artificial
+                  </mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                    <div style="text-align: center; padding: 16px; background: rgba(46, 125, 50, 0.1); border-radius: 8px;">
+                      <div style="font-size: 24px; font-weight: bold; color: #2e7d32;">94.5%</div>
+                      <div style="font-size: 12px; color: #666;">Confiança</div>
+                    </div>
+                    <div style="text-align: center; padding: 16px; background: rgba(46, 125, 50, 0.1); border-radius: 8px;">
+                      <div style="font-size: 18px; font-weight: bold; color: #2e7d32;">Hoje 14:30</div>
+                      <div style="font-size: 12px; color: #666;">Última Atualização</div>
+                    </div>
+                    <div style="text-align: center; padding: 16px; background: rgba(46, 125, 50, 0.1); border-radius: 8px;">
+                      <div style="font-size: 24px; font-weight: bold; color: #2e7d32;">127</div>
+                      <div style="font-size: 12px; color: #666;">Melhorias</div>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <!-- AÇÕES INTELIGENTES -->
+              <mat-card style="background: linear-gradient(135deg, #f3e5f5, #e1bee7);">
+                <mat-card-header>
+                  <mat-card-title style="display: flex; align-items: center; gap: 8px; color: #7b1fa2;">
+                    <mat-icon>psychology</mat-icon>
+                    Ações Inteligentes Disponíveis
+                  </mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+                    
+                    <button mat-raised-button color="primary" (click)="enrichProductWithAI()">
+                      <mat-icon>auto_awesome</mat-icon>
+                      Enriquecer com IA
+                    </button>
+
+                    <button mat-raised-button color="accent" (click)="predictPrices()">
+                      <mat-icon>trending_up</mat-icon>
+                      Predizer Preços
+                    </button>
+
+                    <button mat-stroked-button (click)="validateWithAI()">
+                      <mat-icon>verified</mat-icon>
+                      Validar com IA
+                    </button>
+
+                    <button mat-stroked-button (click)="optimizeProduct()">
+                      <mat-icon>tune</mat-icon>
+                      Otimizar Produto
+                    </button>
+
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            </div>
+          </mat-tab>
+
+          <!-- 🔗 ABA 7: INTEGRAÇÕES -->
+          <mat-tab label="🔗 INTEGRAÇÕES">
+            <div style="padding: 24px;">
+              
+              <!-- BOLSAS E MERCADOS -->
+              <mat-card style="margin-bottom: 24px; background: linear-gradient(135deg, #e3f2fd, #bbdefb);">
+                <mat-card-header>
+                  <mat-card-title style="display: flex; align-items: center; gap: 8px; color: #1976d2;">
+                    <mat-icon>timeline</mat-icon>
+                    Bolsas e Mercados - Preços em Tempo Real
+                  </mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                    
+                    <div style="text-align: center; padding: 16px; background: rgba(25, 118, 210, 0.1); border-radius: 8px; border: 2px solid #4caf50;">
+                      <mat-icon style="color: #4caf50; font-size: 32px;">check_circle</mat-icon>
+                      <div style="font-weight: bold; color: #1976d2; margin-top: 8px;">CBOT</div>
+                      <div style="font-size: 12px; color: #666;">Conectado</div>
+                      <div style="font-size: 14px; font-weight: bold; color: #4caf50;">$485.50/MT</div>
+                    </div>
+
+                    <div style="text-align: center; padding: 16px; background: rgba(25, 118, 210, 0.1); border-radius: 8px; border: 2px solid #4caf50;">
+                      <mat-icon style="color: #4caf50; font-size: 32px;">check_circle</mat-icon>
+                      <div style="font-weight: bold; color: #1976d2; margin-top: 8px;">B3</div>
+                      <div style="font-size: 12px; color: #666;">Conectado</div>
+                      <div style="font-size: 14px; font-weight: bold; color: #4caf50;">R$ 2,485/MT</div>
+                    </div>
+
+                    <div style="text-align: center; padding: 16px; background: rgba(25, 118, 210, 0.1); border-radius: 8px; border: 2px solid #ff9800;">
+                      <mat-icon style="color: #ff9800; font-size: 32px;">warning</mat-icon>
+                      <div style="font-weight: bold; color: #1976d2; margin-top: 8px;">LME</div>
+                      <div style="font-size: 12px; color: #666;">Pendente</div>
+                      <div style="font-size: 14px; font-weight: bold; color: #999;">N/A</div>
+                    </div>
+
+                    <div style="text-align: center; padding: 16px; background: rgba(25, 118, 210, 0.1); border-radius: 8px; border: 2px solid #4caf50;">
+                      <mat-icon style="color: #4caf50; font-size: 32px;">check_circle</mat-icon>
+                      <div style="font-weight: bold; color: #1976d2; margin-top: 8px;">ICE</div>
+                      <div style="font-size: 12px; color: #666;">Conectado</div>
+                      <div style="font-size: 14px; font-weight: bold; color: #4caf50;">€455.20/MT</div>
+                    </div>
+
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <!-- SISTEMAS GOVERNAMENTAIS -->
+              <mat-card style="margin-bottom: 24px; background: linear-gradient(135deg, #fff8e1, #ffecb3);">
+                <mat-card-header>
+                  <mat-card-title style="display: flex; align-items: center; gap: 8px; color: #f57c00;">
+                    <mat-icon>account_balance</mat-icon>
+                    Sistemas Governamentais
+                  </mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+                    
+                    <div style="text-align: center; padding: 16px; background: rgba(245, 124, 0, 0.1); border-radius: 8px; border: 2px solid #4caf50;">
+                      <mat-icon style="color: #4caf50; font-size: 32px;">verified_user</mat-icon>
+                      <div style="font-weight: bold; color: #f57c00; margin-top: 8px;">SISCOMEX</div>
+                      <div style="font-size: 12px; color: #666;">Integração Ativa</div>
+                      <div style="font-size: 10px; color: #4caf50;">Última sync: Hoje 13:45</div>
+                    </div>
+
+                    <div style="text-align: center; padding: 16px; background: rgba(245, 124, 0, 0.1); border-radius: 8px; border: 2px solid #4caf50;">
+                      <mat-icon style="color: #4caf50; font-size: 32px;">receipt_long</mat-icon>
+                      <div style="font-weight: bold; color: #f57c00; margin-top: 8px;">Receita Federal</div>
+                      <div style="font-size: 12px; color: #666;">Conectado</div>
+                      <div style="font-size: 10px; color: #4caf50;">NCM validado</div>
+                    </div>
+
+                    <div style="text-align: center; padding: 16px; background: rgba(245, 124, 0, 0.1); border-radius: 8px; border: 2px solid #4caf50;">
+                      <mat-icon style="color: #4caf50; font-size: 32px;">agriculture</mat-icon>
+                      <div style="font-weight: bold; color: #f57c00; margin-top: 8px;">MAPA</div>
+                      <div style="font-size: 12px; color: #666;">Conectado</div>
+                      <div style="font-size: 10px; color: #4caf50;">Certificações atualizadas</div>
+                    </div>
+
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <!-- ERP E SISTEMAS -->
+              <mat-card style="background: linear-gradient(135deg, #f1f8e9, #dcedc1);">
+                <mat-card-header>
+                  <mat-card-title style="display: flex; align-items: center; gap: 8px; color: #558b2f;">
+                    <mat-icon>integration_instructions</mat-icon>
+                    ERP e Sistemas Conectados
+                  </mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+                    
+                    <div style="text-align: center; padding: 16px; background: rgba(85, 139, 47, 0.1); border-radius: 8px; border: 2px solid #4caf50;">
+                      <mat-icon style="color: #4caf50; font-size: 32px;">business</mat-icon>
+                      <div style="font-weight: bold; color: #558b2f; margin-top: 8px;">SAP ERP</div>
+                      <div style="font-size: 12px; color: #666;">Integração Ativa</div>
+                      <div style="font-size: 10px; color: #4caf50;">Sincronizado</div>
+                    </div>
+
+                    <div style="text-align: center; padding: 16px; background: rgba(85, 139, 47, 0.1); border-radius: 8px; border: 2px solid #ff9800;">
+                      <mat-icon style="color: #ff9800; font-size: 32px;">warehouse</mat-icon>
+                      <div style="font-weight: bold; color: #558b2f; margin-top: 8px;">WMS</div>
+                      <div style="font-size: 12px; color: #666;">Configurando</div>
+                      <div style="font-size: 10px; color: #ff9800;">Em progresso</div>
+                    </div>
+
+                    <div style="text-align: center; padding: 16px; background: rgba(85, 139, 47, 0.1); border-radius: 8px; border: 2px solid #4caf50;">
+                      <mat-icon style="color: #4caf50; font-size: 32px;">local_shipping</mat-icon>
+                      <div style="font-weight: bold; color: #558b2f; margin-top: 8px;">TMS</div>
+                      <div style="font-size: 12px; color: #666;">Conectado</div>
+                      <div style="font-size: 10px; color: #4caf50;">Operacional</div>
+                    </div>
+
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            </div>
+          </mat-tab>
+
+        </mat-tab-group>
+
+        <!-- 💾 BOTÕES DE AÇÃO DO FORMULÁRIO -->
+        <div style="padding: 24px; background: #f8f9fa; border-top: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <mat-icon style="color: #666;">{{editingProduct ? 'edit' : 'add'}}</mat-icon>
+            <span style="color: #666; font-size: 14px;">
+              {{editingProduct ? 'Editando produto existente' : 'Criando novo produto'}}
+            </span>
+          </div>
+
+          <div style="display: flex; gap: 12px;">
+            <button type="button" mat-stroked-button (click)="closeProductForm()">
+              <mat-icon>close</mat-icon>
+              Cancelar
+            </button>
+
+            <button type="button" mat-raised-button (click)="saveAsDraft()" [disabled]="isSaving">
+              <mat-icon>save_alt</mat-icon>
+              Salvar Rascunho
+            </button>
+
+            <button type="submit" mat-raised-button color="primary" [disabled]="!productForm.valid || isSaving">
+              <mat-icon>{{isSaving ? 'hourglass_empty' : 'save'}}</mat-icon>
+              {{isSaving ? 'Salvando...' : (editingProduct ? 'Atualizar' : 'Criar')}} Produto
+            </button>
+          </div>
+
+        </div>
+
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+</div>

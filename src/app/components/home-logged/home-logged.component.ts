@@ -1,13 +1,12 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, HostListener, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatSidenavModule, MatSidenav } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatExpansionModule } from '@angular/material/expansion';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCardModule } from '@angular/material/card';
@@ -18,6 +17,9 @@ import { LoadingComponent } from '../shared/loading/loading.component';
 import { NotificationService } from '../../services/notification.service';
 import { filter } from 'rxjs/operators';
 import { AiCopilotComponent } from '../shared/ai-copilot/ai-copilot.component';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 interface LoggedUser {
   cpf: string;
@@ -38,7 +40,6 @@ interface LoggedUser {
     MatIconModule,
     MatSidenavModule,
     MatListModule,
-    MatExpansionModule,
     MatTooltipModule,
     MatMenuModule,
     MatBadgeModule,
@@ -46,16 +47,20 @@ interface LoggedUser {
     AiCopilotComponent
   ],
   template: `
-    <mat-sidenav-container class="sidenav-container">
-      
-      <!-- Sidebar -->
-      <mat-sidenav 
-        #drawer 
-        class="sidenav" 
-        fixedInViewport 
-        [attr.role]="'navigation'"
-        [mode]="isHandset ? 'over' : 'side'"
-        [opened]="!isHandset">
+    <div class="app-wrapper">
+      <mat-sidenav-container 
+        class="sidenav-container" 
+        fullscreen>
+        
+        <!-- Sidebar -->
+        <mat-sidenav 
+          #drawer 
+          class="sidenav" 
+          fixedInViewport="true"
+          [attr.role]="'navigation'"
+          mode="over"
+          [disableClose]="false"
+          [autoFocus]="false">
         
         <!-- Logo e Header -->
         <div class="sidenav-header">
@@ -71,38 +76,43 @@ interface LoggedUser {
           <ng-container *ngFor="let item of menuItems">
             
             <!-- Menu com submenu -->
-            <mat-expansion-panel 
-              *ngIf="item.items; else simpleMenuItem"
-              class="menu-expansion-panel"
-              [expanded]="item.title === expandedMenu">
+            <ng-container *ngIf="item.items; else simpleMenuItem">
               
-              <mat-expansion-panel-header 
-                class="menu-header"
-                (click)="toggleMenu(item.title)">
-                <mat-panel-title class="menu-title">
-                  <mat-icon class="menu-icon">{{ item.icon }}</mat-icon>
-                  <span>{{ item.title }}</span>
-                </mat-panel-title>
-              </mat-expansion-panel-header>
+              <!-- Cabeçalho do menu expansível -->
+              <mat-list-item 
+                class="menu-header-item"
+                (click)="toggleMenu(item.title); $event.stopPropagation()">
+                <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+                <span matListItemTitle class="menu-text">{{ item.title }}</span>
+                <mat-icon class="expand-icon" [class.expanded]="item.title === expandedMenu">
+                  expand_more
+                </mat-icon>
+              </mat-list-item>
 
-              <div class="submenu-container">
+              <!-- Subitens (mostrados condicionalmente) -->
+              <ng-container *ngIf="item.title === expandedMenu">
                 <mat-list-item 
                   *ngFor="let subItem of item.items"
                   class="submenu-item"
-                  (click)="navigateTo(subItem.route); drawer.close()">
+                  [matTooltip]="subItem.name"
+                  matTooltipPosition="right"
+                  (click)="handleMenuClick(subItem.route)">
                   <mat-icon matListItemIcon>{{ subItem.icon }}</mat-icon>
-                  <span matListItemTitle>{{ subItem.name }}</span>
+                  <span matListItemTitle class="submenu-text">{{ subItem.name }}</span>
                 </mat-list-item>
-              </div>
-            </mat-expansion-panel>
+              </ng-container>
+              
+            </ng-container>
 
             <!-- Menu simples -->
             <ng-template #simpleMenuItem>
               <mat-list-item 
                 class="menu-item"
-                (click)="navigateTo(item.route!); drawer.close()">
+                [matTooltip]="item.title"
+                matTooltipPosition="right"
+                (click)="handleMenuClick(item.route!)">
                 <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
-                <span matListItemTitle>{{ item.title }}</span>
+                <span matListItemTitle class="menu-text">{{ item.title }}</span>
               </mat-list-item>
             </ng-template>
 
@@ -114,13 +124,15 @@ interface LoggedUser {
       <mat-sidenav-content>
         
         <!-- Enhanced Toolbar -->
-        <mat-toolbar color="primary" class="main-toolbar">
+        <mat-toolbar 
+          color="primary" 
+          class="main-toolbar">
           <!-- Menu Toggle -->
           <button
             type="button"
             aria-label="Toggle sidenav"
             mat-icon-button
-            (click)="drawer.toggle()">
+            (click)="toggleSidenav()">
             <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
           </button>
 
@@ -150,7 +162,7 @@ interface LoggedUser {
             </button>
 
             <!-- AI Status -->
-            <button mat-button class="ai-status-btn">
+            <button mat-button class="ai-status-btn" (click)="toggleAIAssistant()">
               <mat-icon class="ai-icon">psychology</mat-icon>
               AI Online
               <div class="status-dot online"></div>
@@ -187,6 +199,7 @@ interface LoggedUser {
 
       </mat-sidenav-content>
     </mat-sidenav-container>
+    </div>
 
     <!-- Notification Menu -->
     <mat-menu #notificationMenu="matMenu" class="notification-menu">
@@ -264,6 +277,17 @@ interface LoggedUser {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
+    .app-wrapper {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
     .logged-container {
       height: 100vh;
       display: flex;
@@ -271,13 +295,45 @@ interface LoggedUser {
     }
 
     .sidenav-container {
-      flex: 1;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      overflow: hidden;
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
     }
 
     .sidenav {
-      width: 280px;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 300px;
+      max-width: 85vw;
+      height: 100vh !important;
       background: #fafafa;
       border-right: 1px solid #e0e0e0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      z-index: 1100 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      transform: translateX(0) !important;
+    }
+    
+    /* Backdrop para sidenav em modo over */
+    .mat-sidenav-backdrop {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      background-color: rgba(0, 0, 0, 0.6) !important;
+      z-index: 1099 !important;
     }
 
     .sidenav-header {
@@ -320,6 +376,7 @@ interface LoggedUser {
 
     .nav-list {
       padding: 0;
+      overflow: hidden; /* Evita overflow nos itens da lista */
     }
 
     .menu-expansion {
@@ -338,11 +395,33 @@ interface LoggedUser {
       font-size: 14px;
     }
 
+    /* Content Layout */
+    .mat-sidenav-content {
+      margin-left: 0 !important;
+      padding: 0 !important;
+      overflow-x: hidden;
+      height: 100vh;
+      width: 100% !important;
+    }
+    
     .main-toolbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
       background: linear-gradient(135deg, #1976d2, #1565c0);
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
       height: 64px;
       padding: 0 16px;
+      z-index: 1050;
+      width: 100%;
+    }
+    
+    .main-content {
+      margin-top: 64px; /* Height of toolbar */
+      overflow-x: hidden;
+      padding: 0;
+      width: 100%;
     }
 
     .search-container {
@@ -437,18 +516,31 @@ interface LoggedUser {
       100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
     }
 
-    /* Menu Styles */
+    /* Menu Styles - Melhorias de UX */
     .menu-expansion-panel {
       background: transparent !important;
       box-shadow: none !important;
       border-radius: 0 !important;
+      margin: 0 !important;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
 
     .menu-header {
-      padding: 12px 16px !important;
-      border-radius: 8px !important;
-      margin: 4px 8px !important;
+      padding: 14px 20px !important;
+      border-radius: 0 !important;
+      margin: 0 !important;
       transition: all 0.3s ease !important;
+      cursor: pointer;
+      position: relative;
+      
+      &:hover {
+        background: rgba(25, 118, 210, 0.04) !important;
+      }
+      
+      &:active {
+        background: rgba(25, 118, 210, 0.08) !important;
+      }
     }
 
     .menu-header:hover {
@@ -458,40 +550,197 @@ interface LoggedUser {
     .menu-title {
       display: flex !important;
       align-items: center !important;
-      gap: 12px !important;
+      gap: 16px !important;
       font-weight: 500 !important;
+      font-size: 14px !important;
+      width: 100% !important;
     }
 
     .menu-icon {
       color: #1976d2 !important;
+      font-size: 20px !important;
+      width: 20px !important;
+      height: 20px !important;
+      flex-shrink: 0;
     }
 
     .submenu-container {
-      background: #f8f9fa;
-      border-left: 3px solid #1976d2;
-      margin-left: 16px;
+      background: linear-gradient(45deg, #f8f9fa, #ffffff);
+      border-left: 4px solid #1976d2;
+      margin: 0;
+      padding: 8px 0;
+      position: relative;
+      overflow: hidden;
+      
+      &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, rgba(25, 118, 210, 0.1), rgba(25, 118, 210, 0.3));
+      }
     }
 
     .submenu-item {
-      border-radius: 0 8px 8px 0 !important;
+      padding: 12px 24px 12px 40px !important;
       margin: 2px 0 !important;
-      transition: all 0.3s ease !important;
-    }
-
-    .submenu-item:hover {
-      background: rgba(25, 118, 210, 0.08) !important;
-      transform: translateX(4px);
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+      cursor: pointer;
+      border-radius: 0;
+      min-height: 48px !important;
+      position: relative;
+      
+      .submenu-text {
+        font-size: 13px;
+        font-weight: 400;
+        color: #424242;
+        line-height: 1.4;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal !important;
+        max-width: 180px;
+      }
+      
+      mat-icon {
+        color: #666 !important;
+        font-size: 16px !important;
+        width: 16px !important;
+        height: 16px !important;
+        margin-right: 12px;
+        flex-shrink: 0;
+      }
+      
+      &:hover {
+        background: rgba(25, 118, 210, 0.06) !important;
+        transform: translateX(6px);
+        
+        .submenu-text {
+          color: #1976d2;
+          font-weight: 500;
+        }
+        
+        mat-icon {
+          color: #1976d2 !important;
+        }
+      }
+      
+      &:active {
+        background: rgba(25, 118, 210, 0.12) !important;
+      }
     }
 
     .menu-item {
-      border-radius: 8px !important;
-      margin: 4px 8px !important;
-      transition: all 0.3s ease !important;
+      padding: 14px 20px !important;
+      margin: 2px 0 !important;
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+      cursor: pointer;
+      border-radius: 0;
+      min-height: 50px !important;
+      
+      .menu-text {
+        font-size: 14px;
+        font-weight: 400;
+        color: #424242;
+        line-height: 1.4;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal !important;
+        max-width: 200px;
+      }
+      
+      mat-icon {
+        color: #1976d2 !important;
+        font-size: 20px !important;
+        width: 20px !important;
+        height: 20px !important;
+        margin-right: 16px;
+        flex-shrink: 0;
+      }
+      
+      &:hover {
+        background: rgba(25, 118, 210, 0.06) !important;
+        transform: translateX(8px);
+        
+        .menu-text {
+          color: #1976d2;
+          font-weight: 500;
+        }
+      }
+      
+      &:active {
+        background: rgba(25, 118, 210, 0.12) !important;
+      }
     }
 
-    .menu-item:hover {
-      background: rgba(25, 118, 210, 0.08) !important;
-      transform: translateX(4px);
+    /* Menu Header Item Styles */
+    .menu-header-item {
+      padding: 14px 20px !important;
+      margin: 4px 0 !important;
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+      cursor: pointer;
+      border-radius: 0;
+      min-height: 50px !important;
+      background: rgba(25, 118, 210, 0.02);
+      border-left: 3px solid transparent;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      
+      .menu-text {
+        font-size: 14px;
+        font-weight: 500;
+        color: #1976d2;
+        line-height: 1.4;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal !important;
+        max-width: 170px;
+        flex-grow: 1;
+        margin: 0 !important;
+      }
+      
+      mat-icon[matListItemIcon] {
+        color: #1976d2 !important;
+        font-size: 20px !important;
+        width: 20px !important;
+        height: 20px !important;
+        margin-right: 16px !important;
+        flex-shrink: 0;
+      }
+      
+      .expand-icon {
+        color: #666 !important;
+        font-size: 18px !important;
+        width: 18px !important;
+        height: 18px !important;
+        transition: transform 0.3s ease;
+        flex-shrink: 0;
+        margin-left: auto !important;
+        
+        &.expanded {
+          transform: rotate(180deg);
+        }
+      }
+      
+      &:hover {
+        background: rgba(25, 118, 210, 0.06) !important;
+        border-left-color: #1976d2;
+        
+        .menu-text {
+          color: #1565c0;
+          font-weight: 600;
+        }
+        
+        .expand-icon {
+          color: #1976d2 !important;
+        }
+      }
+      
+      &:active {
+        background: rgba(25, 118, 210, 0.12) !important;
+      }
     }
 
     /* Menu Dropdown Styles */
@@ -547,10 +796,40 @@ interface LoggedUser {
     .status-offline { color: #f44336; }
     .status-warning { color: #ff9800; }
 
-    /* Responsive */
+    /* Animações personalizadas */
+    @keyframes slideIn {
+      from {
+        transform: translateX(-100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    /* Correção adicional para garantir que não há overflow */
+    .main-content {
+      overflow-x: hidden; /* Evita scroll horizontal no conteúdo principal */
+      padding: 0;
+    }
+
+    /* Responsive - Melhorias para dispositivos móveis */
+    @media (max-width: 1024px) {
+      .sidenav {
+        width: 280px;
+        max-width: 80vw;
+      }
+      
+      .submenu-text,
+      .menu-text {
+        max-width: 160px;
+      }
+    }
+    
     @media (max-width: 768px) {
       .search-container {
-        max-width: 200px;
+        max-width: 180px;
         margin-left: 8px;
       }
 
@@ -565,7 +844,28 @@ interface LoggedUser {
 
       .notification-menu,
       .integration-menu {
-        min-width: 280px;
+        min-width: 260px;
+      }
+      
+      .sidenav {
+        width: 260px;
+        max-width: 85vw;
+      }
+      
+      .submenu-item {
+        padding: 10px 20px 10px 32px !important;
+        min-height: 44px !important;
+      }
+      
+      .menu-item {
+        padding: 12px 16px !important;
+        min-height: 46px !important;
+      }
+      
+      .submenu-text,
+      .menu-text {
+        font-size: 13px;
+        max-width: 140px;
       }
     }
 
@@ -577,15 +877,51 @@ interface LoggedUser {
       .main-toolbar {
         padding: 0 8px;
       }
+      
+      .sidenav-container {
+        overflow: hidden !important;
+      }
+      
+      .sidenav {
+        width: 240px;
+        max-width: 90vw;
+      }
+      
+      .menu-title {
+        font-size: 13px !important;
+        gap: 12px !important;
+      }
+      
+      .submenu-text,
+      .menu-text {
+        font-size: 12px;
+        max-width: 120px;
+      }
+      
+      .menu-icon {
+        font-size: 18px !important;
+        width: 18px !important;
+        height: 18px !important;
+      }
+      
+      .submenu-item mat-icon {
+        font-size: 14px !important;
+        width: 14px !important;
+        height: 14px !important;
+      }
     }
   `]
 })
-export class HomeLoggedComponent implements OnInit {
+export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
+  @ViewChild('drawer') drawer!: MatSidenav;
+  
   private router = inject(Router);
   private notificationService = inject(NotificationService);
+  private breakpointObserver = inject(BreakpointObserver);
+  private destroy$ = new Subject<void>();
 
   expandedMenu = '';
-  isHandset = false; // Para responsividade
+  isHandset = false;
   searchQuery = '';
   notificationCount = 3;
   integrationIssues = 1;
@@ -604,10 +940,126 @@ export class HomeLoggedComponent implements OnInit {
 
   ngOnInit(): void {
     this.notificationService.showInfo('Bem-vindo à Export Intelligence Platform!');
+    
+    // Detecção responsiva melhorada
+    this.breakpointObserver.observe([
+      Breakpoints.Handset,
+      Breakpoints.TabletPortrait,
+      '(max-width: 768px)'
+    ])
+    .pipe(takeUntil(this.destroy$))
+    .subscribe(result => {
+      this.isHandset = result.matches;
+      console.log('🔄 Breakpoint changed:', { 
+        isHandset: this.isHandset, 
+        viewport: window.innerWidth 
+      });
+    });
+  }
+  
+  ngAfterViewInit(): void {
+    // Verifica se o ViewChild foi inicializado corretamente
+    setTimeout(() => {
+      if (this.drawer) {
+        console.log('✅ Drawer ViewChild inicializado com sucesso');
+        console.log('📊 Estado inicial do drawer:', {
+          opened: this.drawer.opened,
+          mode: this.drawer.mode,
+          position: this.drawer.position
+        });
+      } else {
+        console.error('❌ Drawer ViewChild não foi inicializado!');
+      }
+    }, 100);
+  }
+  
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+  
+  // Detecção adicional via HostListener para melhor responsividade
+  @HostListener('window:resize', ['$event'])
+  onResize(event: any): void {
+    const width = event.target.innerWidth;
+    const wasHandset = this.isHandset;
+    this.isHandset = width <= 768;
+    
+    if (wasHandset !== this.isHandset) {
+      console.log('📱 Device type changed:', { 
+        width, 
+        isHandset: this.isHandset
+      });
+    }
+  }
+  
+  // Método para toggle manual do sidenav usando ViewChild
+  toggleSidenav(): void {
+    console.log('🔄 Toggle sidenav chamado');
+    
+    if (this.drawer) {
+      this.drawer.toggle();
+      console.log('✅ drawer.toggle() executado');
+    } else {
+      console.error('⚠️ Drawer não encontrado! ViewChild pode não estar inicializado.');
+    }
   }
 
+  // Método para fechar sidenav ao clicar nos itens
+  handleMenuClick(route: string): void {
+    console.log('🚀 Menu clicado:', route);
+    
+    // Fecha expansion panel se houver
+    this.expandedMenu = '';
+    
+    // Navega imediatamente
+    this.navigateTo(route);
+    
+    // Força fechamento do sidenav com múltiplas técnicas
+    this.forceSidenavClose();
+  }
+  
+  // Força fechamento com várias técnicas
+  private forceSidenavClose(): void {
+    console.log('🔒 Forçando fechamento do sidenav...');
+    
+    // Técnica 1: ViewChild
+    if (this.drawer && this.drawer.opened) {
+      this.drawer.close();
+      console.log('✅ drawer.close() chamado');
+    }
+    
+    // Técnica 2: Simular click no backdrop
+    setTimeout(() => {
+      const backdrop = document.querySelector('.cdk-overlay-backdrop');
+      if (backdrop) {
+        (backdrop as HTMLElement).click();
+        console.log('✅ Backdrop clicado');
+      }
+    }, 50);
+    
+    // Técnica 3: ESC key
+    setTimeout(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'Escape',
+        code: 'Escape', 
+        keyCode: 27,
+        bubbles: true
+      }));
+      console.log('✅ ESC key enviado');
+    }, 100);
+  }
+  
+
   toggleMenu(title: string): void {
-    this.expandedMenu = this.expandedMenu === title ? '' : title;
+    const wasExpanded = this.expandedMenu === title;
+    this.expandedMenu = wasExpanded ? '' : title;
+    
+    console.log('📂 Menu toggled:', { 
+      menu: title, 
+      expanded: !wasExpanded,
+      currentExpanded: this.expandedMenu
+    });
   }
 
   // Nova estrutura de menus para Export Intelligence Platform
@@ -666,7 +1118,7 @@ export class HomeLoggedComponent implements OnInit {
       title: 'Logística',
       icon: 'local_shipping',
       items: [
-        { name: 'Embarques', route: 'logistica/embarques', icon: 'departure_board' },
+        { name: 'Embarques', route: 'logistica/embarque', icon: 'departure_board' },
         { name: 'Portos', route: 'logistica/portos', icon: 'anchor' },
         { name: 'Transportadoras', route: 'logistica/transportadoras', icon: 'truck' }
       ]
@@ -788,7 +1240,29 @@ export class HomeLoggedComponent implements OnInit {
       'assistente-ia',
       
       // Módulo Financeiro
-      'financeiro/contas-receber'
+      'financeiro/contas-receber',
+      
+      // Módulo Contratos
+      'contratos/novo',
+      'contratos/ativos',
+      'contratos/templates',
+      
+      // Módulo Produtos
+      'produtos/catalogo',
+      'produtos/ncm',
+      
+      // Módulo Logística
+      'logistica/embarque',
+      'logistica/embarque/novo',
+      'embarques',
+      
+      // Módulo Exportações
+      'exportacoes/gerenciar',
+      'exportacoes/pedidos',
+      'exportacoes/status',
+      'exportacao/novo',
+      'exportacao/editar',
+      'exportacao/detalhes'
     ];
     
     if (implementedRoutes.includes(route)) {
@@ -906,6 +1380,15 @@ export class HomeLoggedComponent implements OnInit {
   logout(): void {
     this.notificationService.showInfo('Fazendo logout...');
     // Implement logout logic
+  }
+
+  // Função para toggle do AI Assistant
+  toggleAIAssistant(): void {
+    console.log('AI Assistant toggle clicked');
+    this.notificationService.showInfo('Abrindo AI Assistant...');
+    
+    // Para usar o AI assistant component que já existe
+    // Você pode adicionar lógica específica aqui se necessário
   }
 }
 

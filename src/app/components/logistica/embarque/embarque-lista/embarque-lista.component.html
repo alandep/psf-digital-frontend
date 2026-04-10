@@ -1,0 +1,806 @@
+<div class="embarque-lista-container">
+  <!-- Header da página -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-info">
+        <h1>
+          <mat-icon>local_shipping</mat-icon>
+          Embarques
+        </h1>
+        <p>Gerencie todo o ciclo de embarques de exportação</p>
+      </div>
+      <div class="header-actions">
+        <button 
+          mat-button
+          (click)="refreshData()"
+          [disabled]="loading">
+          <mat-icon>refresh</mat-icon>
+          Atualizar
+        </button>
+        <button 
+          mat-button
+          (click)="exportToExcel()">
+          <mat-icon>file_download</mat-icon>
+          Exportar
+        </button>
+        <button 
+          mat-raised-button
+          color="primary"
+          (click)="createEmbarque()">
+          <mat-icon>add</mat-icon>
+          Novo Embarque
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <mat-card class="filtros-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>filter_list</mat-icon>
+        Filtros de Busca
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="searchForm" class="filtros-form">
+        <div class="filtro-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Status do Embarque</mat-label>
+            <mat-select formControlName="shipment_status">
+              <mat-option value="">Todos os Status</mat-option>
+              <mat-option *ngFor="let status of statusOptions" [value]="status">
+                {{ status }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        
+          <mat-form-field appearance="outline">
+            <mat-label>Status do Tracking</mat-label>
+            <mat-select formControlName="tracking_status">
+              <mat-option value="">Todos os Status</mat-option>
+              <mat-option *ngFor="let status of trackingStatusOptions" [value]="status">
+                {{ status }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Exportador</mat-label>
+            <input 
+              matInput
+              formControlName="exporter_name"
+              placeholder="Nome do exportador">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Commodity</mat-label>
+            <input 
+              matInput
+              formControlName="commodity"
+              placeholder="Produto">
+          </mat-form-field>
+        </div>
+
+        <div class="filtro-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Porto de Origem</mat-label>
+            <input 
+              matInput
+              formControlName="port_origin"
+              placeholder="Porto de origem">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Porto de Destino</mat-label>
+            <input 
+              matInput
+              formControlName="port_destination"
+              placeholder="Porto de destino">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Data Início</mat-label>
+            <input 
+              matInput
+              type="date"
+              formControlName="date_range_start">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Data Fim</mat-label>
+            <input 
+              matInput
+              type="date"
+              formControlName="date_range_end">
+          </mat-form-field>
+        </div>
+
+        <div class="filtro-actions">
+          <button 
+            mat-button
+            (click)="clearFilters()">
+            <mat-icon>clear</mat-icon>
+            Limpar Filtros
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Loading Indicator -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-progress-spinner diameter="50"></mat-progress-spinner>
+    <p>Carregando embarques...</p>
+  </div>
+
+  <!-- Dashboard Visual - Métricas em Tempo Real -->
+  <div *ngIf="!loading" class="dashboard-section">
+    <div class="section-header">
+      <h2>
+        <mat-icon class="section-icon">dashboard</mat-icon>
+        Dashboard Executivo
+      </h2>
+      <p class="section-subtitle">Visão geral das operações em tempo real</p>
+    </div>
+    
+    <div class="metrics-container">
+      <!-- Card de Embarques Ativos -->
+      <mat-card class="metric-card embarques-ativos">
+        <mat-card-content>
+          <div class="metric-header">
+            <div class="metric-icon-wrapper">
+              <mat-icon class="metric-icon">local_shipping</mat-icon>
+            </div>
+            <div class="metric-info">
+              <div class="metric-label">Embarques Ativos</div>
+              <div class="metric-value">{{ dashboardMetrics.activeShipments }}</div>
+            </div>
+          </div>
+          <div class="metric-footer">
+            <div class="trend-indicator" [class.trend-positive]="dashboardMetrics.activeShipmentsTrend > 0">
+              <mat-icon>{{ dashboardMetrics.activeShipmentsTrend > 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
+              <span>{{ Math.abs(dashboardMetrics.activeShipmentsTrend) }}% vs mês anterior</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Card de Alertas IA -->
+      <mat-card class="metric-card alertas-ia">
+        <mat-card-content>
+          <div class="metric-header">
+            <div class="metric-icon-wrapper warning">
+              <mat-icon class="metric-icon">psychology</mat-icon>
+            </div>
+            <div class="metric-info">
+              <div class="metric-label">Alertas IA</div>
+              <div class="metric-value">{{ dashboardMetrics.aiAlerts }}</div>
+            </div>
+          </div>
+          <div class="metric-footer">
+            <div class="alert-breakdown">
+              <div class="alert-item" *ngFor="let alert of dashboardMetrics.alertTypes">
+                <mat-icon class="alert-icon" [class]="getAlertTypeClass(alert.type)">{{getAlertTypeIcon(alert.type)}}</mat-icon>
+                <span class="alert-count">{{alert.count}}</span>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Card de Documentação Pendente -->
+      <mat-card class="metric-card docs-pendentes">
+        <mat-card-content>
+          <div class="metric-header">
+            <div class="metric-icon-wrapper info">
+              <mat-icon class="metric-icon">assignment_late</mat-icon>
+            </div>
+            <div class="metric-info">
+              <div class="metric-label">Docs Pendentes</div>
+              <div class="metric-value">{{ dashboardMetrics.pendingDocs }}</div>
+            </div>
+          </div>
+          <div class="metric-footer">
+            <div class="docs-breakdown">
+              <div class="doc-item" *ngIf="dashboardMetrics.pendingDUE">
+                <mat-chip class="doc-chip due">DU-E: {{ dashboardMetrics.pendingDUE }}</mat-chip>
+              </div>
+              <div class="doc-item" *ngIf="dashboardMetrics.pendingVigiagro">
+                <mat-chip class="doc-chip vigiagro">Vigiagro: {{ dashboardMetrics.pendingVigiagro }}</mat-chip>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Card de Performance IA -->
+      <mat-card class="metric-card performance-ia">
+        <mat-card-content>
+          <div class="metric-header">
+            <div class="metric-icon-wrapper success">
+              <mat-icon class="metric-icon">analytics</mat-icon>
+            </div>
+            <div class="metric-info">
+              <div class="metric-label">Performance IA</div>
+              <div class="metric-value">{{ dashboardMetrics.aiETAAccuracy }}%</div>
+            </div>
+          </div>
+          <div class="metric-footer">
+            <div class="performance-details">
+              <div class="performance-item">
+                <span class="performance-label">Precisão ETA</span>
+                <mat-progress-bar 
+                  mode="determinate" 
+                  [value]="dashboardMetrics.aiETAAccuracy"
+                  class="performance-bar">
+                </mat-progress-bar>
+              </div>
+              <div class="performance-item">
+                <span class="performance-label">Economia</span>
+                <span class="performance-value">R$ {{ (dashboardMetrics.costSavings / 1000) }}K</span>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Alertas em Tempo Real -->
+    <mat-card class="real-time-alerts-card" *ngIf="realTimeAlerts.length > 0">
+      <mat-card-header class="alerts-header">
+        <div mat-card-avatar class="alert-avatar">
+          <mat-icon class="alert-header-icon">notifications_active</mat-icon>
+        </div>
+        <mat-card-title>Centro de Notificações</mat-card-title>
+        <mat-card-subtitle>{{ realTimeAlerts.length }} alertas requerem atenção</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="alerts-container">
+          <mat-list class="alerts-list">
+            <mat-list-item *ngFor="let alert of realTimeAlerts; trackBy: trackByAlertId" 
+                          class="alert-list-item" 
+                          [class]="getAlertSeverityClass(alert.severity)">
+              <mat-icon matListItemIcon class="alert-item-icon">{{ getAlertIcon(alert.type) }}</mat-icon>
+              <div matListItemTitle class="alert-message">{{ alert.message }}</div>
+              <div matListItemLine class="alert-metadata">
+                <span class="alert-shipment" *ngIf="alert.shipmentId">{{ alert.shipmentId }}</span>
+                <span class="alert-timestamp">{{ formatAlertTime(alert.timestamp) }}</span>
+              </div>
+              <button mat-icon-button 
+                     matListItemMeta
+                     (click)="dismissAlert(alert)" 
+                     matTooltip="Dispensar alerta"
+                     class="alert-dismiss-btn">
+                <mat-icon>close</mat-icon>
+              </button>
+            </mat-list-item>
+          </mat-list>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Tabela de Embarques -->
+  <mat-card *ngIf="!loading" class="embarques-table-card">
+    <mat-card-header class="table-header">
+      <div mat-card-avatar class="table-avatar">
+        <mat-icon class="table-icon">view_list</mat-icon>
+      </div>
+      <mat-card-title class="table-title">
+        Lista de Embarques
+        <mat-chip class="record-count-chip">{{ totalItems }} registros</mat-chip>
+      </mat-card-title>
+      <mat-card-subtitle>Gerencie e monitore todos os embarques</mat-card-subtitle>
+      
+      <div class="table-header-actions">
+        <mat-form-field appearance="outline" class="items-per-page-field">
+          <mat-label>Items por página</mat-label>
+          <mat-select [(ngModel)]="itemsPerPage" (selectionChange)="applyLocalFilters()">
+            <mat-option [value]="10">10</mat-option>
+            <mat-option [value]="25">25</mat-option>
+            <mat-option [value]="50">50</mat-option>
+            <mat-option [value]="100">100</mat-option>
+          </mat-select>
+        </mat-form-field>
+        
+        <div class="view-toggle">
+          <mat-button-toggle-group name="viewMode" [(ngModel)]="viewMode">
+            <mat-button-toggle value="table" matTooltip="Visão em Tabela">
+              <mat-icon>view_list</mat-icon>
+            </mat-button-toggle>
+            <mat-button-toggle value="cards" matTooltip="Visão em Cards">
+              <mat-icon>view_module</mat-icon>
+            </mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
+      </div>
+    </mat-card-header>
+    <mat-card-content class="table-content">
+      
+      <!-- Visão em Cards (Nova) -->
+      <div *ngIf="viewMode === 'cards'" class="embarques-cards-view">
+        <div class="cards-grid">
+          <mat-card *ngFor="let embarque of filteredEmbarques; trackBy: trackByEmbarqueId" 
+                   class="embarque-card"
+                   (click)="viewEmbarque(embarque)">
+            <mat-card-header>
+              <div mat-card-avatar class="embarque-avatar" [class]="getStatusAvatarClass(embarque.shipment_status)">
+                <mat-icon>{{ getStatusIcon(embarque.shipment_status) }}</mat-icon>
+              </div>
+              <mat-card-title>{{ embarque.shipment_number }}</mat-card-title>
+              <mat-card-subtitle>{{ embarque.commodity }}</mat-card-subtitle>
+            </mat-card-header>
+            
+            <mat-card-content>
+              <div class="card-info-grid">
+                <div class="info-item">
+                  <mat-icon class="info-icon">business</mat-icon>
+                  <div class="info-content">
+                    <span class="info-label">Exportador</span>
+                    <span class="info-value">{{ embarque.exporter_name }}</span>
+                  </div>
+                </div>
+                
+                <div class="info-item">
+                  <mat-icon class="info-icon">scale</mat-icon>
+                  <div class="info-content">
+                    <span class="info-label">Quantidade</span>
+                    <span class="info-value">{{ formatQuantity(embarque.quantity, embarque.unit) }}</span>
+                  </div>
+                </div>
+                
+                <div class="info-item">
+                  <mat-icon class="info-icon">directions_boat</mat-icon>
+                  <div class="info-content">
+                    <span class="info-label">Navio</span>
+                    <span class="info-value">{{ embarque.vessel_name || 'N/A' }}</span>
+                  </div>
+                </div>
+                
+                <div class="info-item route-item">
+                  <mat-icon class="info-icon">route</mat-icon>
+                  <div class="info-content">
+                    <span class="info-label">Rota</span>
+                    <span class="info-value route-info">
+                      {{ embarque.port_origin }} → {{ embarque.port_destination }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="card-status-section">
+                <mat-chip class="status-chip" [class]="getStatusChipClass(embarque.shipment_status)">
+                  {{ embarque.shipment_status }}
+                </mat-chip>
+                
+                <div class="ai-indicator" *ngIf="embarque.delay_risk_score">
+                  <mat-icon class="ai-icon" [class]="getRiskIconClass(embarque.delay_risk_score)">analytics</mat-icon>
+                  <span class="risk-score">{{ embarque.delay_risk_score }}% risco</span>
+                </div>
+              </div>
+            </mat-card-content>
+            
+            <mat-card-actions class="card-actions">
+              <button mat-icon-button color="primary" (click)="viewEmbarque(embarque); $event.stopPropagation()" matTooltip="Visualizar">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button mat-icon-button (click)="editEmbarque(embarque); $event.stopPropagation()" matTooltip="Editar">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="accent" (click)="trackingEmbarque(embarque); $event.stopPropagation()" matTooltip="Tracking">
+                <mat-icon>track_changes</mat-icon>
+              </button>
+            </mat-card-actions>
+          </mat-card>
+        </div>
+      </div>
+      
+      <!-- Visão em Tabela (Melhorada) -->
+      <div *ngIf="viewMode === 'table'" class="table-view">
+        <div class="table-container">
+        <table mat-table [dataSource]="filteredEmbarques" class="embarques-table">
+          
+          <!-- Coluna Número do Embarque -->
+          <ng-container matColumnDef="shipment_number">
+            <th mat-header-cell *matHeaderCellDef 
+                mat-sort-header="shipment_number">
+              Nº Embarque
+            </th>
+            <td mat-cell *matCellDef="let embarque">
+              <div class="shipment-info">
+                <strong>{{ embarque.shipment_number }}</strong>
+                <div class="shipment-id">ID: {{ embarque.shipment_id?.substring(0,8) }}...</div>
+                <div class="booking-number">Booking: {{ embarque.booking_number || 'N/A' }}</div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Coluna Contrato -->
+          <ng-container matColumnDef="contract_id">
+            <th mat-header-cell *matHeaderCellDef 
+                mat-sort-header="contract_id">
+              Contrato
+            </th>
+            <td mat-cell *matCellDef="let embarque">
+              <div class="contract-info">
+                <strong>{{ embarque.contract_number || 'N/A' }}</strong>
+                <div class="contract-id">{{ embarque.contract_id?.substring(0,8) }}...</div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Coluna Exportador -->
+          <ng-container matColumnDef="exporter_name">
+            <th mat-header-cell *matHeaderCellDef 
+                mat-sort-header="exporter_name">
+              Exportador
+            </th>
+            <td mat-cell *matCellDef="let embarque">
+              <div class="company-info">
+                <div class="exporter">{{ embarque.exporter_name }}</div>
+                <div class="importer">{{ embarque.importer_name }}</div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Coluna Commodity -->
+          <ng-container matColumnDef="commodity">
+            <th mat-header-cell *matHeaderCellDef 
+                mat-sort-header="commodity">
+              Commodity
+            </th>
+            <td mat-cell *matCellDef="let embarque">
+              <strong>{{ embarque.commodity }}</strong>
+            </td>
+          </ng-container>
+
+          <!-- Coluna Quantidade -->
+          <ng-container matColumnDef="quantity">
+            <th mat-header-cell *matHeaderCellDef>
+              Quantidade
+            </th>
+            <td mat-cell *matCellDef="let embarque">
+              <div class="quantity-info">
+                <div><strong>{{ formatQuantity(embarque.quantity, embarque.unit) }}</strong></div>
+                <div class="unit">{{ embarque.unit }}</div>
+                <div class="container-count" *ngIf="embarque.container_count">
+                  {{ embarque.container_count }} containers
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Coluna Navio -->
+          <ng-container matColumnDef="vessel_name">
+            <th mat-header-cell *matHeaderCellDef 
+                mat-sort-header="vessel_name">
+              Navio
+            </th>
+            <td mat-cell *matCellDef="let embarque">
+              <div class="vessel-info">
+                <div>{{ embarque.vessel_name || 'N/A' }}</div>
+                <div class="shipping-company">{{ embarque.shipping_company || 'N/A' }}</div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Coluna Portos Detalhados -->
+          <ng-container matColumnDef="ports">
+            <th mat-header-cell *matHeaderCellDef>
+              Portos
+            </th>
+            <td mat-cell *matCellDef="let embarque">
+              <div class="ports-detailed">
+                <div class="port-origin">
+                  <mat-icon class="port-icon">flight_takeoff</mat-icon>
+                  {{ embarque.port_origin }}
+                </div>
+                <div class="port-destination">
+                  <mat-icon class="port-icon">flight_land</mat-icon>
+                  {{ embarque.port_destination }}
+                </div>
+                <div class="transshipment" *ngIf="embarque.transshipment_port">
+                  <mat-icon class="port-icon">swap_horiz</mat-icon>
+                  {{ embarque.transshipment_port }}
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Coluna Status & IA -->
+          <ng-container matColumnDef="ai_status">
+            <th mat-header-cell *matHeaderCellDef>
+              Status IA
+            </th>
+            <td mat-cell *matCellDef="let embarque">
+              <div class="ai-status-info">
+                <mat-chip [class]="getStatusChipClass(embarque.shipment_status)">
+                  {{ embarque.shipment_status }}
+                </mat-chip>
+                <div class="ai-predictions">
+                  <div class="risk-score" [class]="getRiskScoreClass(embarque.delay_risk_score)">
+                    <mat-icon>analytics</mat-icon>
+                    Risco: {{ embarque.delay_risk_score }}%
+                  </div>
+                  <div class="ai-eta" *ngIf="embarque.ai_eta_prediction">
+                    <mat-icon>schedule</mat-icon>
+                    IA ETA: {{ formatDate(embarque.ai_eta_prediction) }}
+                  </div>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Coluna Documentação Aduaneira -->
+          <ng-container matColumnDef="documentation">
+            <th mat-header-cell *matHeaderCellDef>
+              Documentação
+            </th>
+            <td mat-cell *matCellDef="let embarque">
+              <div class="documentation-status">
+                <div class="due-status" *ngIf="embarque.due_number">
+                  <mat-icon [class]="embarque.due_submitted ? 'text-success' : 'text-warning'">description</mat-icon>
+                  DU-E: {{ embarque.due_number }}
+                </div>
+                <div class="vigiagro-status" *ngIf="embarque.vigiagro_status">
+                  <mat-icon [class]="getVigiAgroStatusClass(embarque.vigiagro_status)">verified</mat-icon>
+                  {{ embarque.vigiagro_status }}
+                </div>
+                <div class="mapa-clearance" *ngIf="embarque.mapa_clearance">
+                  <mat-icon class="text-success">check_circle</mat-icon>
+                  MAPA OK
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Coluna Última Atualização -->
+          <ng-container matColumnDef="last_update">
+            <th mat-header-cell *matHeaderCellDef 
+                mat-sort-header="last_update">
+              Última Atualização
+            </th>
+            <td mat-cell *matCellDef="let embarque">
+              <div class="update-info">
+                <div class="timestamp">{{ formatDateTime(embarque.last_update) }}</div>
+                <div class="auto-tracking" *ngIf="embarque.ai_auto_tracking">
+                  <mat-icon class="text-primary">autorenew</mat-icon>
+                  Auto-tracking
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Coluna ETD -->
+          <ng-container matColumnDef="departure_date">
+            <th mat-header-cell *matHeaderCellDef 
+                mat-sort-header="departure_date">
+              ETD
+            </th>
+            <td mat-cell *matCellDef="let embarque">
+              {{ formatDate(embarque.departure_date) }}
+            </td>
+          </ng-container>
+
+          <!-- Coluna ETA -->
+          <ng-container matColumnDef="arrival_date">
+            <th mat-header-cell *matHeaderCellDef 
+                mat-sort-header="arrival_date">
+              ETA
+            </th>
+            <td mat-cell *matCellDef="let embarque">
+              <div class="eta-info">
+                <div>{{ formatDate(embarque.arrival_date) }}</div>
+                <div class="delay-info" *ngIf="embarque.delay_days && embarque.delay_days > 0">
+                  +{{ embarque.delay_days }} dias
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Coluna Status -->
+          <ng-container matColumnDef="shipment_status">
+            <th mat-header-cell *matHeaderCellDef>
+              Status
+            </th>
+            <td mat-cell *matCellDef="let embarque">
+              <mat-chip [class]="getStatusChipClass(embarque.shipment_status)">
+                {{ embarque.shipment_status }}
+              </mat-chip>
+            </td>
+          </ng-container>
+
+          <!-- Coluna Tracking -->
+          <ng-container matColumnDef="tracking_status">
+            <th mat-header-cell *matHeaderCellDef>
+              Tracking
+            </th>
+            <td mat-cell *matCellDef="let embarque">
+              <mat-chip [class]="getTrackingChipClass(embarque.tracking_status)">
+                {{ embarque.tracking_status }}
+              </mat-chip>
+            </td>
+          </ng-container>
+
+          <!-- Coluna Risco -->
+          <ng-container matColumnDef="delay_risk_score">
+            <th mat-header-cell *matHeaderCellDef>
+              Risco
+            </th>
+            <td mat-cell *matCellDef="let embarque">
+              <span [class]="getRiskScoreClass(embarque.delay_risk_score)">
+                {{ embarque.delay_risk_score }}%
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Coluna Ações Expandidas -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>
+              Ações
+            </th>
+            <td mat-cell *matCellDef="let embarque">
+              <div class="action-buttons-expanded">
+                <!-- Ações Principais -->
+                <div class="primary-actions">
+                  <button 
+                    mat-icon-button
+                    color="primary"
+                    (click)="viewEmbarque(embarque)"
+                    matTooltip="Visualizar">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+                  <button 
+                    mat-icon-button
+                    (click)="editEmbarque(embarque)"
+                    matTooltip="Editar">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button 
+                    mat-icon-button
+                    color="accent"
+                    (click)="trackingEmbarque(embarque)"
+                    matTooltip="Tracking em Tempo Real">
+                    <mat-icon>track_changes</mat-icon>
+                  </button>
+                </div>
+
+                <!-- Menu de Ações Avançadas -->
+                <button mat-icon-button [matMenuTriggerFor]="actionsMenu" 
+                        matTooltip="Mais Ações">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+
+                <mat-menu #actionsMenu="matMenu">
+                  <!-- Documentação -->
+                  <button mat-menu-item (click)="generateDocuments(embarque)">
+                    <mat-icon>description</mat-icon>
+                    <span>Gerar Documentos</span>
+                  </button>
+                  
+                  <button mat-menu-item (click)="sendDUE(embarque)" 
+                          [disabled]="!embarque.due_number">
+                    <mat-icon>send</mat-icon>
+                    <span>Enviar DU-E</span>
+                  </button>
+
+                  <button mat-menu-item (click)="downloadBL(embarque)"
+                          [disabled]="!embarque.bill_of_lading">
+                    <mat-icon>file_download</mat-icon>
+                    <span>Download B/L</span>
+                  </button>
+
+                  <mat-divider></mat-divider>
+
+                  <!-- IA & Automação -->
+                  <button mat-menu-item (click)="simulateRoute(embarque)">
+                    <mat-icon>route</mat-icon>
+                    <span>Simular Rota IA</span>
+                  </button>
+                  
+                  <button mat-menu-item (click)="optimizeCargo(embarque)">
+                    <mat-icon>tune</mat-icon>
+                    <span>Otimizar Carga</span>
+                  </button>
+
+                  <button mat-menu-item (click)="predictETA(embarque)">
+                    <mat-icon>schedule</mat-icon>
+                    <span>ETA Inteligente</span>
+                  </button>
+
+                  <button mat-menu-item (click)="toggleAutoTracking(embarque)">
+                    <mat-icon>autorenew</mat-icon>
+                    <span>{{ embarque.ai_auto_tracking ? 'Desativar' : 'Ativar' }} Auto-tracking</span>
+                  </button>
+
+                  <mat-divider></mat-divider>
+
+                  <!-- Integrações -->
+                  <button mat-menu-item (click)="checkSiscomex(embarque)">
+                    <mat-icon>cloud_sync</mat-icon>
+                    <span>Verificar Siscomex</span>
+                  </button>
+                  
+                  <button mat-menu-item (click)="validateVigiagro(embarque)">
+                    <mat-icon>verified</mat-icon>
+                    <span>Validar Vigiagro</span>
+                  </button>
+
+                  <mat-divider></mat-divider>
+
+                  <!-- Operações -->
+                  <button mat-menu-item (click)="duplicateEmbarque(embarque)">
+                    <mat-icon>content_copy</mat-icon>
+                    <span>Duplicar Embarque</span>
+                  </button>
+                  
+                  <button mat-menu-item (click)="exportEmbarqueData(embarque)">
+                    <mat-icon>file_download</mat-icon>
+                    <span>Exportar Dados</span>
+                  </button>
+
+                  <button mat-menu-item (click)="viewAuditLog(embarque)">
+                    <mat-icon>history</mat-icon>
+                    <span>Log de Auditoria</span>
+                  </button>
+
+                  <mat-divider></mat-divider>
+
+                  <button mat-menu-item (click)="deleteEmbarque(embarque)" 
+                          class="text-danger">
+                    <mat-icon>delete</mat-icon>
+                    <span>Excluir</span>
+                  </button>
+                </mat-menu>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Definição das linhas -->
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns" 
+              class="embarque-row"
+              (click)="viewEmbarque(row)">
+          </tr>
+        </table>
+        </div>
+      </div>
+      
+      <!-- Estado vazio melhorado -->
+      <div *ngIf="filteredEmbarques.length === 0" class="enhanced-empty-state">
+        <div class="empty-state-illustration">
+          <mat-icon class="empty-icon">inventory_2</mat-icon>
+        </div>
+        <div class="empty-state-content">
+          <h2 class="empty-title">Nenhum embarque encontrado</h2>
+          <p class="empty-subtitle">
+            Não há embarques que correspondem aos filtros aplicados.
+            <br>Ajuste os filtros ou crie um novo embarque.
+          </p>
+          <div class="empty-actions">
+            <button mat-raised-button color="primary" (click)="createEmbarque()" class="empty-primary-btn">
+              <mat-icon>add</mat-icon>
+              Criar Novo Embarque
+            </button>
+            <button mat-button (click)="clearFilters()" class="empty-secondary-btn">
+              <mat-icon>clear_all</mat-icon>
+              Limpar Filtros
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paginação -->
+      <mat-paginator 
+        *ngIf="totalItems > itemsPerPage"
+        [length]="totalItems"
+        [pageSize]="itemsPerPage"
+        [pageSizeOptions]="[10, 25, 50, 100]"
+        [pageIndex]="currentPage - 1"
+        (page)="onPageChange($event.pageIndex + 1)"
+        showFirstLastButtons>
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+</div>

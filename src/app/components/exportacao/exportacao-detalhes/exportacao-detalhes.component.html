@@ -1,0 +1,628 @@
+<div class="exportacao-detalhes-container">
+  <!-- Header -->
+  <div class="details-header">
+    <div class="header-info">
+      <h2>
+        <mat-icon>visibility</mat-icon>
+        Detalhes da Exportação
+      </h2>
+      <p class="export-number">{{ exportacao.export_number }}</p>
+    </div>
+    
+    <div class="header-actions">
+      <button mat-button (click)="onEdit()">
+        <mat-icon>edit</mat-icon>
+        Editar
+      </button>
+      <button mat-icon-button (click)="onClose()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div *ngIf="loading" class="loading-overlay">
+    <mat-progress-spinner diameter="50"></mat-progress-spinner>
+    <p>Carregando dados...</p>
+  </div>
+
+  <!-- Resumo Executivo -->
+  <div *ngIf="!loading" class="executive-summary">
+    <mat-card class="summary-card">
+      <mat-card-content>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <div class="item-icon">
+              <mat-icon>business</mat-icon>
+            </div>
+            <div class="item-info">
+              <div class="item-label">Importador</div>
+              <div class="item-value">{{ exportacao.importer_name }}</div>
+              <div class="item-secondary">{{ exportacao.destination_country }}</div>
+            </div>
+          </div>
+
+          <div class="summary-item">
+            <div class="item-icon">
+              <mat-icon>attach_money</mat-icon>
+            </div>
+            <div class="item-info">
+              <div class="item-label">Valor Total</div>
+              <div class="item-value">{{ formatCurrency(exportacao.total_value, exportacao.currency) }}</div>
+              <div class="item-secondary">{{ exportacao.incoterm }}</div>
+            </div>
+          </div>
+
+          <div class="summary-item">
+            <div class="item-icon status-icon" [class]="getStatusChipClass(exportacao.export_status)">
+              <mat-icon>{{ exportacao.export_status === 'Completed' ? 'check_circle' : 
+                            exportacao.export_status === 'Processing' ? 'local_shipping' : 
+                            exportacao.export_status === 'Draft' ? 'schedule' : 'draft' }}</mat-icon>
+            </div>
+            <div class="item-info">
+              <div class="item-label">Status</div>
+              <div class="item-value">{{ exportacao.export_status }}</div>
+              <div class="item-secondary">{{ exportacao.compliance_status }}</div>
+            </div>
+          </div>
+
+          <div class="summary-item">
+            <div class="item-icon">
+              <mat-icon>schedule</mat-icon>
+            </div>
+            <div class="item-info">
+              <div class="item-label">Cronograma</div>
+              <div class="item-value" *ngIf="exportacao.etd">ETD: {{ formatDate(exportacao.etd) }}</div>
+              <div class="item-secondary" *ngIf="exportacao.eta">ETA: {{ formatDate(exportacao.eta) }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Barra de Progresso -->
+        <div class="progress-section">
+          <div class="progress-header">
+            <span class="progress-label">Progresso da Exportação</span>
+            <span class="progress-percentage">{{ getProgressPercentage() }}%</span>
+          </div>
+          <mat-progress-bar 
+            mode="determinate" 
+            [value]="getProgressPercentage()"
+            [color]="getProgressColor()">
+          </mat-progress-bar>
+        </div>
+
+        <!-- Alertas de Risco (se houver) -->
+        <div class="risk-alerts" *ngIf="exportacao.ai_risk_score > 50">
+          <mat-chip class="risk-chip" [class]="getRiskScoreClass(exportacao.ai_risk_score)">
+            <mat-icon>warning</mat-icon>
+            Risco: {{ exportacao.ai_risk_score }}%
+          </mat-chip>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+          <button mat-stroked-button 
+                  *ngIf="exportacao.siscomex_status !== 'Approved'"
+                  (click)="sendToSiscomex()"
+                  [disabled]="loading">
+            <mat-icon>cloud_upload</mat-icon>
+            Enviar Siscomex
+          </button>
+          
+          <button mat-stroked-button 
+                  (click)="revalidateCompliance()"
+                  [disabled]="loading">
+            <mat-icon>fact_check</mat-icon>
+            Revalidar
+          </button>
+          
+          <button mat-stroked-button 
+                  (click)="runAIAnalysis()"
+                  [disabled]="loading">
+            <mat-icon>psychology</mat-icon>
+            Análise IA
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Tabs de Detalhes -->
+  <div *ngIf="!loading" class="details-tabs">
+    <mat-tab-group animationDuration="300ms">
+      
+      <!-- Tab 1: Informações Gerais -->
+      <mat-tab label="Informações Gerais">
+        <ng-template matTabLabel>
+          <mat-icon>info</mat-icon>
+          Informações Gerais
+        </ng-template>
+        
+        <div class="tab-content">
+          <div class="info-sections">
+            
+            <!-- Dados Básicos -->
+            <mat-card class="info-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>description</mat-icon>
+                  Dados Básicos
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="info-grid">
+                  <div class="info-row">
+                    <label>Número da Exportação:</label>
+                    <span>{{ exportacao.export_number }}</span>
+                  </div>
+                  <div class="info-row">
+                    <label>Tipo:</label>
+                    <span>{{ exportacao.export_type }}</span>
+                  </div>
+                  <div class="info-row">
+                    <label>Prioridade:</label>
+                    <mat-chip [class]="'priority-' + exportacao.priority?.toLowerCase()">
+                      {{ exportacao.priority }}
+                    </mat-chip>
+                  </div>
+                  <div class="info-row">
+                    <label>Criado em:</label>
+                    <span>{{ formatDateTime(exportacao.created_at) }}</span>
+                  </div>
+                  <div class="info-row">
+                    <label>Responsável:</label>
+                    <span>{{ exportacao.created_by }}</span>
+                  </div>
+                  <div class="info-row" *ngIf="exportacao.description">
+                    <label>Descrição:</label>
+                    <span>{{ exportacao.description }}</span>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Dados do Importador -->
+            <mat-card class="info-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>business</mat-icon>
+                  Importador
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="info-grid">
+                  <div class="info-row">
+                    <label>Nome:</label>
+                    <span>{{ exportacao.importer_name }}</span>
+                  </div>
+                  <div class="info-row">
+                    <label>Documento:</label>
+                    <span>{{ exportacao.importer_document }}</span>
+                  </div>
+                  <div class="info-row">
+                    <label>Endereço:</label>
+                    <span>{{ exportacao.importer_address }}</span>
+                  </div>
+                  <div class="info-row" *ngIf="exportacao.importer_contact">
+                    <label>Contato:</label>
+                    <span>{{ exportacao.importer_contact }}</span>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Informações Comerciais -->
+            <mat-card class="info-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>account_balance</mat-icon>
+                  Informações Comerciais
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="info-grid">
+                  <div class="info-row">
+                    <label>País de Destino:</label>
+                    <span>
+                      <mat-icon>flag</mat-icon>
+                      {{ exportacao.destination_country }}
+                    </span>
+                  </div>
+                  <div class="info-row" *ngIf="exportacao.destination_port">
+                    <label>Porto de Destino:</label>
+                    <span>{{ exportacao.destination_port }}</span>
+                  </div>
+                  <div class="info-row" *ngIf="exportacao.origin_port">
+                    <label>Porto de Origem:</label>
+                    <span>{{ exportacao.origin_port }}</span>
+                  </div>
+                  <div class="info-row">
+                    <label>Incoterm:</label>
+                    <span>{{ exportacao.incoterm }}</span>
+                  </div>
+                  <div class="info-row">
+                    <label>Condições de Pagamento:</label>
+                    <span>{{ exportacao.payment_terms }}</span>
+                  </div>
+                  <div class="info-row">
+                    <label>Moeda:</label>
+                    <span>{{ exportacao.currency }}</span>
+                  </div>
+                  <div class="info-row">
+                    <label>Taxa de Câmbio:</label>
+                    <span>{{ exportacao.exchange_rate }}</span>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Produtos -->
+            <mat-card class="info-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>inventory</mat-icon>
+                  Produtos ({{ exportacao.items?.length || 0 }})
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="products-list" *ngIf="exportacao.items && exportacao.items.length > 0">
+                  <div *ngFor="let item of exportacao.items" class="product-item">
+                    <div class="product-header">
+                      <strong>{{ item.product_name }}</strong>
+                      <mat-chip class="ncm-chip">NCM: {{ item.ncm_code }}</mat-chip>
+                    </div>
+                    <div class="product-details">
+                      <span>{{ formatQuantity(item.quantity, item.unit) }}</span>
+                      <span>•</span>
+                      <span>{{ formatCurrency(item.unit_price) }} / {{ item.unit }}</span>
+                      <span>•</span>
+                      <strong>{{ formatCurrency(item.total_value) }}</strong>
+                    </div>
+                    <div class="product-description" *ngIf="item.product_description">
+                      {{ item.product_description }}
+                    </div>
+                  </div>
+                </div>
+                <div *ngIf="!exportacao.items || exportacao.items.length === 0" class="no-products">
+                  <mat-icon>inventory_2</mat-icon>
+                  <span>Nenhum produto encontrado</span>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 2: Rastreamento -->
+      <mat-tab label="Rastreamento">
+        <ng-template matTabLabel>
+          <mat-icon>track_changes</mat-icon>
+          Rastreamento
+        </ng-template>
+        
+        <div class="tab-content">
+          <mat-card class="tracking-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>local_shipping</mat-icon>
+                Histórico de Movimentação
+              </mat-card-title>
+              <mat-card-subtitle>
+                Modal: {{ exportacao.transport_mode || 'N/A' }}
+                <span *ngIf="exportacao.carrier_name"> • {{ exportacao.carrier_name }}</span>
+              </mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <div *ngIf="trackingData.length > 0" class="tracking-timeline">
+                <div *ngFor="let track of trackingData; trackBy: trackByTrackingIndex" 
+                     class="timeline-item" 
+                     [class]="'status-' + track.status?.toLowerCase().replace(' ', '-')">
+                  <div class="timeline-marker">
+                    <mat-icon>{{ track.status === 'Delivered' ? 'done' : 
+                                 track.status === 'In Transit' ? 'local_shipping' :
+                                 track.status === 'Departed' ? 'flight_takeoff' : 
+                                 'schedule' }}</mat-icon>
+                  </div>
+                  <div class="timeline-content">
+                    <div class="timeline-header">
+                      <span class="timeline-status">{{ track.status }}</span>
+                      <span class="timeline-date">{{ formatDateTime(track.date) }}</span>
+                    </div>
+                    <div class="timeline-location" *ngIf="track.location">
+                      <mat-icon>place</mat-icon>
+                      {{ track.location }}
+                    </div>
+                    <div class="timeline-description" *ngIf="track.description">
+                      {{ track.description }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div *ngIf="trackingData.length === 0" class="no-tracking">
+                <mat-icon>track_changes</mat-icon>
+                <h4>Sem informações de rastreamento</h4>
+                <p>Os dados de rastreamento serão atualizados quando disponíveis</p>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 3: Documentos -->
+      <mat-tab label="Documentos">
+        <ng-template matTabLabel>
+          <mat-icon [matBadge]="documentsData.length" matBadgeHidden="documentsData.length === 0">description</mat-icon>
+          Documentos
+        </ng-template>
+        
+        <div class="tab-content">
+          <mat-card class="documents-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>folder</mat-icon>
+                Documentos da Exportação
+              </mat-card-title>
+              <mat-card-subtitle>
+                {{ documentsData.length }} documento(s) encontrado(s)
+              </mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <div *ngIf="documentsData.length > 0" class="documents-table">
+                <table mat-table [dataSource]="documentsData" class="documents-table-element">
+                  
+                  <ng-container matColumnDef="document_type">
+                    <th mat-header-cell *matHeaderCellDef>Tipo do Documento</th>
+                    <td mat-cell *matCellDef="let doc">
+                      <div class="document-type">
+                        <mat-icon>description</mat-icon>
+                        <div class="doc-info">
+                          <div class="doc-name">{{ doc.document_name }}</div>
+                          <div class="doc-type">{{ doc.document_type }}</div>
+                        </div>
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="status">
+                    <th mat-header-cell *matHeaderCellDef>Status</th>
+                    <td mat-cell *matCellDef="let doc">
+                      <mat-chip [class]="'doc-status-' + doc.status?.toLowerCase()">
+                        <mat-icon>{{ doc.status === 'Approved' ? 'check_circle' : 
+                                     doc.status === 'Rejected' ? 'error' : 
+                                     doc.status === 'Pending' ? 'schedule' : 'help_outline' }}</mat-icon>
+                        {{ doc.status }}
+                      </mat-chip>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="upload_date">
+                    <th mat-header-cell *matHeaderCellDef>Data de Upload</th>
+                    <td mat-cell *matCellDef="let doc">
+                      <div class="upload-info">
+                        <div>{{ formatDate(doc.upload_date) }}</div>
+                        <div class="upload-time">{{ formatDateTime(doc.upload_date).split(' ')[1] }}</div>
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef>Ações</th>
+                    <td mat-cell *matCellDef="let doc">
+                      <div class="document-actions">
+                        <button mat-icon-button 
+                                (click)="viewDocument(doc)"
+                                matTooltip="Visualizar">
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+                        <button mat-icon-button 
+                                (click)="downloadDocument(doc)"
+                                matTooltip="Download">
+                          <mat-icon>download</mat-icon>
+                        </button>
+                        <button mat-icon-button 
+                                [matMenuTriggerFor]="docMenu"
+                                matTooltip="Mais opções">
+                          <mat-icon>more_vert</mat-icon>
+                        </button>
+
+                        <mat-menu #docMenu="matMenu">
+                          <button mat-menu-item (click)="regenerateDocument(doc)">
+                            <mat-icon>refresh</mat-icon>
+                            <span>Regenerar</span>
+                          </button>
+                        </mat-menu>
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="documentsColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: documentsColumns"></tr>
+                </table>
+              </div>
+              
+              <div *ngIf="documentsData.length === 0" class="no-documents">
+                <mat-icon>description</mat-icon>
+                <h4>Nenhum documento encontrado</h4>
+                <p>Os documentos serão listados quando disponíveis</p>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 4: Compliance -->
+      <mat-tab label="Compliance">
+        <ng-template matTabLabel>
+          <mat-icon>gavel</mat-icon>
+          Compliance
+        </ng-template>
+        
+        <div class="tab-content">
+          <mat-card class="compliance-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>security</mat-icon>
+                Status de Compliance
+              </mat-card-title>
+              <mat-card-subtitle>
+                Validações regulamentares e normativas
+              </mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <div *ngIf="complianceData" class="compliance-content">
+                <div class="compliance-score">
+                  <div class="score-circle" [class]="getComplianceChipClass(exportacao.compliance_status)">
+                    <span class="score-value">{{ complianceData.score || 0 }}%</span>
+                    <span class="score-label">Score</span>
+                  </div>
+                  <div class="score-details">
+                    <h4>{{ exportacao.compliance_status }}</h4>
+                    <p>{{ complianceData.description || 'Status de compliance atual' }}</p>
+                  </div>
+                </div>
+
+                <div class="compliance-checks" *ngIf="complianceData.checks">
+                  <h4>Verificações de Compliance</h4>
+                  <mat-list>
+                    <mat-list-item *ngFor="let check of complianceData.checks">
+                      <mat-icon matListItemIcon [color]="check.passed ? 'primary' : 'warn'">
+                        {{ check.passed ? 'check_circle' : 'error' }}
+                      </mat-icon>
+                      <div matListItemTitle>{{ check.name }}</div>
+                      <div matListItemLine>{{ check.description }}</div>
+                    </mat-list-item>
+                  </mat-list>
+                </div>
+
+                <div class="siscomex-status" *ngIf="exportacao.siscomex_status">
+                  <h4>Status Siscomex</h4>
+                  <mat-chip [class]="'siscomex-' + exportacao.siscomex_status.toLowerCase()">
+                    <mat-icon>{{ exportacao.siscomex_status === 'Approved' ? 'check_circle' : 
+                                 exportacao.siscomex_status === 'Rejected' ? 'error' : 'cloud_queue' }}</mat-icon>
+                    {{ exportacao.siscomex_status }}
+                  </mat-chip>
+                  <div class="due-info" *ngIf="exportacao.due_number">
+                    <strong>DU-E:</strong> {{ exportacao.due_number }}
+                  </div>
+                </div>
+              </div>
+              
+              <div *ngIf="!complianceData" class="no-compliance">
+                <mat-icon>fact_check</mat-icon>
+                <h4>Dados de compliance não disponíveis</h4>
+                <p>Clique em "Revalidar" para executar nova análise</p>
+                <button mat-raised-button color="primary" 
+                        (click)="revalidateCompliance()"
+                        [disabled]="loading">
+                  <mat-icon>refresh</mat-icon>
+                  Executar Validação
+                </button>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 5: Análise IA -->
+      <mat-tab label="Análise IA">
+        <ng-template matTabLabel>
+          <mat-icon>psychology</mat-icon>
+          Análise IA
+        </ng-template>
+        
+        <div class="tab-content">
+          <mat-card class="ai-analysis-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>smart_toy</mat-icon>
+                Análise Inteligente
+              </mat-card-title>
+              <mat-card-subtitle>
+                Insights e recomendações baseadas em IA
+              </mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <div *ngIf="aiAnalysis" class="ai-content">
+                
+                <!-- Scores IA -->
+                <div class="ai-scores">
+                  <div class="score-item confidence">
+                    <mat-icon>psychology</mat-icon>
+                    <div class="score-info">
+                      <div class="score-label">Confiança IA</div>
+                      <div class="score-value">{{ exportacao.ai_confidence_score || 0 }}%</div>
+                    </div>
+                  </div>
+                  
+                  <div class="score-item risk" [class]="getRiskScoreClass(exportacao.ai_risk_score || 0)">
+                    <mat-icon>warning</mat-icon>
+                    <div class="score-info">
+                      <div class="score-label">Score de Risco</div>
+                      <div class="score-value">{{ exportacao.ai_risk_score || 0 }}%</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Recomendações -->
+                <div class="ai-recommendations" *ngIf="aiAnalysis.recommendations">
+                  <h4>Recomendações</h4>
+                  <mat-list>
+                    <mat-list-item *ngFor="let rec of aiAnalysis.recommendations">
+                      <mat-icon matListItemIcon color="accent">lightbulb</mat-icon>
+                      <div matListItemTitle>{{ rec.title }}</div>
+                      <div matListItemLine>{{ rec.description }}</div>
+                    </mat-list-item>
+                  </mat-list>
+                </div>
+
+                <!-- Predições -->
+                <div class="ai-predictions" *ngIf="aiAnalysis.predictions">
+                  <h4>Predições</h4>
+                  <div class="predictions-grid">
+                    <div *ngFor="let pred of aiAnalysis.predictions" class="prediction-item">
+                      <div class="prediction-header">
+                        <mat-icon>{{ pred.type === 'delivery' ? 'local_shipping' : 
+                                     pred.type === 'cost' ? 'attach_money' : 'schedule' }}</mat-icon>
+                        <span class="prediction-type">{{ pred.type }}</span>
+                      </div>
+                      <div class="prediction-value">{{ pred.value }}</div>
+                      <div class="prediction-confidence">
+                        Confiança: {{ pred.confidence }}%
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+              
+              <div *ngIf="!aiAnalysis" class="no-ai-analysis">
+                <mat-icon>psychology</mat-icon>
+                <h4>Análise IA não disponível</h4>
+                <p>Execute uma nova análise para obter insights inteligentes</p>
+                <button mat-raised-button color="accent" 
+                        (click)="runAIAnalysis()"
+                        [disabled]="loading">
+                  <mat-icon>auto_awesome</mat-icon>
+                  Executar Análise IA
+                </button>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+
+    </mat-tab-group>
+  </div>
+
+  <!-- Footer Actions -->
+  <div class="dialog-actions">
+    <button mat-button (click)="onClose()">
+      Fechar
+    </button>
+    <button mat-raised-button color="primary" (click)="onEdit()">
+      <mat-icon>edit</mat-icon>
+      Editar Exportação
+    </button>
+  </div>
+</div>

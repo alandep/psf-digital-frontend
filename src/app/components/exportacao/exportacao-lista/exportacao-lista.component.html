@@ -1,0 +1,772 @@
+<div class="exportacao-lista-container">
+  <!-- Header da página -->
+  <div class="page-header">
+    <mat-card class="header-card">
+      <mat-card-content>
+        <div class="header-content">
+          <div class="header-info">
+            <h1>
+              <mat-icon>import_export</mat-icon>
+              Gerenciar Exportações
+            </h1>
+            <p>Orquestrador central do EIP - automação extrema com IA</p>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    
+    <!-- Ações Principais em Cards Separados -->
+    <div class="actions-container">
+      <!-- Card: Automação IA -->
+      <mat-card class="action-card ai-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>psychology</mat-icon>
+            Criação Inteligente
+          </mat-card-title>
+          <mat-card-subtitle>Digite um comando em linguagem natural</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="ai-creation-panel">
+            <mat-form-field appearance="outline" class="nlp-input">
+              <mat-label>Comando inteligente</mat-label>
+              <input 
+                matInput
+                [(ngModel)]="nlpCommand"
+                (keyup.enter)="processNLPCommand()"
+                [disabled]="nlpProcessing"
+                placeholder="Ex: Exportar 1000 ton soja para EUA">
+              <mat-icon matSuffix>auto_awesome</mat-icon>
+            </mat-form-field>
+            <button 
+              mat-raised-button
+              color="accent"
+              (click)="processNLPCommand()"
+              [disabled]="nlpProcessing || !nlpCommand.trim()"
+              class="nlp-button">
+              <mat-icon>smart_toy</mat-icon>
+              {{ nlpProcessing ? 'Processando...' : 'Criar com IA' }}
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      
+      <!-- Card: Ações Rápidas -->
+      <mat-card class="action-card quick-actions-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>flash_on</mat-icon>
+            Ações Rápidas
+          </mat-card-title>
+          <mat-card-subtitle>Operações e ferramentas</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="quick-actions">
+            <button 
+              mat-raised-button
+              color="primary"
+              (click)="createExportacao()"
+              class="primary-action">
+              <mat-icon>add_circle</mat-icon>
+              Nova Exportação
+            </button>
+            
+            <button 
+              mat-stroked-button
+              (click)="loadExportacoes()"
+              [disabled]="loading">
+              <mat-icon>refresh</mat-icon>
+              Atualizar
+            </button>
+            
+            <input #ocrFileInput type="file" [accept]="'.pdf,.png,.jpg,.jpeg'" 
+                   (change)="processOCRUpload($event)" style="display: none;">
+            <button 
+              mat-stroked-button
+              (click)="ocrFileInput.click()">
+              <mat-icon>document_scanner</mat-icon>
+              OCR Upload
+            </button>
+            
+            <button 
+              mat-icon-button
+              [color]="showAIAssistant ? 'accent' : 'primary'"
+              (click)="toggleAIAssistant()"
+              matTooltip="Assistente IA"
+              class="ai-toggle">
+              <mat-icon [matBadge]="aiMessages.length" [matBadgeHidden]="aiMessages.length === 0">smart_toy</mat-icon>
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+
+  <!-- Loading Indicator -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-progress-spinner diameter="50"></mat-progress-spinner>
+    <p>Carregando exportações...</p>
+  </div>
+
+  <!-- Layout principal com sidebar para IA -->
+  <div class="main-layout">
+    
+    <!-- Conteúdo principal -->
+    <div class="main-content">
+      
+      <!-- Dashboard Executivo -->
+      <div *ngIf="!loading && dashboardData" class="dashboard-section">
+        <div class="section-header">
+          <h2>
+            <mat-icon class="section-icon">dashboard</mat-icon>
+            Dashboard Executivo - Exportações
+          </h2>
+          <p class="section-subtitle">Visão 360° das operações com automação IA</p>
+        </div>
+        
+        <!-- Métricas principais -->
+        <div class="metrics-grid">
+          <!-- Total Exportações -->
+          <mat-card class="metric-card total-exports">
+            <mat-card-content>
+              <div class="metric-header">
+                <div class="metric-icon-wrapper">
+                  <mat-icon class="metric-icon">import_export</mat-icon>
+                </div>
+                <div class="metric-info">
+                  <div class="metric-label">Total Exportações</div>
+                  <div class="metric-value">{{ dashboardData.totalExportacoes }}</div>
+                  <div class="metric-secondary">{{ formatCurrency(dashboardData.totalValue) }}</div>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Automação IA -->
+          <mat-card class="metric-card ai-automation">
+            <mat-card-content>
+              <div class="metric-header">
+                <div class="metric-icon-wrapper ai">
+                  <mat-icon class="metric-icon">psychology</mat-icon>
+                </div>
+                <div class="metric-info">
+                  <div class="metric-label">Automação IA</div>
+                  <div class="metric-value">{{ dashboardData.aiAutomationRate }}%</div>
+                </div>
+              </div>
+              <div class="metric-progress">
+                <mat-progress-bar 
+                  mode="determinate" 
+                  [value]="dashboardData.aiAutomationRate"
+                  color="accent">
+                </mat-progress-bar>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Compliance Score -->
+          <mat-card class="metric-card compliance">
+            <mat-card-content>
+              <div class="metric-header">
+                <div class="metric-icon-wrapper compliance">
+                  <mat-icon class="metric-icon">verified_user</mat-icon>
+                </div>
+                <div class="metric-info">
+                  <div class="metric-label">Compliance Score</div>
+                  <div class="metric-value">{{ dashboardData.complianceScore }}%</div>
+                </div>
+              </div>
+              <div class="metric-progress">
+                <mat-progress-bar 
+                  mode="determinate" 
+                  [value]="dashboardData.complianceScore"
+                  [color]="dashboardData.complianceScore >= 90 ? 'primary' : 'warn'">
+                </mat-progress-bar>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Siscomex Integration -->
+          <mat-card class="metric-card siscomex">
+            <mat-card-content>
+              <div class="metric-header">
+                <div class="metric-icon-wrapper siscomex">
+                  <mat-icon class="metric-icon">cloud_sync</mat-icon>
+                </div>
+                <div class="metric-info">
+                  <div class="metric-label">Siscomex Health</div>
+                  <div class="metric-value">{{ dashboardData.siscomexIntegrationHealth }}%</div>
+                </div>
+              </div>
+              <div class="metric-progress">
+                <mat-progress-bar 
+                  mode="determinate" 
+                  [value]="dashboardData.siscomexIntegrationHealth"
+                  color="primary">
+                </mat-progress-bar>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+
+        <!-- Status Grid -->
+        <div class="status-grid">
+          <div class="status-item pending">
+            <div class="status-icon">
+              <mat-icon>hourglass_empty</mat-icon>
+            </div>
+            <div class="status-info">
+              <div class="status-value">{{ dashboardData.exportacoesPendentes }}</div>
+              <div class="status-label">Pendentes</div>
+            </div>
+          </div>
+          
+          <div class="status-item approved">
+            <div class="status-icon">
+              <mat-icon>check_circle</mat-icon>
+            </div>
+            <div class="status-info">
+              <div class="status-value">{{ dashboardData.exportacoesAprovadas }}</div>
+              <div class="status-label">Aprovadas</div>
+            </div>
+          </div>
+          
+          <div class="status-item in-progress">
+            <div class="status-icon">
+              <mat-icon>local_shipping</mat-icon>
+            </div>
+            <div class="status-info">
+              <div class="status-value">{{ dashboardData.exportacoesEmAndamento }}</div>
+              <div class="status-label">Em Andamento</div>
+            </div>
+          </div>
+          
+          <div class="status-item completed">
+            <div class="status-icon">
+              <mat-icon>done_all</mat-icon>
+            </div>
+            <div class="status-info">
+              <div class="status-value">{{ dashboardData.exportacoesCompletas }}</div>
+              <div class="status-label">Completas</div>
+            </div>
+          </div>
+          
+          <div class="status-item blocked" *ngIf="dashboardData.exportacoesBloqueadas > 0">
+            <div class="status-icon">
+              <mat-icon>block</mat-icon>
+            </div>
+            <div class="status-info">
+              <div class="status-value">{{ dashboardData.exportacoesBloqueadas }}</div>
+              <div class="status-label">Bloqueadas</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alertas de Risco -->
+        <mat-card class="risk-alerts-card" *ngIf="dashboardData.riskAlerts.length > 0">
+          <mat-card-header>
+            <div mat-card-avatar class="alert-avatar">
+              <mat-icon>warning</mat-icon>
+            </div>
+            <mat-card-title>Alertas Inteligentes</mat-card-title>
+            <mat-card-subtitle>{{ dashboardData.riskAlerts.length }} alertas requerem atenção</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="alerts-list">
+              <div *ngFor="let alert of dashboardData.riskAlerts; trackBy: trackByAlertId" 
+                   class="alert-item" 
+                   [class]="'alert-' + alert.severity">
+                <div class="alert-icon">
+                  <mat-icon>{{ alert.type === 'compliance' ? 'gavel' : alert.type === 'deadline' ? 'schedule' : 'warning' }}</mat-icon>
+                </div>
+                <div class="alert-content">
+                  <div class="alert-message">{{ alert.message }}</div>
+                  <div class="alert-details">
+                    <span class="alert-export">{{ alert.export_number }}</span>
+                    <span class="alert-time">{{ formatDateTime(alert.created_at) }}</span>
+                  </div>
+                </div>
+                <button mat-icon-button class="alert-action">
+                  <mat-icon>chevron_right</mat-icon>
+                </button>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Filtros -->
+      <mat-card class="filtros-card" *ngIf="!loading">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>filter_list</mat-icon>
+            Filtros Inteligentes
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <form [formGroup]="searchForm" class="filtros-form">
+            <div class="filtro-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Status da Exportação</mat-label>
+                <mat-select formControlName="export_status">
+                  <mat-option value="">Todos os Status</mat-option>
+                  <mat-option *ngFor="let status of statusOptions" [value]="status">
+                    {{ status }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            
+              <mat-form-field appearance="outline">
+                <mat-label>Compliance Status</mat-label>
+                <mat-select formControlName="compliance_status">
+                  <mat-option value="">Todos</mat-option>
+                  <mat-option *ngFor="let status of complianceOptions" [value]="status">
+                    {{ status }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>País de Destino</mat-label>
+                <input 
+                  matInput
+                  formControlName="destination_country"
+                  placeholder="País">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Produto</mat-label>
+                <input 
+                  matInput
+                  formControlName="product_name"
+                  placeholder="Nome do produto">
+              </mat-form-field>
+            </div>
+
+            <div class="filtro-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Importador</mat-label>
+                <input 
+                  matInput
+                  formControlName="importer_name"
+                  placeholder="Nome do importador">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Risco Mínimo (%)</mat-label>
+                <input 
+                  matInput
+                  type="number"
+                  formControlName="ai_risk_score_min"
+                  min="0"
+                  max="100">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Risco Máximo (%)</mat-label>
+                <input 
+                  matInput
+                  type="number"
+                  formControlName="ai_risk_score_max"
+                  min="0"
+                  max="100">
+              </mat-form-field>
+
+              <div class="filtro-actions">
+                <button 
+                  mat-button
+                  (click)="clearFilters()">
+                  <mat-icon>clear</mat-icon>
+                  Limpar Filtros
+                </button>
+              </div>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Lista/Tabela de Exportações -->
+      <mat-card *ngIf="!loading" class="exportacoes-table-card">
+        <mat-card-header class="table-header">
+          <div mat-card-avatar class="table-avatar">
+            <mat-icon class="table-icon">view_list</mat-icon>
+          </div>
+          <mat-card-title class="table-title">
+            Lista de Exportações
+            <mat-chip class="record-count-chip">{{ totalItems }} registros</mat-chip>
+          </mat-card-title>
+          <mat-card-subtitle>Gerencie todo o ciclo de exportação</mat-card-subtitle>
+          
+          <div class="table-header-actions">
+            <mat-form-field appearance="outline" class="items-per-page-field">
+              <mat-label>Items por página</mat-label>
+              <mat-select [(ngModel)]="itemsPerPage" (selectionChange)="applyLocalFilters()">
+                <mat-option [value]="10">10</mat-option>
+                <mat-option [value]="25">25</mat-option>
+                <mat-option [value]="50">50</mat-option>
+                <mat-option [value]="100">100</mat-option>
+              </mat-select>
+            </mat-form-field>
+            
+            <div class="view-toggle">
+              <mat-button-toggle-group name="viewMode" [(ngModel)]="viewMode">
+                <mat-button-toggle value="table" matTooltip="Visão em Tabela">
+                  <mat-icon>view_list</mat-icon>
+                </mat-button-toggle>
+                <mat-button-toggle value="cards" matTooltip="Visão em Cards">
+                  <mat-icon>view_module</mat-icon>
+                </mat-button-toggle>
+                <mat-button-toggle value="kanban" matTooltip="Visão Kanban">
+                  <mat-icon>view_kanban</mat-icon>
+                </mat-button-toggle>
+              </mat-button-toggle-group>
+            </div>
+          </div>
+        </mat-card-header>
+        
+        <mat-card-content class="table-content">
+          
+          <!-- Visão em Tabela -->
+          <div *ngIf="viewMode === 'table'" class="table-view">
+            <div class="table-container">
+              <table mat-table [dataSource]="filteredExportacoes" class="exportacoes-table">
+                
+                <!-- Coluna Número da Exportação -->
+                <ng-container matColumnDef="export_number">
+                  <th mat-header-cell *matHeaderCellDef>Nº Exportação</th>
+                  <td mat-cell *matCellDef="let exp">
+                    <div class="export-info">
+                      <strong>{{ exp.export_number }}</strong>
+                      <div class="export-id">ID: {{ exp.export_id.substring(0,8) }}...</div>
+                      <div class="ai-generated" *ngIf="exp.ai_generated">
+                        <mat-chip class="ai-chip">
+                          <mat-icon>auto_awesome</mat-icon>
+                          IA
+                        </mat-chip>
+                      </div>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <!-- Coluna Produto -->
+                <ng-container matColumnDef="product_name">
+                  <th mat-header-cell *matHeaderCellDef>Produto</th>
+                  <td mat-cell *matCellDef="let exp">
+                    <div class="product-info">
+                      <strong>{{ exp.product_name }}</strong>
+                      <div class="ncm-code">NCM: {{ exp.ncm_code }}</div>
+                      <div class="packaging">{{ exp.packaging_type }}</div>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <!-- Coluna Importador -->
+                <ng-container matColumnDef="importer_name">
+                  <th mat-header-cell *matHeaderCellDef>Importador</th>
+                  <td mat-cell *matCellDef="let exp">
+                    <div class="importer-info">
+                      <strong>{{ exp.importer_name }}</strong>
+                      <div class="country">{{ exp.destination_country }}</div>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <!-- Coluna País de Destino -->
+                <ng-container matColumnDef="destination_country">
+                  <th mat-header-cell *matHeaderCellDef>Destino</th>
+                  <td mat-cell *matCellDef="let exp">
+                    <div class="destination-info">
+                      <mat-icon class="country-flag">flag</mat-icon>
+                      {{ exp.destination_country }}
+                    </div>
+                  </td>
+                </ng-container>
+
+                <!-- Coluna Quantidade & Valor -->
+                <ng-container matColumnDef="quantity_value">
+                  <th mat-header-cell *matHeaderCellDef>Quantidade & Valor</th>
+                  <td mat-cell *matCellDef="let exp">
+                    <div class="quantity-value-info">
+                      <div class="quantity">
+                        <strong>{{ formatQuantity(exp.quantity, exp.unit) }}</strong>
+                      </div>
+                      <div class="value">
+                        {{ formatCurrency(exp.total_value, exp.currency) }}
+                      </div>
+                      <div class="incoterm">{{ exp.incoterm }}</div>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <!-- Coluna Status & Compliance -->
+                <ng-container matColumnDef="status_compliance">
+                  <th mat-header-cell *matHeaderCellDef>Status</th>
+                  <td mat-cell *matCellDef="let exp">
+                    <div class="status-compliance-info">
+                      <mat-chip [class]="getStatusChipClass(exp.export_status)">
+                        {{ exp.export_status }}
+                      </mat-chip>
+                      <mat-chip [class]="getComplianceChipClass(exp.compliance_status)">
+                        <mat-icon>{{ exp.compliance_status === 'OK' ? 'check' : exp.compliance_status === 'Error' ? 'error' : 'warning' }}</mat-icon>
+                        {{ exp.compliance_status }}
+                      </mat-chip>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <!-- Coluna Scores IA -->
+                <ng-container matColumnDef="ai_scores">
+                  <th mat-header-cell *matHeaderCellDef>IA Scores</th>
+                  <td mat-cell *matCellDef="let exp">
+                    <div class="ai-scores-info">
+                      <div class="confidence-score">
+                        <mat-icon>psychology</mat-icon>
+                        <span>{{ exp.ai_confidence_score }}%</span>
+                      </div>
+                      <div class="risk-score" [class]="getRiskScoreClass(exp.ai_risk_score)">
+                        <mat-icon>warning</mat-icon>
+                        <span>{{ exp.ai_risk_score }}%</span>
+                      </div>
+                      <div class="completion" *ngIf="exp.completion_percentage">
+                        <mat-progress-bar 
+                          mode="determinate" 
+                          [value]="exp.completion_percentage"
+                          [color]="exp.completion_percentage >= 80 ? 'primary' : 'accent'">
+                        </mat-progress-bar>
+                        <span class="completion-text">{{ exp.completion_percentage }}%</span>
+                      </div>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <!-- Coluna ETD & ETA -->
+                <ng-container matColumnDef="etd_eta">
+                  <th mat-header-cell *matHeaderCellDef>ETD / ETA</th>
+                  <td mat-cell *matCellDef="let exp">
+                    <div class="etd-eta-info">
+                      <div class="etd" *ngIf="exp.etd">
+                        <mat-icon>flight_takeoff</mat-icon>
+                        <span>{{ formatDate(exp.etd) }}</span>
+                      </div>
+                      <div class="eta" *ngIf="exp.eta">
+                        <mat-icon>flight_land</mat-icon>
+                        <span>{{ formatDate(exp.eta) }}</span>
+                      </div>
+                      <div class="urgent-indicator" *ngIf="exp.is_urgent">
+                        <mat-chip class="urgent-chip">
+                          <mat-icon>schedule</mat-icon>
+                          Urgente
+                        </mat-chip>
+                      </div>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <!-- Coluna Siscomex -->
+                <ng-container matColumnDef="siscomex_status">
+                  <th mat-header-cell *matHeaderCellDef>Siscomex</th>
+                  <td mat-cell *matCellDef="let exp">
+                    <div class="siscomex-info">
+                      <div class="siscomex-status">
+                        <mat-icon [class]="getSiscomexStatusClass(exp.siscomex_status)">
+                          {{ getSiscomexStatusIcon(exp.siscomex_status) }}
+                        </mat-icon>
+                        <span>{{ exp.siscomex_status || 'Not Sent' }}</span>
+                      </div>
+                      <div class="due-number" *ngIf="exp.due_number">
+                        DU-E: {{ exp.due_number }}
+                      </div>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <!-- Coluna Ações -->
+                <ng-container matColumnDef="actions">
+                  <th mat-header-cell *matHeaderCellDef>Ações</th>
+                  <td mat-cell *matCellDef="let exp">
+                    <div class="action-buttons">
+                      <button 
+                        mat-icon-button
+                        color="primary"
+                        (click)="viewExportacao(exp)"
+                        matTooltip="Visualizar">
+                        <mat-icon>visibility</mat-icon>
+                      </button>
+                      <button 
+                        mat-icon-button
+                        (click)="editExportacao(exp)"
+                        matTooltip="Editar">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+
+                      <!-- Menu de ações avançadas -->
+                      <button mat-icon-button [matMenuTriggerFor]="actionsMenu" 
+                              matTooltip="Mais Ações">
+                        <mat-icon>more_vert</mat-icon>
+                      </button>
+
+                      <mat-menu #actionsMenu="matMenu">
+                        <!-- Documentação -->
+                        <button mat-menu-item (click)="generateDocuments(exp)">
+                          <mat-icon>description</mat-icon>
+                          <span>Gerar Documentos</span>
+                        </button>
+                        
+                        <button mat-menu-item (click)="sendToSiscomex(exp)" 
+                                [disabled]="exp.siscomex_status === 'Approved'">
+                          <mat-icon>cloud_upload</mat-icon>
+                          <span>Enviar para Siscomex</span>
+                        </button>
+
+                        <button mat-menu-item (click)="validateExportacao(exp)">
+                          <mat-icon>fact_check</mat-icon>
+                          <span>Validar IA</span>
+                        </button>
+
+                        <mat-divider></mat-divider>
+
+                        <!-- Operações -->
+                        <button mat-menu-item (click)="duplicateExportacao(exp)">
+                          <mat-icon>content_copy</mat-icon>
+                          <span>Duplicar</span>
+                        </button>
+                        
+                        <button mat-menu-item (click)="deleteExportacao(exp)" 
+                                class="text-danger">
+                          <mat-icon>delete</mat-icon>
+                          <span>Excluir</span>
+                        </button>
+                      </mat-menu>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <!-- Definição das linhas -->
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns" 
+                    class="exportacao-row"
+                    (click)="viewExportacao(row)">
+                </tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- Estado vazio -->
+          <div *ngIf="filteredExportacoes.length === 0" class="empty-state">
+            <div class="empty-state-icon">
+              <mat-icon>import_export</mat-icon>
+            </div>
+            <h3>Nenhuma exportação encontrada</h3>
+            <p>Não há exportações que correspondem aos filtros aplicados.</p>
+            <div class="empty-actions">
+              <button mat-raised-button color="primary" (click)="createExportacao()">
+                <mat-icon>add</mat-icon>
+                Criar Nova Exportação
+              </button>
+              <button mat-button (click)="clearFilters()">
+                <mat-icon>clear_all</mat-icon>
+                Limpar Filtros
+              </button>
+            </div>
+          </div>
+
+          <!-- Paginação -->
+          <mat-paginator 
+            *ngIf="totalItems > itemsPerPage"
+            [length]="totalItems"
+            [pageSize]="itemsPerPage"
+            [pageSizeOptions]="[10, 25, 50, 100]"
+            [pageIndex]="currentPage - 1"
+            (page)="onPageChange($event.pageIndex + 1)"
+            showFirstLastButtons>
+          </mat-paginator>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Assistente IA Lateral -->
+    <mat-drawer-container 
+      class="ai-sidebar-container"
+      [class.ai-open]="showAIAssistant" 
+      [hasBackdrop]="false">
+      <mat-drawer 
+        #aiDrawer 
+        mode="side" 
+        position="end" 
+        [opened]="showAIAssistant"
+        class="ai-sidebar">
+        
+        <div class="ai-sidebar-content">
+          <div class="ai-header">
+            <div class="ai-avatar">
+              <mat-icon>smart_toy</mat-icon>
+            </div>
+            <div class="ai-info">
+              <h3>Assistente IA</h3>
+              <p>Seu consultor inteligente de exportação</p>
+            </div>
+            <button 
+              mat-icon-button 
+              (click)="toggleAIAssistant()" 
+              class="close-ai-button"
+              matTooltip="Fechar Assistente"
+              aria-label="Fechar Assistente IA">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+
+          <mat-divider></mat-divider>
+
+          <div class="ai-chat-area">
+            <div class="ai-messages" *ngIf="aiMessages.length > 0">
+              <div *ngFor="let message of aiMessages" 
+                   class="ai-message" 
+                   [class]="'message-' + message.type">
+                <div class="message-content">
+                  {{ message.message }}
+                </div>
+                <div class="message-time">
+                  {{ formatDateTime(message.timestamp) }}
+                </div>
+              </div>
+            </div>
+
+            <div class="ai-welcome" *ngIf="aiMessages.length === 0">
+              <mat-icon class="welcome-icon">psychology</mat-icon>
+              <h4>Como posso ajudar?</h4>
+              <p>Pergunte sobre:</p>
+              <ul>
+                <li>Status de exportações</li>
+                <li>Documentos pendentes</li>
+                <li>Validação de compliance</li>
+                <li>Sugestões de otimização</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="ai-input-area">
+            <mat-form-field appearance="outline" class="ai-input-field">
+              <mat-label>Digite sua pergunta...</mat-label>
+              <textarea 
+                matInput
+                [(ngModel)]="aiQuery"
+                (keyup.enter)="sendAIQuery()"
+                [disabled]="aiProcessing"
+                rows="3"
+                placeholder="Ex: O que falta para liberar a exportação EXP-2026-0001?"></textarea>
+            </mat-form-field>
+            <button 
+              mat-raised-button
+              color="accent"
+              (click)="sendAIQuery()"
+              [disabled]="aiProcessing || !aiQuery.trim()"
+              class="ai-send-button">
+              <mat-icon>send</mat-icon>
+              {{ aiProcessing ? 'Processando...' : 'Enviar' }}
+            </button>
+          </div>
+        </div>
+      </mat-drawer>
+    </mat-drawer-container>
+  </div>
+</div>

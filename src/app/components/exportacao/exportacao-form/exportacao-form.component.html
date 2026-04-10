@@ -1,0 +1,977 @@
+<div class="exportacao-form-container">
+  <!-- Header do Dialog -->
+  <div class="form-header">
+    <h2>
+      <mat-icon>{{ isEditMode ? 'edit' : 'add' }}</mat-icon>
+      {{ isEditMode ? 'Editar Exportação' : 'Nova Exportação' }}
+    </h2>
+    <p class="form-subtitle">{{ isEditMode ? 'Modificar dados da exportação' : 'Criação assistida por IA' }}</p>
+    <button mat-icon-button (click)="onCancel()" class="close-button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div *ngIf="loading" class="loading-overlay">
+    <mat-progress-spinner diameter="50"></mat-progress-spinner>
+    <p>Carregando dados...</p>
+  </div>
+
+  <!-- Stepper Principal -->
+  <div *ngIf="!loading" class="stepper-container">
+    <mat-stepper #stepper linear="true" class="export-stepper">
+      
+      <!-- Step 1: Informações Básicas -->
+      <mat-step [stepControl]="basicInfoForm" label="Informações Básicas">
+        <ng-template matStepLabel>
+          <mat-icon>info</mat-icon>
+          Informações Básicas
+        </ng-template>
+        
+        <div class="step-content">
+          <div class="step-header">
+            <h3>Dados Gerais da Exportação</h3>
+            <p>Configure as informações principais da operação</p>
+          </div>
+
+          <form [formGroup]="basicInfoForm" class="step-form">
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Número da Exportação</mat-label>
+                <input matInput formControlName="export_number" placeholder="EXP-2026-0001">
+                <mat-hint>Formato: EXP-YYYY-NNNN</mat-hint>
+                <mat-error *ngIf="basicInfoForm.get('export_number')?.hasError('required')">
+                  Campo obrigatório
+                </mat-error>
+                <mat-error *ngIf="basicInfoForm.get('export_number')?.hasError('pattern')">
+                  Formato inválido (EXP-YYYY-NNNN)
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Tipo de Exportação</mat-label>
+                <mat-select formControlName="export_type">
+                  <mat-option value="Regular">Regular</mat-option>
+                  <mat-option value="Express">Express</mat-option>
+                  <mat-option value="Sample">Amostra</mat-option>
+                  <mat-option value="Return">Retorno</mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Prioridade</mat-label>
+                <mat-select formControlName="priority">
+                  <mat-option value="Low">Baixa</mat-option>
+                  <mat-option value="Normal">Normal</mat-option>
+                  <mat-option value="High">Alta</mat-option>
+                  <mat-option value="Critical">Crítica</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Responsável</mat-label>
+                <input matInput formControlName="created_by" placeholder="Nome do responsável">
+                <mat-error *ngIf="basicInfoForm.get('created_by')?.hasError('required')">
+                  Campo obrigatório
+                </mat-error>
+              </mat-form-field>
+
+              <mat-slide-toggle formControlName="is_urgent" class="urgent-toggle">
+                <span class="toggle-label">
+                  <mat-icon>schedule</mat-icon>
+                  Exportação Urgente
+                </span>
+              </mat-slide-toggle>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <!-- Dados do Importador -->
+            <div class="section-header">
+              <h4>
+                <mat-icon>business</mat-icon>
+                Dados do Importador
+              </h4>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Nome do Importador</mat-label>
+                <input matInput formControlName="importer_name" placeholder="Razão social completa">
+                <mat-error *ngIf="basicInfoForm.get('importer_name')?.hasError('required')">
+                  Campo obrigatório
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Documento</mat-label>
+                <input matInput formControlName="importer_document" placeholder="CNPJ ou Tax ID">
+                <mat-error *ngIf="basicInfoForm.get('importer_document')?.hasError('required')">
+                  Campo obrigatório
+                </mat-error>
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="address-field">
+                <mat-label>Endereço Completo</mat-label>
+                <textarea matInput formControlName="importer_address" rows="3"
+                          placeholder="Endereço completo do importador"></textarea>
+                <mat-error *ngIf="basicInfoForm.get('importer_address')?.hasError('required')">
+                  Campo obrigatório
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Contato</mat-label>
+                <input matInput formControlName="importer_contact" 
+                       placeholder="Email e telefone">
+              </mat-form-field>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <!-- Destino e Condições -->
+            <div class="section-header">
+              <h4>
+                <mat-icon>public</mat-icon>
+                Destino e Condições Comerciais
+              </h4>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>País de Destino</mat-label>
+                <input matInput formControlName="destination_country" 
+                       [matAutocomplete]="countryAuto"
+                       placeholder="Digite para buscar">
+                <mat-error *ngIf="basicInfoForm.get('destination_country')?.hasError('required')">
+                  Campo obrigatório
+                </mat-error>
+                
+                <mat-autocomplete #countryAuto="matAutocomplete">
+                  <mat-option *ngFor="let country of filteredCountries | async" [value]="country">
+                    <mat-icon>flag</mat-icon>
+                    {{ country }}
+                  </mat-option>
+                </mat-autocomplete>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Porto de Destino</mat-label>
+                <mat-select formControlName="destination_port">
+                  <mat-option *ngFor="let port of ports" [value]="port">
+                    {{ port }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Porto de Origem</mat-label>
+                <mat-select formControlName="origin_port">
+                  <mat-option *ngFor="let port of ports" [value]="port">
+                    {{ port }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Condições de Pagamento</mat-label>
+                <mat-select formControlName="payment_terms">
+                  <mat-option *ngFor="let term of paymentTerms" [value]="term">
+                    {{ term }}
+                  </mat-option>
+                </mat-select>
+                <mat-error *ngIf="basicInfoForm.get('payment_terms')?.hasError('required')">
+                  Campo obrigatório
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Moeda</mat-label>
+                <mat-select formControlName="currency">
+                  <mat-option *ngFor="let curr of currencies" [value]="curr">
+                    {{ curr }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Taxa de Câmbio</mat-label>
+                <input matInput type="number" formControlName="exchange_rate" 
+                       step="0.0001" min="0.0001">
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Incoterm</mat-label>
+                <mat-select formControlName="incoterm">
+                  <mat-option *ngFor="let inc of incoterms" [value]="inc">
+                    {{ inc }}
+                  </mat-option>
+                </mat-select>
+                <mat-error *ngIf="basicInfoForm.get('incoterm')?.hasError('required')">
+                  Campo obrigatório
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Valor Estimado</mat-label>
+                <input matInput type="number" formControlName="estimated_value" 
+                       step="0.01" min="0.01">
+                <mat-error *ngIf="basicInfoForm.get('estimated_value')?.hasError('required')">
+                  Campo obrigatório
+                </mat-error>
+                <mat-error *ngIf="basicInfoForm.get('estimated_value')?.hasError('min')">
+                  Valor deve ser maior que zero
+                </mat-error>
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Descrição Geral</mat-label>
+                <textarea matInput formControlName="description" rows="2"
+                          placeholder="Descrição opcional da exportação"></textarea>
+              </mat-form-field>
+            </div>
+          </form>
+        </div>
+
+        <div class="step-actions">
+          <button mat-button disabled>Anterior</button>
+          <div class="spacer"></div>
+          <button mat-raised-button color="primary" 
+                  [disabled]="!basicInfoForm.valid"
+                  (click)="nextStep()">
+            Próximo
+            <mat-icon>navigate_next</mat-icon>
+          </button>
+        </div>
+      </mat-step>
+
+      <!-- Step 2: Produtos -->
+      <mat-step [stepControl]="productInfoForm" label="Produtos">
+        <ng-template matStepLabel>
+          <mat-icon>inventory</mat-icon>
+          Produtos
+        </ng-template>
+        
+        <div class="step-content">
+          <div class="step-header">
+            <h3>Produtos da Exportação</h3>
+            <p>Configure os itens que serão exportados</p>
+            <div class="header-actions">
+              <button mat-button color="accent" (click)="addProduct()">
+                <mat-icon>add</mat-icon>
+                Adicionar Produto
+              </button>
+            </div>
+          </div>
+
+          <!-- Lista de Produtos -->
+          <div class="products-section">
+            <div *ngIf="exportItems.length === 0" class="empty-products">
+              <mat-icon>inventory_2</mat-icon>
+              <h4>Nenhum produto adicionado</h4>
+              <p>Clique em "Adicionar Produto" para começar</p>
+            </div>
+
+            <div *ngFor="let item of exportItems; let i = index" class="product-card">
+              <mat-card>
+                <mat-card-header>
+                  <div mat-card-avatar class="product-avatar">
+                    <mat-icon>inventory_2</mat-icon>
+                  </div>
+                  <mat-card-title>Produto {{ i + 1 }}</mat-card-title>
+                  <mat-card-subtitle>{{ item.product_name || 'Produto não nomeado' }}</mat-card-subtitle>
+                  <button mat-icon-button (click)="removeProduct(i)" class="remove-product">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </mat-card-header>
+
+                <mat-card-content>
+                  <div class="product-form">
+                    <div class="form-row">
+                      <mat-form-field appearance="outline">
+                        <mat-label>Nome do Produto</mat-label>
+                        <input matInput [(ngModel)]="item.product_name" 
+                               placeholder="Nome comercial">
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Código NCM</mat-label>
+                        <input matInput [(ngModel)]="item.ncm_code" 
+                               placeholder="0000.00.00">
+                      </mat-form-field>
+                    </div>
+
+                    <div class="form-row">
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Descrição do Produto</mat-label>
+                        <textarea matInput [(ngModel)]="item.product_description" 
+                                  rows="2" placeholder="Descrição detalhada"></textarea>
+                      </mat-form-field>
+                    </div>
+
+                    <div class="form-row">
+                      <mat-form-field appearance="outline">
+                        <mat-label>Quantidade</mat-label>
+                        <input matInput type="number" [(ngModel)]="item.quantity" 
+                               (ngModelChange)="updateProductValue(item)"
+                               min="0" step="0.01">
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Unidade</mat-label>
+                        <mat-select [(ngModel)]="item.unit">
+                          <mat-option value="kg">Quilogramas (kg)</mat-option>
+                          <mat-option value="ton">Toneladas (ton)</mat-option>
+                          <mat-option value="pcs">Peças (pcs)</mat-option>
+                          <mat-option value="ltr">Litros (ltr)</mat-option>
+                          <mat-option value="m3">Metros Cúbicos (m³)</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Preço Unitário</mat-label>
+                        <input matInput type="number" [(ngModel)]="item.unit_price" 
+                               (ngModelChange)="updateProductValue(item)"
+                               min="0" step="0.01">
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Valor Total</mat-label>
+                        <input matInput type="number" [value]="item.total_value" 
+                               readonly>
+                      </mat-form-field>
+                    </div>
+
+                    <div class="form-row">
+                      <mat-form-field appearance="outline">
+                        <mat-label>Peso (kg)</mat-label>
+                        <input matInput type="number" [(ngModel)]="item.weight" 
+                               min="0" step="0.001">
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Volume (m³)</mat-label>
+                        <input matInput type="number" [(ngModel)]="item.volume" 
+                               min="0" step="0.001">
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>País de Origem</mat-label>
+                        <mat-select [(ngModel)]="item.country_of_origin">
+                          <mat-option *ngFor="let country of countries" [value]="country">
+                            {{ country }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            </div>
+          </div>
+
+          <!-- Totais e Configurações de Embalagem -->
+          <form [formGroup]="productInfoForm" class="packaging-form">
+            <div class="section-header">
+              <h4>
+                <mat-icon>local_shipping</mat-icon>
+                Totais e Embalagem
+              </h4>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Peso Total (kg)</mat-label>
+                <input matInput type="number" formControlName="total_weight" readonly>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Volume Total (m³)</mat-label>
+                <input matInput type="number" formControlName="total_volume" readonly>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Tipo de Embalagem</mat-label>
+                <mat-select formControlName="packaging_type">
+                  <mat-option *ngFor="let pkg of packagingTypes" [value]="pkg">
+                    {{ pkg }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Instruções Especiais de Manuseio</mat-label>
+                <textarea matInput formControlName="special_handling" 
+                          rows="2" placeholder="Cuidados especiais, se houver"></textarea>
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-slide-toggle formControlName="hazardous_material">
+                <span class="toggle-label">
+                  <mat-icon>warning</mat-icon>
+                  Material Perigoso
+                </span>
+              </mat-slide-toggle>
+
+              <mat-slide-toggle formControlName="temperature_controlled" 
+                                (change)="productInfoForm.get('temperature_controlled')?.value ? null : (productInfoForm.patchValue({min_temperature: null, max_temperature: null}))">
+                <span class="toggle-label">
+                  <mat-icon>thermostat</mat-icon>
+                  Controle de Temperatura
+                </span>
+              </mat-slide-toggle>
+            </div>
+
+            <div class="form-row" *ngIf="productInfoForm.get('temperature_controlled')?.value">
+              <mat-form-field appearance="outline">
+                <mat-label>Temperatura Mínima (°C)</mat-label>
+                <input matInput type="number" formControlName="min_temperature">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Temperatura Máxima (°C)</mat-label>
+                <input matInput type="number" formControlName="max_temperature">
+              </mat-form-field>
+            </div>
+          </form>
+        </div>
+
+        <div class="step-actions">
+          <button mat-button (click)="previousStep()">
+            <mat-icon>navigate_before</mat-icon>
+            Anterior
+          </button>
+          <div class="spacer"></div>
+          <button mat-raised-button color="primary" 
+                  [disabled]="!isStepValid(1)"
+                  (click)="nextStep()">
+            Próximo
+            <mat-icon>navigate_next</mat-icon>
+          </button>
+        </div>
+      </mat-step>
+
+      <!-- Step 3: Logística -->
+      <mat-step [stepControl]="logisticsForm" label="Logística">
+        <ng-template matStepLabel>
+          <mat-icon>local_shipping</mat-icon>
+          Logística
+        </ng-template>
+        
+        <div class="step-content">
+          <div class="step-header">
+            <h3>Configurações de Transporte</h3>
+            <p>Defina o modal de transporte e cronograma</p>
+          </div>
+
+          <form [formGroup]="logisticsForm" class="step-form">
+            <div class="section-header">
+              <h4>
+                <mat-icon>directions</mat-icon>
+                Modal e Transportadora
+              </h4>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Modal de Transporte</mat-label>
+                <mat-select formControlName="transport_mode">
+                  <mat-option *ngFor="let mode of transportModes" [value]="mode">
+                    <mat-icon>{{ mode === 'Maritime' ? 'directions_boat' : 
+                                 mode === 'Air' ? 'flight' :
+                                 mode === 'Road' ? 'local_shipping' : 'train' }}</mat-icon>
+                    {{ mode }}
+                  </mat-option>
+                </mat-select>
+                <mat-error *ngIf="logisticsForm.get('transport_mode')?.hasError('required')">
+                  Campo obrigatório
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Transportadora</mat-label>
+                <input matInput formControlName="carrier_name" 
+                       placeholder="Nome da empresa transportadora">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Navio/Voo</mat-label>
+                <input matInput formControlName="vessel_flight" 
+                       placeholder="Nome do navio ou número do voo">
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Número do Container</mat-label>
+                <input matInput formControlName="container_number" 
+                       placeholder="ABCD1234567">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Número do Lacre</mat-label>
+                <input matInput formControlName="seal_number" 
+                       placeholder="Número do lacre">
+              </mat-form-field>
+            </div>
+
+            <div class="section-header">
+              <h4>
+                <mat-icon>schedule</mat-icon>
+                Cronograma de Transporte
+              </h4>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>ETD - Estimated Time of Departure</mat-label>
+                <input matInput formControlName="etd" [matDatepicker]="etdPicker">
+                <mat-datepicker-toggle matSuffix [for]="etdPicker"></mat-datepicker-toggle>
+                <mat-datepicker #etdPicker></mat-datepicker>
+                <mat-error *ngIf="logisticsForm.get('etd')?.hasError('required')">
+                  Campo obrigatório
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>ETA - Estimated Time of Arrival</mat-label>
+                <input matInput formControlName="eta" [matDatepicker]="etaPicker">
+                <mat-datepicker-toggle matSuffix [for]="etaPicker"></mat-datepicker-toggle>
+                <mat-datepicker #etaPicker></mat-datepicker>
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Descrição da Rota</mat-label>
+                <textarea matInput formControlName="route_description" 
+                          rows="2" placeholder="Roteiro detalhado do transporte"></textarea>
+              </mat-form-field>
+            </div>
+
+            <div class="section-header">
+              <h4>
+                <mat-icon>place</mat-icon>
+                Endereços de Coleta e Entrega
+              </h4>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="address-field">
+                <mat-label>Endereço de Coleta</mat-label>
+                <textarea matInput formControlName="pickup_address" 
+                          rows="3" placeholder="Endereço completo para coleta"></textarea>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="address-field">
+                <mat-label>Endereço de Entrega</mat-label>
+                <textarea matInput formControlName="delivery_address" 
+                          rows="3" placeholder="Endereço completo para entrega"></textarea>
+              </mat-form-field>
+            </div>
+
+            <div class="section-header">
+              <h4>
+                <mat-icon>security</mat-icon>
+                Seguro e Serviços Auxiliares
+              </h4>
+            </div>
+
+            <div class="form-row">
+              <mat-slide-toggle formControlName="insurance_required">
+                <span class="toggle-label">
+                  <mat-icon>security</mat-icon>
+                  Seguro Obrigatório
+                </span>
+              </mat-slide-toggle>
+
+              <mat-form-field appearance="outline" 
+                               *ngIf="logisticsForm.get('insurance_required')?.value">
+                <mat-label>Valor do Seguro</mat-label>
+                <input matInput type="number" formControlName="insurance_value" 
+                       min="0" step="0.01">
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Despachante Aduaneiro</mat-label>
+                <input matInput formControlName="customs_broker" 
+                       placeholder="Nome do despachante">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Agente de Carga</mat-label>
+                <input matInput formControlName="freight_forwarder" 
+                       placeholder="Nome do freight forwarder">
+              </mat-form-field>
+            </div>
+          </form>
+        </div>
+
+        <div class="step-actions">
+          <button mat-button (click)="previousStep()">
+            <mat-icon>navigate_before</mat-icon>
+            Anterior
+          </button>
+          <div class="spacer"></div>
+          <button mat-raised-button color="primary" 
+                  [disabled]="!logisticsForm.valid"
+                  (click)="nextStep()">
+            Próximo
+            <mat-icon>navigate_next</mat-icon>
+          </button>
+        </div>
+      </mat-step>
+
+      <!-- Step 4: Documentação -->
+      <mat-step [stepControl]="documentsForm" label="Documentação">
+        <ng-template matStepLabel>
+          <mat-icon>description</mat-icon>
+          Documentação
+        </ng-template>
+        
+        <div class="step-content">
+          <div class="step-header">
+            <h3>Documentos Necessários</h3>
+            <p>Configure os documentos obrigatórios e opcionais</p>
+          </div>
+
+          <form [formGroup]="documentsForm" class="step-form">
+            <div class="section-header">
+              <h4>
+                <mat-icon>assignment</mat-icon>
+                Documentos Obrigatórios
+              </h4>
+            </div>
+
+            <div class="documents-grid">
+              <mat-slide-toggle formControlName="commercial_invoice_required">
+                <span class="toggle-label">
+                  <mat-icon>receipt</mat-icon>
+                  Commercial Invoice
+                </span>
+              </mat-slide-toggle>
+
+              <mat-slide-toggle formControlName="packing_list_required">
+                <span class="toggle-label">
+                  <mat-icon>inventory</mat-icon>
+                  Packing List
+                </span>
+              </mat-slide-toggle>
+
+              <mat-slide-toggle formControlName="bill_of_lading_required">
+                <span class="toggle-label">
+                  <mat-icon>directions_boat</mat-icon>
+                  Bill of Lading
+                </span>
+              </mat-slide-toggle>
+
+              <mat-slide-toggle formControlName="certificate_origin_required">
+                <span class="toggle-label">
+                  <mat-icon>verified</mat-icon>
+                  Certificate of Origin
+                </span>
+              </mat-slide-toggle>
+
+              <mat-slide-toggle formControlName="phytosanitary_required">
+                <span class="toggle-label">
+                  <mat-icon>local_florist</mat-icon>
+                  Phytosanitary Certificate
+                </span>
+              </mat-slide-toggle>
+
+              <mat-slide-toggle formControlName="health_certificate_required">
+                <span class="toggle-label">
+                  <mat-icon>health_and_safety</mat-icon>
+                  Health Certificate
+                </span>
+              </mat-slide-toggle>
+
+              <mat-slide-toggle formControlName="export_license_required">
+                <span class="toggle-label">
+                  <mat-icon>gavel</mat-icon>
+                  Export License
+                </span>
+              </mat-slide-toggle>
+            </div>
+
+            <div class="section-header">
+              <h4>
+                <mat-icon>upload_file</mat-icon>
+                Documentos Adicionais
+              </h4>
+            </div>
+
+            <div class="documents-upload">
+              <div *ngIf="documents.length === 0" class="empty-documents">
+                <mat-icon>cloud_upload</mat-icon>
+                <h4>Nenhum documento adicional</h4>
+                <p>Adicione documentos específicos conforme necessário</p>
+              </div>
+
+              <div *ngFor="let doc of documents; let i = index" class="document-card">
+                <mat-card class="document-item">
+                  <mat-card-content>
+                    <div class="document-info">
+                      <mat-icon class="document-icon">description</mat-icon>
+                      <div class="document-details">
+                        <div class="document-name">{{ doc.document_name }}</div>
+                        <div class="document-type">{{ doc.document_type }}</div>
+                        <div class="document-status" [class]="'status-' + doc.status.toLowerCase()">
+                          {{ doc.status }}
+                        </div>
+                      </div>
+                      <button mat-icon-button (click)="removeDocument(i)" color="warn">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              </div>
+
+              <div class="add-documents-section">
+                <mat-form-field appearance="outline" class="document-type-select">
+                  <mat-label>Tipo de Documento</mat-label>
+                  <mat-select #documentTypeSelect>
+                    <mat-option *ngFor="let type of documentTypes" [value]="type">
+                      {{ type }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <button mat-raised-button 
+                        [disabled]="!documentTypeSelect.value"
+                        (click)="addDocument(documentTypeSelect.value); documentTypeSelect.value = ''">
+                  <mat-icon>add</mat-icon>
+                  Adicionar Documento
+                </button>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Documentos Adicionais</mat-label>
+                <textarea matInput formControlName="additional_documents" 
+                          rows="2" placeholder="Liste outros documentos necessários"></textarea>
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Instruções Especiais</mat-label>
+                <textarea matInput formControlName="special_instructions" 
+                          rows="3" placeholder="Instruções específicas para documentação"></textarea>
+              </mat-form-field>
+            </div>
+          </form>
+        </div>
+
+        <div class="step-actions">
+          <button mat-button (click)="previousStep()">
+            <mat-icon>navigate_before</mat-icon>
+            Anterior
+          </button>
+          <div class="spacer"></div>
+          <button mat-raised-button color="primary" 
+                  [disabled]="!documentsForm.valid"
+                  (click)="nextStep()">
+            Próximo
+            <mat-icon>navigate_next</mat-icon>
+          </button>
+        </div>
+      </mat-step>
+
+      <!-- Step 5: Revisão e Confirmação -->
+      <mat-step [stepControl]="reviewForm" label="Revisão">
+        <ng-template matStepLabel>
+          <mat-icon>rate_review</mat-icon>
+          Revisão
+        </ng-template>
+        
+        <div class="step-content">
+          <div class="step-header">
+            <h3>Revisão Final</h3>
+            <p>Confirme todos os dados antes de criar a exportação</p>
+          </div>
+
+          <!-- Resumo da Exportação -->
+          <div class="review-summary">
+            <mat-card class="summary-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>summarize</mat-icon>
+                  Resumo da Exportação
+                </mat-card-title>
+              </mat-card-header>
+
+              <mat-card-content>
+                <div class="summary-grid">
+                  <div class="summary-item">
+                    <label>Número:</label>
+                    <span>{{ basicInfoForm.get('export_number')?.value }}</span>
+                  </div>
+
+                  <div class="summary-item">
+                    <label>Importador:</label>
+                    <span>{{ basicInfoForm.get('importer_name')?.value }}</span>
+                  </div>
+
+                  <div class="summary-item">
+                    <label>Destino:</label>
+                    <span>{{ basicInfoForm.get('destination_country')?.value }}</span>
+                  </div>
+
+                  <div class="summary-item">
+                    <label>Valor Total:</label>
+                    <span>{{ basicInfoForm.get('currency')?.value }} {{ basicInfoForm.get('estimated_value')?.value | number:'1.2-2' }}</span>
+                  </div>
+
+                  <div class="summary-item">
+                    <label>Produtos:</label>
+                    <span>{{ exportItems.length }} item(s)</span>
+                  </div>
+
+                  <div class="summary-item">
+                    <label>Modal:</label>
+                    <span>{{ logisticsForm.get('transport_mode')?.value }}</span>
+                  </div>
+
+                  <div class="summary-item">
+                    <label>ETD:</label>
+                    <span>{{ logisticsForm.get('etd')?.value | date:'dd/MM/yyyy' }}</span>
+                  </div>
+
+                  <div class="summary-item">
+                    <label>Documentos:</label>
+                    <span>{{ documents.length }} adicional(is)</span>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+
+          <!-- Opções Finais -->
+          <form [formGroup]="reviewForm" class="step-form">
+            <div class="section-header">
+              <h4>
+                <mat-icon>settings</mat-icon>
+                Opções de Processamento
+              </h4>
+            </div>
+
+            <div class="review-options">
+              <mat-slide-toggle formControlName="submit_to_siscomex">
+                <span class="toggle-label">
+                  <mat-icon>cloud_upload</mat-icon>
+                  Enviar automaticamente para Siscomex
+                </span>
+              </mat-slide-toggle>
+
+              <mat-slide-toggle formControlName="ai_validation_enabled">
+                <span class="toggle-label">
+                  <mat-icon>smart_toy</mat-icon>
+                  Ativar validação inteligente por IA
+                </span>
+              </mat-slide-toggle>
+            </div>
+
+            <div class="section-header">
+              <h4>
+                <mat-icon>check_circle</mat-icon>
+                Confirmações Obrigatórias
+              </h4>
+            </div>
+
+            <div class="confirmations">
+              <mat-checkbox formControlName="final_review">
+                <span class="confirmation-text">
+                  Confirmo que revisei todos os dados e estão corretos
+                </span>
+              </mat-checkbox>
+
+              <mat-checkbox formControlName="terms_accepted">
+                <span class="confirmation-text">
+                  Aceito os termos e condições de exportação
+                </span>
+              </mat-checkbox>
+            </div>
+          </form>
+        </div>
+
+        <div class="step-actions">
+          <button mat-button (click)="previousStep()">
+            <mat-icon>navigate_before</mat-icon>
+            Anterior
+          </button>
+          <div class="spacer"></div>
+          <button mat-raised-button color="primary" 
+                  [disabled]="!reviewForm.valid || saving"
+                  (click)="onSubmit()">
+            <mat-icon *ngIf="!saving">{{ isEditMode ? 'save' : 'send' }}</mat-icon>
+            <mat-progress-spinner *ngIf="saving" diameter="20"></mat-progress-spinner>
+            {{ saving ? 'Salvando...' : (isEditMode ? 'Salvar Alterações' : 'Criar Exportação') }}
+          </button>
+        </div>
+      </mat-step>
+    </mat-stepper>
+  </div>
+
+  <!-- Assistente IA Lateral -->
+  <div class="ai-assistant-sidebar" *ngIf="aiSuggestions.length > 0 || aiProcessing">
+    <div class="ai-header">
+      <mat-icon>psychology</mat-icon>
+      <h4>Assistente IA</h4>
+    </div>
+
+    <div class="ai-content">
+      <div *ngIf="aiProcessing" class="ai-processing">
+        <mat-progress-spinner diameter="30"></mat-progress-spinner>
+        <p>Analisando dados...</p>
+      </div>
+
+      <div class="ai-suggestions" *ngIf="aiSuggestions.length > 0">
+        <div *ngFor="let suggestion of aiSuggestions" class="suggestion-item">
+          <mat-icon class="suggestion-icon">lightbulb</mat-icon>
+          <div class="suggestion-content">
+            <p>{{ suggestion.message || suggestion.text }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="ai-chat-input">
+        <mat-form-field appearance="outline" class="chat-input">
+          <mat-label>Pergunte ao assistente...</mat-label>
+          <textarea matInput [(ngModel)]="aiChat" rows="2"
+                    placeholder="Ex: Que documentos preciso para exportar para os EUA?"></textarea>
+        </mat-form-field>
+        <button mat-icon-button color="primary" 
+                (click)="sendAIMessage()"
+                [disabled]="!aiChat.trim() || aiProcessing">
+          <mat-icon>send</mat-icon>
+        </button>
+      </div>
+
+      <button mat-button color="accent" 
+              (click)="autoFillWithAI()"
+              [disabled]="aiProcessing"
+              class="ai-autofill">
+        <mat-icon>auto_awesome</mat-icon>
+        Preencher com IA
+      </button>
+    </div>
+  </div>
+</div>

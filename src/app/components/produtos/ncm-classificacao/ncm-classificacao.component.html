@@ -1,0 +1,857 @@
+<!-- HEADER E ESTATÍSTICAS -->
+<div class="ncm-header">
+  <div class="header-top">
+    <h2 class="page-title">
+      <mat-icon class="page-icon">assignment_turned_in</mat-icon>
+      Classificação NCM
+    </h2>
+    <button mat-raised-button color="primary" (click)="createClassification()" class="btn-criar">
+      <mat-icon>add</mat-icon>
+      Nova Classificação
+    </button>
+  </div>
+
+  <!-- Dashboard de Estatísticas -->
+  <div class="stats-dashboard" *ngIf="stats">
+    <mat-card class="stats-card">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <mat-icon class="stat-icon">bar_chart</mat-icon>
+          <div class="stat-content">
+            <div class="stat-number">{{ stats.total_classifications }}</div>
+            <div class="stat-label">Total</div>
+          </div>
+        </div>
+        
+        <div class="stat-item">
+          <mat-icon class="stat-icon pending-icon">schedule</mat-icon>
+          <div class="stat-content">
+            <div class="stat-number">{{ stats.pending_review }}</div>
+            <div class="stat-label">Pendente</div>
+          </div>
+        </div>
+        
+        <div class="stat-item">
+          <mat-icon class="stat-icon approved-icon">check_circle</mat-icon>
+          <div class="stat-content">
+            <div class="stat-number">{{ stats.active_classifications }}</div>
+            <div class="stat-label">Aprovado</div>
+          </div>
+        </div>
+        
+        <div class="stat-item">
+          <mat-icon class="stat-icon ai-icon">psychology</mat-icon>
+          <div class="stat-content">
+            <div class="stat-number">{{ stats.ai_generated }}</div>
+            <div class="stat-label">Por IA</div>
+          </div>
+        </div>
+        
+        <div class="stat-item">
+          <mat-icon class="stat-icon confidence-icon">trending_up</mat-icon>
+          <div class="stat-content">
+            <div class="stat-number">{{ formatPercent(stats.avg_ai_confidence) }}</div>
+            <div class="stat-label">Confiança Média</div>
+          </div>
+        </div>
+        
+        <div class="stat-item">
+          <mat-icon class="stat-icon license-icon">verified_user</mat-icon>
+          <div class="stat-content">
+            <div class="stat-number">{{ stats.with_license }}</div>
+            <div class="stat-label">Com Licença</div>
+          </div>
+        </div>
+      </div>
+    </mat-card>
+  </div>
+</div>
+
+<!-- SEÇÃO DE CLASSIFICAÇÃO RÁPIDA COM IA -->
+<mat-card class="quick-classify-card">
+  <mat-card-header>
+    <mat-card-title class="card-title-with-icon">
+      <mat-icon class="card-icon">psychology</mat-icon>
+      Classificação Rápida com IA
+    </mat-card-title>
+    <mat-card-subtitle>
+      Digite a descrição do produto para obter sugestões instantâneas de NCM
+    </mat-card-subtitle>
+  </mat-card-header>
+  
+  <mat-card-content>
+    <form [formGroup]="quickClassifyForm" (ngSubmit)="quickClassifyWithAI()" class="quick-classify-form">
+      <div class="quick-classify-fields">
+        <mat-form-field appearance="outline" class="description-field">
+          <mat-label>Descrição do Produto</mat-label>
+          <textarea 
+            matInput 
+            formControlName="product_description"
+            placeholder="Ex: Grãos de soja descascados e triturados para extração de óleo..."
+            rows="3"
+            maxlength="1000">
+          </textarea>
+          <mat-icon matSuffix>description</mat-icon>
+          <mat-hint align="end">{{(quickClassifyForm.get('product_description')?.value || '').length}}/1000</mat-hint>
+        </mat-form-field>
+
+        <div class="quick-fields-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Nome do Produto</mat-label>
+            <input matInput formControlName="product_name" placeholder="Ex: Soja em grãos">
+            <mat-icon matSuffix>inventory</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Nome Científico</mat-label>
+            <input matInput formControlName="scientific_name" placeholder="Ex: Glycine max">
+            <mat-icon matSuffix>science</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo de Commodity</mat-label>
+            <mat-select formControlName="commodity_type">
+              <mat-option *ngFor="let type of COMMODITY_TYPE_LABELS | keyvalue" [value]="type.key">
+                {{type.value}}
+              </mat-option>
+            </mat-select>
+            <mat-icon matSuffix>category</mat-icon>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="quick-classify-actions">
+        <button 
+          type="submit" 
+          mat-raised-button 
+          color="primary"
+          [disabled]="quickClassifyForm.invalid || isClassifyingWithAI"
+          class="btn-classify">
+          <mat-icon *ngIf="!isClassifyingWithAI">psychology</mat-icon>
+          <mat-spinner diameter="20" *ngIf="isClassifyingWithAI"></mat-spinner>
+          {{ isClassifyingWithAI ? 'Classificando...' : 'Classificar com IA' }}
+        </button>
+        
+        <button 
+          type="button" 
+          mat-button 
+          (click)="quickClassifyForm.reset()"
+          [disabled]="isClassifyingWithAI">
+          <mat-icon>clear</mat-icon>
+          Limpar
+        </button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+<!-- FILTROS AVANÇADOS -->
+<mat-card class="filters-card">
+  <mat-card-header>
+    <mat-card-title class="card-title-with-icon">
+      <mat-icon class="card-icon">filter_list</mat-icon>
+      Filtros
+    </mat-card-title>
+  </mat-card-header>
+  
+  <mat-card-content>
+    <form [formGroup]="filtroForm" class="filters-form">
+      <!-- Primeira linha de filtros -->
+      <div class="filters-row">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Buscar</mat-label>
+          <input matInput formControlName="search" placeholder="Produto, NCM, código...">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Tipos de Commodity</mat-label>
+          <mat-select formControlName="commodity_types" multiple>
+            <mat-option *ngFor="let type of COMMODITY_TYPE_LABELS | keyvalue" [value]="type.key">
+              {{type.value}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Status Compliance</mat-label>
+          <mat-select formControlName="compliance_status" multiple>
+            <mat-option *ngFor="let status of COMPLIANCE_STATUS_LABELS | keyvalue" [value]="status.key">
+              {{status.value}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Segunda linha de filtros -->
+      <div class="filters-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Fonte da Classificação</mat-label>
+          <mat-select formControlName="classification_source" multiple>
+            <mat-option *ngFor="let source of CLASSIFICATION_SOURCE_LABELS | keyvalue" [value]="source.key">
+              {{source.value}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status" multiple>
+            <mat-option *ngFor="let status of STATUS_LABELS | keyvalue" [value]="status.key">
+              {{status.value}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <div class="confidence-range">
+          <label class="confidence-label">Confiança IA: 
+            {{ filtroForm.get('ai_confidence_min')?.value }}% - {{ filtroForm.get('ai_confidence_max')?.value }}%
+          </label>
+          <div class="range-inputs">
+            <mat-form-field appearance="outline" class="range-field">
+              <mat-label>Min %</mat-label>
+              <input matInput type="number" formControlName="ai_confidence_min" min="0" max="100">
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="range-field">
+              <mat-label>Max %</mat-label>
+              <input matInput type="number" formControlName="ai_confidence_max" min="0" max="100">
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+
+      <!-- Terceira linha - switches -->
+      <div class="filters-row switches-row">
+        <mat-slide-toggle formControlName="requires_license">
+          Requer Licença de Exportação
+        </mat-slide-toggle>
+        
+        <mat-slide-toggle formControlName="has_restrictions">
+          Possui Restrições
+        </mat-slide-toggle>
+      </div>
+
+      <!-- Ações dos filtros -->
+      <div class="filters-actions">
+        <button type="button" mat-button (click)="clearFilters()">
+          <mat-icon>clear_all</mat-icon>
+          Limpar Filtros
+        </button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+<!-- GRID DE CLASSIFICAÇÕES -->
+<mat-card class="classifications-card">
+  <mat-card-header>
+    <mat-card-title class="card-title-with-icon">
+      <mat-icon class="card-icon">list</mat-icon>
+      Classificações NCM
+    </mat-card-title>
+    <mat-card-subtitle *ngIf="classifications.length > 0">
+      {{ classifications.length }} classificação(ões) encontrada(s)
+    </mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div class="table-container">
+      <table mat-table [dataSource]="classifications" matSort class="classifications-table">
+        <!-- Status Compliance -->
+        <ng-container matColumnDef="compliance_status">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Compliance</th>
+          <td mat-cell *matCellDef="let classification">
+            <mat-chip 
+              [style.background-color]="getComplianceStatusColor(classification.compliance_status)"
+              class="status-chip">
+              {{getComplianceStatusLabel(classification.compliance_status)}}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <!-- Nome do Produto -->
+        <ng-container matColumnDef="product_name">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Produto</th>
+          <td mat-cell *matCellDef="let classification">
+            <div class="product-cell">
+              <div class="product-name">{{classification.product_name}}</div>
+              <div class="product-type">{{getCommodityTypeLabel(classification.commodity_type)}}</div>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Código do Produto -->
+        <ng-container matColumnDef="product_code">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Código</th>
+          <td mat-cell *matCellDef="let classification">
+            <code class="product-code">{{classification.product_id}}</code>
+          </td>
+        </ng-container>
+
+        <!-- Código NCM -->
+        <ng-container matColumnDef="ncm_code">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>NCM</th>
+          <td mat-cell *matCellDef="let classification">
+            <div class="ncm-cell">
+              <code class="ncm-code">{{classification.ncm_code}}</code>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Descrição NCM -->
+        <ng-container matColumnDef="ncm_description">
+          <th mat-header-cell *matHeaderCellDef>Descrição NCM</th>
+          <td mat-cell *matCellDef="let classification">
+            <div class="ncm-description" [title]="classification.ncm_description">
+              {{classification.ncm_description}}
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Código HS -->
+        <ng-container matColumnDef="hs_code">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>HS</th>
+          <td mat-cell *matCellDef="let classification">
+            <code class="hs-code">{{classification.hs_code}}</code>
+          </td>
+        </ng-container>
+
+        <!-- Tipo Commodity -->
+        <ng-container matColumnDef="commodity_type">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Commodity</th>
+          <td mat-cell *matCellDef="let classification">
+            <mat-chip class="commodity-chip">
+              {{getCommodityTypeLabel(classification.commodity_type)}}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <!-- IA Confidence -->
+        <ng-container matColumnDef="ai_confidence_score">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>IA</th>
+          <td mat-cell *matCellDef="let classification">
+            <div class="ai-confidence" *ngIf="classification.ai_confidence_score > 0">
+              <mat-icon 
+                class="confidence-icon"
+                [style.color]="getConfidenceScoreColor(classification.ai_confidence_score)">
+                psychology
+              </mat-icon>
+              <span 
+                class="confidence-score"
+                [style.color]="getConfidenceScoreColor(classification.ai_confidence_score)">
+                {{formatPercent(classification.ai_confidence_score)}}
+              </span>
+            </div>
+            <span *ngIf="classification.ai_confidence_score === 0" class="no-ai">-</span>
+          </td>
+        </ng-container>
+
+        <!-- Fonte da Classificação -->
+        <ng-container matColumnDef="classification_source">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Fonte</th>
+          <td mat-cell *matCellDef="let classification">
+            <mat-chip class="source-chip">
+              {{getClassificationSourceLabel(classification.classification_source)}}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <!-- Status -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+          <td mat-cell *matCellDef="let classification">
+            <mat-chip 
+              [class]="'status-chip-' + classification.status.toLowerCase()"
+              class="status-chip">
+              {{getStatusLabel(classification.status)}}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <!-- Ações -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef class="actions-header">Ações</th>
+          <td mat-cell *matCellDef="let classification" class="actions-cell">
+            <button 
+              mat-icon-button 
+              [matMenuTriggerFor]="actionsMenu"
+              [matMenuTriggerData]="{classification: classification}">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+      <!-- Loading -->
+      <div class="loading-container" *ngIf="isLoading">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>Carregando classificações...</p>
+      </div>
+
+      <!-- Sem dados -->
+      <div class="no-data-container" *ngIf="!isLoading && classifications.length === 0">
+        <mat-icon class="no-data-icon">assignment_late</mat-icon>
+        <h3>Nenhuma classificação encontrada</h3>
+        <p>Tente ajustar os filtros ou criar uma nova classificação</p>
+      </div>
+    </div>
+  </mat-card-content>
+</mat-card>
+
+<!-- MENU DE AÇÕES -->
+<mat-menu #actionsMenu="matMenu">
+  <ng-template matMenuContent let-classification="classification">
+    <button mat-menu-item (click)="editClassification(classification)">
+      <mat-icon>edit</mat-icon>
+      Editar
+    </button>
+    <button mat-menu-item (click)="deleteClassification(classification)">
+      <mat-icon color="warn">delete</mat-icon>
+      Excluir
+    </button>
+  </ng-template>
+</mat-menu>
+
+<!-- FORMULÁRIO DE CLASSIFICAÇÃO (5 ABAS) -->
+<div id="classification-form-container" class="classification-form-container" *ngIf="showClassificationForm">
+  <mat-card class="classification-form-card">
+    <mat-card-header>
+      <mat-card-title class="form-title">
+        <mat-icon class="form-icon">{{editingClassification ? 'edit' : 'add'}}</mat-icon>
+        {{editingClassification ? 'Editar' : 'Nova'}} Classificação NCM
+      </mat-card-title>
+      <button mat-icon-button (click)="closeClassificationForm()" class="close-button">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="classificacaoForm" (ngSubmit)="saveClassification()" class="classification-form">
+        <mat-tab-group [(selectedIndex)]="selectedTabIndex" class="classification-tabs">
+          
+          <!-- ABA 1: PRODUTO -->
+          <mat-tab label="Produto">
+            <ng-template matTabContent>
+              <div class="tab-content">
+                <h4 class="tab-title">
+                  <mat-icon>inventory</mat-icon>
+                  Informações do Produto
+                </h4>
+                
+                <div class="form-row">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Código do Produto *</mat-label>
+                    <input matInput formControlName="product_id" placeholder="Ex: PROD-001">
+                    <mat-icon matSuffix>tag</mat-icon>
+                    <mat-error *ngIf="classificacaoForm.get('product_id')?.hasError('required')">
+                      Campo obrigatório
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Nome do Produto *</mat-label>
+                    <input matInput formControlName="product_name" placeholder="Ex: Soja em grãos">
+                    <mat-icon matSuffix>inventory</mat-icon>
+                    <mat-error *ngIf="classificacaoForm.get('product_name')?.hasError('required')">
+                      Campo obrigatório
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Tipo de Commodity *</mat-label>
+                    <mat-select formControlName="commodity_type">
+                      <mat-option *ngFor="let type of COMMODITY_TYPE_LABELS | keyvalue" [value]="type.key">
+                        {{type.value}}
+                      </mat-option>
+                    </mat-select>
+                    <mat-icon matSuffix>category</mat-icon>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="description-field">
+                    <mat-label>Descrição do Produto *</mat-label>
+                    <textarea 
+                      matInput 
+                      formControlName="product_description"
+                      placeholder="Descrição detalhada do produto..."
+                      rows="4"
+                      maxlength="2000">
+                    </textarea>
+                    <mat-icon matSuffix>description</mat-icon>
+                    <mat-hint align="end">{{(classificacaoForm.get('product_description')?.value || '').length}}/2000</mat-hint>
+                    <mat-error *ngIf="classificacaoForm.get('product_description')?.hasError('required')">
+                      Campo obrigatório
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Nome Científico</mat-label>
+                    <input matInput formControlName="scientific_name" placeholder="Ex: Glycine max">
+                    <mat-icon matSuffix>science</mat-icon>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>País de Origem *</mat-label>
+                    <input matInput formControlName="origin_country" placeholder="Ex: Brasil">
+                    <mat-icon matSuffix>flag</mat-icon>
+                    <mat-error *ngIf="classificacaoForm.get('origin_country')?.hasError('required')">
+                      Campo obrigatório
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="tab-actions">
+                  <button type="button" mat-raised-button color="primary" (click)="selectedTabIndex = 1">
+                    Próximo: Classificação Fiscal
+                    <mat-icon>arrow_forward</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </ng-template>
+          </mat-tab>
+
+          <!-- ABA 2: CLASSIFICAÇÃO FISCAL -->
+          <mat-tab label="Classificação Fiscal">
+            <ng-template matTabContent>
+              <div class="tab-content">
+                <div class="tab-header-with-ai">
+                  <h4 class="tab-title">
+                    <mat-icon>account_balance</mat-icon>
+                    Classificação Fiscal
+                  </h4>
+                  
+                  <button 
+                    type="button" 
+                    mat-raised-button 
+                    color="accent"
+                    (click)="classifyCurrentFormWithAI()"
+                    [disabled]="!classificacaoForm.get('product_description')?.value || isClassifyingWithAI">
+                    <mat-icon *ngIf="!isClassifyingWithAI">psychology</mat-icon>
+                    <mat-spinner diameter="20" *ngIf="isClassifyingWithAI"></mat-spinner>
+                    {{ isClassifyingWithAI ? 'Classificando...' : 'Classificar com IA' }}
+                  </button>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Código NCM *</mat-label>
+                    <input 
+                      matInput 
+                      formControlName="ncm_code" 
+                      placeholder="Ex: 1201.90.00"
+                      mask="0000.00.00">
+                    <mat-icon matSuffix [color]="isValidatingNCM ? 'accent' : 'primary'">
+                      {{ isValidatingNCM ? '' : 'account_balance' }}
+                    </mat-icon>
+                    <mat-spinner diameter="20" matSuffix *ngIf="isValidatingNCM"></mat-spinner>
+                    <mat-error *ngIf="classificacaoForm.get('ncm_code')?.hasError('required')">
+                      Campo obrigatório
+                    </mat-error>
+                    <mat-error *ngIf="classificacaoForm.get('ncm_code')?.hasError('pattern')">
+                      Formato inválido (0000.00.00)
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Código HS *</mat-label>
+                    <input matInput formControlName="hs_code" placeholder="Ex: 1201">
+                    <mat-icon matSuffix>public</mat-icon>
+                    <mat-error *ngIf="classificacaoForm.get('hs_code')?.hasError('required')">
+                      Campo obrigatório
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="description-field">
+                    <mat-label>Descrição NCM *</mat-label>
+                    <textarea 
+                      matInput 
+                      formControlName="ncm_description"
+                      placeholder="Descrição oficial do NCM..."
+                      rows="3">
+                    </textarea>
+                    <mat-icon matSuffix>description</mat-icon>
+                    <mat-error *ngIf="classificacaoForm.get('ncm_description')?.hasError('required')">
+                      Campo obrigatório
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Descrição HS</mat-label>
+                    <input matInput formControlName="hs_description" placeholder="Descrição do código HS">
+                    <mat-icon matSuffix>description</mat-icon>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Capítulo NCM</mat-label>
+                    <input matInput formControlName="ncm_chapter" placeholder="Ex: 12">
+                    <mat-icon matSuffix>folder</mat-icon>
+                  </mat-form-field>
+                </div>
+
+                <div class="tab-actions">
+                  <button type="button" mat-button (click)="selectedTabIndex = 0">
+                    <mat-icon>arrow_back</mat-icon>
+                    Voltar
+                  </button>
+                  <button type="button" mat-raised-button color="primary" (click)="selectedTabIndex = 2">
+                    Próximo: Compliance
+                    <mat-icon>arrow_forward</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </ng-template>
+          </mat-tab>
+
+          <!-- ABA 3: COMPLIANCE EXPORTAÇÃO -->
+          <mat-tab label="Compliance Exportação">
+            <ng-template matTabContent>
+              <div class="tab-content">
+                <h4 class="tab-title">
+                  <mat-icon>verified_user</mat-icon>
+                  Compliance de Exportação
+                </h4>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Taxa de Exportação (%)</mat-label>
+                    <input 
+                      matInput 
+                      type="number" 
+                      formControlName="export_tax" 
+                      placeholder="0"
+                      min="0"
+                      max="100"
+                      step="0.1">
+                    <mat-icon matSuffix>percent</mat-icon>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Tipo de Licença</mat-label>
+                    <mat-select formControlName="export_license_type">
+                      <mat-option *ngFor="let license of EXPORT_LICENSE_LABELS | keyvalue" [value]="license.key">
+                        {{license.value}}
+                      </mat-option>
+                    </mat-select>
+                    <mat-icon matSuffix>card_membership</mat-icon>
+                  </mat-form-field>
+                </div>
+
+                <div class="compliance-toggles">
+                  <mat-slide-toggle formControlName="export_license_required">
+                    Requer Licença de Exportação
+                  </mat-slide-toggle>
+
+                  <mat-slide-toggle formControlName="lpco_required">
+                    Requer LPCO
+                  </mat-slide-toggle>
+
+                  <mat-slide-toggle formControlName="requires_inspection">
+                    Requer Inspeção
+                  </mat-slide-toggle>
+
+                  <mat-slide-toggle formControlName="export_restriction">
+                    Possui Restrições de Exportação
+                  </mat-slide-toggle>
+                </div>
+
+                <div class="form-row" *ngIf="classificacaoForm.get('lpco_required')?.value">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Tipo de LPCO</mat-label>
+                    <input matInput formControlName="lpco_type" placeholder="Ex: Sanitária">
+                    <mat-icon matSuffix>assignment_turned_in</mat-icon>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row" *ngIf="classificacaoForm.get('requires_inspection')?.value">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Órgão de Inspeção</mat-label>
+                    <mat-select formControlName="inspection_agency">
+                      <mat-option *ngFor="let agency of INSPECTION_AGENCY_LABELS | keyvalue" [value]="agency.key">
+                        {{agency.value}}
+                      </mat-option>
+                    </mat-select>
+                    <mat-icon matSuffix>business</mat-icon>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row" *ngIf="classificacaoForm.get('export_restriction')?.value">
+                  <mat-form-field appearance="outline" class="description-field">
+                    <mat-label>Descrição da Restrição</mat-label>
+                    <textarea 
+                      matInput 
+                      formControlName="restriction_description"
+                      placeholder="Descreva as restrições..."
+                      rows="3">
+                    </textarea>
+                    <mat-icon matSuffix>warning</mat-icon>
+                  </mat-form-field>
+                </div>
+
+                <div class="tab-actions">
+                  <button type="button" mat-button (click)="selectedTabIndex = 1">
+                    <mat-icon>arrow_back</mat-icon>
+                    Voltar
+                  </button>
+                  <button type="button" mat-raised-button color="primary" (click)="selectedTabIndex = 3">
+                    Próximo: IA e Automação
+                    <mat-icon>arrow_forward</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </ng-template>
+          </mat-tab>
+
+          <!-- ABA 4: IA E AUTOMAÇÃO -->
+          <mat-tab label="IA e Automação">
+            <ng-template matTabContent>
+              <div class="tab-content">
+                <h4 class="tab-title">
+                  <mat-icon>psychology</mat-icon>
+                  IA e Automação
+                </h4>
+
+                <div class="ai-summary" 
+                     *ngIf="classificacaoForm.get('ai_confidence_score')?.value > 0">
+                  <mat-card class="ai-summary-card">
+                    <mat-card-header>
+                      <mat-card-title class="ai-title">
+                        <mat-icon>psychology</mat-icon>
+                        Análise da IA
+                      </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="ai-info-grid">
+                        <div class="ai-info-item">
+                          <label>NCM Sugerido:</label>
+                          <code>{{ classificacaoForm.get('ai_suggested_ncm')?.value }}</code>
+                        </div>
+                        <div class="ai-info-item">
+                          <label>Confiança:</label>
+                          <span [style.color]="getConfidenceScoreColor(classificacaoForm.get('ai_confidence_score')?.value)">
+                            {{ formatPercent(classificacaoForm.get('ai_confidence_score')?.value) }}
+                          </span>
+                        </div>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline">
+                    <mat-label>NCM Sugerido pela IA</mat-label>
+                    <input matInput formControlName="ai_suggested_ncm" readonly>
+                    <mat-icon matSuffix>psychology</mat-icon>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Score de Confiança (%)</mat-label>
+                    <input matInput type="number" formControlName="ai_confidence_score" readonly>
+                    <mat-icon matSuffix>trending_up</mat-icon>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="description-field">
+                    <mat-label>Justificativa da IA</mat-label>
+                    <textarea 
+                      matInput 
+                      formControlName="ai_classification_reason"
+                      readonly
+                      rows="4">
+                    </textarea>
+                    <mat-icon matSuffix>description</mat-icon>
+                  </mat-form-field>
+                </div>
+
+                <div class="ai-controls">
+                  <mat-slide-toggle formControlName="ai_auto_classification_enabled">
+                    Classificação Automática Habilitada
+                  </mat-slide-toggle>
+
+                  <mat-slide-toggle formControlName="ai_requires_human_review">
+                    Requer Revisão Humana
+                  </mat-slide-toggle>
+                </div>
+
+                <div class="tab-actions">
+                  <button type="button" mat-button (click)="selectedTabIndex = 2">
+                    <mat-icon>arrow_back</mat-icon>
+                    Voltar
+                  </button>
+                  <button type="button" mat-raised-button color="primary" (click)="selectedTabIndex = 4">
+                    Próximo: Histórico
+                    <mat-icon>arrow_forward</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </ng-template>
+          </mat-tab>
+
+          <!-- ABA 5: HISTÓRICO E AUDITORIA -->
+          <mat-tab label="Histórico">
+            <ng-template matTabContent>
+              <div class="tab-content">
+                <h4 class="tab-title">
+                  <mat-icon>history</mat-icon>
+                  Histórico e Auditoria
+                </h4>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Criado por</mat-label>
+                    <input matInput formControlName="created_by" readonly>
+                    <mat-icon matSuffix>person</mat-icon>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Status de Aprovação</mat-label>
+                    <mat-select formControlName="approval_status">
+                      <mat-option value="PENDING">Pendente</mat-option>
+                      <mat-option value="APPROVED">Aprovado</mat-option>
+                      <mat-option value="REJECTED">Rejeitado</mat-option>
+                    </mat-select>
+                    <mat-icon matSuffix>check_circle</mat-icon>
+                  </mat-form-field>
+                </div>
+
+                <div class="tab-actions final-actions">
+                  <button type="button" mat-button (click)="selectedTabIndex = 3">
+                    <mat-icon>arrow_back</mat-icon>
+                    Voltar
+                  </button>
+                  
+                  <div class="save-actions">
+                    <button type="button" mat-button (click)="closeClassificationForm()">
+                      <mat-icon>close</mat-icon>
+                      Cancelar
+                    </button>
+                    
+                    <button 
+                      type="submit" 
+                      mat-raised-button 
+                      color="primary"
+                      [disabled]="classificacaoForm.invalid || isSaving">
+                      <mat-icon *ngIf="!isSaving">save</mat-icon>
+                      <mat-spinner diameter="20" *ngIf="isSaving"></mat-spinner>
+                      {{ isSaving ? 'Salvando...' : 'Salvar Classificação' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </ng-template>
+          </mat-tab>
+        </mat-tab-group>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

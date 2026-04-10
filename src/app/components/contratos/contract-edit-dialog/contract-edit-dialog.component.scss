@@ -1,0 +1,34 @@
+.dialog-container {
+  width: 100%;
+  max-width: 900px;
+}
+
+.cost-item {
+  padding: 8px;
+  background: white;
+  border-radius: 8px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.cost-item:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transform: translateY(-1px);
+}
+
+::ng-deep .mat-step-header {
+  pointer-events: none;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.contract-card {
+  transition: all 0.3s ease;
+}
+
+.contract-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}

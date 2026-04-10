@@ -1,0 +1,1605 @@
+<div class="embarque-form-container">
+  <!-- Header da página -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-info">
+        <h1>
+          <mat-icon>local_shipping</mat-icon>
+          {{ isEditing ? 'Editar Embarque' : 'Novo Embarque' }}
+        </h1>
+        <p *ngIf="embarque">
+          {{ embarque.shipment_number }} - {{ embarque.commodity }}
+        </p>
+      </div>
+      <div class="header-actions">
+        <button 
+          mat-button
+          color="accent"
+          (click)="showFormValidationErrors()"
+          style="margin-right: 8px;">
+          <mat-icon>bug_report</mat-icon>
+          Debug Validação
+        </button>
+        <button 
+          mat-button
+          (click)="onCancel()"
+          [disabled]="saving">
+          <mat-icon>close</mat-icon>
+          Cancelar
+        </button>
+        <button 
+          mat-raised-button
+          color="primary"
+          (click)="onSubmit()"
+          [disabled]="saving || !canSaveForm()">
+          <mat-icon>save</mat-icon>
+          {{ saving ? 'Salvando...' : (isEditing ? 'Atualizar' : 'Criar') }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Indicator -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-progress-spinner diameter="50"></mat-progress-spinner>
+    <p>Carregando embarque...</p>
+  </div>
+
+  <!-- Formulário -->
+  <mat-card *ngIf="!loading" class="form-card">
+    <form [formGroup]="embarqueForm" (ngSubmit)="onSubmit()">
+      
+      <!-- Material Tabs -->
+      <mat-tab-group class="embarque-tabs" [(selectedIndex)]="activeTabIndex">
+        <!-- Tab Geral -->
+        <mat-tab label="Geral">
+          <ng-template matTabContent>
+            <div class="tab-content-wrapper">
+              <div class="form-grid">
+                <mat-form-field appearance="outline">
+                  <mat-label>Número do Embarque *</mat-label>
+                  <input 
+                    matInput
+                    formControlName="shipment_number"
+                    placeholder="Ex: SHIP-2026-0001">
+                  <mat-error *ngIf="isFieldInvalid('shipment_number')">
+                    {{ getFieldError('shipment_number') }}
+                  </mat-error>
+                </mat-form-field>
+                
+                <mat-form-field appearance="outline">
+                  <mat-label>ID do Contrato *</mat-label>
+                  <input 
+                    matInput
+                    formControlName="contract_id"
+                    placeholder="Selecione um contrato">
+                  <mat-error *ngIf="isFieldInvalid('contract_id')">
+                    {{ getFieldError('contract_id') }}
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Exportador *</mat-label>
+                  <input 
+                    matInput
+                    formControlName="exporter_name"
+                    placeholder="Nome do exportador">
+                  <mat-error *ngIf="isFieldInvalid('exporter_name')">
+                    {{ getFieldError('exporter_name') }}
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Importador *</mat-label>
+                  <input 
+                    matInput
+                    formControlName="importer_name"
+                    placeholder="Nome do importador">
+                  <mat-error *ngIf="isFieldInvalid('importer_name')">
+                    {{ getFieldError('importer_name') }}
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Commodity *</mat-label>
+                  <input 
+                    matInput
+                    formControlName="commodity"
+                    placeholder="Ex: Soja, Café, Minério">
+                  <mat-error *ngIf="isFieldInvalid('commodity')">
+                    {{ getFieldError('commodity') }}
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Quantidade *</mat-label>
+                  <input 
+                    matInput
+                    type="number"
+                    formControlName="quantity"
+                    placeholder="0"
+                    min="0">
+                  <mat-error *ngIf="isFieldInvalid('quantity')">
+                    {{ getFieldError('quantity') }}
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Unidade *</mat-label>
+                  <mat-select formControlName="unit">
+                    <mat-option *ngFor="let unit of unitOptions" [value]="unit">
+                      {{ unit }}
+                    </mat-option>
+                  </mat-select>
+                  <mat-error *ngIf="isFieldInvalid('unit')">
+                    {{ getFieldError('unit') }}
+                  </mat-error>
+                </mat-form-field>
+                
+                <mat-form-field appearance="outline">
+                  <mat-label>Incoterm *</mat-label>
+                  <mat-select formControlName="incoterm">
+                    <mat-option *ngFor="let incoterm of incotermOptions" [value]="incoterm">
+                      {{ incoterm }}
+                    </mat-option>
+                  </mat-select>
+                  <mat-error *ngIf="isFieldInvalid('incoterm')">
+                    {{ getFieldError('incoterm') }}
+                  </mat-error>
+                </mat-form-field>
+              </div>
+            </div>
+          </ng-template>
+        </mat-tab>
+        
+        <!-- Tab Transporte -->
+        <mat-tab label="Transporte">
+          <ng-template matTabContent>
+            <div class="tab-content-wrapper">
+              <div class="form-grid">
+                <mat-form-field appearance="outline">
+                  <mat-label>Modal de Transporte *</mat-label>
+                  <mat-select formControlName="transport_mode">
+                    <mat-option *ngFor="let mode of transportModeOptions" [value]="mode">
+                      {{ mode }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Nome do Navio</mat-label>
+                  <input 
+                    matInput
+                    formControlName="vessel_name"
+                    placeholder="Ex: MSC Mediterranean">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>IMO do Navio</mat-label>
+                  <input 
+                    matInput
+                    formControlName="vessel_imo"
+                    placeholder="Ex: IMO9365058">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Companhia de Navegação</mat-label>
+                  <input 
+                    matInput
+                    formControlName="shipping_company"
+                    placeholder="Ex: MSC Mediterranean Shipping Company">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Número do Booking *</mat-label>
+                  <input 
+                    matInput
+                    formControlName="booking_number"
+                    placeholder="Ex: MSC240407001">
+                  <mat-error *ngIf="isFieldInvalid('booking_number')">
+                    {{ getFieldError('booking_number') }}
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Bill of Lading</mat-label>
+                  <input 
+                    matInput
+                    formControlName="bill_of_lading"
+                    placeholder="Ex: MSC-BL-240407001">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Tipo de Frete *</mat-label>
+                  <mat-select formControlName="freight_type">
+                    <mat-option *ngFor="let type of freightTypeOptions" [value]="type">
+                      {{ type }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </div>
+          </ng-template>
+        </mat-tab>
+        
+        <!-- Tab Containers -->
+        <mat-tab label="Containers">
+          <ng-template matTabContent>
+            <div class="tab-content-wrapper">
+              <div class="section-header">
+                <h3>Gerenciar Containers</h3>
+                <button 
+                  mat-raised-button
+                  color="primary"
+                  (click)="addContainer()">
+                  <mat-icon>add</mat-icon>
+                  Adicionar Container
+                </button>
+              </div>
+
+              <div formArrayName="containers" class="containers-list">
+                <mat-card 
+                  *ngFor="let container of containersArray.controls; let i = index"
+                  class="container-card"
+                  [formGroupName]="i">
+                  
+                  <mat-card-header>
+                    <div mat-card-avatar>
+                      <mat-icon>inventory_2</mat-icon>
+                    </div>
+                    <mat-card-title>Container {{ i + 1 }}</mat-card-title>
+                    <mat-card-subtitle>{{ container.get('container_number')?.value || 'Novo container' }}</mat-card-subtitle>
+                    <div class="spacer"></div>
+                    <button 
+                      mat-icon-button
+                      color="warn"
+                      (click)="removeContainer(i)"
+                      [disabled]="containersArray.length <= 1"
+                      matTooltip="Remover container">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </mat-card-header>
+                  
+                  <mat-card-content>
+                    <div class="form-grid">
+                      <mat-form-field appearance="outline">
+                        <mat-label>Número do Container *</mat-label>
+                        <input 
+                          matInput
+                          formControlName="container_number"
+                          placeholder="Ex: MSCU1234567">
+                        <mat-icon matSuffix>inventory_2</mat-icon>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Tipo de Container *</mat-label>
+                        <mat-select formControlName="container_type">
+                          <mat-option *ngFor="let type of containerTypeOptions" [value]="type">
+                            {{ type }}
+                          </mat-option>
+                        </mat-select>
+                        <mat-icon matSuffix>category</mat-icon>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Número do Lacre</mat-label>
+                        <input 
+                          matInput
+                          formControlName="seal_number"
+                          placeholder="Ex: MSC001234">
+                        <mat-icon matSuffix>lock</mat-icon>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Peso Tara (kg)</mat-label>
+                        <input 
+                          matInput
+                          type="number"
+                          formControlName="tare_weight"
+                          min="0">
+                        <mat-icon matSuffix>scale</mat-icon>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Peso Bruto (kg)</mat-label>
+                        <input 
+                          matInput
+                          type="number"
+                          formControlName="gross_weight"
+                          min="0">
+                        <mat-icon matSuffix>fitness_center</mat-icon>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Peso Líquido (kg)</mat-label>
+                        <input 
+                          matInput
+                          type="number"
+                          formControlName="net_weight"
+                          min="0">
+                        <mat-icon matSuffix>line_weight</mat-icon>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Data de Stuffing</mat-label>
+                        <input 
+                          matInput
+                          [matDatepicker]="stuffingPicker"
+                          formControlName="stuffing_date">
+                        <mat-hint>DD/MM/AAAA</mat-hint>
+                        <mat-datepicker-toggle matSuffix [for]="stuffingPicker"></mat-datepicker-toggle>
+                        <mat-datepicker #stuffingPicker></mat-datepicker>
+                      </mat-form-field>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              </div>
+            </div>
+          </ng-template>
+        </mat-tab>
+        
+        <!-- Tab Portos & Rota -->
+        <mat-tab label="Portos & Rota">
+          <ng-template matTabContent>
+            <div class="tab-content-wrapper">
+              <h3>Definição de Rota</h3>
+              
+              <div class="form-grid">
+                <mat-form-field appearance="outline">
+                  <mat-label>Porto de Origem *</mat-label>
+                  <mat-select 
+                    formControlName="port_origin"
+                    (selectionChange)="onPortOriginChange()">
+                    <mat-option value="">Selecione um porto</mat-option>
+                    <mat-option *ngFor="let porto of portos" [value]="porto.nome">
+                      {{ porto.nome }} - {{ porto.pais }}
+                    </mat-option>
+                  </mat-select>
+                  <mat-icon matSuffix>departure_board</mat-icon>
+                  <mat-error *ngIf="isFieldInvalid('port_origin')">
+                    {{ getFieldError('port_origin') }}
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Porto de Destino *</mat-label>
+                  <mat-select 
+                    formControlName="port_destination"
+                    (selectionChange)="onPortDestinationChange()">
+                    <mat-option value="">Selecione um porto</mat-option>
+                    <mat-option *ngFor="let porto of portos" [value]="porto.nome">
+                      {{ porto.nome }} - {{ porto.pais }}
+                    </mat-option>
+                  </mat-select>
+                  <mat-icon matSuffix>location_on</mat-icon>
+                  <mat-error *ngIf="isFieldInvalid('port_destination')">
+                    {{ getFieldError('port_destination') }}
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Porto de Transbordo</mat-label>
+                  <mat-select formControlName="transshipment_port">
+                    <mat-option value="">Sem transbordo</mat-option>
+                    <mat-option *ngFor="let porto of portos" [value]="porto.nome">
+                      {{ porto.nome }} - {{ porto.pais }}
+                    </mat-option>
+                  </mat-select>
+                  <mat-icon matSuffix>swap_horiz</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Descrição da Rota</mat-label>
+                  <textarea 
+                    matInput
+                    formControlName="route_description"
+                    rows="3"
+                    placeholder="Descrição detalhada da rota do embarque"></textarea>
+                  <mat-icon matSuffix>route</mat-icon>
+                </mat-form-field>
+              </div>
+            </div>
+          </ng-template>
+        </mat-tab>
+        
+        <!-- Tab Datas & Tracking -->
+        <mat-tab label="Datas & Tracking">
+          <ng-template matTabContent>
+            <div class="tab-content-wrapper">
+              <h3>Cronograma e Rastreamento</h3>
+              
+              <div class="form-grid">
+                <mat-form-field appearance="outline">
+                  <mat-label>ETD (Estimated Time of Departure)</mat-label>
+                  <input 
+                    matInput 
+                    [matDatepicker]="etdPicker"
+                    formControlName="etd"
+                    readonly>
+                  <mat-datepicker-toggle matIconSuffix [for]="etdPicker"></mat-datepicker-toggle>
+                  <mat-datepicker #etdPicker></mat-datepicker>
+                  <mat-icon matSuffix>schedule_send</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>ETA (Estimated Time of Arrival)</mat-label>
+                  <input 
+                    matInput 
+                    [matDatepicker]="etaPicker"
+                    formControlName="eta"
+                    readonly>
+                  <mat-datepicker-toggle matIconSuffix [for]="etaPicker"></mat-datepicker-toggle>
+                  <mat-datepicker #etaPicker></mat-datepicker>
+                  <mat-icon matSuffix>schedule</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>ATA (Actual Time of Arrival)</mat-label>
+                  <input 
+                    matInput 
+                    [matDatepicker]="ataPicker"
+                    formControlName="ata"
+                    readonly>
+                  <mat-datepicker-toggle matIconSuffix [for]="ataPicker"></mat-datepicker-toggle>
+                  <mat-datepicker #ataPicker></mat-datepicker>
+                  <mat-icon matSuffix>arrival</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Dias de Atraso</mat-label>
+                  <input 
+                    matInput 
+                    type="number"
+                    formControlName="delay_days"
+                    min="0">
+                  <mat-icon matSuffix>access_alarm</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>URL de Tracking</mat-label>
+                  <input 
+                    matInput 
+                    type="url"
+                    formControlName="tracking_url"
+                    placeholder="https://tracking.company.com/track">
+                  <mat-icon matSuffix>link</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Status do Embarque</mat-label>
+                  <mat-select formControlName="shipment_status">
+                    <mat-option *ngFor="let status of statusOptions" [value]="status">
+                      {{ status }}
+                    </mat-option>
+                  </mat-select>
+                  <mat-icon matSuffix>local_shipping</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Status do Tracking</mat-label>
+                  <mat-select formControlName="tracking_status">
+                    <mat-option *ngFor="let status of trackingStatusOptions" [value]="status">
+                      {{ status }}
+                    </mat-option>
+                  </mat-select>
+                  <mat-icon matSuffix>track_changes</mat-icon>
+                </mat-form-field>
+              </div>
+            </div>
+          </ng-template>
+        </mat-tab>
+        
+        <!-- Tab Documentação Aduaneira -->
+        <mat-tab label="Documentação">
+          <ng-template matTabContent>
+            <div class="tab-content-wrapper">
+              <h3>Documentação Aduaneira</h3>
+              
+              <mat-card class="document-section">
+                <mat-card-header>
+                  <mat-icon>description</mat-icon>
+                  <mat-card-title>Números dos Documentos</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="form-grid">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Número DU-E</mat-label>
+                      <input 
+                        matInput
+                        formControlName="due_number"
+                        placeholder="Ex: DUE26040001">
+                      <mat-icon matSuffix>fact_check</mat-icon>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>Número RUC</mat-label>
+                      <input 
+                        matInput
+                        formControlName="ruc_number"
+                        placeholder="Ex: RUC26040001">
+                      <mat-icon matSuffix>assignment</mat-icon>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>Número da Invoice</mat-label>
+                      <input 
+                        matInput
+                        formControlName="invoice_number"
+                        placeholder="Ex: INV-2026-0001">
+                      <mat-icon matSuffix>receipt</mat-icon>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>Número da Packing List</mat-label>
+                      <input 
+                        matInput
+                        formControlName="packing_list_number"
+                        placeholder="Ex: PL-2026-0001">
+                      <mat-icon matSuffix>list_alt</mat-icon>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>Certificado Fitossanitário</mat-label>
+                      <input 
+                        matInput
+                        formControlName="certificate_phytosanitary"
+                        placeholder="Ex: FITO-2026-0001">
+                      <mat-icon matSuffix>eco</mat-icon>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>Status Vigiagro</mat-label>
+                      <mat-select formControlName="vigiagro_status">
+                        <mat-option *ngFor="let status of vigiAgroStatusOptions" [value]="status">
+                          {{ status }}
+                        </mat-option>
+                      </mat-select>
+                      <mat-icon matSuffix>agriculture</mat-icon>
+                    </mat-form-field>
+                  </div>
+
+                  <mat-checkbox formControlName="mapa_clearance">
+                    Liberação MAPA obtida
+                  </mat-checkbox>
+
+                  <mat-divider class="section-divider"></mat-divider>
+                  
+                  <div class="action-section">
+                    <button 
+                      mat-raised-button
+                      color="primary"
+                      (click)="generateDocuments()"
+                      [disabled]="!isEditing">
+                      <mat-icon>file_present</mat-icon>
+                      Gerar Documentos
+                    </button>
+                    <p class="helper-text">
+                      Gera automaticamente Invoice, Packing List, BL e DU-E
+                    </p>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <!-- Integração Siscomex -->
+              <mat-card class="siscomex-section">
+                <mat-card-header>
+                  <mat-icon>public</mat-icon>
+                  <mat-card-title>Integração Siscomex</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="status-grid">
+                    <div class="status-item">
+                      <label>Status DU-E</label>
+                      <div class="status-display">
+                        <mat-chip [class]="getSiscomexStatusColor('due_status')">
+                          {{embarque?.siscomex_due_status || 'Não Registrado'}}
+                        </mat-chip>
+                        <button 
+                          mat-icon-button
+                          (click)="checkDueStatus()">
+                          <mat-icon>refresh</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div class="status-item">
+                      <label>Status LPCO</label>
+                      <div class="status-display">
+                        <mat-chip [class]="getSiscomexStatusColor('lpco_status')">
+                          {{embarque?.siscomex_lpco_status || 'Pendente'}}
+                        </mat-chip>
+                        <button 
+                          mat-icon-button
+                          (click)="checkLpcoStatus()">
+                          <mat-icon>refresh</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div class="status-item">
+                      <label>Canal Parametrização</label>
+                      <div class="status-display">
+                        <mat-chip [class]="getChannelColor()">
+                          {{embarque?.customs_channel || 'A ser definido'}}
+                        </mat-chip>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="action-buttons">
+                    <button 
+                      mat-raised-button
+                      color="accent"
+                      class="full-width"
+                      (click)="registerOnSiscomex()"
+                      [disabled]="embarque?.siscomex_due_status === 'Registrado'">
+                      <mat-icon>cloud_upload</mat-icon>
+                      Registrar no Siscomex
+                    </button>
+                    
+                    <button 
+                      mat-raised-button
+                      color="primary"
+                      class="full-width"
+                      (click)="syncWithSiscomex()">
+                      <mat-icon>sync</mat-icon>
+                      Sincronizar com Siscomex
+                    </button>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <!-- Controle de Órgãos Governamentais -->
+              <mat-card class="government-agencies-section">
+                <mat-card-header>
+                  <mat-icon>account_balance</mat-icon>
+                  <mat-card-title>Órgãos Governamentais</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="agencies-grid">
+                    <!-- MAPA -->
+                    <mat-card class="agency-card mapa-card">
+                      <mat-card-header>
+                        <mat-icon>eco</mat-icon>
+                        <mat-card-title>MAPA</mat-card-title>
+                        <mat-card-subtitle>Ministério da Agricultura</mat-card-subtitle>
+                      </mat-card-header>
+                      <mat-card-content>
+                        <div class="agency-controls">
+                          <mat-checkbox formControlName="mapa_required">
+                            Requer Anuência MAPA
+                          </mat-checkbox>
+                          
+                          <mat-checkbox formControlName="mapa_clearance">
+                            MAPA Liberado
+                          </mat-checkbox>
+                          
+                          <div class="status-display">
+                            <label>Status:</label>
+                            <mat-chip [class]="getMapaStatusColor()">{{getMapaStatus()}}</mat-chip>
+                          </div>
+                        </div>
+                      </mat-card-content>
+                    </mat-card>
+
+                    <!-- ANVISA -->
+                    <mat-card class="agency-card anvisa-card">
+                      <mat-card-header>
+                        <mat-icon>health_and_safety</mat-icon>
+                        <mat-card-title>ANVISA</mat-card-title>
+                        <mat-card-subtitle>Agência Nacional de Vigilância Sanitária</mat-card-subtitle>
+                      </mat-card-header>
+                      <mat-card-content>
+                        <div class="agency-controls">
+                          <mat-checkbox formControlName="anvisa_required">
+                            Requer Anuência ANVISA
+                          </mat-checkbox>
+                          
+                          <mat-checkbox formControlName="anvisa_clearance">
+                            ANVISA Liberada
+                          </mat-checkbox>
+                          
+                          <div class="status-display">
+                            <label>Status:</label>
+                            <mat-chip [class]="getAnvisaStatusColor()">{{getAnvisaStatus()}}</mat-chip>
+                          </div>
+                        </div>
+                      </mat-card-content>
+                    </mat-card>
+
+                    <!-- IBAMA -->
+                    <mat-card class="agency-card ibama-card">
+                      <mat-card-header>
+                        <mat-icon>forest</mat-icon>
+                        <mat-card-title>IBAMA</mat-card-title>
+                        <mat-card-subtitle>Instituto Brasileiro do Meio Ambiente</mat-card-subtitle>
+                      </mat-card-header>
+                      <mat-card-content>
+                        <div class="agency-controls">
+                          <mat-checkbox formControlName="ibama_required">
+                            Requer Anuência IBAMA
+                          </mat-checkbox>
+                          
+                          <mat-checkbox formControlName="ibama_clearance">
+                            IBAMA Liberado
+                          </mat-checkbox>
+                          
+                          <div class="status-display">
+                            <label>Status:</label>
+                            <mat-chip [class]="getIbamaStatusColor()">{{getIbamaStatus()}}</mat-chip>
+                          </div>
+                        </div>
+                      </mat-card-content>
+                    </mat-card>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <!-- Rastreamento de Documentos -->
+              <mat-card class="document-tracking-section">
+                <mat-card-header>
+                  <mat-icon>insert_drive_file</mat-icon>
+                  <mat-card-title>Rastreamento de Documentos</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <mat-table class="documents-table" [dataSource]="getDocumentTrackingData()">
+                    <ng-container matColumnDef="document">
+                      <mat-header-cell *matHeaderCellDef>Documento</mat-header-cell>
+                      <mat-cell *matCellDef="let element">
+                        <div class="document-cell">
+                          <mat-icon>{{element.icon}}</mat-icon>
+                          {{element.name}}
+                        </div>
+                      </mat-cell>
+                    </ng-container>
+            
+                    <ng-container matColumnDef="number">
+                      <mat-header-cell *matHeaderCellDef>Número</mat-header-cell>
+                      <mat-cell *matCellDef="let element">{{element.number}}</mat-cell>
+                    </ng-container>
+            
+                    <ng-container matColumnDef="status">
+                      <mat-header-cell *matHeaderCellDef>Status</mat-header-cell>
+                      <mat-cell *matCellDef="let element">
+                        <mat-chip [class]="element.statusColor">{{element.status}}</mat-chip>
+                      </mat-cell>
+                    </ng-container>
+            
+                    <ng-container matColumnDef="uploadDate">
+                      <mat-header-cell *matHeaderCellDef>Data Upload</mat-header-cell>
+                      <mat-cell *matCellDef="let element">{{element.uploadDate}}</mat-cell>
+                    </ng-container>
+            
+                    <ng-container matColumnDef="lastCheck">
+                      <mat-header-cell *matHeaderCellDef>Última Verificação</mat-header-cell>
+                      <mat-cell *matCellDef="let element">{{element.lastCheck}}</mat-cell>
+                    </ng-container>
+            
+                    <ng-container matColumnDef="actions">
+                      <mat-header-cell *matHeaderCellDef>Ações</mat-header-cell>
+                      <mat-cell *matCellDef="let element">
+                        <button mat-icon-button [color]="element.actionColor" (click)="element.action()" matTooltip="{{element.actionTooltip}}">
+                          <mat-icon>{{element.actionIcon}}</mat-icon>
+                        </button>
+                      </mat-cell>
+                    </ng-container>
+            
+                    <mat-header-row *matHeaderRowDef="['document', 'number', 'status', 'uploadDate', 'lastCheck', 'actions']"></mat-header-row>
+                    <mat-row *matRowDef="let row; columns: ['document', 'number', 'status', 'uploadDate', 'lastCheck', 'actions'];"></mat-row>
+                  </mat-table>
+                </mat-card-content>
+              </mat-card>
+
+              <!-- Automação Documentária -->
+              <mat-card class="automation-section">
+                <mat-card-header>
+                  <mat-icon>auto_awesome</mat-icon>
+                  <mat-card-title>Automação Documentária</mat-card-title>
+                  <mat-card-subtitle>Configure processos automatizados para geração e envio de documentos</mat-card-subtitle>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="automation-grid">
+                    <div class="automation-option">
+                      <mat-checkbox formControlName="auto_generate_invoice">
+                        <div class="checkbox-content">
+                          <strong>Auto-gerar Invoice</strong>
+                          <br>
+                          <small>Baseado nos dados do contrato</small>
+                        </div>
+                      </mat-checkbox>
+                    </div>
+                    
+                    <div class="automation-option">
+                      <mat-checkbox formControlName="auto_submit_siscomex">
+                        <div class="checkbox-content">
+                          <strong>Auto-submeter Siscomex</strong>
+                          <br>
+                          <small>DU-E automática quando pronto</small>
+                        </div>
+                      </mat-checkbox>
+                    </div>
+                    
+                    <div class="automation-option">
+                      <mat-checkbox formControlName="auto_notify_client">
+                        <div class="checkbox-content">
+                          <strong>Notificar Cliente</strong>
+                          <br>
+                          <small>Email/SMS quando docs prontos</small>
+                        </div>
+                      </mat-checkbox>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            </div>
+          </ng-template>
+        </mat-tab>
+        
+        <!-- Tab IA & Automação -->
+        <mat-tab label="IA & Automação">
+          <ng-template matTabContent>
+            <div class="tab-content-wrapper">
+              <mat-card class="ai-intro-card">
+                <mat-card-content>
+                  <div class="ai-header">
+                    <mat-icon>smart_toy</mat-icon>
+                    <div>
+                      <h3>Inteligência Artificial Aplicada</h3>
+                      <p>Otimizações e sugestões baseadas em dados históricos e tempo real.</p>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <mat-card class="ai-predictions">
+                <mat-card-header>
+                  <mat-icon>psychology</mat-icon>
+                  <mat-card-title>Previsões e Sugestões IA</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="form-grid">
+                    <mat-form-field appearance="outline" class="full-width">
+                      <mat-label>Sugestão de Rota da IA</mat-label>
+                      <textarea 
+                        matInput
+                        formControlName="ai_route_suggestion"
+                        rows="3"
+                        readonly
+                        placeholder="A IA irá sugerir a melhor rota automaticamente"></textarea>
+                      <mat-icon matSuffix>route</mat-icon>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>Porto Sugerido pela IA</mat-label>
+                      <input 
+                        matInput
+                        formControlName="ai_port_suggestion"
+                        readonly>
+                      <mat-icon matSuffix>anchor</mat-icon>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>ETA Predito pela IA</mat-label>
+                      <input 
+                        matInput 
+                        [matDatepicker]="aiEtaPicker"
+                        formControlName="ai_eta_prediction"
+                        readonly>
+                      <mat-datepicker-toggle matIconSuffix [for]="aiEtaPicker"></mat-datepicker-toggle>
+                      <mat-datepicker #aiEtaPicker></mat-datepicker>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>Score de Risco de Atraso (%)</mat-label>
+                      <input 
+                        matInput
+                        type="number"
+                        formControlName="ai_delay_risk_score"
+                        readonly
+                        min="0"
+                        max="100">
+                      <mat-icon matSuffix>warning</mat-icon>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>Economia Estimada (R$)</mat-label>
+                      <input 
+                        matInput
+                        type="number"
+                        formControlName="ai_cost_optimization"
+                        readonly>
+                      <mat-icon matSuffix>savings</mat-icon>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>Melhor Transportadora (IA)</mat-label>
+                      <input 
+                        matInput
+                        formControlName="ai_best_shipping_company"
+                        readonly>
+                      <mat-icon matSuffix>local_shipping</mat-icon>
+                    </mat-form-field>
+                  </div>
+
+                  <mat-checkbox formControlName="ai_auto_tracking">
+                    <div class="checkbox-content">
+                      <strong>Tracking Automático Habilitado</strong>
+                      <br>
+                      <small>Atualiza automaticamente o status via APIs dos armadores</small>
+                    </div>
+                  </mat-checkbox>
+                </mat-card-content>
+              </mat-card>
+
+              <mat-card class="ai-alerts">
+                <mat-card-header>
+                  <mat-icon>notifications</mat-icon>
+                  <mat-card-title>Sistema de Alertas IA</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="checkbox-grid">
+                    <mat-checkbox formControlName="ai_alert_delay">
+                      Alertas de Atraso
+                    </mat-checkbox>
+                    
+                    <mat-checkbox formControlName="ai_alert_weather">
+                      Alertas Meteorológicos
+                    </mat-checkbox>
+                    
+                    <mat-checkbox formControlName="ai_alert_customs">
+                      Alertas Aduaneiros
+                    </mat-checkbox>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <mat-card class="ai-optimization">
+                <mat-card-header>
+                  <mat-icon>tune</mat-icon>
+                  <mat-card-title>Otimização Automática</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="optimization-grid">
+                    <mat-checkbox formControlName="ai_optimize_route">
+                      <div class="checkbox-content">
+                        <strong>Auto-Roteamento</strong>
+                        <br><small>IA define melhor rota</small>
+                      </div>
+                    </mat-checkbox>
+                    
+                    <mat-checkbox formControlName="ai_optimize_cost">
+                      <div class="checkbox-content">
+                        <strong>Otimização de Custo</strong>
+                        <br><small>Melhor custo-benefício</small>
+                      </div>
+                    </mat-checkbox>
+                    
+                    <mat-checkbox formControlName="ai_optimize_carbon">
+                      <div class="checkbox-content">
+                        <strong>Pegada de Carbono</strong>
+                        <br><small>Rota sustentável</small>
+                      </div>
+                    </mat-checkbox>
+                    
+                    <mat-checkbox formControlName="ai_optimize_time">
+                      <div class="checkbox-content">
+                        <strong>Otimização de Tempo</strong>
+                        <br><small>Entrega mais rápida</small>
+                      </div>
+                    </mat-checkbox>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <mat-card class="ai-automation">
+                <mat-card-header>
+                  <mat-icon>precision_manufacturing</mat-icon>
+                  <mat-card-title>Automação de Processos</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="automation-grid">
+                    <mat-checkbox formControlName="ai_auto_docs">
+                      <div class="checkbox-content">
+                        <strong>Geração Automática de Documentos</strong>
+                        <br><small>BL, Invoice, Packing automaticamente</small>
+                      </div>
+                    </mat-checkbox>
+                    
+                    <mat-checkbox formControlName="ai_auto_booking">
+                      <div class="checkbox-content">
+                        <strong>Booking Automático</strong>
+                        <br><small>Reserva espaços navios automaticamente</small>
+                      </div>
+                    </mat-checkbox>
+                    
+                    <mat-checkbox formControlName="ai_auto_compliance">
+                      <div class="checkbox-content">
+                        <strong>Compliance Automático</strong>
+                        <br><small>Válida documentos automaticamente</small>
+                      </div>
+                    </mat-checkbox>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <mat-card class="ai-predictions-realtime">
+                <mat-card-header>
+                  <mat-icon>trending_up</mat-icon>
+                  <mat-card-title>Previsões em Tempo Real</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="progress-grid">
+                    <div class="progress-item">
+                      <label>Probabilidade de Sucesso</label>
+                      <mat-progress-bar 
+                        mode="determinate" 
+                        [value]="embarque?.ai_success_probability || 85"
+                        color="primary">
+                      </mat-progress-bar>
+                      <span class="progress-value">{{embarque?.ai_success_probability || '85'}}%</span>
+                    </div>
+                    
+                    <div class="progress-item">
+                      <label>Risco Operacional</label>
+                      <mat-progress-bar 
+                        mode="determinate" 
+                        [value]="embarque?.ai_operational_risk || 15"
+                        color="warn">
+                      </mat-progress-bar>
+                      <span class="progress-value">{{embarque?.ai_operational_risk || '15'}}%</span>
+                    </div>
+                    
+                    <div class="progress-item">
+                      <label>Score de Confiabilidade</label>
+                      <mat-progress-bar 
+                        mode="determinate" 
+                        [value]="embarque?.ai_reliability_score || 92"
+                        color="accent">
+                      </mat-progress-bar>
+                      <span class="progress-value">{{embarque?.ai_reliability_score || '92'}}%</span>
+                    </div>
+                    
+                    <div class="progress-item">
+                      <label>Índice de Sustentabilidade</label>
+                      <mat-progress-bar 
+                        mode="determinate" 
+                        [value]="embarque?.ai_sustainability_index || 78"
+                        color="primary">
+                      </mat-progress-bar>
+                      <span class="progress-value">{{embarque?.ai_sustainability_index || '78'}}%</span>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <div class="ai-actions">
+                <button 
+                  mat-raised-button
+                  color="primary"
+                  class="action-button"
+                  (click)="runAiAnalysis()">
+                  <mat-icon>psychology</mat-icon> 
+                  Executar Análise Completa IA
+                </button>
+                
+                <button 
+                  mat-raised-button
+                  color="accent"
+                  class="action-button"
+                  (click)="enableFullAutomation()">
+                  <mat-icon>auto_awesome</mat-icon> 
+                  Habilitar Automação Total
+                </button>
+              </div>
+            </div>
+          </ng-template>
+        </mat-tab>
+        
+        <!-- Tab Financeiro -->
+        <mat-tab label="Financeiro">
+          <ng-template matTabContent>
+            <div class="tab-content-wrapper">
+              <h3>Gestão Financeira</h3>
+              
+              <mat-card class="costs-section">
+                <mat-card-header>
+                  <mat-icon>attach_money</mat-icon>
+                  <mat-card-title>Custos Operacionais</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="form-grid">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Custo do Frete (R$)</mat-label>
+                      <input 
+                        matInput
+                        type="number"
+                        formControlName="freight_cost"
+                        min="0"
+                        step="0.01"
+                        (input)="calculateTotalLogisticCost()">
+                      <mat-icon matSuffix>local_shipping</mat-icon>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>Custo do Seguro (R$)</mat-label>
+                      <input 
+                        matInput
+                        type="number"
+                        formControlName="insurance_cost"
+                        min="0"
+                        step="0.01"
+                        (input)="calculateTotalLogisticCost()">
+                      <mat-icon matSuffix>security</mat-icon>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>Taxas Portuárias (R$)</mat-label>
+                      <input 
+                        matInput
+                        type="number"
+                        formControlName="port_charges"
+                        min="0"
+                        step="0.01"
+                        (input)="calculateTotalLogisticCost()">
+                      <mat-icon matSuffix>account_balance</mat-icon>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>Custo Logístico Total (R$)</mat-label>
+                      <input 
+                        matInput
+                        type="number"
+                        formControlName="total_logistic_cost"
+                        readonly>
+                      <mat-icon matSuffix>calculate</mat-icon>
+                    </mat-form-field>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <mat-card class="financial-analysis">
+                <mat-card-header>
+                  <mat-icon>analytics</mat-icon>
+                  <mat-card-title>Análise Financeira</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="analysis-grid">
+                    <div class="metric-item">
+                      <strong>Custo por MT:</strong>
+                      <span>R$ {{ (embarqueForm.get('total_logistic_cost')?.value || 0) / (embarqueForm.get('quantity')?.value || 1) | number:'1.2-2' }}</span>
+                    </div>
+                    <div class="metric-item">
+                      <strong>% Frete:</strong>
+                      <span>{{ ((embarqueForm.get('freight_cost')?.value || 0) / (embarqueForm.get('total_logistic_cost')?.value || 1) * 100) | number:'1.1-1' }}%</span>
+                    </div>
+                    <div class="metric-item">
+                      <strong>% Seguro:</strong>
+                      <span>{{ ((embarqueForm.get('insurance_cost')?.value || 0) / (embarqueForm.get('total_logistic_cost')?.value || 1) * 100) | number:'1.1-1' }}%</span>
+                    </div>
+                    <div class="metric-item">
+                      <strong>% Portuário:</strong>
+                      <span>{{ ((embarqueForm.get('port_charges')?.value || 0) / (embarqueForm.get('total_logistic_cost')?.value || 1) * 100) | number:'1.1-1' }}%</span>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <mat-card class="payments-section">
+                <mat-card-header>
+                  <mat-icon>credit_card</mat-icon>
+                  <mat-card-title>Gestão de Pagamentos</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="form-grid">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Status do Pagamento</mat-label>
+                      <mat-select formControlName="payment_status">
+                        <mat-option value="pendente">Pendente</mat-option>
+                        <mat-option value="parcial">Pago Parcialmente</mat-option>
+                        <mat-option value="pago">Pago Integralmente</mat-option>
+                        <mat-option value="atrasado">Em Atraso</mat-option>
+                      </mat-select>
+                      <mat-icon matSuffix>payment</mat-icon>
+                    </mat-form-field>
+                    
+                    <mat-form-field appearance="outline">
+                      <mat-label>Data de Vencimento</mat-label>
+                      <input 
+                        matInput 
+                        [matDatepicker]="dueDatePicker"
+                        formControlName="payment_due_date"
+                        readonly>
+                      <mat-datepicker-toggle matIconSuffix [for]="dueDatePicker"></mat-datepicker-toggle>
+                      <mat-datepicker #dueDatePicker></mat-datepicker>
+                    </mat-form-field>
+                    
+                    <mat-form-field appearance="outline">
+                      <mat-label>Valor Pago (R$)</mat-label>
+                      <input 
+                        matInput
+                        type="number"
+                        formControlName="amount_paid"
+                        min="0"
+                        step="0.01">
+                      <mat-icon matSuffix>check_circle</mat-icon>
+                    </mat-form-field>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <mat-card class="budget-section">
+                <mat-card-header>
+                  <mat-icon>pie_chart</mat-icon>
+                  <mat-card-title>Controle Orçamentário</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="form-grid">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Orçamento Inicial (R$)</mat-label>
+                      <input 
+                        matInput
+                        type="number"
+                        formControlName="initial_budget"
+                        min="0"
+                        step="0.01"
+                        (input)="calculateBudgetVariation()">
+                      <mat-icon matSuffix>budget</mat-icon>
+                    </mat-form-field>
+                    
+                    <mat-form-field appearance="outline">
+                      <mat-label>Custo Real (R$)</mat-label>
+                      <input 
+                        matInput
+                        type="number"
+                        formControlName="actual_cost"
+                        readonly>
+                      <mat-icon matSuffix>receipt_long</mat-icon>
+                    </mat-form-field>
+                    
+                    <mat-form-field appearance="outline">
+                      <mat-label>Variação (R$)</mat-label>
+                      <input 
+                        matInput
+                        type="number"
+                        formControlName="budget_variation"
+                        readonly>
+                      <mat-icon matSuffix>trending_up</mat-icon>
+                    </mat-form-field>
+                    
+                    <div class="budget-progress">
+                      <label>% Orçamento Usado</label>
+                      <mat-progress-bar 
+                        mode="determinate" 
+                        [value]="getBudgetUsagePercentage()"
+                        [color]="getBudgetUsagePercentage() <= 100 ? 'primary' : 'warn'">
+                      </mat-progress-bar>
+                      <span class="progress-value">{{getBudgetUsagePercentage() | number:'1.1-1'}}%</span>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <mat-card class="profitability-section">
+                <mat-card-header>
+                  <mat-icon>trending_up</mat-icon>
+                  <mat-card-title>Análise de Rentabilidade</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="form-grid">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Receita Bruta (R$)</mat-label>
+                      <input 
+                        matInput
+                        type="number"
+                        formControlName="gross_revenue"
+                        min="0"
+                        step="0.01"
+                        (input)="calculateMargins()">
+                      <mat-icon matSuffix>monetization_on</mat-icon>
+                    </mat-form-field>
+                    
+                    <mat-form-field appearance="outline">
+                      <mat-label>Margem Bruta (%)</mat-label>
+                      <input 
+                        matInput
+                        type="number"
+                        formControlName="gross_margin"
+                        readonly>
+                      <mat-icon matSuffix>percent</mat-icon>
+                    </mat-form-field>
+                    
+                    <mat-form-field appearance="outline">
+                      <mat-label>Lucro Líquido (R$)</mat-label>
+                      <input 
+                        matInput
+                        type="number"
+                        formControlName="net_profit"
+                        readonly>
+                      <mat-icon matSuffix>account_balance_wallet</mat-icon>
+                    </mat-form-field>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <mat-card class="cost-breakdown-section">
+                <mat-card-header>
+                  <mat-icon>list</mat-icon>
+                  <mat-card-title>Breakdown Detalhado de Custos</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="cost-table">
+                    <mat-table [dataSource]="getCostBreakdownData()" class="mat-elevation-z0">
+                      <ng-container matColumnDef="item">
+                        <mat-header-cell *matHeaderCellDef>Item</mat-header-cell>
+                        <mat-cell *matCellDef="let element">{{element.item}}</mat-cell>
+                      </ng-container>
+
+                      <ng-container matColumnDef="value">
+                        <mat-header-cell *matHeaderCellDef>Valor (R$)</mat-header-cell>
+                        <mat-cell *matCellDef="let element">{{element.value | currency:'BRL':'symbol':'1.2-2'}}</mat-cell>
+                      </ng-container>
+
+                      <ng-container matColumnDef="percentage">
+                        <mat-header-cell *matHeaderCellDef>% do Total</mat-header-cell>
+                        <mat-cell *matCellDef="let element">{{element.percentage | number:'1.1-1'}}%</mat-cell>
+                      </ng-container>
+
+                      <ng-container matColumnDef="status">
+                        <mat-header-cell *matHeaderCellDef>Status</mat-header-cell>
+                        <mat-cell *matCellDef="let element">
+                          <mat-chip [class]="element.statusColor">{{element.status}}</mat-chip>
+                        </mat-cell>
+                      </ng-container>
+
+                      <mat-header-row *matHeaderRowDef="['item', 'value', 'percentage', 'status']"></mat-header-row>
+                      <mat-row *matRowDef="let row; columns: ['item', 'value', 'percentage', 'status'];"></mat-row>
+                    </mat-table>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <mat-card class="financial-alerts" *ngIf="hasFinancialAlerts()">
+                <mat-card-header>
+                  <mat-icon>warning</mat-icon>
+                  <mat-card-title>Alertas Financeiros</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="alerts-grid">
+                    <div *ngIf="getBudgetUsagePercentage() > 100" class="alert-item error">
+                      <mat-icon>error</mat-icon>
+                      <span><strong>Orçamento ultrapassado em {{getBudgetUsagePercentage() - 100 | number:'1.1-1'}}%</strong></span>
+                    </div>
+                    
+                    <div *ngIf="isPaymentOverdue()" class="alert-item warning">
+                      <mat-icon>schedule</mat-icon>
+                      <span><strong>Pagamento em atraso</strong></span>
+                    </div>
+                    
+                    <div *ngIf="getGrossMargin() < 10" class="alert-item warning">
+                      <mat-icon>trending_down</mat-icon>
+                      <span><strong>Margem bruta abaixo do objetivo ({{getGrossMargin() | number:'1.1-1'}}%)</strong></span>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            </div>
+          </ng-template>
+        </mat-tab>
+        
+        <!-- Tab Auditoria -->
+        <mat-tab label="Auditoria">
+          <ng-template matTabContent>
+            <div class="tab-content-wrapper">
+              <div class="audit-section">
+                <!-- Informações de Criação -->
+                <mat-card class="audit-card">
+                  <mat-card-header>
+                    <mat-icon>person_add</mat-icon>
+                    <mat-card-title>Criação</mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content>
+                    <div class="audit-grid">
+                      <mat-form-field appearance="outline">
+                        <mat-label>Criado em</mat-label>
+                        <input 
+                          matInput
+                          [value]="formatDateTime(embarque?.created_at)"
+                          readonly>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Criado por</mat-label>
+                        <input 
+                          matInput
+                          [value]="embarque?.created_by_name || 'Sistema'"
+                          readonly>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Método de Criação</mat-label>
+                        <input 
+                          matInput
+                          [value]="embarque?.creation_method || 'Manual'"
+                          readonly>
+                      </mat-form-field>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+
+                <!-- Informações de Última Atualização -->
+                <mat-card class="audit-card">
+                  <mat-card-header>
+                    <mat-icon>update</mat-icon>
+                    <mat-card-title>Última Atualização</mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content>
+                    <div class="audit-grid">
+                      <mat-form-field appearance="outline">
+                        <mat-label>Atualizado em</mat-label>
+                        <input 
+                          matInput
+                          [value]="formatDateTime(embarque?.updated_at)"
+                          readonly>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Atualizado por</mat-label>
+                        <input 
+                          matInput
+                          [value]="embarque?.updated_by_name || 'Sistema'"
+                          readonly>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Tipo de Atualização</mat-label>
+                        <input 
+                          matInput
+                          [value]="embarque?.update_type || 'Manual'"
+                          readonly>
+                      </mat-form-field>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+
+                <!-- Histórico de Alterações -->
+                <mat-card class="audit-card">
+                  <mat-card-header>
+                    <mat-icon>history</mat-icon>
+                    <mat-card-title>Histórico de Alterações</mat-card-title>
+                    <div class="card-actions">
+                      <button mat-button (click)="refreshAuditLog()">
+                        <mat-icon>refresh</mat-icon>
+                        Atualizar
+                      </button>
+                      <button mat-button (click)="exportAuditLog()">
+                        <mat-icon>file_download</mat-icon>
+                        Exportar
+                      </button>
+                    </div>
+                  </mat-card-header>
+                  <mat-card-content>
+                    <div class="audit-log">
+                      <div *ngIf="auditLogs?.length === 0" class="no-audit-logs">
+                        <mat-icon>info</mat-icon>
+                        <p>Nenhuma alteração registrada ainda.</p>
+                      </div>
+                      
+                      <div *ngFor="let log of auditLogs" class="audit-log-entry">
+                        <div class="log-header">
+                          <div class="log-timestamp">
+                            <mat-icon>schedule</mat-icon>
+                            {{ formatDateTime(log.timestamp) }}
+                          </div>
+                          <div class="log-user">
+                            <mat-icon>person</mat-icon>
+                            {{ log.user_name || 'Sistema' }}
+                          </div>
+                          <div class="log-action">
+                            <mat-chip [class]="getActionChipClass(log.action)">
+                              {{ log.action }}
+                            </mat-chip>
+                          </div>
+                        </div>
+                        
+                        <div class="log-details">
+                          <div class="log-description">{{ log.description }}</div>
+                          
+                          <div *ngIf="log.changes && log.changes.length > 0" class="field-changes">
+                            <div *ngFor="let change of log.changes" class="field-change">
+                              <span class="field-name">{{ change.field }}:</span>
+                              <span class="old-value">{{ change.old_value || 'vazio' }}</span>
+                              <mat-icon>arrow_forward</mat-icon>
+                              <span class="new-value">{{ change.new_value }}</span>
+                            </div>
+                          </div>
+
+                          <div *ngIf="log.ip_address" class="log-metadata">
+                            <span class="metadata-item">
+                              <mat-icon>computer</mat-icon>
+                              IP: {{ log.ip_address }}
+                            </span>
+                            <span class="metadata-item" *ngIf="log.user_agent">
+                              <mat-icon>devices</mat-icon>
+                              {{ log.browser_info }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <!-- Carregamento de mais logs -->
+                      <div class="load-more-logs" *ngIf="hasMoreAuditLogs">
+                        <button mat-button (click)="loadMoreAuditLogs()">
+                          <mat-icon>expand_more</mat-icon>
+                          Carregar mais logs
+                        </button>
+                      </div>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+
+                <!-- Compliance e Conformidade -->
+                <mat-card class="audit-card">
+                  <mat-card-header>
+                    <mat-icon>verified_user</mat-icon>
+                    <mat-card-title>Compliance & Conformidade</mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content>
+                    <div class="compliance-checks">
+                      <div class="compliance-item">
+                        <mat-icon [class]="embarque?.gdpr_compliant ? 'text-success' : 'text-warning'">
+                          {{ embarque?.gdpr_compliant ? 'check_circle' : 'warning' }}
+                        </mat-icon>
+                        <span>LGPD/GDPR Compliance</span>
+                        <mat-chip [class]="embarque?.gdpr_compliant ? 'success' : 'warning'">
+                          {{ embarque?.gdpr_compliant ? 'Conforme' : 'Pendente' }}
+                        </mat-chip>
+                      </div>
+
+                      <div class="compliance-item">
+                        <mat-icon [class]="embarque?.audit_trail_complete ? 'text-success' : 'text-warning'">
+                          {{ embarque?.audit_trail_complete ? 'check_circle' : 'warning' }}
+                        </mat-icon>
+                        <span>Trilha de Auditoria</span>
+                        <mat-chip [class]="embarque?.audit_trail_complete ? 'success' : 'warning'">
+                          {{ embarque?.audit_trail_complete ? 'Completa' : 'Incompleta' }}
+                        </mat-chip>
+                      </div>
+
+                      <div class="compliance-item">
+                        <mat-icon [class]="embarque?.data_retention_compliant ? 'text-success' : 'text-warning'">
+                          {{ embarque?.data_retention_compliant ? 'check_circle' : 'warning' }}
+                        </mat-icon>
+                        <span>Retenção de Dados</span>
+                        <mat-chip [class]="embarque?.data_retention_compliant ? 'success' : 'warning'">
+                          {{ embarque?.data_retention_compliant ? 'Conforme' : 'Revisar' }}
+                        </mat-chip>
+                      </div>
+                    </div>
+
+                    <div class="retention-info">
+                      <mat-form-field appearance="outline">
+                        <mat-label>Prazo de Retenção</mat-label>
+                        <input 
+                          matInput
+                          [value]="embarque?.data_retention_period || '7 anos (padrão)'"
+                          readonly>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Data de Exclusão Programada</mat-label>
+                        <input 
+                          matInput
+                          [value]="formatDate(embarque?.scheduled_deletion_date)"
+                          readonly>
+                      </mat-form-field>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              </div>
+            </div>
+          </ng-template>
+        </mat-tab>
+      </mat-tab-group>
+    </form>
+  </mat-card>
+</div>

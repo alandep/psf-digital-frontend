@@ -1,0 +1,364 @@
+<div class="template-edit-dialog">
+  <div mat-dialog-title class="dialog-header">
+    <div class="header-content">
+      <mat-icon>{{ isEditMode ? 'edit' : 'add_circle' }}</mat-icon>
+      <h2>{{ isEditMode ? 'Editar Template' : 'Novo Template' }}</h2>
+      @if (isEditMode && templateForm.get('active')?.value) {
+        <div class="template-status">
+          <mat-chip color="primary" selected>Ativo</mat-chip>
+        </div>
+      }
+    </div>
+    <button mat-icon-button (click)="onCancel()" class="close-button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content class="dialog-content">
+    <form [formGroup]="templateForm" class="template-form">
+      <mat-tab-group [(selectedIndex)]="selectedTabIndex" class="template-tabs">
+        
+        <!-- Aba 1: Geral -->
+        <mat-tab label="Geral">
+          <div class="tab-content">
+            <div class="form-section">
+              <h3>Informações Básicas</h3>
+              
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Nome do Template</mat-label>
+                  <input matInput formControlName="template_name" placeholder="Ex: Template Exportação Soja GAFTA">
+                  <mat-error *ngIf="templateForm.get('template_name')?.hasError('required')">
+                    Nome do template é obrigatório
+                  </mat-error>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Descrição</mat-label>
+                  <textarea matInput formControlName="description" 
+                           rows="3" placeholder="Descrição detalhada do template..."></textarea>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Tipo de Contrato</mat-label>
+                  <mat-select formControlName="contract_type">
+                    <mat-option value="export">Exportação</mat-option>
+                    <mat-option value="import">Importação</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Versão</mat-label>
+                  <input matInput formControlName="version" placeholder="1.0">
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Padrão Organizacional</mat-label>
+                  <mat-select formControlName="organization_standard">
+                    <mat-option value="GAFTA">GAFTA</mat-option>
+                    <mat-option value="FOSFA">FOSFA</mat-option>
+                    <mat-option value="ICC">ICC</mat-option>
+                    <mat-option value="ANEC">ANEC</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <div class="half-width">
+                  <mat-slide-toggle formControlName="active" class="status-toggle">
+                    Template Ativo
+                  </mat-slide-toggle>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Aba 2: Comercial -->
+        <mat-tab label="Comercial">
+          <div class="tab-content">
+            <div class="form-section">
+              <h3>Informações Comerciais</h3>
+              
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Commodity</mat-label>
+                  <mat-select formControlName="commodity">
+                    <mat-option value="SOJA">Soja</mat-option>
+                    <mat-option value="MILHO">Milho</mat-option>
+                    <mat-option value="ACUCAR">Açúcar</mat-option>
+                    <mat-option value="CAFE">Café</mat-option>
+                    <mat-option value="ALGODAO">Algodão</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Quantidade Mínima (TM)</mat-label>
+                  <input matInput type="number" formControlName="quantity_min" placeholder="5000">
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Quantidade Máxima (TM)</mat-label>
+                  <input matInput type="number" formControlName="quantity_max" placeholder="10000">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Preço Padrão</mat-label>
+                  <input matInput type="number" formControlName="default_price" placeholder="450.00">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Incoterm</mat-label>
+                  <mat-select formControlName="incoterm">
+                    <mat-option value="FOB">FOB - Free on Board</mat-option>
+                    <mat-option value="CIF">CIF - Cost, Insurance and Freight</mat-option>
+                    <mat-option value="CFR">CFR - Cost and Freight</mat-option>
+                    <mat-option value="FAS">FAS - Free Alongside Ship</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Especificações do Produto</mat-label>
+                  <textarea matInput formControlName="commodity_grade" 
+                           rows="3" placeholder="Especificações técnicas, qualidade, etc."></textarea>
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Aba 3: Financeiro -->
+        <mat-tab label="Financeiro">
+          <div class="tab-content">
+            <div class="form-section">
+              <h3>Condições Financeiras</h3>
+              
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Moeda</mat-label>
+                  <mat-select formControlName="currency">
+                    <mat-option value="USD">USD - Dólar Americano</mat-option>
+                    <mat-option value="EUR">EUR - Euro</mat-option>
+                    <mat-option value="BRL">BRL - Real Brasileiro</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Termos de Pagamento</mat-label>
+                  <mat-select formControlName="payment_terms">
+                    <mat-option value="LC_SIGHT">LC à Vista</mat-option>
+                    <mat-option value="LC_30D">LC 30 dias</mat-option>
+                    <mat-option value="LC_60D">LC 60 dias</mat-option>
+                    <mat-option value="CAD">Pagamento contra documentos</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Dias para Pagamento</mat-label>
+                  <input matInput type="number" formControlName="payment_days" 
+                         min="0" placeholder="30">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Tipo de Preço</mat-label>
+                  <mat-select formControlName="price_type">
+                    <mat-option value="FIXED">Preço Fixo</mat-option>
+                    <mat-option value="FLOATING">Preço Flutuante</mat-option>
+                    <mat-option value="TO_BE_FIXED">A Fixar</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Observações Financeiras</mat-label>
+                  <textarea matInput formControlName="description" 
+                           rows="3" placeholder="Observações sobre pagamento, descontos, etc."></textarea>
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Aba 4: Logística -->
+        <mat-tab label="Logística">
+          <div class="tab-content">
+            <div class="form-section">
+              <h3>Informações Logísticas</h3>
+              
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Porto/Local Origem</mat-label>
+                  <input matInput formControlName="port_origin" placeholder="Santos, SP">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Porto/Local Destino</mat-label>
+                  <input matInput formControlName="port_destination" placeholder="Shanghai, China">
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Início do Período (dias)</mat-label>
+                  <input matInput type="number" formControlName="shipment_period_start" placeholder="30">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Fim do Período (dias)</mat-label>
+                  <input matInput type="number" formControlName="shipment_period_end" placeholder="60">
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Tipo de Envio</mat-label>
+                  <mat-select formControlName="shipment_type">
+                    <mat-option value="MARITIME">Marítimo</mat-option>
+                    <mat-option value="ROAD">Rodoviário</mat-option>
+                    <mat-option value="RAIL">Ferroviário</mat-option>
+                    <mat-option value="AIR">Aéreo</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <div class="half-width">
+                  <mat-slide-toggle formControlName="partial_shipment_allowed" class="status-toggle">
+                    Embarque Parcial Permitido
+                  </mat-slide-toggle>
+                  <mat-slide-toggle formControlName="transshipment_allowed" class="status-toggle">
+                    Transbordo Permitido
+                  </mat-slide-toggle>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Template do Texto Contratual</mat-label>
+                  <textarea matInput formControlName="contract_text_template" 
+                           rows="4" placeholder="Template base para o texto do contrato..."></textarea>
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Aba 5: Cláusulas -->
+        <mat-tab label="Cláusulas">
+          <div class="tab-content">
+            <div class="form-section">
+              <h3>Cláusulas Contratuais</h3>
+              
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Especificações de Qualidade</mat-label>
+                  <textarea matInput formControlName="quality_specification" 
+                           rows="4" placeholder="Especificações de qualidade, tolerâncias, inspeção..."></textarea>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Cláusulas de Force Majeure</mat-label>
+                  <textarea matInput formControlName="force_majeure_clause" 
+                           rows="3" placeholder="Condições de força maior, eventos cobertos..."></textarea>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Cláusulas de Arbitragem</mat-label>
+                  <mat-select formControlName="arbitration_clause">
+                    <mat-option value="LONDON">Londres</mat-option>
+                    <mat-option value="PARIS">Paris</mat-option>
+                    <mat-option value="SINGAPORE">Singapura</mat-option>
+                    <mat-option value="SAO_PAULO">São Paulo</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Aba 6: IA -->
+        <mat-tab label="IA">
+          <div class="tab-content">
+            <div class="form-section">
+              <h3>Configurações de Inteligência Artificial</h3>
+              
+              <div class="form-row">
+                <mat-slide-toggle formControlName="ai_enabled" class="ai-toggle">
+                  Análise de IA Habilitada
+                </mat-slide-toggle>
+              </div>
+
+              @if (templateForm.get('ai_enabled')?.value) {
+                <div class="ai-config">
+                  <div class="form-row">
+                    <mat-slide-toggle formControlName="ai_auto_fill" class="ai-toggle">
+                      Preenchimento Automático
+                    </mat-slide-toggle>
+                    <mat-slide-toggle formControlName="ai_risk_analysis" class="ai-toggle">
+                      Análise de Riscos
+                    </mat-slide-toggle>
+                  </div>
+
+                  <div class="form-row">
+                    <mat-slide-toggle formControlName="ai_suggest_incoterm" class="ai-toggle">
+                      Sugestão de Incoterms
+                    </mat-slide-toggle>
+                    <mat-slide-toggle formControlName="ai_generate_contract_text" class="ai-toggle">
+                      Geração de Texto Contratual
+                    </mat-slide-toggle>
+                  </div>
+
+                  <div class="form-row">
+                    <mat-slide-toggle formControlName="ai_compliance_check" class="ai-toggle">
+                      Verificação de Conformidade
+                    </mat-slide-toggle>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </mat-tab>
+
+      </mat-tab-group>
+    </form>
+  </mat-dialog-content>
+
+  <mat-dialog-actions class="dialog-actions">
+    <div class="actions-left">
+      <button mat-button (click)="onCancel()" class="cancel-button">
+        <mat-icon>close</mat-icon>
+        Cancelar
+      </button>
+    </div>
+    
+    <div class="actions-right">
+      <button mat-button (click)="onValidate()" [disabled]="templateForm.invalid" class="validate-button">
+        <mat-icon>check_circle</mat-icon>
+        Validar
+      </button>
+      
+      <button mat-raised-button color="primary" (click)="onSave()" 
+              [disabled]="templateForm.invalid || isSaving" class="save-button">
+      @if (isSaving) {
+        <mat-spinner diameter="20"></mat-spinner>
+      } @else {
+        <mat-icon>save</mat-icon>
+      }
+        {{ isEditMode ? 'Atualizar' : 'Criar' }} Template
+      </button>
+    </div>
+  </mat-dialog-actions>
+</div>

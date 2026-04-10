@@ -1,0 +1,598 @@
+// @import '../_embarque-shared.scss';
+
+.embarque-detalhes-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  font-family: 'Inter', sans-serif;
+}
+
+.page-header {
+  margin-bottom: 24px;
+  
+  .breadcrumb-nav {
+    margin-bottom: 16px;
+    
+    .btn-link {
+      color: #666;
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-family: 'Inter', sans-serif;
+      
+      &:hover {
+        color: #1976d2;
+      }
+      
+      i {
+        margin-right: 8px;
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+      }
+    }
+  }
+  
+  .page-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 8px 0;
+    color: #1976d2;
+    font-size: 2rem;
+    font-weight: 500;
+    
+    i {
+      font-size: 2rem;
+      width: 2rem;
+      height: 2rem;
+      color: #1976d2;
+    }
+  }
+  
+  .page-subtitle {
+    margin: 0;
+    color: #666;
+    font-size: 1.1rem;
+  }
+  
+  .header-actions {
+    display: flex;
+    gap: 8px;
+    
+    .btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+      font-family: 'Inter', sans-serif;
+      
+      i {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+    }
+  }
+}
+
+// Cards do Dashboard
+.status-card,
+.tracking-card,
+.risk-card,
+.cost-card {
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  }
+  
+  .card-body {
+    padding: 20px;
+  }
+  
+  .status-icon,
+  .tracking-icon,
+  .risk-icon,
+  .cost-icon {
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #1976d2, #42a5f5);
+    
+    i {
+      color: white;
+      font-size: 2rem;
+      width: 2rem;
+      height: 2rem;
+    }
+  }
+  
+  .card-title {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 16px;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+.risk-card {
+  .risk-icon {
+    background: linear-gradient(135deg, #f57c00, #ffb74d);
+  }
+  
+  .risk-score {
+    margin: 16px 0;
+  }
+}
+
+.cost-card {
+  .cost-icon i {
+    color: #27ae60;
+  }
+}
+
+.arrival-info {
+  font-size: 1.2rem;
+  color: #2c3e50;
+}
+
+.progress {
+  height: 8px;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+  
+  .progress-bar {
+    border-radius: 4px;
+  }
+}
+
+// Cards de Informações
+.card {
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  }
+  
+  .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    border-radius: 8px 8px 0 0;
+    padding: 16px 24px;
+    
+    .card-title {
+      font-weight: 500;
+      color: #333;
+      font-family: 'Inter', sans-serif;
+      
+      i {
+        margin-right: 8px;
+        color: #1976d2;
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+    }
+  }
+  
+  .card-body {
+    padding: 20px;
+  }
+}
+
+// Grid de Informações
+.info-grid {
+  display: grid;
+  gap: 16px;
+  
+  .info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f3f4;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    label {
+      font-weight: 500;
+      color: #666;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    span {
+      color: #333;
+      font-weight: 500;
+      font-family: 'Inter', sans-serif;
+      margin-bottom: 0;
+    }
+  }
+}
+
+// Visual da Rota
+.route-visual {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 1rem 0;
+  
+  .route-point {
+    text-align: center;
+    flex: 1;
+    
+    .port-info {
+      padding: 1rem;
+      border-radius: 8px;
+      
+      i {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+        display: block;
+      }
+      
+      strong {
+        display: block;
+        color: #2c3e50;
+        margin-bottom: 0.25rem;
+      }
+      
+      small {
+        color: #6c757d;
+        font-size: 0.8rem;
+      }
+    }
+    
+    &.origin .port-info {
+      background-color: rgba(52, 152, 219, 0.1);
+      i { color: #3498db; }
+    }
+    
+    &.destination .port-info {
+      background-color: rgba(46, 204, 113, 0.1);
+      i { color: #2ecc71; }
+    }
+  }
+  
+  .route-line {
+    flex: 2;
+    text-align: center;
+    position: relative;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 10%;
+      right: 10%;
+      height: 2px;
+      background: linear-gradient(90deg, #3498db, #2ecc71);
+      transform: translateY(-50%);
+    }
+    
+    i {
+      position: relative;
+      z-index: 1;
+      background: white;
+      padding: 0 1rem;
+      color: #3498db;
+      font-size: 1.5rem;
+    }
+  }
+}
+
+// Grid de datas
+.dates-grid {
+  display: grid;
+  gap: 0.75rem;
+  
+  .date-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f1f3f4;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    label {
+      font-weight: 500;
+      color: #6c757d;
+      margin-bottom: 0;
+    }
+    
+    span {
+      color: #2c3e50;
+      font-weight: 500;
+    }
+  }
+}
+
+// Timeline
+.timeline {
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+  }
+  
+  .timeline-item {
+    position: relative;
+    padding-left: 50px;
+    margin-bottom: 2rem;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+    
+    .timeline-marker {
+      position: absolute;
+      left: 15px;
+      top: 5px;
+      width: 10px;
+      height: 10px;
+      
+      i {
+        font-size: 10px;
+      }
+    }
+    
+    .timeline-content {
+      .timeline-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        
+        h6 {
+          margin-bottom: 0;
+          color: #2c3e50;
+          font-weight: 600;
+        }
+        
+        small {
+          color: #6c757d;
+        }
+      }
+      
+      p {
+        color: #6c757d;
+        margin-bottom: 0;
+      }
+    }
+    
+    &.timeline-completed {
+      .timeline-marker i {
+        color: #28a745;
+      }
+    }
+    
+    &.timeline-current {
+      .timeline-marker i {
+        color: #007bff;
+        animation: pulse 2s infinite;
+      }
+      
+      .timeline-content h6 {
+        color: #007bff;
+      }
+    }
+    
+    &.timeline-pending {
+      .timeline-marker i {
+        color: #6c757d;
+      }
+      
+      .timeline-content {
+        opacity: 0.7;
+      }
+    }
+  }
+}
+
+// Animação de pulse
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+// Alertas da IA
+.alert-list {
+  .alert {
+    border-radius: 6px;
+    border-left: 4px solid;
+    
+    &.alert-info {
+      border-left-color: #17a2b8;
+    }
+    
+    &.alert-warning {
+      border-left-color: #ffc107;
+    }
+    
+    &.alert-danger {
+      border-left-color: #dc3545;
+    }
+    
+    i {
+      margin-right: 0.5rem;
+    }
+  }
+}
+
+.ai-suggestions {
+  h6 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  
+  p {
+    margin-bottom: 0;
+    border-left: 4px solid #3498db;
+    font-style: italic;
+  }
+}
+
+// Itens financeiros
+.financial-item {
+  text-align: center;
+  padding: 1rem;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  
+  label {
+    display: block;
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+  }
+  
+  strong {
+    display: block;
+    font-size: 1.1rem;
+  }
+}
+
+// Badges
+.badge {
+  font-size: 0.8rem;
+  padding: 0.4rem 0.8rem;
+  font-weight: 500;
+  
+  &.badge-secondary {
+    background-color: #6c757d;
+  }
+  
+  &.badge-info {
+    background-color: #17a2b8;
+  }
+  
+  &.badge-primary {
+    background-color: #007bff;
+  }
+  
+  &.badge-success {
+    background-color: #28a745;
+  }
+  
+  &.badge-danger {
+    background-color: #dc3545;
+  }
+  
+  &.badge-warning {
+    background-color: #ffc107;
+    color: #212529;
+  }
+}
+
+// Responsividade
+@media (max-width: 992px) {
+  .embarque-detalhes-container {
+    padding: 1rem;
+  }
+  
+  .page-header {
+    .d-flex {
+      flex-direction: column;
+      gap: 1rem;
+      align-items: start !important;
+    }
+    
+    .header-actions {
+      flex-direction: column;
+      width: 100%;
+      
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+  
+  .route-visual {
+    flex-direction: column;
+    gap: 1rem;
+    
+    .route-line {
+      &::before {
+        display: none;
+      }
+      
+      i {
+        transform: rotate(90deg);
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 1.8rem;
+  }
+  
+  .info-grid .info-item,
+  .dates-grid .date-item {
+    flex-direction: column;
+    align-items: start;
+    gap: 0.25rem;
+  }
+  
+  .timeline {
+    &::before {
+      left: 10px;
+    }
+    
+    .timeline-item {
+      padding-left: 30px;
+      
+      .timeline-marker {
+        left: 5px;
+      }
+    }
+  }
+  
+  .financial-item {
+    margin-bottom: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .timeline-content .timeline-header {
+    flex-direction: column;
+    align-items: start;
+    gap: 0.25rem;
+  }
+  
+  .card-body {
+    padding: 1rem;
+  }
+}

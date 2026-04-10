@@ -1,0 +1,11 @@
+name,product_code,commodity_type,ncm_code,hs_code,origin_country,standard_price,currency,unit
+Soja Grão Premium,SOJA_PREM_001,SOJA,1201.90.00,1201,Brasil,450.50,USD,MT
+Milho Amarelo Export,MILHO_EXP_002,MILHO,1005.90.11,1005,Brasil,280.00,USD,MT
+Café Arábica Santos,CAFE_ARAB_003,CAFE,0901.11.10,0901,Brasil,3200.75,USD,MT
+Açúcar Cristal VHP,ACUCAR_VHP_004,ACUCAR,1701.14.00,1701,Brasil,520.25,USD,MT
+Algodão em Pluma,ALGODAO_PLU_005,ALGODAO,5201.00.90,5201,Brasil,1850.00,USD,MT
+Soja Farelo Alta Proteína,SOJA_FAR_006,SOJA,2304.00.00,2304,Brasil,380.30,USD,MT
+Milho para Ração,MILHO_RAC_007,MILHO,1005.90.19,1005,Brasil,260.50,USD,MT
+Café Robusta Conillon,CAFE_ROB_008,CAFE,0901.12.00,0901,Brasil,2850.00,USD,MT
+Açúcar Demerara,ACUCAR_DEM_009,ACUCAR,1701.13.00,1701,Brasil,580.75,USD,MT
+Algodão Beneficiado,ALGODAO_BEN_010,ALGODAO,5201.00.20,5201,Brasil,1920.00,USD,MT

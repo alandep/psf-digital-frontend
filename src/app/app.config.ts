@@ -6,6 +6,7 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { routes } from './app.routes';
 import { BffService } from './services/bff.service';
 import { NotificationService } from './services/notification.service';
+import { NCMClassificationMockService } from '../services/ncm-classification-mock.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -15,6 +16,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withFetch()),
     BffService,
     NotificationService,
+    NCMClassificationMockService,
   ],
 };
 

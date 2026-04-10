@@ -1,0 +1,164 @@
+// Variáveis CSS compartilhadas para módulo de Embarques seguindo padrão EIP
+
+// Cores primárias do EIP
+:root {
+  --primary-color: #1976d2;
+  --primary-light: #42a5f5;
+  --primary-dark: #1565c0;
+  
+  --secondary-color: #666;
+  --secondary-light: #999;
+  --secondary-dark: #333;
+  
+  --success-color: #388e3c;
+  --success-light: #66bb6a;
+  --success-dark: #2e7d32;
+  
+  --warning-color: #f57c00;
+  --warning-light: #ffb74d;
+  --warning-dark: #ef6c00;
+  
+  --danger-color: #d32f2f;
+  --danger-light: #ef5350;
+  --danger-dark: #c62828;
+  
+  --info-color: #1976d2;
+  --info-light: #42a5f5;
+  --info-dark: #1565c0;
+  
+  // Cores neutras
+  --background-color: #f8f9fa;
+  --border-color: #e9ecef;
+  --text-color: #333;
+  --text-muted: #666;
+  
+  // Tipografia
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  // Espaçamentos
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 16px;
+  --spacing-lg: 20px;
+  --spacing-xl: 24px;
+  
+  // Sombras
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.1);
+  --shadow-lg: 0 6px 20px rgba(0,0,0,0.1);
+  --shadow-xl: 0 8px 25px rgba(0,0,0,0.15);
+  
+  // Border radius
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+}
+
+// Mixins para gradientes
+@mixin gradient-primary {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+}
+
+@mixin gradient-success {
+  background: linear-gradient(135deg, var(--success-color), var(--success-light));
+}
+
+@mixin gradient-warning {
+  background: linear-gradient(135deg, var(--warning-color), var(--warning-light));
+}
+
+@mixin gradient-danger {
+  background: linear-gradient(135deg, var(--danger-color), var(--danger-light));
+}
+
+// Mixin para hover effect padrão dos cards
+@mixin card-hover {
+  transition: transform 0.2s, box-shadow 0.2s;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+}
+
+// Mixin para botões padrão EIP
+@mixin btn-eip($color, $light-color, $dark-color) {
+  background: linear-gradient(135deg, #{$color}, #{$light-color});
+  border: none;
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--border-radius-sm);
+  
+  &:hover {
+    background: linear-gradient(135deg, #{$dark-color}, #{$color});
+    transform: translateY(-1px);
+  }
+}
+
+// Classe utilitária para ícones
+.eip-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+// Classes utilitárias para cores
+.text-primary-eip { color: var(--primary-color) !important; }
+.text-secondary-eip { color: var(--secondary-color) !important; }
+.text-success-eip { color: var(--success-color) !important; }
+.text-warning-eip { color: var(--warning-color) !important; }
+.text-danger-eip { color: var(--danger-color) !important; }
+
+// Classes para KPI cards seguindo padrão EIP
+.kpi-card-eip {
+  @include card-hover;
+  border: none;
+  box-shadow: var(--shadow-md);
+  border-radius: var(--border-radius-md);
+  
+  .kpi-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: var(--border-radius-lg);
+    margin-bottom: var(--spacing-md);
+    
+    &.primary { @include gradient-primary; }
+    &.success { @include gradient-success; }
+    &.warning { @include gradient-warning; }
+    &.danger { @include gradient-danger; }
+    
+    i {
+      color: white;
+      font-size: 2rem;
+      width: 2rem;
+      height: 2rem;
+    }
+  }
+  
+  .kpi-label {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    font-weight: var(--font-weight-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: var(--font-family);
+  }
+  
+  .kpi-value {
+    font-size: 1.5rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-color);
+    font-family: var(--font-family);
+  }
+}

@@ -1,0 +1,44 @@
+.catalog-container {
+  background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.product-card:hover {
+  box-shadow: 0 8px 24px rgba(76, 175, 80, 0.2);
+  transform: translateY(-2px);
+  border-color: #4caf50;
+}
+
+.kpi-card {
+  transition: transform 0.2s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+.detail-item {
+  transition: transform 0.2s ease;
+}
+
+.detail-item:hover {
+  transform: scale(1.05);
+}
+
+.integration-item {
+  transition: all 0.2s ease;
+}
+
+.integration-item:hover {
+  background-color: #f5f5f5;
+}
+
+.quality-indicator {
+  transition: transform 0.2s ease;
+}
+
+.quality-indicator:hover {
+  transform: scale(1.02);
+}
