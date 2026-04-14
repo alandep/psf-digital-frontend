@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, HostListener, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, HostListener, ViewChild, AfterViewInit, ElementRef, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -60,7 +60,11 @@ interface LoggedUser {
           [attr.role]="'navigation'"
           mode="over"
           [disableClose]="false"
-          [autoFocus]="false">
+          [autoFocus]="false"
+          (backdropClick)="onBackdropClick()"
+          (keydown.escape)="onEscapeKey()"
+          (opened)="onSidenavOpened()"
+          (closed)="onSidenavClosed()">
         
         <!-- Logo e Header -->
         <div class="sidenav-header">
@@ -81,7 +85,7 @@ interface LoggedUser {
               <!-- Cabeçalho do menu expansível -->
               <mat-list-item 
                 class="menu-header-item"
-                (click)="toggleMenu(item.title); $event.stopPropagation()">
+                (click)="toggleMenu(item.title)">
                 <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
                 <span matListItemTitle class="menu-text">{{ item.title }}</span>
                 <mat-icon class="expand-icon" [class.expanded]="item.title === expandedMenu">
@@ -96,7 +100,7 @@ interface LoggedUser {
                   class="submenu-item"
                   [matTooltip]="subItem.name"
                   matTooltipPosition="right"
-                  (click)="handleMenuClick(subItem.route)">
+                  (click)="handleMenuClick(subItem.route)">                  
                   <mat-icon matListItemIcon>{{ subItem.icon }}</mat-icon>
                   <span matListItemTitle class="submenu-text">{{ subItem.name }}</span>
                 </mat-list-item>
@@ -918,6 +922,8 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
   private router = inject(Router);
   private notificationService = inject(NotificationService);
   private breakpointObserver = inject(BreakpointObserver);
+  private ngZone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
   private destroy$ = new Subject<void>();
 
   expandedMenu = '';
@@ -941,7 +947,7 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit(): void {
     this.notificationService.showInfo('Bem-vindo à Export Intelligence Platform!');
     
-    // Detecção responsiva melhorada
+    // Detecção responsiva
     this.breakpointObserver.observe([
       Breakpoints.Handset,
       Breakpoints.TabletPortrait,
@@ -950,25 +956,14 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
     .pipe(takeUntil(this.destroy$))
     .subscribe(result => {
       this.isHandset = result.matches;
-      console.log('🔄 Breakpoint changed:', { 
-        isHandset: this.isHandset, 
-        viewport: window.innerWidth 
-      });
     });
   }
   
   ngAfterViewInit(): void {
-    // Verifica se o ViewChild foi inicializado corretamente
+    // Configuração simples do ViewChild
     setTimeout(() => {
       if (this.drawer) {
-        console.log('✅ Drawer ViewChild inicializado com sucesso');
-        console.log('📊 Estado inicial do drawer:', {
-          opened: this.drawer.opened,
-          mode: this.drawer.mode,
-          position: this.drawer.position
-        });
-      } else {
-        console.error('❌ Drawer ViewChild não foi inicializado!');
+        console.log('✅ Drawer inicializado:', !!this.drawer);
       }
     }, 100);
   }
@@ -993,73 +988,97 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
   
-  // Método para toggle manual do sidenav usando ViewChild
   toggleSidenav(): void {
-    console.log('🔄 Toggle sidenav chamado');
-    
+    console.log('🍔 Toggle sidenav clicked');
     if (this.drawer) {
+      console.log('📝 Estado atual:', this.drawer.opened);
+      
+      // Se está fechado e vai abrir, reseta estados CSS
+      if (!this.drawer.opened) {
+        this.resetSidenavStyles();
+      }
+      
       this.drawer.toggle();
-      console.log('✅ drawer.toggle() executado');
+      console.log('🔄 Toggle executado');
+      
+      setTimeout(() => {
+        console.log('📝 Estado após toggle:', this.drawer?.opened);
+      }, 100);
     } else {
-      console.error('⚠️ Drawer não encontrado! ViewChild pode não estar inicializado.');
+      console.warn('⚠️ Drawer não inicializado');
+    }
+  }
+  
+  private resetSidenavStyles(): void {
+    const sidenavEl = document.querySelector('mat-sidenav');
+    const backdropEl = document.querySelector('.mat-drawer-backdrop');
+    
+    if (sidenavEl) {
+      (sidenavEl as HTMLElement).style.visibility = '';
+      (sidenavEl as HTMLElement).style.transform = '';
+    }
+    if (backdropEl) {
+      (backdropEl as HTMLElement).style.display = '';
     }
   }
 
-  // Método para fechar sidenav ao clicar nos itens
+  // ========== SOLUÇÃO DEFINITIVA - FORÇA FECHAMENTO ==========
+  
   handleMenuClick(route: string): void {
-    console.log('🚀 Menu clicado:', route);
+    console.log('👆 Menu clicked. Route:', route);
     
-    // Fecha expansion panel se houver
+    // Fecha submenu expansível
     this.expandedMenu = '';
     
-    // Navega imediatamente
-    this.navigateTo(route);
+    // FORÇA fechamento imediato e efetivo 
+    this.forceCloseSidenav();
     
-    // Força fechamento do sidenav com múltiplas técnicas
-    this.forceSidenavClose();
-  }
-  
-  // Força fechamento com várias técnicas
-  private forceSidenavClose(): void {
-    console.log('🔒 Forçando fechamento do sidenav...');
-    
-    // Técnica 1: ViewChild
-    if (this.drawer && this.drawer.opened) {
-      this.drawer.close();
-      console.log('✅ drawer.close() chamado');
-    }
-    
-    // Técnica 2: Simular click no backdrop
+    // Navega
     setTimeout(() => {
-      const backdrop = document.querySelector('.cdk-overlay-backdrop');
-      if (backdrop) {
-        (backdrop as HTMLElement).click();
-        console.log('✅ Backdrop clicado');
+      this.navigateTo(route);
+    }, 150);
+  }
+
+  private forceCloseSidenav(): void {
+    if (!this.drawer) return;
+
+    console.log('🔒 Forçando fechamento...Estado atual:', this.drawer.opened);
+    
+    // 1. Método nativo
+    this.drawer.close();
+    
+    // 2. Força estado interno
+    setTimeout(() => {
+      if (this.drawer?.opened) {
+        // Acessa propriedade privada para forçar estado
+        (this.drawer as any)._opened = false;
+        (this.drawer as any)._openedStream?.next(false);
+        
+        // Força detecção de mudanças
+        (this.drawer as any)._changeDetectorRef?.markForCheck();
       }
     }, 50);
-    
-    // Técnica 3: ESC key
+
+    // 3. Manipulação CSS como backup
     setTimeout(() => {
-      document.dispatchEvent(new KeyboardEvent('keydown', {
-        key: 'Escape',
-        code: 'Escape', 
-        keyCode: 27,
-        bubbles: true
-      }));
-      console.log('✅ ESC key enviado');
+      const sidenavEl = document.querySelector('mat-sidenav');
+      const backdropEl = document.querySelector('.mat-drawer-backdrop');
+      
+      if (sidenavEl) {
+        (sidenavEl as HTMLElement).style.visibility = 'hidden';
+        (sidenavEl as HTMLElement).style.transform = 'translateX(-100%)';
+      }
+      if (backdropEl) {
+        (backdropEl as HTMLElement).style.display = 'none';
+      }
+      
+      console.log('✅ Fechamento forçado aplicado!');
     }, 100);
   }
   
-
   toggleMenu(title: string): void {
     const wasExpanded = this.expandedMenu === title;
     this.expandedMenu = wasExpanded ? '' : title;
-    
-    console.log('📂 Menu toggled:', { 
-      menu: title, 
-      expanded: !wasExpanded,
-      currentExpanded: this.expandedMenu
-    });
   }
 
   // Nova estrutura de menus para Export Intelligence Platform
@@ -1389,6 +1408,24 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
     
     // Para usar o AI assistant component que já existe
     // Você pode adicionar lógica específica aqui se necessário
+  }
+
+  onBackdropClick(): void {
+    console.log('🎭 Backdrop clicked');
+    // Deixa o Angular Material gerenciar automaticamente
+  }
+
+  onEscapeKey(): void {
+    console.log('⌨️ Escape key pressed');
+    // Deixa o Angular Material gerenciar automaticamente
+  }
+  
+  onSidenavOpened(): void {
+    // Sidenav aberto
+  }
+  
+  onSidenavClosed(): void {
+    this.expandedMenu = ''; // Fecha submenus quando sidenav fecha
   }
 }
 
