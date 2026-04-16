@@ -1,0 +1,480 @@
+.novos-pedidos-container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #fafafa;
+  min-height: calc(100vh - 120px);
+}
+
+/* ========== HEADER SECTION ========== */
+.header-section {
+  margin-bottom: 32px;
+  
+  .header-card {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    
+    .header-avatar {
+      background: linear-gradient(135deg, #1976d2, #42a5f5);
+      color: white;
+      
+      mat-icon {
+        font-size: 24px;
+        line-height: 1;
+      }
+    }
+    
+    mat-card-title {
+      font-size: 28px;
+      font-weight: 500;
+      color: #1976d2;
+    }
+    
+    mat-card-subtitle {
+      font-size: 16px;
+      color: #666;
+      margin-top: 8px;
+    }
+  }
+}
+
+/* ========== PROGRESS SECTION ========== */
+.progress-info {
+  margin-top: 24px;
+  
+  .progress-text {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    
+    .current-step {
+      font-size: 18px;
+      font-weight: 500;
+      color: #1976d2;
+    }
+    
+    .progress-counter {
+      font-size: 14px;
+      color: #666;
+      background: #e3f2fd;
+      padding: 4px 12px;
+      border-radius: 16px;
+    }
+  }
+  
+  .progress-bar {
+    height: 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    
+    ::ng-deep .mat-progress-bar-fill::after {
+      background: linear-gradient(90deg, #1976d2, #42a5f5);
+    }
+    
+    ::ng-deep .mat-progress-bar-buffer {
+      background: #e3f2fd;
+    }
+  }
+  
+  .progress-percentage {
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1976d2;
+  }
+}
+
+/* ========== STEPS OVERVIEW ========== */
+.steps-overview {
+  margin-top: 24px;
+  
+  .steps-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: space-between;
+    
+    @media (max-width: 768px) {
+      justify-content: flex-start;
+    }
+    
+    .step-chip {
+      flex: 1;
+      min-width: 180px;
+      height: 48px;
+      font-size: 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+      
+      mat-icon {
+        font-size: 18px;
+        margin-right: 8px;
+      }
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      }
+      
+      &.completed {
+        background: #4caf50 !important;
+        color: white;
+        
+        mat-icon {
+          color: white;
+        }
+      }
+      
+      &.mat-chip-selected {
+        background: #1976d2 !important;
+        color: white;
+        border-color: #1976d2;
+      }
+      
+      @media (max-width: 768px) {
+        flex: none;
+        min-width: 160px;
+      }
+    }
+  }
+}
+
+/* ========== LOADING OVERLAY ========== */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255,255,255,0.9);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  .loading-card {
+    min-width: 300px;
+    text-align: center;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    
+    .loading-content {
+      padding: 24px;
+      
+      mat-progress-bar {
+        margin-bottom: 16px;
+      }
+      
+      p {
+        margin: 0;
+        color: #666;
+        font-size: 16px;
+      }
+    }
+  }
+}
+
+/* ========== STEPPER SECTION ========== */
+.stepper-section {
+  margin-bottom: 32px;
+}
+
+.novos-pedidos-stepper {
+  background: transparent;
+  
+  ::ng-deep {
+    .mat-stepper-vertical {
+      .mat-step {
+        .mat-step-header {
+          padding: 16px 24px;
+          margin-bottom: 16px;
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          transition: all 0.3s ease;
+          
+          &:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+          }
+          
+          .mat-step-icon {
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 2px solid #1976d2;
+            width: 32px;
+            height: 32px;
+            
+            &.mat-step-icon-selected {
+              background: #1976d2;
+              color: white;
+            }
+            
+            &.mat-step-icon-state-done {
+              background: #4caf50;
+              color: white;
+              border-color: #4caf50;
+            }
+          }
+          
+          .mat-step-label {
+            font-weight: 500;
+            color: #333;
+            
+            .step-label {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              
+              mat-icon {
+                font-size: 20px;
+                color: #1976d2;
+              }
+              
+              span {
+                font-size: 16px;
+              }
+            }
+          }
+        }
+        
+        .mat-step-content {
+          margin-left: 0;
+          padding: 0;
+          border: none;
+        }
+        
+        .mat-vertical-stepper-content {
+          padding: 0 0 24px 0;
+        }
+        
+        .mat-vertical-content-container {
+          margin-left: 0;
+          border: none;
+        }
+      }
+    }
+  }
+}
+
+/* ========== STEP CARDS ========== */
+.step-card {
+  margin-bottom: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  }
+  
+  .step-avatar {
+    background: linear-gradient(135deg, #1976d2, #42a5f5);
+    color: white;
+    
+    mat-icon {
+      font-size: 24px;
+    }
+  }
+  
+  mat-card-title {
+    font-size: 22px;
+    font-weight: 500;
+    color: #333;
+  }
+  
+  mat-card-subtitle {
+    font-size: 14px;
+    color: #666;
+    margin-top: 4px;
+  }
+  
+  mat-card-content {
+    padding: 24px;
+  }
+}
+
+/* ========== ACTIONS SECTION ========== */
+.actions-section {
+  position: sticky;
+  bottom: 24px;
+  z-index: 100;
+  
+  .actions-card {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    border-radius: 12px;
+    background: white;
+    
+    .actions-content {
+      padding: 16px 24px;
+      
+      .status-info {
+        margin-bottom: 16px;
+        
+        .status-chip {
+          background: #e8f5e8;
+          color: #2e7d32;
+          margin-right: 8px;
+          
+          mat-icon {
+            color: #4caf50;
+          }
+        }
+        
+        .progress-chip {
+          background: #e3f2fd;
+          color: #1976d2;
+        }
+      }
+      
+      .actions-buttons {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        
+        @media (max-width: 768px) {
+          flex-direction: column;
+          gap: 12px;
+        }
+        
+        .navigation-buttons {
+          display: flex;
+          gap: 12px;
+          
+          .nav-button {
+            min-width: 120px;
+            height: 48px;
+            border-radius: 8px;
+            font-weight: 500;
+            
+            mat-icon {
+              margin: 0 4px;
+            }
+          }
+        }
+        
+        .main-buttons {
+          display: flex;
+          gap: 12px;
+          
+          button {
+            height: 48px;
+            border-radius: 8px;
+            font-weight: 500;
+            min-width: 120px;
+            
+            mat-icon {
+              margin-right: 8px;
+            }
+          }
+          
+          .save-button {
+            border: 2px solid #1976d2;
+            color: #1976d2;
+            
+            &:hover {
+              background: #e3f2fd;
+            }
+          }
+          
+          .cancel-button {
+            color: #666;
+            
+            &:hover {
+              background: #f5f5f5;
+            }
+          }
+          
+          .submit-button {
+            background: linear-gradient(135deg, #4caf50, #66bb6a);
+            color: white;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+            
+            &:hover:not(:disabled) {
+              transform: translateY(-2px);
+              box-shadow: 0 4px 16px rgba(76, 175, 80, 0.4);
+            }
+            
+            &:disabled {
+              background: #e0e0e0;
+              color: #9e9e9e;
+              box-shadow: none;
+            }
+          }
+        }
+        
+        mat-divider {
+          height: 40px;
+          
+          @media (max-width: 768px) {
+            display: none;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* ========== RESPONSIVE DESIGN ========== */
+@media (max-width: 768px) {
+  .novos-pedidos-container {
+    padding: 16px;
+  }
+  
+  .header-section .header-card {
+    mat-card-title {
+      font-size: 24px;
+    }
+  }
+  
+  .step-card {
+    mat-card-content {
+      padding: 16px;
+    }
+  }
+  
+  .actions-section .actions-card .actions-content {
+    padding: 16px;
+    
+    .actions-buttons {
+      .navigation-buttons,
+      .main-buttons {
+        width: 100%;
+        justify-content: space-between;
+        
+        button {
+          flex: 1;
+          min-width: auto;
+        }
+      }
+    }
+  }
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.step-card {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* ========== ACCESSIBILITY ========== */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

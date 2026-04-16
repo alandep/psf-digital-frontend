@@ -138,9 +138,9 @@ export const routes: Routes = [
       {
         path: 'exportacoes/pedidos',
         loadComponent: () =>
-          import('./components/exportacao/exportacao-lista/exportacao-lista.component').then((m) => {
-            console.log('Loading ExportacaoListaComponent (Pedidos):', m);
-            return m.ExportacaoListaComponent;
+          import('./components/exportacao/novo-pedido/novo-pedido-stepper.component').then((m) => {
+            console.log('Loading NovoPedidoStepperComponent:', m);
+            return m.NovoPedidoStepperComponent;
           }),
       },
       {

@@ -1,0 +1,294 @@
+<div class="novos-pedidos-container">
+  <!-- Header com Progresso -->
+  <div class="header-section">
+    <mat-card class="header-card">
+      <mat-card-header>
+        <div mat-card-avatar class="header-avatar">
+          <mat-icon>add_shopping_cart</mat-icon>
+        </div>
+        <mat-card-title>Novo Pedido de Exportação</mat-card-title>
+        <mat-card-subtitle>
+          Assistente inteligente para criação de pedidos de exportação
+        </mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <!-- Progress Bar com Informações -->
+        <div class="progress-info">
+          <div class="progress-text">
+            <span class="current-step">{{ getCurrentStepName() }}</span>
+            <span class="progress-counter">{{ currentStepIndex + 1 }} de {{ totalSteps }}</span>
+          </div>
+          <mat-progress-bar 
+            mode="determinate" 
+            [value]="progressPercentage"
+            class="progress-bar">
+          </mat-progress-bar>
+          <div class="progress-percentage">{{ progressPercentage }}% concluído</div>
+        </div>
+        
+        <!-- Steps Overview -->
+        <div class="steps-overview">
+          <mat-chip-set class="steps-chips">
+            <mat-chip 
+              *ngFor="let step of steps; let i = index"
+              [selected]="i === currentStepIndex"
+              [disabled]="i > currentStepIndex && isLinear"
+              (click)="goToStep(i)"
+              [class.completed]="step.isCompleted"
+              class="step-chip">
+              <mat-icon>{{ step.isCompleted ? 'check_circle' : step.icon }}</mat-icon>
+              {{ step.stepName }}
+            </mat-chip>
+          </mat-chip-set>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div *ngIf="loading" class="loading-overlay">
+    <mat-card class="loading-card">
+      <mat-card-content>
+        <div class="loading-content">
+          <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+          <p>Carregando dados iniciais...</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Stepper Principal -->
+  <div *ngIf="!loading" class="stepper-section">
+    <mat-stepper 
+      #stepper 
+      [linear]="isLinear"
+      orientation="vertical"
+      class="novos-pedidos-stepper">
+      
+      <!-- Step 1: Informações Básicas -->
+      <mat-step [stepControl]="informacaoBasicaForm" label="Informações Básicas">
+        <ng-template matStepLabel>
+          <div class="step-label">
+            <mat-icon>info</mat-icon>
+            <span>Informações Básicas</span>
+          </div>
+        </ng-template>
+        
+        <mat-card class="step-card">
+          <mat-card-header>
+            <div mat-card-avatar class="step-avatar">
+              <mat-icon>info</mat-icon>
+            </div>
+            <mat-card-title>Dados Gerais da Exportação</mat-card-title>
+            <mat-card-subtitle>
+              Configure as informações principais da operação de exportação
+            </mat-card-subtitle>
+          </mat-card-header>
+          
+          <mat-card-content>
+            <app-informacao-basica
+              [data]="exportacaoData[0]"
+              (dataChanged)="onStepDataChanged(0, $event)">
+            </app-informacao-basica>
+          </mat-card-content>
+        </mat-card>
+      </mat-step>
+      
+      <!-- Step 2: Produtos -->
+      <mat-step [stepControl]="produtosForm" label="Produtos">
+        <ng-template matStepLabel>
+          <div class="step-label">
+            <mat-icon>inventory_2</mat-icon>
+            <span>Produtos</span>  
+          </div>
+        </ng-template>
+        
+        <mat-card class="step-card">
+          <mat-card-header>
+            <div mat-card-avatar class="step-avatar">
+              <mat-icon>inventory_2</mat-icon>
+            </div>
+            <mat-card-title>Produtos & Especificações</mat-card-title>
+            <mat-card-subtitle>
+              Defina produtos, quantidades e especificações técnicas
+            </mat-card-subtitle>
+          </mat-card-header>
+          
+          <mat-card-content>
+            <app-produtos
+              [data]="exportacaoData[1]"
+              (dataChanged)="onStepDataChanged(1, $event)">
+            </app-produtos>
+          </mat-card-content>
+        </mat-card>
+      </mat-step>
+      
+      <!-- Step 3: Logística -->
+      <mat-step [stepControl]="logisticaForm" label="Logística">
+        <ng-template matStepLabel>
+          <div class="step-label">
+            <mat-icon>local_shipping</mat-icon>
+            <span>Logística</span>
+          </div>
+        </ng-template>
+        
+        <mat-card class="step-card">
+          <mat-card-header>
+            <div mat-card-avatar class="step-avatar">
+              <mat-icon>local_shipping</mat-icon>
+            </div>
+            <mat-card-title>Logística & Transporte</mat-card-title>
+            <mat-card-subtitle>
+              Configure origem, destino e modalidades de transporte
+            </mat-card-subtitle>
+          </mat-card-header>
+          
+          <mat-card-content>
+            <app-logistica
+              [data]="exportacaoData[2]"
+              (dataChanged)="onStepDataChanged(2, $event)">
+            </app-logistica>
+          </mat-card-content>
+        </mat-card>
+      </mat-step>
+      
+      <!-- Step 4: Documentação -->
+      <mat-step [stepControl]="documentacaoForm" label="Documentação">
+        <ng-template matStepLabel>
+          <div class="step-label">
+            <mat-icon>description</mat-icon>
+            <span>Documentação</span>
+          </div>
+        </ng-template>
+        
+        <mat-card class="step-card">
+          <mat-card-header>
+            <div mat-card-avatar class="step-avatar">
+              <mat-icon>description</mat-icon>
+            </div>
+            <mat-card-title>Documentação & Certificados</mat-card-title>
+            <mat-card-subtitle>
+              Anexe e configure a documentação necessária para exportação
+            </mat-card-subtitle>
+          </mat-card-header>
+          
+          <mat-card-content>
+            <app-documentacao
+              [data]="exportacaoData[3]"
+              (dataChanged)="onStepDataChanged(3, $event)">
+            </app-documentacao>
+          </mat-card-content>
+        </mat-card>
+      </mat-step>
+      
+      <!-- Step 5: Revisão e Confirmação -->
+      <mat-step [stepControl]="revisaoForm" label="Revisão">
+        <ng-template matStepLabel>
+          <div class="step-label">
+            <mat-icon>check_circle</mat-icon>
+            <span>Revisão & Confirmação</span>
+          </div>
+        </ng-template>
+        
+        <mat-card class="step-card">
+          <mat-card-header>
+            <div mat-card-avatar class="step-avatar">
+              <mat-icon>check_circle</mat-icon>
+            </div>
+            <mat-card-title>Revisão Final</mat-card-title>
+            <mat-card-subtitle>
+              Revise todas as informações antes de submeter o pedido
+            </mat-card-subtitle>
+          </mat-card-header>
+          
+          <mat-card-content>
+            <app-revisao-confirmacao
+              [data]="exportacaoData"
+              (dataChanged)="onStepDataChanged(4, $event)">
+            </app-revisao-confirmacao>
+          </mat-card-content>
+        </mat-card>
+      </mat-step>
+    </mat-stepper>
+  </div>
+
+  <!-- Actions Footer -->
+  <div class="actions-section">
+    <mat-card class="actions-card">
+      <mat-card-content>
+        <div class="actions-content">
+          <!-- Informações do Status -->
+          <div class="status-info">
+            <mat-chip-set>
+              <mat-chip class="status-chip">
+                <mat-icon>schedule</mat-icon>
+                Rascunho Automático
+              </mat-chip>
+              <mat-chip class="progress-chip">
+                {{ getCompletedStepsCount() }}/{{ totalSteps }} Etapas Concluídas
+              </mat-chip>
+            </mat-chip-set>
+          </div>
+          
+          <!-- Botões de Ação -->
+          <div class="actions-buttons">
+            <!-- Navegação -->
+            <div class="navigation-buttons">
+              <button 
+                mat-button
+                [disabled]="currentStepIndex === 0"
+                (click)="previousStep()"
+                class="nav-button">
+                <mat-icon>chevron_left</mat-icon>
+                Anterior
+              </button>
+              
+              <button 
+                mat-flat-button
+                color="primary"
+                [disabled]="currentStepIndex === totalSteps - 1"
+                (click)="nextStep()"
+                class="nav-button">
+                Próximo
+                <mat-icon>chevron_right</mat-icon>
+              </button>
+            </div>
+            
+            <mat-divider vertical></mat-divider>
+            
+            <!-- Ações Principais -->
+            <div class="main-buttons">
+              <button 
+                mat-stroked-button
+                (click)="saveAndExit()"
+                [disabled]="saving"
+                class="save-button">
+                <mat-icon>save</mat-icon>
+                Salvar e Sair
+              </button>
+              
+              <button 
+                mat-button
+                (click)="cancelProcess()"
+                class="cancel-button">
+                <mat-icon>cancel</mat-icon>
+                Cancelar
+              </button>
+              
+              <button 
+                mat-raised-button
+                color="accent"
+                [disabled]="!isAllStepsCompleted() || saving"
+                (click)="submitExportacao()"
+                class="submit-button">
+                <mat-icon>check</mat-icon>
+                {{ saving ? 'Enviando...' : 'Criar Pedido' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
