@@ -1,0 +1,139 @@
+<!-- Header -->
+<div class="dialog-header">
+  <div class="header-content">
+    <mat-icon class="header-icon">gavel</mat-icon>
+    <div>
+      <h2>Nova Licença</h2>
+      <p>Cadastro de nova licença regulatória</p>
+    </div>
+  </div>
+  <button mat-icon-button (click)="close()" class="close-btn">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<!-- Content -->
+<mat-dialog-content>
+  <form [formGroup]="licenseForm">
+    <mat-tab-group>
+      <!-- Tab 1: Dados Gerais -->
+      <mat-tab label="Dados Gerais">
+        <div class="form-content">
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Nº Licença</mat-label>
+              <input matInput formControlName="licenseNumber">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Tipo de Licença</mat-label>
+              <mat-select formControlName="licenseType">
+                <mat-option *ngFor="let t of data.licenseTypes" [value]="t">{{ t }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Empresa</mat-label>
+              <mat-select formControlName="company">
+                <mat-option *ngFor="let c of companies" [value]="c">{{ c }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Produto</mat-label>
+              <mat-select formControlName="productName">
+                <mat-option *ngFor="let p of products" [value]="p">{{ p }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>País Destino</mat-label>
+              <mat-select formControlName="destinationCountry">
+                <mat-option *ngFor="let c of data.countries" [value]="c">{{ c }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Órgão Regulador</mat-label>
+              <mat-select formControlName="regulatoryBody">
+                <mat-option *ngFor="let o of data.regulatoryBodies" [value]="o">{{ o }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Data Emissão</mat-label>
+              <input matInput [matDatepicker]="issueDate" formControlName="issueDate">
+              <mat-datepicker-toggle matIconSuffix [for]="issueDate"></mat-datepicker-toggle>
+              <mat-datepicker #issueDate></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Data Validade</mat-label>
+              <input matInput [matDatepicker]="expiryDate" formControlName="expiryDate">
+              <mat-datepicker-toggle matIconSuffix [for]="expiryDate"></mat-datepicker-toggle>
+              <mat-datepicker #expiryDate></mat-datepicker>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Responsável</mat-label>
+              <input matInput formControlName="responsibleUser" placeholder="Nome do responsável">
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Observações</mat-label>
+            <textarea matInput formControlName="observations" rows="3" placeholder="Observações sobre a licença..."></textarea>
+          </mat-form-field>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 2: Vinculações -->
+      <mat-tab label="Vinculações">
+        <div class="form-content">
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Exportação Vinculada</mat-label>
+              <input matInput formControlName="linkedExportNumber" placeholder="Nº da exportação">
+              <mat-icon matPrefix>description</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Código do Produto</mat-label>
+              <input matInput formControlName="linkedProductCode" placeholder="NCM ou código interno">
+              <mat-icon matPrefix>inventory_2</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Contrato Vinculado</mat-label>
+              <input matInput formControlName="linkedContractNumber" placeholder="Nº do contrato">
+              <mat-icon matPrefix>handshake</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <div class="vinculacoes-info">
+            <mat-icon>info</mat-icon>
+            <p>As vinculações permitem rastrear a licença em relação a exportações, produtos e contratos específicos.</p>
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </form>
+</mat-dialog-content>
+
+<!-- Actions -->
+<mat-dialog-actions align="end">
+  <button mat-button (click)="close()">Cancelar</button>
+  <button mat-raised-button color="primary" (click)="save()" [disabled]="licenseForm.invalid">
+    <mat-icon>save</mat-icon> Salvar Licença
+  </button>
+</mat-dialog-actions>

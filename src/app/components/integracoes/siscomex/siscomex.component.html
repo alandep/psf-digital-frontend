@@ -1,0 +1,422 @@
+<!-- Main Container -->
+<div class="siscomex-container">
+
+  <!-- Loading Bar -->
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header Premium -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">account_balance</mat-icon>
+        <div class="title-content">
+          <h1>Integrações Siscomex</h1>
+          <p class="subtitle">Monitoramento de integrações com Portal Único e órgãos governamentais</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button color="primary" (click)="refreshServices()">
+          <mat-icon>refresh</mat-icon> Atualizar Status
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Dashboard Cards -->
+  <div class="kpi-dashboard">
+    <mat-card class="kpi-card kpi-dues">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>description</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.totalDues || 0 }}</div>
+          <div class="kpi-label">DU-Es Registradas</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-clearance">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>schedule</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.avgClearanceTime || 0 }}h</div>
+          <div class="kpi-label">Tempo Médio Desembaraço</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-success">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>trending_up</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.successRate || 0 }}%</div>
+          <div class="kpi-label">Taxa de Sucesso</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-lpcos">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>verified</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.activeLpcos || 0 }}</div>
+          <div class="kpi-label">LPCOs Ativas</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-services">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>cloud_done</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.servicesOnline || 0 }}/{{ metrics?.servicesTotal || 0 }}</div>
+          <div class="kpi-label">Serviços Online</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-month">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>calendar_month</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.duesThisMonth || 0 }}</div>
+          <div class="kpi-label">DU-Es Este Mês</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Services Status Card (Hero Feature) -->
+  <mat-card class="services-card">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="services-header-icon">dns</mat-icon>
+      <mat-card-title>Status dos Serviços Siscomex</mat-card-title>
+      <mat-card-subtitle>Monitoramento em tempo real dos sistemas governamentais</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="services-grid">
+        <div class="service-card" *ngFor="let service of services" [ngClass]="getServiceStatusClass(service.status)">
+          <div class="service-status-indicator"></div>
+          <div class="service-content">
+            <div class="service-header">
+              <span class="service-name">{{ service.name }}</span>
+              <span class="service-status-badge" [ngClass]="getServiceStatusClass(service.status)">
+                <mat-icon class="service-status-icon">{{ getServiceStatusIcon(service.status) }}</mat-icon>
+                {{ getServiceStatusLabel(service.status) }}
+              </span>
+            </div>
+            <p class="service-description">{{ service.description }}</p>
+            <div class="service-metrics">
+              <span class="service-metric">
+                <mat-icon>speed</mat-icon>
+                {{ service.avgResponseTime > 0 ? service.avgResponseTime + 'ms' : 'N/A' }}
+              </span>
+              <span class="service-metric">
+                <mat-icon>show_chart</mat-icon>
+                {{ service.uptime }}% uptime
+              </span>
+              <span class="service-metric">
+                <mat-icon>update</mat-icon>
+                {{ service.lastCheck | date:'HH:mm' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Filters Card -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <div class="filter-row">
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Buscar</mat-label>
+            <input matInput formControlName="searchText" placeholder="Número DU-E, exportador, NCM...">
+            <mat-icon matPrefix>search</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let s of dueStatuses" [value]="s">{{ getDueStatusLabel(s) }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Canal</mat-label>
+            <mat-select formControlName="channel">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let c of channels" [value]="c">{{ c }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Data Início</mat-label>
+            <input matInput [matDatepicker]="pickerStart" formControlName="dateStart">
+            <mat-datepicker-toggle matIconSuffix [for]="pickerStart"></mat-datepicker-toggle>
+            <mat-datepicker #pickerStart></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Data Fim</mat-label>
+            <input matInput [matDatepicker]="pickerEnd" formControlName="dateEnd">
+            <mat-datepicker-toggle matIconSuffix [for]="pickerEnd"></mat-datepicker-toggle>
+            <mat-datepicker #pickerEnd></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        <div class="clear-filter-wrapper">
+          <button mat-button class="clear-filters-btn" (click)="clearFilters()">
+            <mat-icon>filter_list_off</mat-icon> Limpar Filtros
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- DU-E Table -->
+  <mat-card class="results-card">
+    <mat-card-content>
+      <div class="results-header">
+        <h3>DU-E - Declarações Únicas de Exportação ({{ dueDataSource.data.length }})</h3>
+      </div>
+
+      <div class="table-container">
+        <table mat-table [dataSource]="dueDataSource" matSort #dueSort="matSort" class="due-table">
+          <!-- DUE Number -->
+          <ng-container matColumnDef="dueNumber">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Número DU-E</th>
+            <td mat-cell *matCellDef="let due">
+              <span class="code-badge">{{ due.dueNumber }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Exporter Name -->
+          <ng-container matColumnDef="exporterName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Exportador</th>
+            <td mat-cell *matCellDef="let due">
+              <span class="exporter-name">{{ due.exporterName }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Status -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+            <td mat-cell *matCellDef="let due">
+              <span class="status-chip" [ngClass]="getDueStatusClass(due.status)">
+                {{ getDueStatusLabel(due.status) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Country -->
+          <ng-container matColumnDef="country">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>País</th>
+            <td mat-cell *matCellDef="let due">{{ due.country }}</td>
+          </ng-container>
+
+          <!-- Total Value -->
+          <ng-container matColumnDef="totalValue">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Valor Total</th>
+            <td mat-cell *matCellDef="let due">
+              <span class="value-text">{{ formatCurrency(due.totalValue, due.currency) }}</span>
+            </td>
+          </ng-container>
+
+          <!-- NCM -->
+          <ng-container matColumnDef="ncm">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>NCM</th>
+            <td mat-cell *matCellDef="let due">
+              <span class="ncm-badge">{{ due.ncm }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Product -->
+          <ng-container matColumnDef="product">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Produto</th>
+            <td mat-cell *matCellDef="let due">{{ due.product }}</td>
+          </ng-container>
+
+          <!-- Port -->
+          <ng-container matColumnDef="port">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Porto</th>
+            <td mat-cell *matCellDef="let due">{{ due.port }}</td>
+          </ng-container>
+
+          <!-- Channel -->
+          <ng-container matColumnDef="channel">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Canal</th>
+            <td mat-cell *matCellDef="let due">
+              <span class="channel-badge" [ngClass]="getChannelClass(due.channel)">
+                {{ due.channel }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Registration Date -->
+          <ng-container matColumnDef="registrationDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Data Registro</th>
+            <td mat-cell *matCellDef="let due">{{ due.registrationDate | date:'dd/MM/yyyy' }}</td>
+          </ng-container>
+
+          <!-- Last Update -->
+          <ng-container matColumnDef="lastUpdate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Última Atualização</th>
+            <td mat-cell *matCellDef="let due">{{ due.lastUpdate | date:'dd/MM/yyyy' }}</td>
+          </ng-container>
+
+          <!-- Actions -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header disabled>Ações</th>
+            <td mat-cell *matCellDef="let due">
+              <button mat-icon-button color="primary" (click)="viewDueDetails(due)" matTooltip="Ver detalhes">
+                <mat-icon>visibility</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="dueDisplayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: dueDisplayedColumns;" class="clickable-row"></tr>
+        </table>
+      </div>
+
+      <mat-paginator #duePaginator
+        [pageSizeOptions]="[10, 25, 50, 100]"
+        [pageSize]="10"
+        showFirstLastButtons>
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- LPCO Table -->
+  <mat-card class="results-card">
+    <mat-card-content>
+      <div class="results-header">
+        <h3>LPCO - Licenças, Permissões e Certificados ({{ lpcoDataSource.data.length }})</h3>
+      </div>
+
+      <div class="table-container">
+        <table mat-table [dataSource]="lpcoDataSource" matSort #lpcoSort="matSort" class="lpco-table">
+          <!-- LPCO Number -->
+          <ng-container matColumnDef="lpcoNumber">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Número LPCO</th>
+            <td mat-cell *matCellDef="let lpco">
+              <span class="code-badge">{{ lpco.lpcoNumber }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Type -->
+          <ng-container matColumnDef="type">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</th>
+            <td mat-cell *matCellDef="let lpco">
+              <span class="type-chip">{{ lpco.type }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Organ -->
+          <ng-container matColumnDef="organ">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Órgão</th>
+            <td mat-cell *matCellDef="let lpco">{{ lpco.organ }}</td>
+          </ng-container>
+
+          <!-- Product -->
+          <ng-container matColumnDef="product">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Produto</th>
+            <td mat-cell *matCellDef="let lpco">{{ lpco.product }}</td>
+          </ng-container>
+
+          <!-- Status -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+            <td mat-cell *matCellDef="let lpco">
+              <span class="status-chip" [ngClass]="getLpcoStatusClass(lpco.status)">
+                {{ getLpcoStatusLabel(lpco.status) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Request Date -->
+          <ng-container matColumnDef="requestDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Data Solicitação</th>
+            <td mat-cell *matCellDef="let lpco">{{ lpco.requestDate | date:'dd/MM/yyyy' }}</td>
+          </ng-container>
+
+          <!-- Volume -->
+          <ng-container matColumnDef="volume">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Volume</th>
+            <td mat-cell *matCellDef="let lpco">{{ lpco.volume | number }} {{ lpco.unit }}</td>
+          </ng-container>
+
+          <!-- Used Volume -->
+          <ng-container matColumnDef="usedVolume">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Utilizado</th>
+            <td mat-cell *matCellDef="let lpco">
+              <div class="volume-indicator" *ngIf="lpco.volume > 0">
+                <mat-progress-bar mode="determinate" [value]="(lpco.usedVolume / lpco.volume) * 100"></mat-progress-bar>
+                <span class="volume-text">{{ lpco.usedVolume | number }}/{{ lpco.volume | number }}</span>
+              </div>
+              <span *ngIf="lpco.volume === 0">-</span>
+            </td>
+          </ng-container>
+
+          <!-- Linked DUE -->
+          <ng-container matColumnDef="linkedDue">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>DU-E Vinculada</th>
+            <td mat-cell *matCellDef="let lpco">
+              <span class="code-badge small">{{ lpco.linkedDue }}</span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="lpcoDisplayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: lpcoDisplayedColumns;" class="clickable-row"></tr>
+        </table>
+      </div>
+
+      <mat-paginator #lpcoPaginator
+        [pageSizeOptions]="[10, 25, 50, 100]"
+        [pageSize]="10"
+        showFirstLastButtons>
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Timeline Card -->
+  <mat-card class="timeline-card">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="timeline-header-icon">timeline</mat-icon>
+      <mat-card-title>Eventos Recentes</mat-card-title>
+      <mat-card-subtitle>Histórico de atividades e alertas do Siscomex</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="timeline-list">
+        <div class="timeline-item" *ngFor="let event of events" [ngClass]="getEventSeverityClass(event.severity)">
+          <div class="timeline-icon">
+            <mat-icon>{{ getEventIcon(event.type) }}</mat-icon>
+          </div>
+          <div class="timeline-content">
+            <span class="timeline-description">{{ event.description }}</span>
+            <div class="timeline-meta">
+              <span class="timeline-reference">{{ event.reference }}</span>
+              <span class="timeline-date">{{ event.date | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+</div>

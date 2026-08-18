@@ -1,0 +1,410 @@
+<!-- Main Container -->
+<div class="mapa-container">
+
+  <!-- Loading Bar -->
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">eco</mat-icon>
+        <div class="title-content">
+          <h1>MAPA/Vigiagro</h1>
+          <p class="subtitle">Monitoramento de certificados, inspeções e habilitações agropecuárias para exportação</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button color="primary" (click)="refreshData()">
+          <mat-icon>refresh</mat-icon> Atualizar Dados
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Dashboard Cards -->
+  <div class="kpi-dashboard">
+    <mat-card class="kpi-card kpi-active-certs">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>verified</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.activeCertificates || 0 }}</div>
+          <div class="kpi-label">Certificados Vigentes</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-expiring">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>warning</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.expiringCertificates || 0 }}</div>
+          <div class="kpi-label">Vencendo em 30 dias</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-inspections">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>assignment</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.pendingInspections || 0 }}</div>
+          <div class="kpi-label">Inspeções Pendentes</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-habilitacoes">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>business</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.activeHabilitacoes || 0 }}</div>
+          <div class="kpi-label">Habilitações Ativas</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-month-certs">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>calendar_month</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.certificatesThisMonth || 0 }}</div>
+          <div class="kpi-label">Certificados Este Mês</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-approval">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>trending_up</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.approvalRate || 0 }}%</div>
+          <div class="kpi-label">Taxa Aprovação</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Filter -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Buscar</mat-label>
+          <input matInput formControlName="searchText" placeholder="Produto, certificado, estabelecimento...">
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+        <button mat-button class="clear-filters-btn" (click)="clearFilters()">
+          <mat-icon>filter_list_off</mat-icon> Limpar
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Tabs -->
+  <mat-tab-group class="mapa-tabs" animationDuration="300ms">
+
+    <!-- Tab: Certificados -->
+    <mat-tab label="Certificados">
+      <mat-card class="results-card">
+        <mat-card-content>
+          <div class="results-header">
+            <h3>Certificados Fitossanitários e Sanitários ({{ certDataSource.data.length }})</h3>
+          </div>
+
+          <div class="table-container">
+            <table mat-table [dataSource]="certDataSource" matSort #certSort="matSort" class="data-table">
+
+              <!-- Number -->
+              <ng-container matColumnDef="number">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Número</th>
+                <td mat-cell *matCellDef="let cert">
+                  <span class="code-badge">{{ cert.number }}</span>
+                </td>
+              </ng-container>
+
+              <!-- Type -->
+              <ng-container matColumnDef="type">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</th>
+                <td mat-cell *matCellDef="let cert">
+                  <span class="type-chip">{{ cert.type }}</span>
+                </td>
+              </ng-container>
+
+              <!-- Product -->
+              <ng-container matColumnDef="product">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Produto</th>
+                <td mat-cell *matCellDef="let cert">{{ cert.product }}</td>
+              </ng-container>
+
+              <!-- NCM -->
+              <ng-container matColumnDef="ncm">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>NCM</th>
+                <td mat-cell *matCellDef="let cert">
+                  <span class="ncm-badge">{{ cert.ncm }}</span>
+                </td>
+              </ng-container>
+
+              <!-- Destination -->
+              <ng-container matColumnDef="destination">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Destino</th>
+                <td mat-cell *matCellDef="let cert">{{ cert.destination }}</td>
+              </ng-container>
+
+              <!-- Establishment -->
+              <ng-container matColumnDef="establishment">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Estabelecimento</th>
+                <td mat-cell *matCellDef="let cert">{{ cert.establishment }}</td>
+              </ng-container>
+
+              <!-- Issue Date -->
+              <ng-container matColumnDef="issueDate">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Emissão</th>
+                <td mat-cell *matCellDef="let cert">{{ cert.issueDate | date:'dd/MM/yyyy' }}</td>
+              </ng-container>
+
+              <!-- Expiration Date -->
+              <ng-container matColumnDef="expirationDate">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Validade</th>
+                <td mat-cell *matCellDef="let cert">{{ cert.expirationDate | date:'dd/MM/yyyy' }}</td>
+              </ng-container>
+
+              <!-- Status -->
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+                <td mat-cell *matCellDef="let cert">
+                  <span class="status-chip" [ngClass]="getCertStatusClass(cert.status)">
+                    {{ getCertStatusLabel(cert.status) }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Inspector -->
+              <ng-container matColumnDef="inspector">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Fiscal</th>
+                <td mat-cell *matCellDef="let cert">{{ cert.inspector }}</td>
+              </ng-container>
+
+              <!-- Linked DUE -->
+              <ng-container matColumnDef="linkedDue">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>DU-E Vinculada</th>
+                <td mat-cell *matCellDef="let cert">
+                  <span class="code-badge small">{{ cert.linkedDue }}</span>
+                </td>
+              </ng-container>
+
+              <!-- Volume -->
+              <ng-container matColumnDef="volume">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Volume</th>
+                <td mat-cell *matCellDef="let cert">{{ cert.volume | number }} {{ cert.unit }}</td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="certDisplayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: certDisplayedColumns;" class="clickable-row"></tr>
+            </table>
+          </div>
+
+          <mat-paginator #certPaginator
+            [pageSizeOptions]="[10, 25, 50, 100]"
+            [pageSize]="10"
+            showFirstLastButtons>
+          </mat-paginator>
+        </mat-card-content>
+      </mat-card>
+    </mat-tab>
+
+    <!-- Tab: Inspeções -->
+    <mat-tab label="Inspeções">
+      <mat-card class="results-card">
+        <mat-card-content>
+          <div class="results-header">
+            <h3>Inspeções Agropecuárias ({{ inspDataSource.data.length }})</h3>
+          </div>
+
+          <div class="table-container">
+            <table mat-table [dataSource]="inspDataSource" matSort #inspSort="matSort" class="data-table">
+
+              <!-- Type -->
+              <ng-container matColumnDef="type">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</th>
+                <td mat-cell *matCellDef="let insp">
+                  <span class="type-chip">{{ insp.type }}</span>
+                </td>
+              </ng-container>
+
+              <!-- Product -->
+              <ng-container matColumnDef="product">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Produto</th>
+                <td mat-cell *matCellDef="let insp">{{ insp.product }}</td>
+              </ng-container>
+
+              <!-- Establishment -->
+              <ng-container matColumnDef="establishment">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Estabelecimento</th>
+                <td mat-cell *matCellDef="let insp">{{ insp.establishment }}</td>
+              </ng-container>
+
+              <!-- Scheduled Date -->
+              <ng-container matColumnDef="scheduledDate">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Data Agendada</th>
+                <td mat-cell *matCellDef="let insp">{{ insp.scheduledDate | date:'dd/MM/yyyy' }}</td>
+              </ng-container>
+
+              <!-- Inspector -->
+              <ng-container matColumnDef="inspector">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Fiscal</th>
+                <td mat-cell *matCellDef="let insp">{{ insp.inspector }}</td>
+              </ng-container>
+
+              <!-- Status -->
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+                <td mat-cell *matCellDef="let insp">
+                  <span class="status-chip" [ngClass]="getInspStatusClass(insp.status)">
+                    {{ getInspStatusLabel(insp.status) }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Result -->
+              <ng-container matColumnDef="result">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Resultado</th>
+                <td mat-cell *matCellDef="let insp">{{ insp.result || '—' }}</td>
+              </ng-container>
+
+              <!-- Observations -->
+              <ng-container matColumnDef="observations">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Observações</th>
+                <td mat-cell *matCellDef="let insp">
+                  <span class="observations-text" [matTooltip]="insp.observations">{{ insp.observations }}</span>
+                </td>
+              </ng-container>
+
+              <!-- Linked Certificate -->
+              <ng-container matColumnDef="linkedCertificate">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Certificado</th>
+                <td mat-cell *matCellDef="let insp">
+                  <span class="code-badge small">{{ insp.linkedCertificate }}</span>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="inspDisplayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: inspDisplayedColumns;" class="clickable-row"></tr>
+            </table>
+          </div>
+
+          <mat-paginator #inspPaginator
+            [pageSizeOptions]="[10, 25, 50, 100]"
+            [pageSize]="10"
+            showFirstLastButtons>
+          </mat-paginator>
+        </mat-card-content>
+      </mat-card>
+    </mat-tab>
+
+    <!-- Tab: Habilitações -->
+    <mat-tab label="Habilitações">
+      <mat-card class="results-card">
+        <mat-card-content>
+          <div class="results-header">
+            <h3>Habilitações de Estabelecimentos ({{ habDataSource.data.length }})</h3>
+          </div>
+
+          <div class="table-container">
+            <table mat-table [dataSource]="habDataSource" matSort #habSort="matSort" class="data-table">
+
+              <!-- Establishment -->
+              <ng-container matColumnDef="establishment">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Estabelecimento</th>
+                <td mat-cell *matCellDef="let hab">{{ hab.establishment }}</td>
+              </ng-container>
+
+              <!-- CNPJ -->
+              <ng-container matColumnDef="cnpj">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>CNPJ</th>
+                <td mat-cell *matCellDef="let hab">
+                  <span class="code-badge">{{ hab.cnpj }}</span>
+                </td>
+              </ng-container>
+
+              <!-- SIF Number -->
+              <ng-container matColumnDef="sifNumber">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>SIF</th>
+                <td mat-cell *matCellDef="let hab">{{ hab.sifNumber }}</td>
+              </ng-container>
+
+              <!-- Products -->
+              <ng-container matColumnDef="products">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Produtos</th>
+                <td mat-cell *matCellDef="let hab">
+                  <span class="products-list" [matTooltip]="hab.products.join(', ')">
+                    {{ hab.products.join(', ') }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Markets -->
+              <ng-container matColumnDef="markets">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Mercados</th>
+                <td mat-cell *matCellDef="let hab">
+                  <span class="markets-list">{{ hab.markets.join(', ') }}</span>
+                </td>
+              </ng-container>
+
+              <!-- Status -->
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+                <td mat-cell *matCellDef="let hab">
+                  <span class="status-chip" [ngClass]="getHabStatusClass(hab.status)">
+                    {{ getHabStatusLabel(hab.status) }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Issue Date -->
+              <ng-container matColumnDef="issueDate">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Emissão</th>
+                <td mat-cell *matCellDef="let hab">{{ hab.issueDate | date:'dd/MM/yyyy' }}</td>
+              </ng-container>
+
+              <!-- Expiration Date -->
+              <ng-container matColumnDef="expirationDate">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Validade</th>
+                <td mat-cell *matCellDef="let hab">{{ hab.expirationDate | date:'dd/MM/yyyy' }}</td>
+              </ng-container>
+
+              <!-- Last Audit -->
+              <ng-container matColumnDef="lastAudit">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Última Auditoria</th>
+                <td mat-cell *matCellDef="let hab">{{ hab.lastAudit | date:'dd/MM/yyyy' }}</td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="habDisplayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: habDisplayedColumns;" class="clickable-row"></tr>
+            </table>
+          </div>
+
+          <mat-paginator #habPaginator
+            [pageSizeOptions]="[10, 25, 50, 100]"
+            [pageSize]="10"
+            showFirstLastButtons>
+          </mat-paginator>
+        </mat-card-content>
+      </mat-card>
+    </mat-tab>
+
+  </mat-tab-group>
+
+</div>

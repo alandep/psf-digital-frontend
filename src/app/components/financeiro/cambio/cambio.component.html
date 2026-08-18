@@ -1,0 +1,721 @@
+<!-- Main Container -->
+<div class="cambio-container">
+
+  <!-- Loading Bar -->
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header Premium -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">currency_exchange</mat-icon>
+        <div class="title-content">
+          <h1>Câmbio</h1>
+          <p class="subtitle">Plataforma inteligente de gestão cambial com IA</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button color="primary" (click)="createContract()">
+          <mat-icon>add</mat-icon> Novo Contrato
+        </button>
+        <button mat-raised-button color="primary" (click)="isSimulationExpanded = !isSimulationExpanded">
+          <mat-icon>science</mat-icon> Simular Câmbio
+        </button>
+        <button mat-raised-button color="primary" (click)="refreshQuotations()">
+          <mat-icon>refresh</mat-icon> Atualizar Cotações
+        </button>
+        <button mat-raised-button color="primary" (click)="exportPDF()">
+          <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Financial KPIs -->
+  <div class="kpi-dashboard">
+    <mat-card class="kpi-card kpi-exported">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>attach_money</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ formatCurrency(financialKPIs?.exportedValue || 0, 'USD') }}</div>
+          <div class="kpi-label">Valor Exportado</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-liquidated">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>account_balance</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ formatCurrency(financialKPIs?.liquidatedValue || 0) }}</div>
+          <div class="kpi-label">Valor Liquidado</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-pending">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>schedule</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ formatCurrency(financialKPIs?.pendingReceipts || 0) }}</div>
+          <div class="kpi-label">Recebimentos Pendentes</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card" [ngClass]="(financialKPIs?.gainLoss || 0) >= 0 ? 'kpi-gain' : 'kpi-loss'">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>{{ (financialKPIs?.gainLoss || 0) >= 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ formatCurrency(financialKPIs?.gainLoss || 0) }}</div>
+          <div class="kpi-label">Ganho/Perda Cambial</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-spread">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>swap_horiz</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ financialKPIs?.avgSpread || 0 }}%</div>
+          <div class="kpi-label">Spread Médio</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-days">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>event</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ financialKPIs?.avgLiquidationDays || 0 }} dias</div>
+          <div class="kpi-label">Prazo Médio Liquidação</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Quotations Panel -->
+  <mat-card class="quotations-card">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="quotation-header-icon">show_chart</mat-icon>
+      <mat-card-title>Cotações em Tempo Real</mat-card-title>
+      <mat-card-subtitle>Fonte: BCB/PTAX — Atualizado {{ quotations.length > 0 ? (quotations[0].lastUpdated | date:'dd/MM HH:mm') : '' }}</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="quotations-grid">
+        <div class="quotation-item" *ngFor="let q of quotations">
+          <div class="quotation-currency">{{ q.currency }}/BRL</div>
+          <div class="quotation-rate">{{ q.currentRate | number:'1.4-4' }}</div>
+          <div class="quotation-change" [ngClass]="getTrendColor(q.trend)">
+            <mat-icon>{{ getTrendIcon(q.trend) }}</mat-icon>
+            <span>{{ q.dailyChange >= 0 ? '+' : '' }}{{ q.dailyChange | number:'1.2-2' }}%</span>
+          </div>
+          <div class="quotation-best">
+            <span class="best-label">Melhor:</span>
+            <span class="best-value">{{ q.bestAvailable | number:'1.4-4' }}</span>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Simulation Card (Hero Feature) -->
+  <mat-card class="simulation-card" *ngIf="isSimulationExpanded">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="simulation-icon">psychology</mat-icon>
+      <mat-card-title>Simulação de Câmbio com IA</mat-card-title>
+      <mat-card-subtitle>Calcule cenários e compare bancos para sua operação</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="simulationForm" class="simulation-form">
+        <div class="simulation-fields">
+          <mat-form-field appearance="outline">
+            <mat-label>Moeda</mat-label>
+            <mat-select formControlName="currency">
+              <mat-option *ngFor="let c of currencies" [value]="c">{{ c }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Valor</mat-label>
+            <input matInput type="number" formControlName="value" placeholder="100000">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Prazo (dias)</mat-label>
+            <input matInput type="number" formControlName="term" placeholder="30">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Banco</mat-label>
+            <mat-select formControlName="bank">
+              <mat-option *ngFor="let b of banks" [value]="b">{{ b }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Data Prevista</mat-label>
+            <input matInput [matDatepicker]="simPicker" formControlName="expectedDate">
+            <mat-datepicker-toggle matIconSuffix [for]="simPicker"></mat-datepicker-toggle>
+            <mat-datepicker #simPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        <div class="simulation-actions">
+          <button mat-raised-button color="primary" (click)="simulate()" [disabled]="isSimulating || simulationForm.invalid">
+            <mat-icon>science</mat-icon>
+            {{ isSimulating ? 'Simulando...' : 'Simular Câmbio' }}
+          </button>
+          <mat-progress-spinner *ngIf="isSimulating" mode="indeterminate" diameter="24"></mat-progress-spinner>
+        </div>
+      </form>
+
+      <!-- Simulation Result -->
+      <div class="simulation-result" *ngIf="simulationResult">
+        <mat-divider></mat-divider>
+        <h3><mat-icon>emoji_objects</mat-icon> Resultado da Simulação</h3>
+        <div class="result-grid">
+          <div class="result-item result-best">
+            <span class="result-label">Valor Líquido (BRL)</span>
+            <span class="result-value">{{ formatCurrency(simulationResult.netValue) }}</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">IOF (0,38%)</span>
+            <span class="result-value">{{ formatCurrency(simulationResult.iof) }}</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">Taxas Bancárias</span>
+            <span class="result-value">{{ formatCurrency(simulationResult.bankFees) }}</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">Spread</span>
+            <span class="result-value">{{ simulationResult.spread }}%</span>
+          </div>
+          <div class="result-item" [ngClass]="simulationResult.financialImpact >= 0 ? 'result-gain' : 'result-loss'">
+            <span class="result-label">Impacto Financeiro</span>
+            <span class="result-value">{{ formatCurrency(simulationResult.financialImpact) }}</span>
+          </div>
+        </div>
+
+        <!-- Scenarios -->
+        <h4>Cenários</h4>
+        <div class="scenario-cards">
+          <div class="scenario-card" *ngFor="let scenario of simulationResult.scenarios" [ngClass]="getScenarioClass(scenario.type)">
+            <div class="scenario-header">
+              <span class="scenario-type">{{ scenario.type }}</span>
+              <span class="scenario-probability">{{ scenario.probability }}%</span>
+            </div>
+            <div class="scenario-rate">{{ scenario.rate | number:'1.4-4' }}</div>
+            <div class="scenario-value">{{ formatCurrency(scenario.brlValue) }}</div>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Filters Section -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <div class="filter-row">
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Buscar</mat-label>
+            <input matInput formControlName="searchText" placeholder="Contrato, banco, exportador...">
+            <mat-icon matPrefix>search</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let s of statuses" [value]="s">{{ s }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Banco</mat-label>
+            <mat-select formControlName="bank">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let b of banks" [value]="b">{{ b }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Moeda</mat-label>
+            <mat-select formControlName="currency">
+              <mat-option value="">Todas</mat-option>
+              <mat-option *ngFor="let c of currencies" [value]="c">{{ c }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Valor Mínimo</mat-label>
+            <input matInput type="number" formControlName="minValue" placeholder="Ex: 100000">
+          </mat-form-field>
+        </div>
+
+        <div class="clear-filter-wrapper">
+          <button mat-button class="clear-filters-btn" (click)="clearFilters()">
+            <mat-icon>filter_list_off</mat-icon> Limpar Filtros
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Results Grid -->
+  <mat-card class="results-card">
+    <mat-card-content>
+      <div class="results-header">
+        <h3>{{ dataSource.data.length }} contratos encontrados</h3>
+      </div>
+
+      <table mat-table [dataSource]="dataSource" matSort class="contracts-table">
+        <!-- Contract Number Column -->
+        <ng-container matColumnDef="contractNumber">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Contrato</th>
+          <td mat-cell *matCellDef="let c">
+            <span class="contract-number">{{ c.contractNumber }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Bank Column -->
+        <ng-container matColumnDef="bank">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Banco</th>
+          <td mat-cell *matCellDef="let c">{{ c.bank }}</td>
+        </ng-container>
+
+        <!-- Currency Column -->
+        <ng-container matColumnDef="currency">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Moeda</th>
+          <td mat-cell *matCellDef="let c">
+            <span class="currency-badge">{{ c.currency }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Foreign Value Column -->
+        <ng-container matColumnDef="foreignValue">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Valor ME</th>
+          <td mat-cell *matCellDef="let c">{{ formatCurrency(c.foreignValue, c.currency) }}</td>
+        </ng-container>
+
+        <!-- Exchange Rate Column -->
+        <ng-container matColumnDef="exchangeRate">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Taxa</th>
+          <td mat-cell *matCellDef="let c">{{ c.exchangeRate | number:'1.4-4' }}</td>
+        </ng-container>
+
+        <!-- BRL Value Column -->
+        <ng-container matColumnDef="brlValue">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Valor BRL</th>
+          <td mat-cell *matCellDef="let c">{{ formatCurrency(c.brlValue) }}</td>
+        </ng-container>
+
+        <!-- Status Column -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+          <td mat-cell *matCellDef="let c">
+            <span class="status-chip" [ngClass]="getStatusColor(c.status)">{{ c.status }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Liquidation Date Column -->
+        <ng-container matColumnDef="liquidationDate">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Liquidação</th>
+          <td mat-cell *matCellDef="let c">{{ c.liquidationDate | date:'dd/MM/yyyy' }}</td>
+        </ng-container>
+
+        <!-- AI Score Column -->
+        <ng-container matColumnDef="aiFinancialScore">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Score IA</th>
+          <td mat-cell *matCellDef="let c">
+            <div class="score-indicator">
+              <mat-progress-bar mode="determinate" [value]="c.aiFinancialScore" [ngClass]="getScoreColor(c.aiFinancialScore)"></mat-progress-bar>
+              <span class="score-value">{{ c.aiFinancialScore }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Gain/Loss Column -->
+        <ng-container matColumnDef="gainLoss">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Ganho/Perda</th>
+          <td mat-cell *matCellDef="let c">
+            <span [ngClass]="c.gainLoss >= 0 ? 'gain-positive' : 'loss-negative'">
+              {{ formatCurrency(c.gainLoss) }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Ações</th>
+          <td mat-cell *matCellDef="let c">
+            <button mat-icon-button color="primary" (click)="selectContract(c); $event.stopPropagation()" matTooltip="Visualizar">
+              <mat-icon>visibility</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="selectContract(row)" class="clickable-row"></tr>
+      </table>
+
+      <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" showFirstLastButtons></mat-paginator>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Detail Panel -->
+  <mat-card class="detail-card" *ngIf="isDetailOpen && selectedContract">
+    <mat-card-header>
+      <div class="detail-header">
+        <div class="detail-title-section">
+          <mat-icon class="detail-icon">currency_exchange</mat-icon>
+          <div>
+            <h2>{{ selectedContract.contractNumber }}</h2>
+            <p>{{ selectedContract.bank }} &mdash; {{ selectedContract.exporterName }}</p>
+          </div>
+        </div>
+        <div class="detail-header-actions">
+          <span class="currency-badge">{{ selectedContract.currency }}</span>
+          <span class="status-chip" [ngClass]="getStatusColor(selectedContract.status)">
+            {{ selectedContract.status }}
+          </span>
+          <button mat-icon-button (click)="closeDetail()" matTooltip="Fechar">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+    </mat-card-header>
+
+    <mat-card-content>
+      <mat-tab-group>
+        <!-- Tab 1: Dados Gerais -->
+        <mat-tab label="Dados Gerais">
+          <div class="tab-content">
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-label">Exportador</span>
+                <span class="info-value">{{ selectedContract.exporterName }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Banco</span>
+                <span class="info-value">{{ selectedContract.bank }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Nº Contrato</span>
+                <span class="info-value">{{ selectedContract.contractNumber }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Exportação Vinculada</span>
+                <span class="info-value">{{ selectedContract.linkedExportNumber }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Invoice</span>
+                <span class="info-value">{{ selectedContract.linkedInvoiceNumber }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">DU-E</span>
+                <span class="info-value">{{ selectedContract.linkedDueNumber }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Moeda</span>
+                <span class="info-value">{{ selectedContract.currency }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Valor ME</span>
+                <span class="info-value">{{ formatCurrency(selectedContract.foreignValue, selectedContract.currency) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Taxa de Câmbio</span>
+                <span class="info-value">{{ selectedContract.exchangeRate | number:'1.4-4' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Valor BRL</span>
+                <span class="info-value">{{ formatCurrency(selectedContract.brlValue) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Data Fechamento</span>
+                <span class="info-value">{{ selectedContract.closingDate | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Data Liquidação</span>
+                <span class="info-value">{{ selectedContract.liquidationDate | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Spread</span>
+                <span class="info-value">{{ selectedContract.spread }}%</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Ganho/Perda</span>
+                <span class="info-value" [ngClass]="selectedContract.gainLoss >= 0 ? 'gain-positive' : 'loss-negative'">
+                  {{ formatCurrency(selectedContract.gainLoss) }}
+                </span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Status</span>
+                <span class="info-value">{{ selectedContract.status }}</span>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Tab 2: Operações -->
+        <mat-tab label="Operações">
+          <div class="tab-content">
+            <div class="operations-list">
+              <div class="operation-item">
+                <mat-icon class="op-icon op-done">check_circle</mat-icon>
+                <div class="op-content">
+                  <span class="op-name">Fechamento do Contrato</span>
+                  <span class="op-detail">{{ selectedContract.closingDate | date:'dd/MM/yyyy' }} — Taxa {{ selectedContract.exchangeRate | number:'1.4-4' }}</span>
+                </div>
+                <span class="op-status op-completed">Concluído</span>
+              </div>
+              <div class="operation-item">
+                <mat-icon class="op-icon" [ngClass]="selectedContract.status === 'LIQUIDADO' ? 'op-done' : 'op-pending'">
+                  {{ selectedContract.status === 'LIQUIDADO' ? 'check_circle' : 'hourglass_empty' }}
+                </mat-icon>
+                <div class="op-content">
+                  <span class="op-name">Liquidação</span>
+                  <span class="op-detail">Prevista: {{ selectedContract.liquidationDate | date:'dd/MM/yyyy' }}</span>
+                </div>
+                <span class="op-status" [ngClass]="selectedContract.status === 'LIQUIDADO' ? 'op-completed' : 'op-pending-status'">
+                  {{ selectedContract.status === 'LIQUIDADO' ? 'Concluído' : 'Pendente' }}
+                </span>
+              </div>
+              <div class="operation-item">
+                <mat-icon class="op-icon op-pending">hourglass_empty</mat-icon>
+                <div class="op-content">
+                  <span class="op-name">ACC/ACE</span>
+                  <span class="op-detail">Adiantamento sobre contrato de câmbio</span>
+                </div>
+                <span class="op-status op-pending-status">N/A</span>
+              </div>
+              <div class="operation-item">
+                <mat-icon class="op-icon" [ngClass]="selectedContract.status === 'LIQUIDADO' ? 'op-done' : 'op-pending'">
+                  {{ selectedContract.status === 'LIQUIDADO' ? 'check_circle' : 'hourglass_empty' }}
+                </mat-icon>
+                <div class="op-content">
+                  <span class="op-name">Recebimento</span>
+                  <span class="op-detail">Crédito em conta corrente</span>
+                </div>
+                <span class="op-status" [ngClass]="selectedContract.status === 'LIQUIDADO' ? 'op-completed' : 'op-pending-status'">
+                  {{ selectedContract.status === 'LIQUIDADO' ? 'Concluído' : 'Pendente' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Tab 3: Fluxo Financeiro (Timeline) -->
+        <mat-tab label="Fluxo Financeiro">
+          <div class="tab-content">
+            <div class="timeline-list" *ngIf="timeline.length > 0; else noTimeline">
+              <div class="timeline-item" *ngFor="let event of timeline; let last = last">
+                <div class="timeline-dot"></div>
+                <div class="timeline-connector" *ngIf="!last"></div>
+                <div class="timeline-content">
+                  <div class="timeline-header">
+                    <span class="timeline-event">{{ event.event }}</span>
+                    <span class="timeline-date">{{ event.date | date:'dd/MM/yyyy' }}</span>
+                  </div>
+                  <div class="timeline-details">
+                    <span>{{ event.details }}</span>
+                    <span class="timeline-user">{{ event.user }}</span>
+                  </div>
+                  <div class="timeline-value" *ngIf="event.value">
+                    {{ formatCurrency(event.value) }}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <ng-template #noTimeline>
+              <div class="empty-state">
+                <mat-icon>timeline</mat-icon>
+                <p>Nenhum evento de timeline disponível</p>
+              </div>
+            </ng-template>
+          </div>
+        </mat-tab>
+
+        <!-- Tab 4: Integrações -->
+        <mat-tab label="Integrações">
+          <div class="tab-content">
+            <div class="integrations-grid">
+              <div class="integration-item">
+                <mat-icon>description</mat-icon>
+                <span class="integration-label">Exportação</span>
+                <span class="integration-value">{{ selectedContract.linkedExportNumber }}</span>
+              </div>
+              <div class="integration-item">
+                <mat-icon>receipt</mat-icon>
+                <span class="integration-label">Invoice</span>
+                <span class="integration-value">{{ selectedContract.linkedInvoiceNumber }}</span>
+              </div>
+              <div class="integration-item">
+                <mat-icon>assignment</mat-icon>
+                <span class="integration-label">DU-E</span>
+                <span class="integration-value">{{ selectedContract.linkedDueNumber }}</span>
+              </div>
+              <div class="integration-item">
+                <mat-icon>account_balance</mat-icon>
+                <span class="integration-label">Contrato Câmbio</span>
+                <span class="integration-value">{{ selectedContract.contractNumber }}</span>
+              </div>
+              <div class="integration-item">
+                <mat-icon>local_shipping</mat-icon>
+                <span class="integration-label">Embarque</span>
+                <span class="integration-value">Vinculado</span>
+              </div>
+              <div class="integration-item">
+                <mat-icon>verified</mat-icon>
+                <span class="integration-label">Certificados</span>
+                <span class="integration-value">Vinculado</span>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Tab 5: Cotações Históricas -->
+        <mat-tab label="Cotações Históricas">
+          <div class="tab-content">
+            <table mat-table [dataSource]="quotations" class="quotations-table">
+              <ng-container matColumnDef="currency">
+                <th mat-header-cell *matHeaderCellDef>Moeda</th>
+                <td mat-cell *matCellDef="let q">{{ q.currency }}/BRL</td>
+              </ng-container>
+              <ng-container matColumnDef="currentRate">
+                <th mat-header-cell *matHeaderCellDef>Taxa Atual</th>
+                <td mat-cell *matCellDef="let q">{{ q.currentRate | number:'1.4-4' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="previousClose">
+                <th mat-header-cell *matHeaderCellDef>Fechamento Anterior</th>
+                <td mat-cell *matCellDef="let q">{{ q.previousClose | number:'1.4-4' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="dailyChange">
+                <th mat-header-cell *matHeaderCellDef>Variação Diária</th>
+                <td mat-cell *matCellDef="let q">
+                  <span [ngClass]="q.dailyChange >= 0 ? 'gain-positive' : 'loss-negative'">
+                    {{ q.dailyChange >= 0 ? '+' : '' }}{{ q.dailyChange | number:'1.2-2' }}%
+                  </span>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="source">
+                <th mat-header-cell *matHeaderCellDef>Fonte</th>
+                <td mat-cell *matCellDef="let q">{{ q.source }}</td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="['currency', 'currentRate', 'previousClose', 'dailyChange', 'source']"></tr>
+              <tr mat-row *matRowDef="let row; columns: ['currency', 'currentRate', 'previousClose', 'dailyChange', 'source']"></tr>
+            </table>
+          </div>
+        </mat-tab>
+
+        <!-- Tab 6: IA & Insights -->
+        <mat-tab label="IA & Insights">
+          <div class="tab-content" *ngIf="aiInsights">
+            <!-- Score Gauge -->
+            <div class="ai-score-section">
+              <div class="score-gauge">
+                <div class="score-circle">
+                  <span class="score-number">{{ aiInsights.financialScore }}</span>
+                  <span class="score-label">Score Financeiro</span>
+                </div>
+                <mat-progress-bar mode="determinate" [value]="aiInsights.financialScore" class="score-bar"></mat-progress-bar>
+              </div>
+              <div class="ai-recommendations">
+                <div class="recommendation-item">
+                  <mat-icon>shield</mat-icon>
+                  <span><strong>Nível de Risco:</strong>
+                    <span class="risk-badge" [ngClass]="getRiskColor(aiInsights.riskLevel)">{{ aiInsights.riskLevel }}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bank Comparison -->
+            <h4>Comparativo de Bancos</h4>
+            <table mat-table [dataSource]="aiInsights.bankComparisons" class="bank-table">
+              <ng-container matColumnDef="bank">
+                <th mat-header-cell *matHeaderCellDef>Banco</th>
+                <td mat-cell *matCellDef="let b">
+                  <span [ngClass]="b.recommendation ? 'recommended-bank' : ''">{{ b.bank }}</span>
+                  <mat-icon *ngIf="b.recommendation" class="recommend-icon">star</mat-icon>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="rate">
+                <th mat-header-cell *matHeaderCellDef>Taxa</th>
+                <td mat-cell *matCellDef="let b">{{ b.rate | number:'1.4-4' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="spread">
+                <th mat-header-cell *matHeaderCellDef>Spread</th>
+                <td mat-cell *matCellDef="let b">{{ b.spread }}%</td>
+              </ng-container>
+              <ng-container matColumnDef="fees">
+                <th mat-header-cell *matHeaderCellDef>Taxas</th>
+                <td mat-cell *matCellDef="let b">{{ formatCurrency(b.fees) }}</td>
+              </ng-container>
+              <ng-container matColumnDef="netValue">
+                <th mat-header-cell *matHeaderCellDef>Valor Líquido</th>
+                <td mat-cell *matCellDef="let b">{{ formatCurrency(b.netValue) }}</td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="['bank', 'rate', 'spread', 'fees', 'netValue']"></tr>
+              <tr mat-row *matRowDef="let row; columns: ['bank', 'rate', 'spread', 'fees', 'netValue']" [ngClass]="row.recommendation ? 'recommended-row' : ''"></tr>
+            </table>
+
+            <!-- Alerts -->
+            <h4>Alertas</h4>
+            <div class="alerts-list">
+              <div class="alert-item" *ngFor="let alert of aiInsights.alerts" [ngClass]="getAlertClass(alert.severity)">
+                <mat-icon>{{ getAlertIcon(alert.severity) }}</mat-icon>
+                <div class="alert-content">
+                  <span class="alert-message">{{ alert.message }}</span>
+                  <span class="alert-time">{{ alert.detectedAt | date:'dd/MM HH:mm' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Suggestions -->
+            <h4>Sugestões da IA</h4>
+            <div class="suggestions-list">
+              <div class="suggestion-card" *ngFor="let sug of aiInsights.suggestions">
+                <div class="suggestion-header">
+                  <mat-icon>lightbulb</mat-icon>
+                  <span class="suggestion-action">{{ sug.action }}</span>
+                  <span class="suggestion-confidence">{{ sug.confidence }}% confiança</span>
+                </div>
+                <p class="suggestion-reason">{{ sug.reason }}</p>
+                <div class="suggestion-factors">
+                  <span class="factor-chip" *ngFor="let f of sug.factors">{{ f }}</span>
+                </div>
+                <div class="suggestion-impact">
+                  <mat-icon>trending_up</mat-icon>
+                  <span>{{ sug.financialImpact }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Executive Summary -->
+            <h4>Resumo Executivo</h4>
+            <div class="executive-summary">
+              <mat-icon>summarize</mat-icon>
+              <p>{{ aiInsights.executiveSummary }}</p>
+            </div>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </mat-card-content>
+  </mat-card>
+
+</div>

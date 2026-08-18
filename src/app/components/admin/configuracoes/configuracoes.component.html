@@ -1,0 +1,102 @@
+<!-- Main Container -->
+<div class="configuracoes-container">
+
+  <!-- Loading Bar -->
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">settings</mat-icon>
+        <div class="title-content">
+          <h1>Configurações do Sistema</h1>
+          <p class="subtitle">Gerencie os parâmetros e preferências da plataforma EIP</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button class="save-btn" [disabled]="!hasChanges" (click)="saveChanges()">
+          <mat-icon>save</mat-icon> Salvar Alterações
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content Area -->
+  <div class="config-layout">
+
+    <!-- Left Side: Category Navigation -->
+    <mat-card class="categories-card">
+      <mat-card-content>
+        <div class="category-nav">
+          <button *ngFor="let group of configGroups"
+                  class="category-item"
+                  [class.active]="selectedCategory === group.category"
+                  (click)="selectCategory(group.category)">
+            <mat-icon class="category-icon">{{ group.icon }}</mat-icon>
+            <div class="category-info">
+              <span class="category-label">{{ group.label }}</span>
+              <span class="category-desc">{{ group.description }}</span>
+            </div>
+            <mat-icon class="arrow-icon">chevron_right</mat-icon>
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Right Side: Config Items Form -->
+    <mat-card class="config-form-card" *ngIf="selectedGroup">
+      <mat-card-header>
+        <mat-icon mat-card-avatar class="form-header-icon">{{ selectedGroup.icon }}</mat-icon>
+        <mat-card-title>{{ selectedGroup.label }}</mat-card-title>
+        <mat-card-subtitle>{{ selectedGroup.description }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="configForm" class="config-form" *ngIf="configForm">
+
+          <div class="config-item" *ngFor="let item of selectedGroup.items">
+            <div class="config-item-header">
+              <span class="config-label">{{ item.label }}</span>
+              <span class="config-meta">
+                Modificado em {{ formatDate(item.lastModified) }} por {{ item.modifiedBy }}
+              </span>
+            </div>
+            <p class="config-description">{{ item.description }}</p>
+
+            <!-- TEXT Input -->
+            <mat-form-field *ngIf="item.type === 'TEXT'" appearance="outline" class="config-field">
+              <mat-label>{{ item.label }}</mat-label>
+              <input matInput [formControlName]="item.key">
+            </mat-form-field>
+
+            <!-- NUMBER Input -->
+            <mat-form-field *ngIf="item.type === 'NUMBER'" appearance="outline" class="config-field">
+              <mat-label>{{ item.label }}</mat-label>
+              <input matInput type="number" [formControlName]="item.key">
+            </mat-form-field>
+
+            <!-- SELECT Input -->
+            <mat-form-field *ngIf="item.type === 'SELECT'" appearance="outline" class="config-field">
+              <mat-label>{{ item.label }}</mat-label>
+              <mat-select [formControlName]="item.key">
+                <mat-option *ngFor="let opt of item.options" [value]="opt">{{ opt }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <!-- BOOLEAN Input -->
+            <div *ngIf="item.type === 'BOOLEAN'" class="toggle-field">
+              <mat-slide-toggle [formControlName]="item.key" color="primary">
+                {{ configForm.get(item.key)?.value ? 'Ativado' : 'Desativado' }}
+              </mat-slide-toggle>
+            </div>
+
+            <mat-divider></mat-divider>
+          </div>
+
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+  </div>
+
+</div>

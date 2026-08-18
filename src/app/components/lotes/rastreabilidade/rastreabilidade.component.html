@@ -1,0 +1,569 @@
+<!-- Main Container -->
+<div class="rastreabilidade-container">
+
+  <!-- Loading Bar -->
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header Premium -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">timeline</mat-icon>
+        <div class="title-content">
+          <h1>Rastreabilidade</h1>
+          <p class="subtitle">Rastreabilidade completa Farm to Port com inteligência artificial</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button color="primary" (click)="exportPDF()">
+          <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
+        </button>
+        <button mat-raised-button color="primary" (click)="exportExcel()">
+          <mat-icon>table_chart</mat-icon> Exportar Excel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Dashboard Cards -->
+  <div class="kpi-dashboard">
+    <mat-card class="kpi-card kpi-total">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>inventory_2</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.totalLotes || 0 }}</div>
+          <div class="kpi-label">Total Lotes Rastreados</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-transit">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>local_shipping</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.lotesInTransit || 0 }}</div>
+          <div class="kpi-label">Em Trânsito</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-delivered">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.lotesDelivered || 0 }}</div>
+          <div class="kpi-label">Entregues</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-score">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>insights</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.avgTraceabilityScore || 0 }}%</div>
+          <div class="kpi-label">Score Rastreabilidade Médio</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- AI Search Bar -->
+  <mat-card class="ai-search-card">
+    <mat-card-content>
+      <div class="ai-search-wrapper">
+        <mat-icon class="ai-search-icon">psychology</mat-icon>
+        <input
+          class="ai-search-input"
+          type="text"
+          [value]="aiSearchText"
+          (input)="onAISearchInput($event)"
+          (keydown)="onAISearchKeydown($event)"
+          placeholder="Pergunte qualquer coisa sobre seus lotes..."
+        />
+        <button mat-icon-button class="ai-search-btn" (click)="searchNaturalLanguage()" matTooltip="Buscar com IA">
+          <mat-icon>search</mat-icon>
+        </button>
+      </div>
+      <div class="ai-search-chips">
+        <mat-chip-set>
+          <mat-chip (click)="applySearchChip('Lotes para China')">Lotes para China</mat-chip>
+          <mat-chip (click)="applySearchChip('Fazenda Santa Maria')">Fazenda Santa Maria</mat-chip>
+          <mat-chip (click)="applySearchChip('Container MSCU')">Container MSCU...</mat-chip>
+          <mat-chip (click)="applySearchChip('Embarcado MSC Aurora')">MSC Aurora</mat-chip>
+          <mat-chip (click)="applySearchChip('Café Arábica')">Café Arábica</mat-chip>
+        </mat-chip-set>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Filters Section -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <div class="filter-row">
+          <!-- Harvest Filter -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Safra</mat-label>
+            <mat-select formControlName="harvest">
+              <mat-option value="">Todas</mat-option>
+              <mat-option *ngFor="let h of harvests" [value]="h">{{ h }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Farm Filter -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Fazenda</mat-label>
+            <mat-select formControlName="farm">
+              <mat-option value="">Todas</mat-option>
+              <mat-option *ngFor="let f of farms" [value]="f">{{ f }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Warehouse Filter -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Armazém</mat-label>
+            <mat-select formControlName="warehouse">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let w of warehouses" [value]="w">{{ w }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Country Filter -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>País Destino</mat-label>
+            <mat-select formControlName="destinationCountry">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let c of countries" [value]="c">{{ c }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="filter-row">
+          <!-- Client Filter -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Cliente</mat-label>
+            <mat-select formControlName="client">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let cl of clients" [value]="cl">{{ cl }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Status Filter -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let s of statuses" [value]="s">{{ s }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Container Filter -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Container</mat-label>
+            <input matInput formControlName="container" placeholder="Nº do container">
+          </mat-form-field>
+
+          <!-- Clear Filters -->
+          <div class="filter-field clear-filter-wrapper">
+            <button mat-raised-button color="warn" (click)="clearFilters()" class="clear-filters-btn">
+              <mat-icon>clear</mat-icon> Limpar Filtros
+            </button>
+          </div>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Results Grid -->
+  <mat-card class="grid-card">
+    <div class="grid-toolbar">
+      <h2>Lotes Rastreados</h2>
+      <div class="grid-actions">
+        <span class="results-count">{{ filteredLotes.length }} lotes encontrados</span>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table mat-table [dataSource]="filteredLotes" class="lots-table" [trackBy]="trackByLoteId">
+
+        <!-- Lote Number Column -->
+        <ng-container matColumnDef="loteNumber">
+          <th mat-header-cell *matHeaderCellDef>Nº Lote</th>
+          <td mat-cell *matCellDef="let lote">
+            <span class="lot-number">{{ lote.loteNumber }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Product Name Column -->
+        <ng-container matColumnDef="productName">
+          <th mat-header-cell *matHeaderCellDef>Produto</th>
+          <td mat-cell *matCellDef="let lote">{{ lote.productName }}</td>
+        </ng-container>
+
+        <!-- Harvest Column -->
+        <ng-container matColumnDef="harvest">
+          <th mat-header-cell *matHeaderCellDef>Safra</th>
+          <td mat-cell *matCellDef="let lote">{{ lote.harvest }}</td>
+        </ng-container>
+
+        <!-- Farm Column -->
+        <ng-container matColumnDef="farmName">
+          <th mat-header-cell *matHeaderCellDef>Fazenda</th>
+          <td mat-cell *matCellDef="let lote">{{ lote.farmName }}</td>
+        </ng-container>
+
+        <!-- Status Column -->
+        <ng-container matColumnDef="currentStatus">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let lote">
+            <span class="status-chip" [ngClass]="'status-' + getStatusColor(lote.currentStatus)">
+              {{ lote.currentStatus }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Location Column -->
+        <ng-container matColumnDef="currentLocation">
+          <th mat-header-cell *matHeaderCellDef>Localização</th>
+          <td mat-cell *matCellDef="let lote">{{ lote.currentLocation }}</td>
+        </ng-container>
+
+        <!-- Country Column -->
+        <ng-container matColumnDef="destinationCountry">
+          <th mat-header-cell *matHeaderCellDef>Destino</th>
+          <td mat-cell *matCellDef="let lote">{{ lote.destinationCountry }}</td>
+        </ng-container>
+
+        <!-- Client Column -->
+        <ng-container matColumnDef="clientName">
+          <th mat-header-cell *matHeaderCellDef>Cliente</th>
+          <td mat-cell *matCellDef="let lote">{{ lote.clientName }}</td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Ações</th>
+          <td mat-cell *matCellDef="let lote">
+            <button mat-icon-button matTooltip="Ver Rastreabilidade" (click)="selectLote(lote); $event.stopPropagation()">
+              <mat-icon>visibility</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+            (click)="selectLote(row)"
+            class="lot-row"
+            [class.selected-row]="selectedLote?.id === row.id">
+        </tr>
+      </table>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="filteredLotes.length === 0 && !isLoading">
+      <mat-icon>search_off</mat-icon>
+      <p>Nenhum lote encontrado com os filtros aplicados</p>
+      <button mat-stroked-button color="primary" (click)="clearFilters()">Limpar Filtros</button>
+    </div>
+  </mat-card>
+
+  <!-- Detail Panel -->
+  <mat-card class="detail-panel" *ngIf="isDetailOpen && selectedLote">
+    <div class="detail-header">
+      <div class="detail-title">
+        <mat-icon>timeline</mat-icon>
+        <h2>Rastreabilidade - {{ selectedLote.loteNumber }}</h2>
+      </div>
+      <button mat-icon-button (click)="closeDetail()" matTooltip="Fechar">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <mat-tab-group animationDuration="200ms">
+
+      <!-- Tab 1 - Timeline -->
+      <mat-tab label="Timeline">
+        <div class="tab-content">
+          <div class="timeline-container">
+            <div class="timeline-event" *ngFor="let event of timeline; trackBy: trackByEventId"
+                 [ngClass]="'event-' + getEventColor(event.status)">
+              <div class="timeline-marker">
+                <mat-icon>{{ getEventIcon(event.eventType) }}</mat-icon>
+              </div>
+              <div class="timeline-content">
+                <div class="timeline-event-header">
+                  <h4>{{ event.title }}</h4>
+                  <span class="timeline-date">{{ formatDate(event.date) }}</span>
+                </div>
+                <p class="timeline-description">{{ event.description }}</p>
+                <div class="timeline-meta">
+                  <span class="meta-item"><mat-icon>place</mat-icon> {{ event.location }}</span>
+                  <span class="meta-item"><mat-icon>person</mat-icon> {{ event.responsibleUser }}</span>
+                </div>
+                <div class="timeline-docs" *ngIf="event.documents.length > 0">
+                  <mat-chip-set>
+                    <mat-chip *ngFor="let doc of event.documents">
+                      <mat-icon matChipAvatar>description</mat-icon>
+                      {{ doc }}
+                    </mat-chip>
+                  </mat-chip-set>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 2 - Cadeia Logística -->
+      <mat-tab label="Cadeia Logística">
+        <div class="tab-content">
+          <div class="supply-chain">
+            <ng-container *ngFor="let node of supplyChainNodes; let last = last; trackBy: trackByNodeId">
+              <div class="supply-chain-node" [ngClass]="'node-' + getEventColor(node.status)">
+                <mat-icon class="node-icon">{{ getEventIcon(node.type) }}</mat-icon>
+                <span class="node-label">{{ node.label }}</span>
+                <span class="node-sublabel">{{ node.sublabel }}</span>
+                <span class="node-date">{{ formatDate(node.date) }}</span>
+              </div>
+              <div class="supply-chain-arrow" *ngIf="!last">
+                <mat-icon>arrow_forward</mat-icon>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 3 - Dados Gerais -->
+      <mat-tab label="Dados Gerais">
+        <div class="tab-content">
+          <mat-list class="detail-list">
+            <mat-list-item>
+              <mat-icon matListItemIcon>tag</mat-icon>
+              <span matListItemTitle>Número do Lote</span>
+              <span matListItemLine>{{ selectedLote.loteNumber }}</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>category</mat-icon>
+              <span matListItemTitle>Produto</span>
+              <span matListItemLine>{{ selectedLote.productName }}</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>eco</mat-icon>
+              <span matListItemTitle>Safra</span>
+              <span matListItemLine>{{ selectedLote.harvest }}</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>agriculture</mat-icon>
+              <span matListItemTitle>Fazenda / Talhão</span>
+              <span matListItemLine>{{ selectedLote.farmName }} - {{ selectedLote.farmPlot }}</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>person</mat-icon>
+              <span matListItemTitle>Produtor</span>
+              <span matListItemLine>{{ selectedLote.producerName }}</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>scale</mat-icon>
+              <span matListItemTitle>Quantidade</span>
+              <span matListItemLine>{{ selectedLote.quantity }} {{ selectedLote.unit }}</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>inventory_2</mat-icon>
+              <span matListItemTitle>Container</span>
+              <span matListItemLine>{{ selectedLote.containerNumber }}</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>directions_boat</mat-icon>
+              <span matListItemTitle>Navio</span>
+              <span matListItemLine>{{ selectedLote.vesselName }}</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>receipt</mat-icon>
+              <span matListItemTitle>Invoice</span>
+              <span matListItemLine>{{ selectedLote.invoiceNumber }}</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>description</mat-icon>
+              <span matListItemTitle>DU-E</span>
+              <span matListItemLine>{{ selectedLote.dueNumber }}</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>confirmation_number</mat-icon>
+              <span matListItemTitle>Booking</span>
+              <span matListItemLine>{{ selectedLote.bookingNumber }}</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>local_shipping</mat-icon>
+              <span matListItemTitle>Bill of Lading (BL)</span>
+              <span matListItemLine>{{ selectedLote.blNumber }}</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>flight_takeoff</mat-icon>
+              <span matListItemTitle>País Destino</span>
+              <span matListItemLine>{{ selectedLote.destinationCountry }}</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>business</mat-icon>
+              <span matListItemTitle>Cliente</span>
+              <span matListItemLine>{{ selectedLote.clientName }}</span>
+            </mat-list-item>
+          </mat-list>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 4 - Documentos -->
+      <mat-tab label="Documentos">
+        <div class="tab-content">
+          <table mat-table [dataSource]="documents" class="docs-table">
+            <!-- Document Type -->
+            <ng-container matColumnDef="documentType">
+              <th mat-header-cell *matHeaderCellDef>Tipo</th>
+              <td mat-cell *matCellDef="let doc">{{ doc.documentType }}</td>
+            </ng-container>
+
+            <!-- Document Number -->
+            <ng-container matColumnDef="documentNumber">
+              <th mat-header-cell *matHeaderCellDef>Número</th>
+              <td mat-cell *matCellDef="let doc">{{ doc.documentNumber }}</td>
+            </ng-container>
+
+            <!-- Issue Date -->
+            <ng-container matColumnDef="issueDate">
+              <th mat-header-cell *matHeaderCellDef>Emissão</th>
+              <td mat-cell *matCellDef="let doc">{{ formatDate(doc.issueDate) }}</td>
+            </ng-container>
+
+            <!-- Status -->
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Status</th>
+              <td mat-cell *matCellDef="let doc">
+                <span class="status-chip" [ngClass]="'status-' + getDocStatusColor(doc.status)">
+                  {{ doc.status === 'valid' ? 'Válido' : doc.status === 'expired' ? 'Vencido' : 'Pendente' }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Actions -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Ações</th>
+              <td mat-cell *matCellDef="let doc">
+                <button mat-icon-button matTooltip="Download" *ngIf="doc.fileUrl" [disabled]="!doc.fileUrl">
+                  <mat-icon>download</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="docDisplayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: docDisplayedColumns;"></tr>
+          </table>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 5 - IA & Insights -->
+      <mat-tab label="IA & Insights">
+        <div class="tab-content" *ngIf="aiInsights">
+          <div class="insights-section">
+
+            <!-- Score Gauges -->
+            <div class="insights-scores">
+              <div class="score-card">
+                <h4>Confiabilidade</h4>
+                <div class="score-gauge">
+                  <div class="gauge-fill" [style.width.%]="aiInsights.reliabilityScore"
+                       [ngClass]="'gauge-' + getScoreColor(aiInsights.reliabilityScore)">
+                  </div>
+                </div>
+                <span class="gauge-value">{{ aiInsights.reliabilityScore }}/100</span>
+              </div>
+              <div class="score-card">
+                <h4>Rastreabilidade</h4>
+                <div class="score-gauge">
+                  <div class="gauge-fill" [style.width.%]="aiInsights.traceabilityScore"
+                       [ngClass]="'gauge-' + getScoreColor(aiInsights.traceabilityScore)">
+                  </div>
+                </div>
+                <span class="gauge-value">{{ aiInsights.traceabilityScore }}/100</span>
+              </div>
+            </div>
+
+            <!-- Risk Level -->
+            <div class="risk-badge-section">
+              <span class="risk-label">Risco Regulatório:</span>
+              <span class="risk-badge" [ngClass]="'risk-' + getRiskColor(aiInsights.regulatoryRisk)">
+                {{ aiInsights.regulatoryRisk }}
+              </span>
+            </div>
+
+            <!-- Executive Summary -->
+            <div class="executive-summary">
+              <h4><mat-icon>auto_awesome</mat-icon> Resumo Executivo</h4>
+              <p>{{ aiInsights.executiveSummary }}</p>
+            </div>
+
+            <!-- Alerts -->
+            <div class="alerts-section" *ngIf="aiInsights.alerts.length > 0">
+              <h4><mat-icon>notifications_active</mat-icon> Alertas</h4>
+              <div class="alert-item" *ngFor="let alert of aiInsights.alerts"
+                   [ngClass]="'alert-' + getRiskColor(alert.severity)">
+                <mat-icon>{{ alert.severity === 'HIGH' || alert.severity === 'CRITICAL' ? 'error' : 'warning' }}</mat-icon>
+                <span>{{ alert.message }}</span>
+              </div>
+            </div>
+
+            <!-- Chain Breaks -->
+            <div class="chain-breaks-section" *ngIf="aiInsights.chainBreaks.length > 0">
+              <h4><mat-icon>link_off</mat-icon> Lacunas na Cadeia</h4>
+              <div class="chain-break-item" *ngFor="let cb of aiInsights.chainBreaks">
+                <mat-icon>warning</mat-icon>
+                <div class="break-info">
+                  <strong>{{ cb.fromEvent }} → {{ cb.toEvent }}</strong>
+                  <span>{{ cb.description }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Compliance Checks -->
+            <div class="compliance-section" *ngIf="aiInsights.complianceChecks.length > 0">
+              <h4><mat-icon>verified</mat-icon> Conformidade por País</h4>
+              <div class="compliance-list">
+                <div class="compliance-item" *ngFor="let check of aiInsights.complianceChecks"
+                     [ngClass]="'compliance-' + getComplianceStatusColor(check.status)">
+                  <mat-icon>{{ getComplianceIcon(check.status) }}</mat-icon>
+                  <div class="compliance-info">
+                    <strong>{{ check.country }} - {{ check.requirement }}</strong>
+                    <span>{{ check.details }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </mat-tab>
+
+    </mat-tab-group>
+  </mat-card>
+
+</div>

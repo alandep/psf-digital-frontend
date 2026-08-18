@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, HostListener, ViewChild, AfterViewInit, ElementRef, NgZone, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, HostListener, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -20,6 +20,7 @@ import { AiCopilotComponent } from '../shared/ai-copilot/ai-copilot.component';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { CambioService, ExchangeRate } from '../../services/cambio.service';
 
 interface LoggedUser {
   cpf: string;
@@ -159,10 +160,12 @@ interface LoggedUser {
           <div class="toolbar-actions">
             
             <!-- Exchange Rate -->
-            <button mat-button class="exchange-rate-btn">
+            <button mat-button class="exchange-rate-btn" *ngIf="exchangeRate$ | async as rate">
               <mat-icon>currency_exchange</mat-icon>
-              USD: R$ 5.18
-              <mat-icon class="trend-up">trending_up</mat-icon>
+              {{ rate.currency }}: R$ {{ rate.rate | number:'1.2-2' }}
+              <mat-icon [class]="rate.trend === 'up' ? 'trend-up' : rate.trend === 'down' ? 'trend-down' : 'trend-stable'">
+                {{ rate.trend === 'up' ? 'trending_up' : rate.trend === 'down' ? 'trending_down' : 'trending_flat' }}
+              </mat-icon>
             </button>
 
             <!-- AI Status -->
@@ -326,7 +329,6 @@ interface LoggedUser {
       z-index: 1100 !important;
       margin: 0 !important;
       padding: 0 !important;
-      transform: translateX(0) !important;
     }
     
     /* Backdrop para sidenav em modo over */
@@ -495,6 +497,16 @@ interface LoggedUser {
 
     .trend-up {
       color: #4caf50;
+      font-size: 18px !important;
+    }
+
+    .trend-down {
+      color: #f44336;
+      font-size: 18px !important;
+    }
+
+    .trend-stable {
+      color: #ff9800;
       font-size: 18px !important;
     }
 
@@ -922,9 +934,10 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
   private router = inject(Router);
   private notificationService = inject(NotificationService);
   private breakpointObserver = inject(BreakpointObserver);
-  private ngZone = inject(NgZone);
-  private cdr = inject(ChangeDetectorRef);
+  private cambioService = inject(CambioService);
   private destroy$ = new Subject<void>();
+
+  exchangeRate$ = this.cambioService.exchangeRate$;
 
   expandedMenu = '';
   isHandset = false;
@@ -960,12 +973,7 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
   }
   
   ngAfterViewInit(): void {
-    // Configuração simples do ViewChild
-    setTimeout(() => {
-      if (this.drawer) {
-        console.log('✅ Drawer inicializado:', !!this.drawer);
-      }
-    }, 100);
+    // ViewChild is ready after this lifecycle hook
   }
   
   ngOnDestroy(): void {
@@ -989,91 +997,19 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
   }
   
   toggleSidenav(): void {
-    console.log('🍔 Toggle sidenav clicked');
-    if (this.drawer) {
-      console.log('📝 Estado atual:', this.drawer.opened);
-      
-      // Se está fechado e vai abrir, reseta estados CSS
-      if (!this.drawer.opened) {
-        this.resetSidenavStyles();
-      }
-      
-      this.drawer.toggle();
-      console.log('🔄 Toggle executado');
-      
-      setTimeout(() => {
-        console.log('📝 Estado após toggle:', this.drawer?.opened);
-      }, 100);
-    } else {
-      console.warn('⚠️ Drawer não inicializado');
-    }
-  }
-  
-  private resetSidenavStyles(): void {
-    const sidenavEl = document.querySelector('mat-sidenav');
-    const backdropEl = document.querySelector('.mat-drawer-backdrop');
-    
-    if (sidenavEl) {
-      (sidenavEl as HTMLElement).style.visibility = '';
-      (sidenavEl as HTMLElement).style.transform = '';
-    }
-    if (backdropEl) {
-      (backdropEl as HTMLElement).style.display = '';
-    }
+    this.drawer?.toggle();
   }
 
-  // ========== SOLUÇÃO DEFINITIVA - FORÇA FECHAMENTO ==========
-  
   handleMenuClick(route: string): void {
-    console.log('👆 Menu clicked. Route:', route);
-    
-    // Fecha submenu expansível
     this.expandedMenu = '';
-    
-    // FORÇA fechamento imediato e efetivo 
-    this.forceCloseSidenav();
-    
-    // Navega
-    setTimeout(() => {
+
+    if (this.drawer?.opened) {
+      this.drawer.close().then(() => {
+        this.navigateTo(route);
+      });
+    } else {
       this.navigateTo(route);
-    }, 150);
-  }
-
-  private forceCloseSidenav(): void {
-    if (!this.drawer) return;
-
-    console.log('🔒 Forçando fechamento...Estado atual:', this.drawer.opened);
-    
-    // 1. Método nativo
-    this.drawer.close();
-    
-    // 2. Força estado interno
-    setTimeout(() => {
-      if (this.drawer?.opened) {
-        // Acessa propriedade privada para forçar estado
-        (this.drawer as any)._opened = false;
-        (this.drawer as any)._openedStream?.next(false);
-        
-        // Força detecção de mudanças
-        (this.drawer as any)._changeDetectorRef?.markForCheck();
-      }
-    }, 50);
-
-    // 3. Manipulação CSS como backup
-    setTimeout(() => {
-      const sidenavEl = document.querySelector('mat-sidenav');
-      const backdropEl = document.querySelector('.mat-drawer-backdrop');
-      
-      if (sidenavEl) {
-        (sidenavEl as HTMLElement).style.visibility = 'hidden';
-        (sidenavEl as HTMLElement).style.transform = 'translateX(-100%)';
-      }
-      if (backdropEl) {
-        (backdropEl as HTMLElement).style.display = 'none';
-      }
-      
-      console.log('✅ Fechamento forçado aplicado!');
-    }, 100);
+    }
   }
   
   toggleMenu(title: string): void {
@@ -1231,87 +1167,17 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   ];
 
-  // Método para atualizar navegação com as novas rotas
   navigateTo(route: string): void {
-    console.log('🚀 Navegando para:', route);
-    
-    // Lista de rotas implementadas - expandida para EIP
-    const implementedRoutes = [
-      // Módulos existentes
-      'cadastros/cidades',
-      'cadastros/psf-ubs', 
-      'cadastros/usuarios',
-      'fichas/cadastro-individual',
-      'fichas/cadastro-domiciliar',
-      'fichas/visita-domiciliar',
-      
-      // Novos módulos EIP
-      'dashboards/principal',  // Corrigido: era 'dashboard'
-      'rentabilidade/analise',
-      'rentabilidade/simulador',
-      'rentabilidade/cenarios',
-      'dashboards/criar',
-      'dashboards/meus',
-      'automacao/criar-regra',
-      'automacao/regras-ativas',
-      'construtor/nova-tela',
-      'construtor/minhas-telas',
-      'assistente-ia',
-      
-      // Módulo Financeiro
-      'financeiro/contas-receber',
-      
-      // Módulo Contratos
-      'contratos/novo',
-      'contratos/ativos',
-      'contratos/templates',
-      
-      // Módulo Produtos
-      'produtos/catalogo',
-      'produtos/ncm',
-      
-      // Módulo Logística
-      'logistica/embarque',
-      'logistica/embarque/novo',
-      'embarques',
-      
-      // Módulo Exportações
-      'exportacoes/gerenciar',
-      'exportacoes/pedidos',
-      'exportacoes/status',
-      'exportacao/novo',
-      'exportacao/editar',
-      'exportacao/detalhes'
-    ];
-    
-    if (implementedRoutes.includes(route)) {
-      this.notificationService.showInfo(`Acessando: ${route.split('/').pop()?.replace('-', ' ')}`);
-      
-      // Evitar navegação se já estamos na rota
-      const currentUrl = this.router.url;
-      const targetUrl = `/home-logged/${route}`;
-      
-      if (currentUrl === targetUrl) {
-        console.log('🔄 Já estamos na rota:', targetUrl);
-        return;
-      }
-      
-      console.log('🎯 Navegando de:', currentUrl, 'para:', targetUrl);
-      
-      this.router.navigateByUrl(targetUrl).then(success => {
-        if (success) {
-          console.log('✅ Navegação bem-sucedida para:', targetUrl);
-        } else {
-          console.error('❌ Falha na navegação para:', targetUrl);
-          this.notificationService.showError('Erro ao navegar para a página solicitada');
-        }
-      }).catch(error => {
-        console.error('❌ Erro durante navegação:', error);
-        this.notificationService.showError('Erro ao navegar para a página solicitada');
-      });
-    } else {
-      this.notificationService.showInfo(`Funcionalidade "${route.split('/').pop()?.replace('-', ' ')}" em desenvolvimento`);
+    const currentUrl = this.router.url;
+    const targetUrl = `/home-logged/${route}`;
+
+    if (currentUrl === targetUrl) {
+      return;
     }
+
+    this.router.navigateByUrl(targetUrl).catch(() => {
+      this.notificationService.showError('Erro ao navegar para a página solicitada');
+    });
   }
 
   performSearch(): void {
@@ -1411,21 +1277,19 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onBackdropClick(): void {
-    console.log('🎭 Backdrop clicked');
-    // Deixa o Angular Material gerenciar automaticamente
+    // Angular Material handles this automatically
   }
 
   onEscapeKey(): void {
-    console.log('⌨️ Escape key pressed');
-    // Deixa o Angular Material gerenciar automaticamente
+    // Angular Material handles this automatically
   }
   
   onSidenavOpened(): void {
-    // Sidenav aberto
+    // Sidenav opened
   }
   
   onSidenavClosed(): void {
-    this.expandedMenu = ''; // Fecha submenus quando sidenav fecha
+    this.expandedMenu = ''; // Close submenus when sidenav closes
   }
 }
 

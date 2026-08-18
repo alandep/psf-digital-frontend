@@ -1,0 +1,269 @@
+<!-- Loading -->
+@if (loading) {
+  <div class="loading-container">
+    <mat-spinner diameter="48"></mat-spinner>
+    <p>Carregando simulador...</p>
+  </div>
+}
+
+@if (!loading) {
+<div class="simulador-container">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">calculate</mat-icon>
+        <div>
+          <h1>Simulador de Rentabilidade</h1>
+          <p class="subtitle">Simule cenários e analise margens</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Simulator Content -->
+  <div class="simulator-layout">
+
+    <!-- Left Panel: Form -->
+    <mat-card class="form-card">
+      <mat-card-header>
+        <mat-card-title>Parâmetros da Simulação</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="simulacaoForm" class="simulation-form">
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Produto</mat-label>
+            <mat-select formControlName="product">
+              @for (product of products; track product) {
+                <mat-option [value]="product">{{ product }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Volume</mat-label>
+              <input matInput type="number" formControlName="volume" placeholder="0">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Unidade</mat-label>
+              <mat-select formControlName="unit">
+                @for (unit of units; track unit) {
+                  <mat-option [value]="unit">{{ unit }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Preço Unitário</mat-label>
+              <input matInput type="number" formControlName="pricePerUnit" placeholder="0.00">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Moeda</mat-label>
+              <mat-select formControlName="currency">
+                @for (currency of currencies; track currency) {
+                  <mat-option [value]="currency">{{ currency }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Incoterm</mat-label>
+            <mat-select formControlName="incoterm">
+              @for (incoterm of incoterms; track incoterm) {
+                <mat-option [value]="incoterm">{{ incoterm }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Porto de Origem</mat-label>
+            <mat-select formControlName="originPort">
+              @for (port of ports; track port) {
+                <mat-option [value]="port">{{ port }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>País de Destino</mat-label>
+            <mat-select formControlName="destinationCountry">
+              @for (country of countries; track country) {
+                <mat-option [value]="country">{{ country }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Taxa de Câmbio (BRL)</mat-label>
+            <input matInput type="number" formControlName="exchangeRate" placeholder="5.05">
+          </mat-form-field>
+
+          <button
+            mat-raised-button
+            class="btn-simular"
+            (click)="simular()"
+            [disabled]="simulacaoForm.invalid || simulating">
+            @if (simulating) {
+              <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+              <mat-icon>play_arrow</mat-icon>
+            }
+            Simular
+          </button>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Right Panel: Results -->
+    <div class="results-panel">
+      @if (result) {
+        <!-- KPI Cards -->
+        <div class="results-kpis">
+          <mat-card class="result-kpi receita">
+            <mat-card-content>
+              <span class="kpi-label">Receita</span>
+              <span class="kpi-value">{{ formatCurrency(result.receita) }}</span>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="result-kpi custo">
+            <mat-card-content>
+              <span class="kpi-label">Custo Total</span>
+              <span class="kpi-value">{{ formatCurrency(result.custoTotal) }}</span>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="result-kpi margem">
+            <mat-card-content>
+              <span class="kpi-label">Margem Bruta</span>
+              <span class="kpi-value">{{ formatCurrency(result.margemBruta) }}</span>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="result-kpi percent">
+            <mat-card-content>
+              <span class="kpi-label">Margem %</span>
+              <span class="kpi-value">{{ result.margemPercentual | number:'1.1-1' }}%</span>
+            </mat-card-content>
+          </mat-card>
+        </div>
+
+        <!-- Cost Breakdown -->
+        <mat-card class="breakdown-card">
+          <mat-card-header>
+            <mat-card-title>Composição de Custos</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="breakdown-list">
+              @for (item of result.breakdownItems; track item.category) {
+                <div class="breakdown-item">
+                  <div class="breakdown-header">
+                    <div class="breakdown-info">
+                      <span class="breakdown-category">{{ item.category }}</span>
+                      <span class="breakdown-description">{{ item.description }}</span>
+                    </div>
+                    <div class="breakdown-values">
+                      <span class="breakdown-value">{{ formatCurrency(item.value) }}</span>
+                      <span class="breakdown-percent">{{ item.percentage | number:'1.1-1' }}%</span>
+                    </div>
+                  </div>
+                  <mat-progress-bar
+                    [mode]="'determinate'"
+                    [value]="item.percentage"
+                    color="primary">
+                  </mat-progress-bar>
+                </div>
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+      } @else {
+        <mat-card class="placeholder-card">
+          <mat-card-content>
+            <mat-icon class="placeholder-icon">analytics</mat-icon>
+            <h3>Configure os parâmetros</h3>
+            <p>Preencha o formulário e clique em "Simular" para ver os resultados da análise de rentabilidade.</p>
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
+  </div>
+
+  <!-- History Table -->
+  <mat-card class="history-card">
+    <mat-card-header>
+      <mat-card-title>Histórico de Simulações</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="table-container">
+        <table mat-table [dataSource]="dataSource" matSort class="history-table">
+
+          <!-- Date -->
+          <ng-container matColumnDef="date">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Data</th>
+            <td mat-cell *matCellDef="let row">{{ row.date | date:'dd/MM/yyyy' }}</td>
+          </ng-container>
+
+          <!-- Product -->
+          <ng-container matColumnDef="product">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Produto</th>
+            <td mat-cell *matCellDef="let row">{{ row.product }}</td>
+          </ng-container>
+
+          <!-- Country -->
+          <ng-container matColumnDef="country">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Destino</th>
+            <td mat-cell *matCellDef="let row">{{ row.country }}</td>
+          </ng-container>
+
+          <!-- Volume -->
+          <ng-container matColumnDef="volume">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Volume</th>
+            <td mat-cell *matCellDef="let row">{{ row.volume | number }} ton</td>
+          </ng-container>
+
+          <!-- Receita -->
+          <ng-container matColumnDef="receita">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Receita</th>
+            <td mat-cell *matCellDef="let row">{{ formatCurrency(row.receita) }}</td>
+          </ng-container>
+
+          <!-- Margem -->
+          <ng-container matColumnDef="margem">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Margem</th>
+            <td mat-cell *matCellDef="let row">{{ formatCurrency(row.margem) }}</td>
+          </ng-container>
+
+          <!-- Margem % -->
+          <ng-container matColumnDef="margemPercent">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Margem %</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="margem-badge" [class.high]="row.margemPercent >= 25" [class.medium]="row.margemPercent >= 20 && row.margemPercent < 25" [class.low]="row.margemPercent < 20">
+                {{ row.margemPercent | number:'1.1-1' }}%
+              </span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [pageSizeOptions]="[10, 25, 50, 100]"
+        [pageSize]="10"
+        showFirstLastButtons>
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+
+</div>
+}

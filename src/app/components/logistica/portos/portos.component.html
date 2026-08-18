@@ -1,0 +1,758 @@
+<!-- Main Container -->
+<div class="portos-container">
+
+  <!-- Loading Bar -->
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header Premium -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">anchor</mat-icon>
+        <div class="title-content">
+          <h1>Portos &amp; Terminais</h1>
+          <p class="subtitle">Centro inteligente de decisão logística com IA</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button color="primary" (click)="createPorto()">
+          <mat-icon>add</mat-icon> Novo Porto
+        </button>
+        <button mat-raised-button color="primary" (click)="isSimulationExpanded = !isSimulationExpanded">
+          <mat-icon>science</mat-icon> Simular Exportação
+        </button>
+        <button mat-raised-button color="primary" (click)="exportPDF()">
+          <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Dashboard Cards -->
+  <div class="kpi-dashboard">
+    <mat-card class="kpi-card kpi-total">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>anchor</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.totalPorts || 0 }}</div>
+          <div class="kpi-label">Total Portos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-operational">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.operationalCount || 0 }}</div>
+          <div class="kpi-label">Operacionais</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-congested">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>warning</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.congestedCount || 0 }}</div>
+          <div class="kpi-label">Congestionados</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-score">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>insights</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.avgLogisticsScore || 0 }}</div>
+          <div class="kpi-label">Score Logístico Médio</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-shipments">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>directions_boat</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.activeShipments || 0 }}</div>
+          <div class="kpi-label">Embarques Ativos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Simulation Card (Hero Feature) -->
+  <mat-card class="simulation-card" *ngIf="isSimulationExpanded">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="simulation-icon">psychology</mat-icon>
+      <mat-card-title>Simulação de Exportação com IA</mat-card-title>
+      <mat-card-subtitle>Encontre a melhor rota, porto e modal para sua carga</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="simulationForm" class="simulation-form">
+        <div class="simulation-fields">
+          <mat-form-field appearance="outline">
+            <mat-label>Produto</mat-label>
+            <input matInput formControlName="product" placeholder="Ex: Soja em Grãos">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Quantidade (ton)</mat-label>
+            <input matInput type="number" formControlName="quantity" placeholder="5000">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Origem</mat-label>
+            <input matInput formControlName="origin" placeholder="Ex: Rondonópolis - MT">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Destino</mat-label>
+            <input matInput formControlName="destination" placeholder="Ex: Shanghai - China">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Incoterm</mat-label>
+            <mat-select formControlName="incoterm">
+              <mat-option value="FOB">FOB</mat-option>
+              <mat-option value="CIF">CIF</mat-option>
+              <mat-option value="CFR">CFR</mat-option>
+              <mat-option value="EXW">EXW</mat-option>
+              <mat-option value="DDP">DDP</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Data Prevista</mat-label>
+            <input matInput [matDatepicker]="picker" formControlName="date">
+            <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        <div class="simulation-actions">
+          <button mat-raised-button color="primary" (click)="simulate()" [disabled]="isSimulating || simulationForm.invalid">
+            <mat-icon>science</mat-icon>
+            {{ isSimulating ? 'Simulando...' : 'Simular Exportação' }}
+          </button>
+          <mat-progress-spinner *ngIf="isSimulating" mode="indeterminate" diameter="24"></mat-progress-spinner>
+        </div>
+      </form>
+
+      <!-- Simulation Result -->
+      <div class="simulation-result" *ngIf="simulationResult">
+        <mat-divider></mat-divider>
+        <h3><mat-icon>emoji_objects</mat-icon> Resultado da Simulação</h3>
+        <div class="result-grid">
+          <div class="result-item result-best">
+            <span class="result-label">Melhor Porto</span>
+            <span class="result-value">{{ simulationResult.bestPort }}</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">Melhor Rota</span>
+            <span class="result-value">{{ simulationResult.bestRoute }}</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">Custo Estimado</span>
+            <span class="result-value">USD {{ simulationResult.estimatedCost | number:'1.0-0' }}</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">Tempo Estimado</span>
+            <span class="result-value">{{ simulationResult.estimatedTime }} dias</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">ETA</span>
+            <span class="result-value">{{ simulationResult.eta | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">Nível de Risco</span>
+            <span class="result-value">{{ simulationResult.riskLevel }}</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">Emissões CO₂</span>
+            <span class="result-value">{{ simulationResult.emissions | number:'1.0-0' }} kg</span>
+          </div>
+        </div>
+
+        <!-- Alternatives -->
+        <h4>Alternativas</h4>
+        <table mat-table [dataSource]="simulationResult.alternatives" class="alternatives-table">
+          <ng-container matColumnDef="port">
+            <th mat-header-cell *matHeaderCellDef>Porto</th>
+            <td mat-cell *matCellDef="let alt">{{ alt.port }}</td>
+          </ng-container>
+          <ng-container matColumnDef="route">
+            <th mat-header-cell *matHeaderCellDef>Rota</th>
+            <td mat-cell *matCellDef="let alt">{{ alt.route }}</td>
+          </ng-container>
+          <ng-container matColumnDef="cost">
+            <th mat-header-cell *matHeaderCellDef>Custo (USD)</th>
+            <td mat-cell *matCellDef="let alt">{{ alt.cost | number:'1.0-0' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="time">
+            <th mat-header-cell *matHeaderCellDef>Tempo (dias)</th>
+            <td mat-cell *matCellDef="let alt">{{ alt.time }}</td>
+          </ng-container>
+          <ng-container matColumnDef="risk">
+            <th mat-header-cell *matHeaderCellDef>Risco</th>
+            <td mat-cell *matCellDef="let alt">{{ alt.risk }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="['port', 'route', 'cost', 'time', 'risk']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['port', 'route', 'cost', 'time', 'risk']"></tr>
+        </table>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Filters Section -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <div class="filter-row">
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Buscar</mat-label>
+            <input matInput formControlName="searchText" placeholder="Nome, código, cidade...">
+            <mat-icon matPrefix>search</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>País</mat-label>
+            <mat-select formControlName="country">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let c of countries" [value]="c">{{ c }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Tipo</mat-label>
+            <mat-select formControlName="portType">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let t of portTypes" [value]="t">{{ t }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Status Operacional</mat-label>
+            <mat-select formControlName="operationalStatus">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let s of statuses" [value]="s">{{ s }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Congestionamento</mat-label>
+            <mat-select formControlName="congestionLevel">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let cl of congestionLevels" [value]="cl">{{ getCongestionLabel(cl) }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="clear-filter-wrapper">
+          <button mat-button class="clear-filters-btn" (click)="clearFilters()">
+            <mat-icon>filter_list_off</mat-icon> Limpar Filtros
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Results Grid -->
+  <mat-card class="results-card">
+    <mat-card-content>
+      <div class="results-header">
+        <h3>{{ filteredPortos.length }} portos encontrados</h3>
+      </div>
+
+      <table mat-table [dataSource]="filteredPortos" class="portos-table">
+        <!-- Name Column -->
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Nome</th>
+          <td mat-cell *matCellDef="let porto">
+            <span class="porto-name">{{ porto.name }}</span>
+          </td>
+        </ng-container>
+
+        <!-- UN/LOCODE Column -->
+        <ng-container matColumnDef="unLocode">
+          <th mat-header-cell *matHeaderCellDef>UN/LOCODE</th>
+          <td mat-cell *matCellDef="let porto">
+            <span class="code-badge">{{ porto.unLocode }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Country Column -->
+        <ng-container matColumnDef="country">
+          <th mat-header-cell *matHeaderCellDef>País</th>
+          <td mat-cell *matCellDef="let porto">{{ porto.country }}</td>
+        </ng-container>
+
+        <!-- Port Type Column -->
+        <ng-container matColumnDef="portType">
+          <th mat-header-cell *matHeaderCellDef>Tipo</th>
+          <td mat-cell *matCellDef="let porto">
+            <span class="type-chip">{{ porto.portType }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Status Column -->
+        <ng-container matColumnDef="operationalStatus">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let porto">
+            <span class="status-chip" [ngClass]="getStatusClass(porto.operationalStatus)">
+              {{ porto.operationalStatus }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Congestion Column -->
+        <ng-container matColumnDef="congestionLevel">
+          <th mat-header-cell *matHeaderCellDef>Congestionamento</th>
+          <td mat-cell *matCellDef="let porto">
+            <span class="congestion-badge" [ngClass]="getCongestionClass(porto.congestionLevel)">
+              {{ getCongestionLabel(porto.congestionLevel) }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- AI Score Column -->
+        <ng-container matColumnDef="aiLogisticsScore">
+          <th mat-header-cell *matHeaderCellDef>Score IA</th>
+          <td mat-cell *matCellDef="let porto">
+            <div class="score-indicator">
+              <mat-progress-bar mode="determinate" [value]="porto.aiLogisticsScore"></mat-progress-bar>
+              <span class="score-value">{{ porto.aiLogisticsScore }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Ações</th>
+          <td mat-cell *matCellDef="let porto">
+            <button mat-icon-button color="primary" (click)="selectPorto(porto)" matTooltip="Ver detalhes">
+              <mat-icon>visibility</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="selectPorto(row)" class="clickable-row"></tr>
+      </table>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Detail Panel -->
+  <mat-card class="detail-card" *ngIf="isDetailOpen && selectedPorto">
+    <mat-card-header>
+      <div class="detail-header">
+        <div class="detail-title-section">
+          <mat-icon class="detail-icon">anchor</mat-icon>
+          <div>
+            <h2>{{ selectedPorto.name }}</h2>
+            <p>{{ selectedPorto.unLocode }} &mdash; {{ selectedPorto.city }}, {{ selectedPorto.country }}</p>
+          </div>
+        </div>
+        <div class="detail-header-actions">
+          <span class="status-chip" [ngClass]="getStatusClass(selectedPorto.operationalStatus)">
+            {{ selectedPorto.operationalStatus }}
+          </span>
+          <button mat-icon-button (click)="closeDetail()" matTooltip="Fechar">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+    </mat-card-header>
+
+    <mat-card-content>
+      <mat-tab-group>
+        <!-- Tab 1: Dados Gerais -->
+        <mat-tab label="Dados Gerais">
+          <div class="tab-content">
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-label">Nome</span>
+                <span class="info-value">{{ selectedPorto.name }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">UN/LOCODE</span>
+                <span class="info-value">{{ selectedPorto.unLocode }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">País</span>
+                <span class="info-value">{{ selectedPorto.country }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Cidade</span>
+                <span class="info-value">{{ selectedPorto.city }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Coordenadas</span>
+                <span class="info-value">{{ selectedPorto.latitude }}, {{ selectedPorto.longitude }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Tipo</span>
+                <span class="info-value">{{ selectedPorto.portType }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Operador</span>
+                <span class="info-value">{{ selectedPorto.operator }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Capacidade Anual</span>
+                <span class="info-value">{{ formatCapacity(selectedPorto.annualCapacity) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Horário de Operação</span>
+                <span class="info-value">{{ selectedPorto.operatingHours }}</span>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Tab 2: Infraestrutura -->
+        <mat-tab label="Infraestrutura">
+          <div class="tab-content" *ngIf="infrastructure">
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-label">Berços de Atracação</span>
+                <span class="info-value">{{ infrastructure.berthCount }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Calado Máximo</span>
+                <span class="info-value">{{ infrastructure.maxDraft }}m</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Capacidade de Armazenamento</span>
+                <span class="info-value">{{ formatCapacity(infrastructure.storageCapacity) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Silos</span>
+                <span class="info-value">{{ infrastructure.siloCount }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Armazéns</span>
+                <span class="info-value">{{ infrastructure.warehouseCount }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Pátio de Contêineres</span>
+                <span class="info-value">{{ infrastructure.containerYardCapacity | number }} TEUs</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Movimentação Diária</span>
+                <span class="info-value">{{ formatCapacity(infrastructure.dailyMovementCapacity) }}/dia</span>
+              </div>
+            </div>
+
+            <h4>Equipamentos</h4>
+            <div class="chips-list">
+              <span class="info-chip" *ngFor="let eq of infrastructure.equipment">{{ eq }}</span>
+            </div>
+
+            <h4>Modais Suportados</h4>
+            <div class="chips-list">
+              <span class="info-chip modal-chip" *ngFor="let modal of infrastructure.supportedModals">{{ modal }}</span>
+            </div>
+
+            <h4>Serviços Aduaneiros</h4>
+            <div class="chips-list">
+              <span class="info-chip customs-chip" *ngFor="let svc of infrastructure.customsServices">{{ svc }}</span>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Tab 3: Indicadores Operacionais -->
+        <mat-tab label="Indicadores Operacionais">
+          <div class="tab-content" *ngIf="indicators">
+            <div class="indicators-grid">
+              <div class="indicator-card">
+                <div class="indicator-header">
+                  <mat-icon>traffic</mat-icon>
+                  <span>Congestionamento</span>
+                </div>
+                <div class="indicator-gauge">
+                  <mat-progress-bar mode="determinate"
+                    [value]="indicators.congestionLevel === 'LOW' ? 25 : indicators.congestionLevel === 'MEDIUM' ? 50 : indicators.congestionLevel === 'HIGH' ? 75 : 95"
+                    [ngClass]="getCongestionClass(indicators.congestionLevel)">
+                  </mat-progress-bar>
+                  <span class="congestion-badge" [ngClass]="getCongestionClass(indicators.congestionLevel)">
+                    {{ getCongestionLabel(indicators.congestionLevel) }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="indicator-card">
+                <div class="indicator-header">
+                  <mat-icon>hourglass_empty</mat-icon>
+                  <span>Tempo Médio de Espera</span>
+                </div>
+                <div class="indicator-value">{{ indicators.avgWaitTime }}h</div>
+                <mat-progress-bar mode="determinate" [value]="(indicators.avgWaitTime / 96) * 100"></mat-progress-bar>
+              </div>
+
+              <div class="indicator-card">
+                <div class="indicator-header">
+                  <mat-icon>dock</mat-icon>
+                  <span>Tempo Médio de Atracação</span>
+                </div>
+                <div class="indicator-value">{{ indicators.avgBerthingTime }}h</div>
+                <mat-progress-bar mode="determinate" [value]="(indicators.avgBerthingTime / 96) * 100"></mat-progress-bar>
+              </div>
+
+              <div class="indicator-card">
+                <div class="indicator-header">
+                  <mat-icon>fact_check</mat-icon>
+                  <span>Tempo Médio de Liberação</span>
+                </div>
+                <div class="indicator-value">{{ indicators.avgClearanceTime }}h</div>
+                <mat-progress-bar mode="determinate" [value]="(indicators.avgClearanceTime / 48) * 100"></mat-progress-bar>
+              </div>
+
+              <div class="indicator-card">
+                <div class="indicator-header">
+                  <mat-icon>storage</mat-icon>
+                  <span>Capacidade Disponível</span>
+                </div>
+                <div class="indicator-value">{{ indicators.availableCapacity }}%</div>
+                <mat-progress-bar mode="determinate" [value]="indicators.availableCapacity" class="capacity-bar"></mat-progress-bar>
+              </div>
+
+              <div class="indicator-card">
+                <div class="indicator-header">
+                  <mat-icon>local_shipping</mat-icon>
+                  <span>Movimentação Diária</span>
+                </div>
+                <div class="indicator-value">{{ indicators.dailyMovement | number }} ton</div>
+              </div>
+
+              <div class="indicator-card">
+                <div class="indicator-header">
+                  <mat-icon>pie_chart</mat-icon>
+                  <span>Ocupação Atual</span>
+                </div>
+                <div class="indicator-value">{{ indicators.currentOccupancy }}%</div>
+                <mat-progress-bar mode="determinate" [value]="indicators.currentOccupancy"
+                  [ngClass]="{'occupancy-high': indicators.currentOccupancy > 80, 'occupancy-medium': indicators.currentOccupancy > 60 && indicators.currentOccupancy <= 80}">
+                </mat-progress-bar>
+              </div>
+
+              <div class="indicator-card">
+                <div class="indicator-header">
+                  <mat-icon>update</mat-icon>
+                  <span>Última Atualização</span>
+                </div>
+                <div class="indicator-value">{{ indicators.lastUpdated | date:'dd/MM/yyyy HH:mm' }}</div>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Tab 4: Rotas Logísticas -->
+        <mat-tab label="Rotas Logísticas">
+          <div class="tab-content">
+            <div class="routes-list" *ngIf="routes.length > 0; else noRoutes">
+              <div class="route-card" *ngFor="let route of routes">
+                <div class="route-header">
+                  <h4>{{ route.origin }} → {{ route.destination }}</h4>
+                  <div class="route-metrics">
+                    <span class="route-metric"><mat-icon>straighten</mat-icon> {{ route.totalDistance | number }} km</span>
+                    <span class="route-metric"><mat-icon>schedule</mat-icon> {{ route.estimatedTime }} dias</span>
+                    <span class="route-metric"><mat-icon>attach_money</mat-icon> USD {{ route.estimatedCost | number:'1.0-0' }}</span>
+                    <span class="route-metric"><mat-icon>eco</mat-icon> {{ route.estimatedEmissions | number:'1.0-0' }} kg CO₂</span>
+                  </div>
+                </div>
+
+                <!-- Route Segments Visualization -->
+                <div class="route-segments">
+                  <div class="segment-card" *ngFor="let seg of route.segments; let last = last">
+                    <div class="segment-icon">
+                      <mat-icon>{{ seg.mode === 'Ferroviário' ? 'train' : seg.mode === 'Rodoviário' ? 'local_shipping' : seg.mode === 'Marítimo' ? 'directions_boat' : 'warehouse' }}</mat-icon>
+                    </div>
+                    <div class="segment-info">
+                      <span class="segment-mode">{{ seg.mode }}</span>
+                      <span class="segment-route">{{ seg.from }} → {{ seg.to }}</span>
+                      <span class="segment-details">{{ seg.distance > 0 ? (seg.distance | number) + ' km' : '' }} · {{ seg.time }}h · USD {{ seg.cost | number:'1.0-0' }}</span>
+                    </div>
+                    <div class="segment-connector" *ngIf="!last">
+                      <mat-icon>arrow_forward</mat-icon>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Risks -->
+                <div class="route-risks" *ngIf="route.risks.length > 0">
+                  <mat-icon class="risk-icon">warning</mat-icon>
+                  <span *ngFor="let risk of route.risks; let last = last">{{ risk }}{{ last ? '' : ' · ' }}</span>
+                </div>
+              </div>
+            </div>
+            <ng-template #noRoutes>
+              <div class="empty-state">
+                <mat-icon>route</mat-icon>
+                <p>Nenhuma rota cadastrada para este porto</p>
+              </div>
+            </ng-template>
+          </div>
+        </mat-tab>
+
+        <!-- Tab 5: Embarques -->
+        <mat-tab label="Embarques">
+          <div class="tab-content">
+            <table mat-table [dataSource]="shipments" class="shipments-table" *ngIf="shipments.length > 0; else noShipments">
+              <ng-container matColumnDef="bookingNumber">
+                <th mat-header-cell *matHeaderCellDef>Booking</th>
+                <td mat-cell *matCellDef="let s">{{ s.bookingNumber }}</td>
+              </ng-container>
+              <ng-container matColumnDef="exportNumber">
+                <th mat-header-cell *matHeaderCellDef>Exportação</th>
+                <td mat-cell *matCellDef="let s">{{ s.exportNumber }}</td>
+              </ng-container>
+              <ng-container matColumnDef="containerNumber">
+                <th mat-header-cell *matHeaderCellDef>Container</th>
+                <td mat-cell *matCellDef="let s">
+                  <span class="code-badge">{{ s.containerNumber }}</span>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="vesselName">
+                <th mat-header-cell *matHeaderCellDef>Navio</th>
+                <td mat-cell *matCellDef="let s">{{ s.vesselName }}</td>
+              </ng-container>
+              <ng-container matColumnDef="eta">
+                <th mat-header-cell *matHeaderCellDef>ETA</th>
+                <td mat-cell *matCellDef="let s">{{ s.eta | date:'dd/MM/yyyy' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="etd">
+                <th mat-header-cell *matHeaderCellDef>ETD</th>
+                <td mat-cell *matCellDef="let s">{{ s.etd | date:'dd/MM/yyyy' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef>Status</th>
+                <td mat-cell *matCellDef="let s">
+                  <span class="status-chip" [ngClass]="getShipmentStatusClass(s.status)">{{ s.status }}</span>
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="['bookingNumber', 'exportNumber', 'containerNumber', 'vesselName', 'eta', 'etd', 'status']"></tr>
+              <tr mat-row *matRowDef="let row; columns: ['bookingNumber', 'exportNumber', 'containerNumber', 'vesselName', 'eta', 'etd', 'status']"></tr>
+            </table>
+            <ng-template #noShipments>
+              <div class="empty-state">
+                <mat-icon>directions_boat</mat-icon>
+                <p>Nenhum embarque registrado para este porto</p>
+              </div>
+            </ng-template>
+          </div>
+        </mat-tab>
+
+        <!-- Tab 6: IA & Insights -->
+        <mat-tab label="IA & Insights">
+          <div class="tab-content" *ngIf="aiInsights">
+            <!-- Score Gauge -->
+            <div class="ai-score-section">
+              <div class="score-gauge">
+                <div class="score-circle">
+                  <span class="score-number">{{ aiInsights.logisticsScore }}</span>
+                  <span class="score-label">Score Logístico</span>
+                </div>
+                <mat-progress-bar mode="determinate" [value]="aiInsights.logisticsScore" class="score-bar"></mat-progress-bar>
+              </div>
+              <div class="ai-recommendations">
+                <div class="recommendation-item">
+                  <mat-icon>recommend</mat-icon>
+                  <span><strong>Porto Recomendado:</strong> {{ aiInsights.recommendedPort }}</span>
+                </div>
+                <div class="recommendation-item">
+                  <mat-icon>swap_horiz</mat-icon>
+                  <span><strong>Modal Recomendado:</strong> {{ aiInsights.recommendedModal }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Port Ranking -->
+            <h4>Ranking de Portos</h4>
+            <table mat-table [dataSource]="aiInsights.portRanking" class="ranking-table">
+              <ng-container matColumnDef="portName">
+                <th mat-header-cell *matHeaderCellDef>Porto</th>
+                <td mat-cell *matCellDef="let r">{{ r.portName }}</td>
+              </ng-container>
+              <ng-container matColumnDef="score">
+                <th mat-header-cell *matHeaderCellDef>Score</th>
+                <td mat-cell *matCellDef="let r">
+                  <div class="score-indicator">
+                    <mat-progress-bar mode="determinate" [value]="r.score"></mat-progress-bar>
+                    <span class="score-value">{{ r.score }}</span>
+                  </div>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="cost">
+                <th mat-header-cell *matHeaderCellDef>Custo (USD)</th>
+                <td mat-cell *matCellDef="let r">{{ r.cost | number:'1.0-0' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="time">
+                <th mat-header-cell *matHeaderCellDef>Tempo (dias)</th>
+                <td mat-cell *matCellDef="let r">{{ r.time }}</td>
+              </ng-container>
+              <ng-container matColumnDef="congestion">
+                <th mat-header-cell *matHeaderCellDef>Congestionamento</th>
+                <td mat-cell *matCellDef="let r">
+                  <span class="congestion-badge" [ngClass]="getCongestionClass(r.congestion)">{{ getCongestionLabel(r.congestion) }}</span>
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="['portName', 'score', 'cost', 'time', 'congestion']"></tr>
+              <tr mat-row *matRowDef="let row; columns: ['portName', 'score', 'cost', 'time', 'congestion']"></tr>
+            </table>
+
+            <!-- Alerts -->
+            <h4>Alertas</h4>
+            <div class="alerts-list">
+              <div class="alert-item" *ngFor="let alert of aiInsights.alerts" [ngClass]="getAlertClass(alert.severity)">
+                <mat-icon>{{ getAlertIcon(alert.severity) }}</mat-icon>
+                <div class="alert-content">
+                  <span class="alert-message">{{ alert.message }}</span>
+                  <span class="alert-time">{{ alert.detectedAt | date:'dd/MM HH:mm' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Suggestions -->
+            <h4>Sugestões da IA</h4>
+            <div class="suggestions-list">
+              <div class="suggestion-card" *ngFor="let sug of aiInsights.suggestions">
+                <div class="suggestion-header">
+                  <mat-icon>lightbulb</mat-icon>
+                  <span class="suggestion-action">{{ sug.action }}</span>
+                  <span class="suggestion-confidence">{{ sug.confidence }}% confiança</span>
+                </div>
+                <p class="suggestion-reason">{{ sug.reason }}</p>
+                <div class="suggestion-criteria">
+                  <span class="criteria-chip" *ngFor="let c of sug.criteria">{{ c }}</span>
+                </div>
+                <div class="suggestion-impact">
+                  <mat-icon>trending_up</mat-icon>
+                  <span>{{ sug.estimatedImpact }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Executive Summary -->
+            <h4>Resumo Executivo</h4>
+            <div class="executive-summary">
+              <mat-icon>summarize</mat-icon>
+              <p>{{ aiInsights.executiveSummary }}</p>
+            </div>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </mat-card-content>
+  </mat-card>
+
+</div>

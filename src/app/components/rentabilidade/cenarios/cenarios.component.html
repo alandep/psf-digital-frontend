@@ -1,0 +1,278 @@
+<!-- Main Container -->
+<div class="cenarios-container">
+
+  <!-- Loading Bar -->
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">compare_arrows</mat-icon>
+        <div class="title-content">
+          <h1>Cenários de Rentabilidade</h1>
+          <p class="subtitle">Comparação de cenários para operações de exportação</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button class="new-btn" (click)="novoCenario()">
+          <mat-icon>add</mat-icon> Novo Cenário
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Dashboard Cards -->
+  <div class="kpi-dashboard">
+    <mat-card class="kpi-card kpi-total">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>analytics</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.totalCenarios }}</div>
+          <div class="kpi-label">Total Cenários</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-ativos">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.cenariosAtivos }}</div>
+          <div class="kpi-label">Ativos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-melhor">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>trending_up</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.melhorMargem }}%</div>
+          <div class="kpi-label">Melhor Margem</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-pior">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>trending_down</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.piorMargem }}%</div>
+          <div class="kpi-label">Pior Margem</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-media">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>equalizer</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.margemMedia }}%</div>
+          <div class="kpi-label">Margem Média</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-cambio">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>currency_exchange</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">R$ {{ metrics.variacaoCambial }}</div>
+          <div class="kpi-label">Variação Cambial</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Comparison Card (HERO) -->
+  <mat-card class="comparison-card">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="comparison-header-icon">assessment</mat-icon>
+      <mat-card-title>Comparativo de Cenários</mat-card-title>
+      <mat-card-subtitle>Visão consolidada das métricas por tipo de cenário</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="comparison-grid">
+        <!-- Header Row -->
+        <div class="comparison-row comparison-header-row">
+          <div class="comparison-cell metric-cell">Métrica</div>
+          <div class="comparison-cell tipo-cell otimista-header">Otimista</div>
+          <div class="comparison-cell tipo-cell base-header">Base</div>
+          <div class="comparison-cell tipo-cell conservador-header">Conservador</div>
+          <div class="comparison-cell tipo-cell adverso-header">Adverso</div>
+        </div>
+        <!-- Data Rows -->
+        <div class="comparison-row" *ngFor="let comp of comparisons">
+          <div class="comparison-cell metric-cell">{{ comp.metric }}</div>
+          <div class="comparison-cell value-cell" [ngClass]="getComparisonCellClass(comp.metric, 'otimista')">
+            {{ formatComparisonValue(comp.otimista, comp.unit) }}
+          </div>
+          <div class="comparison-cell value-cell" [ngClass]="getComparisonCellClass(comp.metric, 'base')">
+            {{ formatComparisonValue(comp.base, comp.unit) }}
+          </div>
+          <div class="comparison-cell value-cell" [ngClass]="getComparisonCellClass(comp.metric, 'conservador')">
+            {{ formatComparisonValue(comp.conservador, comp.unit) }}
+          </div>
+          <div class="comparison-cell value-cell" [ngClass]="getComparisonCellClass(comp.metric, 'adverso')">
+            {{ formatComparisonValue(comp.adverso, comp.unit) }}
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Filters -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <mat-form-field appearance="outline" class="filter-field search-field">
+          <mat-label>Buscar</mat-label>
+          <input matInput formControlName="searchText" placeholder="Nome, produto, país, criador...">
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Tipo</mat-label>
+          <mat-select formControlName="tipo">
+            <mat-option value="">Todos</mat-option>
+            <mat-option value="OTIMISTA">Otimista</mat-option>
+            <mat-option value="BASE">Base</mat-option>
+            <mat-option value="CONSERVADOR">Conservador</mat-option>
+            <mat-option value="ADVERSO">Adverso</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Produto</mat-label>
+          <mat-select formControlName="product">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let p of getUniqueProducts()" [value]="p">{{ p }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <button mat-button class="clear-filters-btn" (click)="clearFilters()">
+          <mat-icon>filter_list_off</mat-icon> Limpar
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Scenarios Table -->
+  <mat-card class="results-card">
+    <mat-card-content>
+      <div class="results-header">
+        <h3>Cenários ({{ dataSource.filteredData.length }})</h3>
+      </div>
+
+      <div class="table-container">
+        <table mat-table [dataSource]="dataSource" matSort #cenariosSort="matSort" class="data-table">
+
+          <!-- Name -->
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Nome</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="cenario-name">{{ row.name }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Tipo -->
+          <ng-container matColumnDef="tipo">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="tipo-chip" [ngClass]="getTipoClass(row.tipo)">{{ row.tipo }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Product -->
+          <ng-container matColumnDef="product">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Produto</th>
+            <td mat-cell *matCellDef="let row">{{ row.product }}</td>
+          </ng-container>
+
+          <!-- Country -->
+          <ng-container matColumnDef="country">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>País</th>
+            <td mat-cell *matCellDef="let row">{{ row.country }}</td>
+          </ng-container>
+
+          <!-- Volume -->
+          <ng-container matColumnDef="volume">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Volume</th>
+            <td mat-cell *matCellDef="let row">{{ row.volume | number:'1.0-0' }}</td>
+          </ng-container>
+
+          <!-- Exchange Rate -->
+          <ng-container matColumnDef="exchangeRate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Câmbio</th>
+            <td mat-cell *matCellDef="let row">R$ {{ row.exchangeRate | number:'1.2-2' }}</td>
+          </ng-container>
+
+          <!-- Margin -->
+          <ng-container matColumnDef="margin">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Margem (USD)</th>
+            <td mat-cell *matCellDef="let row">{{ row.margin | number:'1.0-0' }}</td>
+          </ng-container>
+
+          <!-- Margin Percent -->
+          <ng-container matColumnDef="marginPercent">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Margem %</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="margin-value" [ngClass]="row.marginPercent >= 25 ? 'margin-good' : row.marginPercent >= 15 ? 'margin-warning' : 'margin-danger'">
+                {{ row.marginPercent }}%
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Revenue -->
+          <ng-container matColumnDef="revenue">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Receita</th>
+            <td mat-cell *matCellDef="let row">USD {{ row.revenue | number:'1.0-0' }}</td>
+          </ng-container>
+
+          <!-- Risk Level -->
+          <ng-container matColumnDef="riskLevel">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Risco</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="risk-badge" [ngClass]="getRiskClass(row.riskLevel)">{{ row.riskLevel }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Created At -->
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Criado em</th>
+            <td mat-cell *matCellDef="let row">{{ row.createdAt | date:'dd/MM/yyyy' }}</td>
+          </ng-container>
+
+          <!-- Created By -->
+          <ng-container matColumnDef="createdBy">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Criado por</th>
+            <td mat-cell *matCellDef="let row">{{ row.createdBy }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="clickable-row"></tr>
+        </table>
+      </div>
+
+      <mat-paginator #cenariosPaginator
+        [pageSizeOptions]="[10, 25, 50, 100]"
+        [pageSize]="10"
+        showFirstLastButtons>
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+
+</div>

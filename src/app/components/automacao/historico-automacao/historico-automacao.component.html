@@ -1,0 +1,234 @@
+<!-- Main Container -->
+<div class="historico-container">
+
+  <!-- Loading Bar -->
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">history</mat-icon>
+        <div class="title-content">
+          <h1>Histórico de Execuções</h1>
+          <p class="subtitle">Registro de todas as execuções de regras de automação</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button class="export-btn" (click)="exportData()">
+          <mat-icon>download</mat-icon> Exportar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Dashboard Cards -->
+  <div class="kpi-dashboard">
+    <mat-card class="kpi-card kpi-total">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>analytics</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.totalExecucoes }}</div>
+          <div class="kpi-label">Total Execuções</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-hoje">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>today</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.execucoesHoje }}</div>
+          <div class="kpi-label">Hoje</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-sucesso">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.sucessos }}</div>
+          <div class="kpi-label">Sucessos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-falhas">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>cancel</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.falhas }}</div>
+          <div class="kpi-label">Falhas</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-tempo">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>timer</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ formatTempoMedio(metrics.tempoMedio) }}</div>
+          <div class="kpi-label">Tempo Médio</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-taxa">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>speed</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.taxaSucesso }}%</div>
+          <div class="kpi-label">Taxa de Sucesso</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Filters -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let s of statuses" [value]="s">{{ getStatusLabel(s) }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field rule-field">
+          <mat-label>Regra</mat-label>
+          <mat-select formControlName="ruleName">
+            <mat-option value="">Todas</mat-option>
+            <mat-option *ngFor="let name of ruleNames" [value]="name">{{ name }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Período</mat-label>
+          <mat-select formControlName="periodo">
+            <mat-option value="">Todo período</mat-option>
+            <mat-option value="24">Últimas 24h</mat-option>
+            <mat-option value="48">Últimas 48h</mat-option>
+            <mat-option value="72">Últimos 3 dias</mat-option>
+            <mat-option value="168">Última semana</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <button mat-button class="clear-filters-btn" (click)="clearFilters()">
+          <mat-icon>filter_list_off</mat-icon> Limpar
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Histórico Table -->
+  <mat-card class="results-card">
+    <mat-card-content>
+      <div class="results-header">
+        <h3>Execuções ({{ dataSource.filteredData.length }})</h3>
+      </div>
+
+      <div class="table-container">
+        <table mat-table [dataSource]="dataSource" matSort #historicoSort="matSort" class="data-table">
+
+          <!-- Start Time -->
+          <ng-container matColumnDef="startTime">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Data/Hora</th>
+            <td mat-cell *matCellDef="let row">{{ row.startTime | date:'dd/MM/yyyy HH:mm' }}</td>
+          </ng-container>
+
+          <!-- Rule Name -->
+          <ng-container matColumnDef="ruleName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Regra</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="rule-name" [matTooltip]="row.ruleName">{{ row.ruleName }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Categoria -->
+          <ng-container matColumnDef="categoria">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Categoria</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="chip chip-categoria">{{ row.categoria }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Trigger -->
+          <ng-container matColumnDef="trigger">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Trigger</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="chip chip-trigger">{{ row.trigger }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Status -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="status-badge" [ngClass]="'status-' + row.status.toLowerCase()">
+                {{ getStatusLabel(row.status) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Duration -->
+          <ng-container matColumnDef="duration">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Duração</th>
+            <td mat-cell *matCellDef="let row">{{ formatDuration(row.duration) }}</td>
+          </ng-container>
+
+          <!-- Affected Entities -->
+          <ng-container matColumnDef="affectedEntities">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Entidades</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="entities-count" [class.has-entities]="row.affectedEntities > 0">
+                {{ row.affectedEntities }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Output -->
+          <ng-container matColumnDef="output">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Resultado</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="output-text" [matTooltip]="row.output">{{ row.output || '—' }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Error -->
+          <ng-container matColumnDef="error">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Erro</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="error-text" *ngIf="row.error" [matTooltip]="row.error">{{ row.error }}</span>
+              <span *ngIf="!row.error">—</span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="clickable-row"></tr>
+        </table>
+      </div>
+
+      <mat-paginator #historicoPaginator
+        [pageSizeOptions]="[10, 25, 50, 100]"
+        [pageSize]="10"
+        showFirstLastButtons>
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+
+</div>

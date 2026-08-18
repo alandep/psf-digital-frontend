@@ -1,0 +1,144 @@
+@use 'sass:color';
+
+$compliance-primary: #4527a0;
+$compliance-dark: #311b92;
+
+// === HOST - PREVENT OVERFLOW ===
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+// === DIALOG HEADER ===
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 28px;
+  background: linear-gradient(135deg, $compliance-primary 0%, $compliance-dark 100%);
+  color: white;
+  flex-shrink: 0;
+  min-height: 64px;
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .header-icon {
+      font-size: 2rem;
+      width: 2rem;
+      height: 2rem;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      padding: 6px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    p {
+      margin: 2px 0 0;
+      font-size: 0.85rem;
+      opacity: 0.9;
+    }
+  }
+
+  .close-btn {
+    color: white;
+    opacity: 0.9;
+    transition: opacity 0.2s;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+// === DIALOG CONTENT ===
+mat-dialog-content {
+  flex: 1;
+  padding: 24px 28px !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin: 0 !important;
+  max-height: none !important;
+}
+
+// === DIALOG ACTIONS ===
+mat-dialog-actions {
+  flex-shrink: 0;
+  padding: 16px 28px !important;
+  margin: 0 !important;
+  border-top: 1px solid #e0e0e0;
+  background: #fafafa;
+  gap: 12px;
+
+  button {
+    min-width: 120px;
+  }
+}
+
+// === FORM CONTENT ===
+.form-content {
+  padding: 24px 4px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.vinculacoes-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: rgba($compliance-primary, 0.04);
+  border-radius: 8px;
+  border: 1px solid rgba($compliance-primary, 0.1);
+  margin-top: 16px;
+
+  mat-icon {
+    color: $compliance-primary;
+    margin-top: 2px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.88rem;
+    color: #555;
+    line-height: 1.4;
+  }
+}
+
+// === RESPONSIVE ===
+@media (max-width: 768px) {
+  .dialog-header {
+    padding: 16px 20px;
+
+    .header-content h2 {
+      font-size: 1.15rem;
+    }
+  }
+
+  mat-dialog-content {
+    padding: 16px 20px !important;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}

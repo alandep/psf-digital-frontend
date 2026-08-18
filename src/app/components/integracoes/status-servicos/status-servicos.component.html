@@ -1,0 +1,153 @@
+<!-- Loading -->
+@if (loading) {
+  <div class="loading-container">
+    <mat-spinner diameter="48"></mat-spinner>
+    <p>Carregando status dos serviços...</p>
+  </div>
+}
+
+@if (!loading) {
+<div class="status-servicos-container">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">monitor_heart</mat-icon>
+        <div>
+          <h1>Status dos Serviços</h1>
+          <p class="subtitle">Monitoramento unificado de disponibilidade</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button color="primary" (click)="refreshData()">
+          <mat-icon>refresh</mat-icon>
+          Atualizar
+        </button>
+        <span class="last-refresh">Última atualização: {{ lastRefresh | date:'HH:mm:ss' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-grid">
+    <mat-card class="summary-card online">
+      <mat-card-content>
+        <div class="summary-icon">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <div class="summary-info">
+          <span class="summary-value">{{ summary.online }}</span>
+          <span class="summary-label">Serviços Online</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="summary-card degraded">
+      <mat-card-content>
+        <div class="summary-icon">
+          <mat-icon>warning</mat-icon>
+        </div>
+        <div class="summary-info">
+          <span class="summary-value">{{ summary.degraded }}</span>
+          <span class="summary-label">Degradados</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="summary-card offline">
+      <mat-card-content>
+        <div class="summary-icon">
+          <mat-icon>cancel</mat-icon>
+        </div>
+        <div class="summary-info">
+          <span class="summary-value">{{ summary.offline }}</span>
+          <span class="summary-label">Offline</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="summary-card maintenance">
+      <mat-card-content>
+        <div class="summary-icon">
+          <mat-icon>build</mat-icon>
+        </div>
+        <div class="summary-info">
+          <span class="summary-value">{{ summary.maintenance }}</span>
+          <span class="summary-label">Em Manutenção</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Services Grid -->
+  <div class="services-grid">
+    @for (service of services; track service.id) {
+      <mat-card class="service-card" [class]="'status-' + service.status.toLowerCase()">
+        <mat-card-content>
+          <div class="service-header">
+            <div class="service-name">
+              <h3>{{ service.name }}</h3>
+              <p class="service-description">{{ service.description }}</p>
+            </div>
+            <div class="status-badge" [class]="'badge-' + service.status.toLowerCase()">
+              <mat-icon>{{ getStatusIcon(service.status) }}</mat-icon>
+              <span>{{ getStatusLabel(service.status) }}</span>
+            </div>
+          </div>
+
+          <div class="service-metrics">
+            <div class="metric-item">
+              <span class="metric-label">Uptime</span>
+              <span class="metric-value">{{ service.uptime | number:'1.1-1' }}%</span>
+              <mat-progress-bar
+                [mode]="'determinate'"
+                [value]="service.uptime"
+                [color]="getUptimeColor(service.uptime)">
+              </mat-progress-bar>
+            </div>
+
+            <div class="metric-row">
+              <div class="metric-item small">
+                <span class="metric-label">Tempo Resposta</span>
+                <span class="metric-value">{{ formatResponseTime(service.avgResponseTime) }}</span>
+              </div>
+              <div class="metric-item small">
+                <span class="metric-label">Última Verificação</span>
+                <span class="metric-value">{{ service.lastCheck | date:'HH:mm' }}</span>
+              </div>
+            </div>
+
+            <div class="metric-item small">
+              <span class="metric-label">Último Incidente</span>
+              <span class="metric-value">
+                {{ service.lastIncident ? (service.lastIncident | date:'dd/MM/yyyy') : 'Nenhum registrado' }}
+              </span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
+
+  <!-- Overall Uptime -->
+  <mat-card class="overall-uptime-card">
+    <mat-card-content>
+      <div class="overall-content">
+        <mat-icon class="overall-icon">speed</mat-icon>
+        <div class="overall-info">
+          <span class="overall-label">Disponibilidade Geral</span>
+          <span class="overall-value">{{ overallUptime | number:'1.2-2' }}%</span>
+        </div>
+        <mat-progress-bar
+          class="overall-bar"
+          [mode]="'determinate'"
+          [value]="overallUptime"
+          [color]="getUptimeColor(overallUptime)">
+        </mat-progress-bar>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+</div>
+}

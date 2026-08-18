@@ -1,0 +1,269 @@
+<!-- Main Container -->
+<div class="auditoria-container">
+
+  <!-- Loading Bar -->
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">admin_panel_settings</mat-icon>
+        <div class="title-content">
+          <h1>Trilha de Auditoria</h1>
+          <p class="subtitle">Registro completo de todas as ações realizadas no sistema</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button class="export-btn" (click)="exportAudit()">
+          <mat-icon>file_download</mat-icon> Exportar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Dashboard Cards -->
+  <div class="kpi-dashboard">
+    <mat-card class="kpi-card kpi-total">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>receipt_long</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.totalEvents }}</div>
+          <div class="kpi-label">Total Eventos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-today">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>today</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.eventsToday }}</div>
+          <div class="kpi-label">Eventos Hoje</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-users">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>people</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.uniqueUsers }}</div>
+          <div class="kpi-label">Usuários Únicos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-critical">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>warning</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.criticalActions }}</div>
+          <div class="kpi-label">Ações Críticas</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-module">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>widgets</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.mostActiveModule || '—' }}</div>
+          <div class="kpi-label">Módulo Mais Ativo</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-last">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>schedule</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ formatTimeAgo(metrics.lastEvent) }}</div>
+          <div class="kpi-label">Último Evento</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Filters -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <mat-form-field appearance="outline" class="filter-field search-field">
+          <mat-label>Buscar</mat-label>
+          <input matInput formControlName="searchText" placeholder="Usuário, entidade, descrição...">
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Ação</mat-label>
+          <mat-select formControlName="action">
+            <mat-option value="">Todas</mat-option>
+            <mat-option *ngFor="let action of actions" [value]="action">{{ getActionLabel(action) }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Módulo</mat-label>
+          <mat-select formControlName="module">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let mod of modules" [value]="mod">{{ mod }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Usuário</mat-label>
+          <mat-select formControlName="user">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let user of uniqueUsers" [value]="user">{{ user }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <button mat-button class="clear-filters-btn" (click)="clearFilters()">
+          <mat-icon>filter_list_off</mat-icon> Limpar
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Audit Table -->
+  <mat-card class="results-card">
+    <mat-card-content>
+      <div class="results-header">
+        <h3>Registros de Auditoria ({{ dataSource.filteredData.length }})</h3>
+      </div>
+
+      <div class="table-container">
+        <table mat-table [dataSource]="dataSource" matSort #auditSort="matSort" multiTemplateDataRows class="data-table">
+
+          <!-- Timestamp -->
+          <ng-container matColumnDef="timestamp">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Data/Hora</th>
+            <td mat-cell *matCellDef="let entry">{{ entry.timestamp | date:'dd/MM/yyyy HH:mm' }}</td>
+          </ng-container>
+
+          <!-- User -->
+          <ng-container matColumnDef="user">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Usuário</th>
+            <td mat-cell *matCellDef="let entry">
+              <span class="user-name">{{ entry.user }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Action -->
+          <ng-container matColumnDef="action">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Ação</th>
+            <td mat-cell *matCellDef="let entry">
+              <span class="action-chip" [ngClass]="'action-' + entry.action.toLowerCase()">
+                {{ getActionLabel(entry.action) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Module -->
+          <ng-container matColumnDef="module">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Módulo</th>
+            <td mat-cell *matCellDef="let entry">
+              <span class="module-chip">{{ entry.module }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Entity -->
+          <ng-container matColumnDef="entity">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Entidade</th>
+            <td mat-cell *matCellDef="let entry">{{ entry.entity }}</td>
+          </ng-container>
+
+          <!-- Description -->
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Descrição</th>
+            <td mat-cell *matCellDef="let entry">
+              <span class="description-text">{{ entry.description }}</span>
+            </td>
+          </ng-container>
+
+          <!-- IP Address -->
+          <ng-container matColumnDef="ipAddress">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>IP</th>
+            <td mat-cell *matCellDef="let entry">
+              <span class="code-badge">{{ entry.ipAddress }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Actions (expand) -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Detalhes</th>
+            <td mat-cell *matCellDef="let entry">
+              <button mat-icon-button (click)="toggleExpand(entry); $event.stopPropagation()">
+                <mat-icon>{{ expandedEntry === entry ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <!-- Expanded Detail Row -->
+          <ng-container matColumnDef="expandedDetail">
+            <td mat-cell *matCellDef="let entry" [attr.colspan]="displayedColumns.length">
+              <div class="detail-panel" [@detailExpand]="entry === expandedEntry ? 'expanded' : 'collapsed'">
+                <div class="detail-content" *ngIf="entry === expandedEntry">
+                  <div class="detail-grid">
+                    <div class="detail-item">
+                      <span class="detail-label">ID do Registro</span>
+                      <span class="detail-value">{{ entry.id }}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-label">Email</span>
+                      <span class="detail-value">{{ entry.userEmail }}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-label">Entity ID</span>
+                      <span class="detail-value code-badge">{{ entry.entityId }}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-label">Detalhes</span>
+                      <span class="detail-value">{{ entry.details }}</span>
+                    </div>
+                    <div class="detail-item" *ngIf="entry.oldValue">
+                      <span class="detail-label">Valor Anterior</span>
+                      <span class="detail-value old-value">{{ entry.oldValue }}</span>
+                    </div>
+                    <div class="detail-item" *ngIf="entry.newValue">
+                      <span class="detail-label">Novo Valor</span>
+                      <span class="detail-value new-value">{{ entry.newValue }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+              class="clickable-row"
+              [class.expanded-row]="expandedEntry === row"
+              (click)="toggleExpand(row)">
+          </tr>
+          <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"></tr>
+        </table>
+      </div>
+
+      <mat-paginator #auditPaginator
+        [pageSizeOptions]="[10, 25, 50, 100]"
+        [pageSize]="10"
+        showFirstLastButtons>
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+
+</div>

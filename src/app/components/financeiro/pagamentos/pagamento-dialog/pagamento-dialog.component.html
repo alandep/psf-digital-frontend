@@ -1,0 +1,177 @@
+<!-- Dialog Header -->
+<div class="dialog-header">
+  <h2>
+    <mat-icon>add_circle</mat-icon>
+    Novo Pagamento
+  </h2>
+  <button mat-icon-button (click)="close()" matTooltip="Fechar">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<!-- Dialog Content -->
+<mat-dialog-content>
+  <mat-tab-group animationDuration="200ms">
+
+    <!-- Tab 1: Dados Gerais -->
+    <mat-tab label="Dados Gerais">
+      <div class="tab-content">
+        <form [formGroup]="paymentForm" class="payment-form">
+
+          <mat-form-field appearance="outline" class="form-field-full">
+            <mat-label>Número do Pagamento</mat-label>
+            <input matInput formControlName="paymentNumber">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Empresa</mat-label>
+            <input matInput formControlName="company">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Beneficiário</mat-label>
+            <mat-select formControlName="beneficiary">
+              <mat-option *ngFor="let b of data.beneficiaries" [value]="b">{{ b }}</mat-option>
+            </mat-select>
+            <mat-error>Campo obrigatório</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo de Pagamento</mat-label>
+            <mat-select formControlName="paymentType">
+              <mat-option *ngFor="let t of paymentTypes" [value]="t.value">{{ t.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Categoria</mat-label>
+            <mat-select formControlName="category">
+              <mat-option *ngFor="let c of data.categories" [value]="c">{{ c }}</mat-option>
+            </mat-select>
+            <mat-error>Campo obrigatório</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Banco</mat-label>
+            <mat-select formControlName="bank">
+              <mat-option *ngFor="let b of data.banks" [value]="b">{{ b }}</mat-option>
+            </mat-select>
+            <mat-error>Campo obrigatório</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Conta Bancária</mat-label>
+            <input matInput formControlName="bankAccount">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Moeda</mat-label>
+            <mat-select formControlName="currency">
+              <mat-option *ngFor="let c of data.currencies" [value]="c">{{ c }}</mat-option>
+            </mat-select>
+            <mat-error>Campo obrigatório</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Valor</mat-label>
+            <input matInput type="number" formControlName="amount">
+            <mat-error>Informe um valor válido</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Data de Emissão</mat-label>
+            <input matInput [matDatepicker]="issuePicker" formControlName="issueDate">
+            <mat-datepicker-toggle matSuffix [for]="issuePicker"></mat-datepicker-toggle>
+            <mat-datepicker #issuePicker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Data de Vencimento</mat-label>
+            <input matInput [matDatepicker]="duePicker" formControlName="dueDate">
+            <mat-datepicker-toggle matSuffix [for]="duePicker"></mat-datepicker-toggle>
+            <mat-datepicker #duePicker></mat-datepicker>
+            <mat-error>Campo obrigatório</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Centro de Custo</mat-label>
+            <input matInput formControlName="costCenter">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field-full">
+            <mat-label>Observações</mat-label>
+            <textarea matInput formControlName="observations" rows="3"></textarea>
+          </mat-form-field>
+
+        </form>
+      </div>
+    </mat-tab>
+
+    <!-- Tab 2: Pagamento Internacional -->
+    <mat-tab label="Internacional" [disabled]="!isInternational()">
+      <div class="tab-content">
+        <form [formGroup]="paymentForm" class="payment-form">
+
+          <mat-form-field appearance="outline">
+            <mat-label>SWIFT / BIC</mat-label>
+            <input matInput formControlName="swift">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>IBAN</mat-label>
+            <input matInput formControlName="iban">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Banco do Beneficiário</mat-label>
+            <input matInput formControlName="beneficiaryBank">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>País do Beneficiário</mat-label>
+            <input matInput formControlName="beneficiaryCountry">
+          </mat-form-field>
+
+        </form>
+      </div>
+    </mat-tab>
+
+    <!-- Tab 3: Vinculações -->
+    <mat-tab label="Vinculações">
+      <div class="tab-content">
+        <form [formGroup]="paymentForm" class="payment-form">
+
+          <mat-form-field appearance="outline">
+            <mat-label>Nº Exportação</mat-label>
+            <input matInput formControlName="linkedExportNumber">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Nº Contrato</mat-label>
+            <input matInput formControlName="linkedContractNumber">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Nº Invoice</mat-label>
+            <input matInput formControlName="linkedInvoiceNumber">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Nº DU-E</mat-label>
+            <input matInput formControlName="linkedDueNumber">
+          </mat-form-field>
+
+        </form>
+      </div>
+    </mat-tab>
+
+  </mat-tab-group>
+</mat-dialog-content>
+
+<!-- Dialog Actions -->
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="close()">Cancelar</button>
+  <button mat-raised-button color="primary" (click)="save()" [disabled]="paymentForm.invalid">
+    <mat-icon>save</mat-icon> Criar Pagamento
+  </button>
+</mat-dialog-actions>

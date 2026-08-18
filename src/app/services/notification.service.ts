@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface Notification {
   id: string;
@@ -166,13 +167,15 @@ export class NotificationService {
     this.notificationsSubject.next([]);
   }
 
+  get unreadCount$(): Observable<number> {
+    return this.notificationsSubject.asObservable().pipe(
+      map(notifications => notifications.filter(n => !n.read).length)
+    );
+  }
+
+  // Keep for backward compatibility
   getUnreadCount(): Observable<number> {
-    return new Observable(observer => {
-      this.notifications$.subscribe(notifications => {
-        const unreadCount = notifications.filter(n => !n.read).length;
-        observer.next(unreadCount);
-      });
-    });
+    return this.unreadCount$;
   }
 
   private generateId(): string {

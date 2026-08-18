@@ -1,0 +1,264 @@
+<!-- Main Container -->
+<div class="usuarios-container">
+
+  <!-- Loading Bar -->
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">admin_panel_settings</mat-icon>
+        <div class="title-content">
+          <h1>Gestão de Usuários</h1>
+          <p class="subtitle">Administração de acessos, permissões e segurança</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button class="action-btn" (click)="importarUsuarios()">
+          <mat-icon>upload_file</mat-icon> Importar
+        </button>
+        <button mat-raised-button class="action-btn primary-btn" (click)="novoUsuario()">
+          <mat-icon>person_add</mat-icon> Novo Usuário
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Dashboard Cards -->
+  <div class="kpi-dashboard">
+    <mat-card class="kpi-card kpi-total">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>groups</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.totalUsers }}</div>
+          <div class="kpi-label">Total Usuários</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-ativos">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.ativos }}</div>
+          <div class="kpi-label">Ativos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-inativos">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>pause_circle</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.inativos }}</div>
+          <div class="kpi-label">Inativos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-bloqueados">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>block</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.bloqueados }}</div>
+          <div class="kpi-label">Bloqueados</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-pendentes">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>hourglass_empty</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.pendentes }}</div>
+          <div class="kpi-label">Pendentes</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-mfa">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>security</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.mfaHabilitado }}</div>
+          <div class="kpi-label">MFA Habilitado</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Filters -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <mat-form-field appearance="outline" class="filter-field search-field">
+          <mat-label>Buscar</mat-label>
+          <input matInput formControlName="searchText" placeholder="Nome, email, departamento...">
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Perfil</mat-label>
+          <mat-select formControlName="role">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let r of roles" [value]="r">{{ r }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let s of statuses" [value]="s">{{ s }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Empresa</mat-label>
+          <mat-select formControlName="empresa">
+            <mat-option value="">Todas</mat-option>
+            <mat-option *ngFor="let e of getUniqueEmpresas()" [value]="e">{{ e }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <button mat-button class="clear-filters-btn" (click)="clearFilters()">
+          <mat-icon>filter_list_off</mat-icon> Limpar
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Users Table -->
+  <mat-card class="results-card">
+    <mat-card-content>
+      <div class="results-header">
+        <h3>Usuários ({{ dataSource.filteredData.length }})</h3>
+      </div>
+
+      <div class="table-container">
+        <table mat-table [dataSource]="dataSource" matSort #usuariosSort="matSort" class="data-table">
+
+          <!-- Name -->
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Nome</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="user-name">{{ row.name }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Email -->
+          <ng-container matColumnDef="email">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Email</th>
+            <td mat-cell *matCellDef="let row">{{ row.email }}</td>
+          </ng-container>
+
+          <!-- Role -->
+          <ng-container matColumnDef="role">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Perfil</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="role-chip" [ngClass]="getRoleClass(row.role)">{{ row.role }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Status -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="status-badge" [ngClass]="getStatusClass(row.status)">{{ row.status }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Empresa -->
+          <ng-container matColumnDef="empresa">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Empresa</th>
+            <td mat-cell *matCellDef="let row">{{ row.empresa }}</td>
+          </ng-container>
+
+          <!-- Departamento -->
+          <ng-container matColumnDef="departamento">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Departamento</th>
+            <td mat-cell *matCellDef="let row">{{ row.departamento }}</td>
+          </ng-container>
+
+          <!-- Último Acesso -->
+          <ng-container matColumnDef="ultimoAcesso">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Último Acesso</th>
+            <td mat-cell *matCellDef="let row">{{ row.ultimoAcesso | date:'dd/MM/yyyy HH:mm' }}</td>
+          </ng-container>
+
+          <!-- Data Criação -->
+          <ng-container matColumnDef="dataCriacao">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Criado em</th>
+            <td mat-cell *matCellDef="let row">{{ row.dataCriacao | date:'dd/MM/yyyy' }}</td>
+          </ng-container>
+
+          <!-- MFA -->
+          <ng-container matColumnDef="mfaEnabled">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>MFA</th>
+            <td mat-cell *matCellDef="let row">
+              <mat-icon class="mfa-icon" [ngClass]="row.mfaEnabled ? 'mfa-yes' : 'mfa-no'">
+                {{ row.mfaEnabled ? 'check_circle' : 'cancel' }}
+              </mat-icon>
+            </td>
+          </ng-container>
+
+          <!-- Login Count -->
+          <ng-container matColumnDef="loginCount">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Logins</th>
+            <td mat-cell *matCellDef="let row">{{ row.loginCount }}</td>
+          </ng-container>
+
+          <!-- Actions -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Ações</th>
+            <td mat-cell *matCellDef="let row">
+              <button mat-icon-button [matMenuTriggerFor]="userMenu" matTooltip="Ações">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #userMenu="matMenu">
+                <button mat-menu-item (click)="editUser(row)">
+                  <mat-icon>edit</mat-icon>
+                  <span>Editar</span>
+                </button>
+                <button mat-menu-item (click)="blockUser(row)">
+                  <mat-icon>block</mat-icon>
+                  <span>Bloquear</span>
+                </button>
+                <button mat-menu-item (click)="resetPassword(row)">
+                  <mat-icon>lock_reset</mat-icon>
+                  <span>Reset Senha</span>
+                </button>
+              </mat-menu>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="clickable-row"></tr>
+        </table>
+      </div>
+
+      <mat-paginator #usuariosPaginator
+        [pageSizeOptions]="[10, 25, 50, 100]"
+        [pageSize]="10"
+        showFirstLastButtons>
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Hidden file input for CSV import -->
+  <input type="file" #fileInput accept=".csv,.txt" style="display: none" (change)="onFileSelected($event)">
+
+</div>

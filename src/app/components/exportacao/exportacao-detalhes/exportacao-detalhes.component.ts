@@ -2,7 +2,8 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { Component, OnInit, Inject, Optional } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Router, ActivatedRoute } from '@angular/router';
-import { ExportacaoMockService } from '@services/exportacaoMockService';
+import { EXPORTACAO_SERVICE } from '../../../services/exportacao/exportacao-service.token';
+import { IExportacaoService } from '../../../services/exportacao/exportacao-service.interface';
 import { Exportacao, ExportacaoDocumento, RiskAlert } from '../../../../types/exportacao';
 import { Observable } from 'rxjs';
 
@@ -46,7 +47,6 @@ import { MatMenuModule } from '@angular/material/menu';
     MatSnackBarModule,
     MatMenuModule
   ],
-  providers: [ExportacaoMockService],
   templateUrl: './exportacao-detalhes.component.html',
   styleUrls: ['./exportacao-detalhes.component.scss']
 })
@@ -68,7 +68,7 @@ export class ExportacaoDetalhesComponent implements OnInit {
   trackingColumns = ['date', 'status', 'location', 'description'];
   
   constructor(
-    private exportacaoService: ExportacaoMockService,
+    @Inject(EXPORTACAO_SERVICE) private exportacaoService: IExportacaoService,
     private router: Router,
     private route: ActivatedRoute,
     @Optional() public dialogRef?: MatDialogRef<ExportacaoDetalhesComponent>,

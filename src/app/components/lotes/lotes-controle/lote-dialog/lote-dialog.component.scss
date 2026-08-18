@@ -1,0 +1,407 @@
+@use 'sass:color';
+
+// === VARIABLES ===
+$primary: #1976d2;
+$primary-dark: #1565c0;
+$success: #4caf50;
+$warning: #ff9800;
+$danger: #f44336;
+$purple: #9c27b0;
+$blue: #2196f3;
+
+// === HOST - PREVENT OVERFLOW ===
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+// === DIALOG HEADER ===
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 28px;
+  background: linear-gradient(135deg, $primary, $primary-dark);
+  color: white;
+  flex-shrink: 0;
+  min-height: 64px;
+
+  h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.02em;
+
+    mat-icon {
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+    }
+  }
+
+  button {
+    color: white;
+    opacity: 0.9;
+    transition: opacity 0.2s;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+// === DIALOG CONTENT ===
+mat-dialog-content {
+  flex: 1;
+  padding: 24px 28px !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin: 0 !important;
+  max-height: none !important;
+}
+
+// === DIALOG ACTIONS ===
+mat-dialog-actions {
+  flex-shrink: 0;
+  padding: 16px 28px !important;
+  margin: 0 !important;
+  border-top: 1px solid #e0e0e0;
+  background: #fafafa;
+  gap: 12px;
+
+  button {
+    min-width: 120px;
+  }
+}
+
+// === FORM STYLES ===
+.dialog-form {
+  padding: 0;
+}
+
+.create-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  .form-field-full {
+    grid-column: 1 / -1;
+  }
+
+  .form-field-half {
+    // Already handled by grid columns
+  }
+
+  .form-field-third {
+    // Will span in a 3-col sub-grid
+  }
+
+  .section-title {
+    grid-column: 1 / -1;
+    font-size: 1rem;
+    font-weight: 600;
+    color: $primary;
+    margin: 12px 0 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e8e8e8;
+  }
+
+  // Location fields in 3 columns
+  .form-field-third {
+    grid-column: auto;
+  }
+}
+
+// Override for the 3 location fields — use a wrapper in the template or rely on grid auto-flow
+// Since we can't easily do 3-col inside a 2-col grid without restructuring HTML,
+// let the thirds just flow naturally in the 2-col grid (they'll wrap nicely)
+
+.form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid #e0e0e0;
+}
+
+// === TABS CONTENT ===
+.dialog-tabs {
+  padding: 0;
+}
+
+.tab-content {
+  padding: 24px 4px;
+}
+
+.detail-section {
+  margin-bottom: 28px;
+
+  h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+.detail-label {
+  font-size: 0.9rem;
+  color: #666;
+  min-width: 150px;
+}
+
+.detail-value {
+  font-weight: 500;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+// === STATUS CHIPS ===
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &.status-green {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  &.status-red {
+    background-color: #ffebee;
+    color: #c62828;
+  }
+
+  &.status-orange {
+    background-color: #fff3e0;
+    color: #e65100;
+  }
+
+  &.status-blue {
+    background-color: #e3f2fd;
+    color: #1565c0;
+  }
+
+  &.status-purple {
+    background-color: #f3e5f5;
+    color: #6a1b9a;
+  }
+
+  &.status-grey {
+    background-color: #f5f5f5;
+    color: #616161;
+  }
+}
+
+// === STOCK SECTION ===
+.stock-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stock-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+
+  .stock-label {
+    font-size: 0.95rem;
+    color: #666;
+  }
+
+  .stock-value {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #333;
+
+    &.stock-reserved {
+      color: $purple;
+    }
+
+    &.stock-exported {
+      color: $blue;
+    }
+  }
+
+  &.stock-available {
+    padding-top: 12px;
+
+    .stock-value {
+      font-size: 1.3rem;
+      color: $success;
+    }
+  }
+}
+
+.stock-progress {
+  margin-top: 16px;
+  border-radius: 4px;
+}
+
+.stock-percentage {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 6px;
+  display: block;
+}
+
+// === QUALITY ===
+.inspection-data {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.inspection-item {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 14px;
+  background: #f8f9fa;
+  border-radius: 8px;
+
+  .insp-label {
+    font-size: 0.75rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .insp-value {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #333;
+    margin-top: 2px;
+  }
+}
+
+.quality-form {
+  .quality-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+
+    .form-field-full {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
+// === MOVEMENT HISTORY ===
+.movement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.movement-item {
+  padding: 14px 0;
+
+  .movement-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .movement-type {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: $primary;
+  }
+
+  .movement-date {
+    font-size: 0.8rem;
+    color: #999;
+  }
+
+  .movement-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #555;
+  }
+
+  .movement-transition {
+    font-weight: 500;
+  }
+
+  .movement-user {
+    color: #888;
+  }
+
+  .movement-notes {
+    font-size: 0.85rem;
+    color: #777;
+    margin: 6px 0 0;
+    font-style: italic;
+  }
+}
+
+// === EMPTY STATE ===
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px;
+  color: #999;
+
+  mat-icon {
+    font-size: 52px;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 16px;
+  }
+
+  p {
+    margin: 0 0 16px;
+    font-size: 0.95rem;
+  }
+}
+
+// === RESPONSIVE ===
+@media (max-width: 768px) {
+  .dialog-header {
+    padding: 16px 20px;
+
+    h2 {
+      font-size: 1.15rem;
+    }
+  }
+
+  mat-dialog-content {
+    padding: 16px 20px !important;
+  }
+
+  .create-form {
+    grid-template-columns: 1fr;
+  }
+
+  .inspection-data {
+    grid-template-columns: 1fr;
+  }
+
+  .quality-form .quality-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,266 @@
+<!-- Loading -->
+@if (loading) {
+  <div class="loading-container">
+    <mat-spinner diameter="48"></mat-spinner>
+    <p>Carregando empresas...</p>
+  </div>
+}
+
+@if (!loading) {
+<div class="empresas-container">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">business</mat-icon>
+        <div>
+          <h1>Gestão de Empresas</h1>
+          <p class="subtitle">Administração de clientes e tenants</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button class="btn-new" (click)="novaEmpresa()">
+          <mat-icon>add</mat-icon>
+          Nova Empresa
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <mat-card class="kpi-card">
+      <mat-card-content>
+        <mat-icon class="kpi-icon total">domain</mat-icon>
+        <div class="kpi-info">
+          <span class="kpi-value">{{ metrics.totalEmpresas }}</span>
+          <span class="kpi-label">Total Empresas</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <mat-card-content>
+        <mat-icon class="kpi-icon ativas">check_circle</mat-icon>
+        <div class="kpi-info">
+          <span class="kpi-value">{{ metrics.ativas }}</span>
+          <span class="kpi-label">Ativas</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <mat-card-content>
+        <mat-icon class="kpi-icon onboarding">hourglass_empty</mat-icon>
+        <div class="kpi-info">
+          <span class="kpi-value">{{ metrics.emOnboarding }}</span>
+          <span class="kpi-label">Em Onboarding</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <mat-card-content>
+        <mat-icon class="kpi-icon suspensas">pause_circle</mat-icon>
+        <div class="kpi-info">
+          <span class="kpi-value">{{ metrics.suspensas }}</span>
+          <span class="kpi-label">Suspensas</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <mat-card-content>
+        <mat-icon class="kpi-icon usuarios">people</mat-icon>
+        <div class="kpi-info">
+          <span class="kpi-value">{{ metrics.totalUsuarios }}</span>
+          <span class="kpi-label">Total Usuários</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <mat-card-content>
+        <mat-icon class="kpi-icon exportacoes">local_shipping</mat-icon>
+        <div class="kpi-info">
+          <span class="kpi-value">{{ metrics.totalExportacoes | number }}</span>
+          <span class="kpi-label">Total Exportações</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Filters -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo</mat-label>
+          <mat-select formControlName="tipo">
+            <mat-option value="">Todos</mat-option>
+            @for (tipo of tipos; track tipo) {
+              <mat-option [value]="tipo">{{ getTipoLabel(tipo) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="">Todos</mat-option>
+            @for (status of statuses; track status) {
+              <mat-option [value]="status">{{ getStatusLabel(status) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Plano</mat-label>
+          <mat-select formControlName="plano">
+            <mat-option value="">Todos</mat-option>
+            @for (plano of planos; track plano) {
+              <mat-option [value]="plano">{{ plano }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Buscar</mat-label>
+          <input matInput formControlName="search" placeholder="Nome, CNPJ ou responsável...">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <button mat-stroked-button type="button" (click)="clearFilters()">
+          <mat-icon>clear</mat-icon>
+          Limpar
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Table -->
+  <mat-card class="table-card">
+    <mat-card-content>
+      <div class="table-container">
+        <table mat-table [dataSource]="dataSource" matSort class="empresas-table">
+
+          <!-- Nome Fantasia -->
+          <ng-container matColumnDef="nomeFantasia">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Nome Fantasia</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="empresa-name">{{ row.nomeFantasia }}</span>
+            </td>
+          </ng-container>
+
+          <!-- CNPJ -->
+          <ng-container matColumnDef="cnpj">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>CNPJ</th>
+            <td mat-cell *matCellDef="let row">{{ row.cnpj }}</td>
+          </ng-container>
+
+          <!-- Tipo -->
+          <ng-container matColumnDef="tipo">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="chip tipo-chip" [class]="'tipo-' + row.tipo.toLowerCase()">
+                {{ getTipoLabel(row.tipo) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Status -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="badge" [class]="'status-' + row.status.toLowerCase()">
+                {{ getStatusLabel(row.status) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- País -->
+          <ng-container matColumnDef="pais">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>País</th>
+            <td mat-cell *matCellDef="let row">{{ row.pais }}</td>
+          </ng-container>
+
+          <!-- Plano -->
+          <ng-container matColumnDef="plano">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Plano</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="badge" [class]="'plano-' + row.plano.toLowerCase()">
+                {{ row.plano }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Responsável -->
+          <ng-container matColumnDef="responsavel">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Responsável</th>
+            <td mat-cell *matCellDef="let row">{{ row.responsavel }}</td>
+          </ng-container>
+
+          <!-- Usuários -->
+          <ng-container matColumnDef="usuarios">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Usuários</th>
+            <td mat-cell *matCellDef="let row">{{ row.usuarios }}</td>
+          </ng-container>
+
+          <!-- Exportações -->
+          <ng-container matColumnDef="exportacoes">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Exportações</th>
+            <td mat-cell *matCellDef="let row">{{ row.exportacoes | number }}</td>
+          </ng-container>
+
+          <!-- Data Adesão -->
+          <ng-container matColumnDef="dataAdesao">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Adesão</th>
+            <td mat-cell *matCellDef="let row">{{ row.dataAdesao | date:'dd/MM/yyyy' }}</td>
+          </ng-container>
+
+          <!-- Último Acesso -->
+          <ng-container matColumnDef="ultimoAcesso">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Último Acesso</th>
+            <td mat-cell *matCellDef="let row">{{ row.ultimoAcesso | date:'dd/MM/yyyy' }}</td>
+          </ng-container>
+
+          <!-- Actions -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Ações</th>
+            <td mat-cell *matCellDef="let row">
+              <button mat-icon-button [matMenuTriggerFor]="menu" matTooltip="Ações">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #menu="matMenu">
+                <button mat-menu-item (click)="visualizarEmpresa(row)">
+                  <mat-icon>visibility</mat-icon>
+                  <span>Visualizar</span>
+                </button>
+                <button mat-menu-item (click)="editarEmpresa(row)">
+                  <mat-icon>edit</mat-icon>
+                  <span>Editar</span>
+                </button>
+                <button mat-menu-item (click)="suspenderEmpresa(row)">
+                  <mat-icon>block</mat-icon>
+                  <span>Suspender</span>
+                </button>
+              </mat-menu>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [pageSizeOptions]="[10, 25, 50, 100]"
+        [pageSize]="10"
+        showFirstLastButtons>
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+
+</div>
+}

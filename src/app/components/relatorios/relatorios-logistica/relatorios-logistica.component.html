@@ -1,0 +1,351 @@
+<!-- Main Container -->
+<div class="logistica-container">
+
+  <!-- Loading Bar -->
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">local_shipping</mat-icon>
+        <div class="title-content">
+          <h1>Relatório Logístico</h1>
+          <p class="subtitle">Performance de embarques, portos e armadores</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button class="export-btn" (click)="exportPDF()">
+          <mat-icon>picture_as_pdf</mat-icon> PDF
+        </button>
+        <button mat-raised-button class="export-btn" (click)="exportExcel()">
+          <mat-icon>table_chart</mat-icon> Excel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Dashboard Cards (4x2) -->
+  <div class="kpi-dashboard">
+    <mat-card class="kpi-card kpi-total">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>directions_boat</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.totalShipments }}</div>
+          <div class="kpi-label">Total Embarques</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-otif">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>verified</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.onTimeRate }}%</div>
+          <div class="kpi-label">OTIF Rate</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-transit">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>schedule</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.avgTransitDays }}d</div>
+          <div class="kpi-label">Transit Médio</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-containers">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>inventory_2</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.totalContainers }}</div>
+          <div class="kpi-label">Total Containers</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-cost">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>attach_money</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">${{ metrics.avgCostPerContainer | number:'1.0-0' }}</div>
+          <div class="kpi-label">Custo Médio/Container</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-delayed">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>warning</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.delayedShipments }}</div>
+          <div class="kpi-label">Embarques Atrasados</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-carrier">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>business</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.topCarrier }}</div>
+          <div class="kpi-label">Top Armador</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-route">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>route</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value kpi-value-small">{{ metrics.topRoute }}</div>
+          <div class="kpi-label">Top Rota</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Port Performance -->
+  <mat-card class="performance-card">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="perf-header-icon">anchor</mat-icon>
+      <mat-card-title>Performance por Porto</mat-card-title>
+      <mat-card-subtitle>Tempo de permanência, OTIF e volume por porto de origem</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="ports-grid">
+        <div class="port-card" *ngFor="let port of ports">
+          <div class="port-name">{{ port.port }}</div>
+          <div class="port-stats">
+            <div class="port-stat">
+              <span class="stat-value">{{ port.shipments }}</span>
+              <span class="stat-label">embarques</span>
+            </div>
+            <div class="port-stat">
+              <span class="stat-value">{{ port.avgDwell }}d</span>
+              <span class="stat-label">dwell time</span>
+            </div>
+            <div class="port-stat">
+              <span class="stat-value" [ngClass]="{'otif-good': port.onTimeRate >= 80, 'otif-bad': port.onTimeRate < 80}">{{ port.onTimeRate }}%</span>
+              <span class="stat-label">OTIF</span>
+            </div>
+            <div class="port-stat">
+              <span class="stat-value">{{ port.totalVolume }}</span>
+              <span class="stat-label">containers</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Carrier Performance -->
+  <mat-card class="performance-card">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="perf-header-icon">sailing</mat-icon>
+      <mat-card-title>Performance por Armador</mat-card-title>
+      <mat-card-subtitle>Taxa de pontualidade por armador</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="carriers-list">
+        <div class="carrier-item" *ngFor="let carrier of carriers">
+          <div class="carrier-header">
+            <span class="carrier-name">{{ carrier.carrier }}</span>
+            <span class="carrier-rate">{{ carrier.onTimeRate }}% OTIF</span>
+          </div>
+          <div class="carrier-bar-container">
+            <div class="carrier-bar" [style.width.%]="(carrier.onTimeRate / getMaxCarrierOTIF()) * 100"
+                 [ngClass]="{
+                   'bar-excellent': carrier.onTimeRate >= 95,
+                   'bar-good': carrier.onTimeRate >= 80 && carrier.onTimeRate < 95,
+                   'bar-average': carrier.onTimeRate < 80
+                 }">
+            </div>
+          </div>
+          <div class="carrier-details">
+            <span>{{ carrier.shipments }} embarques</span>
+            <span>{{ carrier.avgTransit }}d transit</span>
+            <span>${{ carrier.avgCost | number:'1.0-0' }}/ctnr</span>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Filters -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <mat-form-field appearance="outline" class="filter-field search-field">
+          <mat-label>Buscar</mat-label>
+          <input matInput formControlName="searchText" placeholder="Embarque, navio, destino...">
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Armador</mat-label>
+          <mat-select formControlName="carrier">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let c of carriers" [value]="c.carrier">{{ c.carrier }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Porto Origem</mat-label>
+          <mat-select formControlName="origin">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let p of ports" [value]="p.port">{{ p.port }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Pontualidade</mat-label>
+          <mat-select formControlName="onTime">
+            <mat-option value="">Todos</mat-option>
+            <mat-option value="true">No prazo</mat-option>
+            <mat-option value="false">Atrasados</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <button mat-button class="clear-filters-btn" (click)="clearFilters()">
+          <mat-icon>filter_list_off</mat-icon> Limpar
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Shipments Table -->
+  <mat-card class="results-card">
+    <mat-card-content>
+      <div class="results-header">
+        <h3>Embarques ({{ dataSource.filteredData.length }})</h3>
+      </div>
+
+      <div class="table-container">
+        <table mat-table [dataSource]="dataSource" matSort #logisticaSort="matSort" class="data-table">
+
+          <!-- Shipment Number -->
+          <ng-container matColumnDef="shipmentNumber">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Embarque</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="shipment-number">{{ row.shipmentNumber }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Vessel -->
+          <ng-container matColumnDef="vessel">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Navio</th>
+            <td mat-cell *matCellDef="let row">{{ row.vessel }}</td>
+          </ng-container>
+
+          <!-- Origin -->
+          <ng-container matColumnDef="origin">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Origem</th>
+            <td mat-cell *matCellDef="let row">{{ row.origin }}</td>
+          </ng-container>
+
+          <!-- Destination -->
+          <ng-container matColumnDef="destination">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Destino</th>
+            <td mat-cell *matCellDef="let row">{{ row.destination }}</td>
+          </ng-container>
+
+          <!-- Container Count -->
+          <ng-container matColumnDef="containerCount">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Containers</th>
+            <td mat-cell *matCellDef="let row">{{ row.containerCount }}</td>
+          </ng-container>
+
+          <!-- Departure Date -->
+          <ng-container matColumnDef="departureDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Partida</th>
+            <td mat-cell *matCellDef="let row">{{ row.departureDate | date:'dd/MM/yyyy' }}</td>
+          </ng-container>
+
+          <!-- Arrival Date -->
+          <ng-container matColumnDef="arrivalDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Chegada</th>
+            <td mat-cell *matCellDef="let row">{{ row.arrivalDate | date:'dd/MM/yyyy' }}</td>
+          </ng-container>
+
+          <!-- Transit Days -->
+          <ng-container matColumnDef="transitDays">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Transit</th>
+            <td mat-cell *matCellDef="let row">{{ row.transitDays }}d</td>
+          </ng-container>
+
+          <!-- Status -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="status-badge" [ngClass]="row.status === 'Entregue' ? 'status-entregue' : 'status-transito'">
+                {{ row.status }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Carrier -->
+          <ng-container matColumnDef="carrier">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Armador</th>
+            <td mat-cell *matCellDef="let row">{{ row.carrier }}</td>
+          </ng-container>
+
+          <!-- Cost -->
+          <ng-container matColumnDef="cost">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Custo</th>
+            <td mat-cell *matCellDef="let row">${{ row.cost | number:'1.0-0' }}</td>
+          </ng-container>
+
+          <!-- On Time -->
+          <ng-container matColumnDef="onTime">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Pontual</th>
+            <td mat-cell *matCellDef="let row">
+              <mat-icon class="ontime-icon" [ngClass]="row.onTime ? 'ontime-yes' : 'ontime-no'">
+                {{ row.onTime ? 'check_circle' : 'cancel' }}
+              </mat-icon>
+            </td>
+          </ng-container>
+
+          <!-- Delay Days -->
+          <ng-container matColumnDef="delayDays">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Atraso</th>
+            <td mat-cell *matCellDef="let row">
+              <span [ngClass]="{'delay-value': row.delayDays > 0}">
+                {{ row.delayDays > 0 ? row.delayDays + 'd' : '—' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="clickable-row"></tr>
+        </table>
+      </div>
+
+      <mat-paginator #logisticaPaginator
+        [pageSizeOptions]="[10, 25, 50, 100]"
+        [pageSize]="10"
+        showFirstLastButtons>
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+
+</div>

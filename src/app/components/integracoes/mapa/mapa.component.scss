@@ -1,0 +1,362 @@
+@use 'sass:color';
+
+// MAPA/Vigiagro Theme - Agriculture Green
+$primary: #2e7d32;
+$dark: #1b5e20;
+$light: #c8e6c9;
+$accent: #66bb6a;
+$warn: #ff9800;
+$danger: #f44336;
+
+.mapa-container {
+  padding: 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+// Loading Bar
+.loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+// ================================
+// HEADER
+// ================================
+.page-header {
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, $primary, $dark);
+  border-radius: 16px;
+  padding: 32px;
+  color: white;
+
+  .header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .title-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .header-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    opacity: 0.9;
+  }
+
+  .title-content {
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      margin: 4px 0 0;
+      opacity: 0.85;
+      font-size: 14px;
+    }
+  }
+
+  .header-actions {
+    button {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.25);
+      }
+    }
+  }
+}
+
+// ================================
+// KPI CARDS
+// ================================
+.kpi-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  }
+
+  mat-card-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px !important;
+  }
+
+  .kpi-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    mat-icon {
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+      color: white;
+    }
+  }
+
+  .kpi-info {
+    .kpi-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1a1a2e;
+      line-height: 1.2;
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      color: #666;
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  }
+
+  &.kpi-active-certs .kpi-icon { background: $primary; }
+  &.kpi-expiring .kpi-icon { background: $warn; }
+  &.kpi-inspections .kpi-icon { background: #1565c0; }
+  &.kpi-habilitacoes .kpi-icon { background: #6a1b9a; }
+  &.kpi-month-certs .kpi-icon { background: #00838f; }
+  &.kpi-approval .kpi-icon { background: $accent; }
+}
+
+// ================================
+// FILTERS
+// ================================
+.filters-card {
+  margin-bottom: 24px;
+  border-radius: 12px;
+
+  .filters-form {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .filter-field {
+    flex: 1;
+    min-width: 300px;
+  }
+
+  .clear-filters-btn {
+    color: $primary;
+  }
+}
+
+// ================================
+// TABS
+// ================================
+.mapa-tabs {
+  ::ng-deep {
+    .mat-mdc-tab-header {
+      border-bottom: 2px solid #e0e0e0;
+    }
+
+    .mat-mdc-tab:not(.mat-mdc-tab-disabled) .mdc-tab-indicator__content--underline {
+      border-color: $primary;
+    }
+
+    .mat-mdc-tab:not(.mat-mdc-tab-disabled).mdc-tab--active .mdc-tab__text-label {
+      color: $primary;
+    }
+  }
+}
+
+// ================================
+// RESULTS TABLE
+// ================================
+.results-card {
+  margin-top: 16px;
+  border-radius: 12px;
+  overflow: hidden;
+
+  .results-header {
+    padding: 16px 0;
+    border-bottom: 1px solid #e0e0e0;
+
+    h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+    }
+  }
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+
+  th {
+    background: #f8f9fa;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #555;
+    white-space: nowrap;
+  }
+
+  td {
+    font-size: 13px;
+    color: #333;
+  }
+
+  .clickable-row {
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background: color.adjust($light, $lightness: 10%);
+    }
+  }
+}
+
+// ================================
+// BADGES & CHIPS
+// ================================
+.code-badge {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 12px;
+  background: #f5f5f5;
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: #333;
+  border: 1px solid #e0e0e0;
+
+  &.small {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+}
+
+.type-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  background: color.adjust($primary, $lightness: 50%);
+  color: $dark;
+}
+
+.ncm-badge {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 11px;
+  color: #666;
+}
+
+.status-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &.status-vigente, &.status-ativa, &.status-aprovada {
+    background: #e8f5e9;
+    color: $dark;
+  }
+
+  &.status-vencido, &.status-vencida, &.status-reprovada {
+    background: #ffebee;
+    color: #c62828;
+  }
+
+  &.status-emissao, &.status-andamento, &.status-agendada, &.status-renovacao {
+    background: #e3f2fd;
+    color: #1565c0;
+  }
+
+  &.status-suspenso, &.status-suspensa {
+    background: #fff3e0;
+    color: #e65100;
+  }
+
+  &.status-cancelado, &.status-cancelada {
+    background: #fafafa;
+    color: #9e9e9e;
+  }
+}
+
+.observations-text {
+  display: inline-block;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.products-list, .markets-list {
+  display: inline-block;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// ================================
+// RESPONSIVE
+// ================================
+@media (max-width: 768px) {
+  .mapa-container {
+    padding: 16px;
+  }
+
+  .page-header {
+    padding: 24px;
+
+    .header-main {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .title-content h1 {
+      font-size: 22px;
+    }
+  }
+
+  .kpi-dashboard {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .filters-card .filter-field {
+    min-width: 100%;
+  }
+}

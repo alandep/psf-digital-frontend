@@ -1,0 +1,252 @@
+@use 'sass:color';
+
+// === VARIABLES ===
+$primary: #37474f;
+$dark: #263238;
+$success: #4caf50;
+$warning: #ff9800;
+$danger: #f44336;
+$info: #2196f3;
+$purple: #9c27b0;
+$teal: #009688;
+
+// === LOADING ===
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 1rem;
+
+  p {
+    color: #666;
+    font-size: 1rem;
+  }
+}
+
+// === MAIN CONTAINER ===
+.empresas-container {
+  padding: 24px;
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+// === PAGE HEADER ===
+.page-header {
+  background: linear-gradient(135deg, $primary 0%, $dark 100%);
+  color: white;
+  padding: 2rem;
+  margin-bottom: 24px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(55, 71, 79, 0.3);
+
+  .header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .title-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+
+      .header-icon {
+        font-size: 3rem;
+        width: 3rem;
+        height: 3rem;
+        opacity: 0.9;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 700;
+      }
+
+      .subtitle {
+        margin: 0.25rem 0 0;
+        opacity: 0.85;
+        font-size: 0.95rem;
+      }
+    }
+
+    .header-actions {
+      .btn-new {
+        background: white;
+        color: $dark;
+        font-weight: 600;
+      }
+    }
+  }
+}
+
+// === KPI CARDS ===
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  border-radius: 12px;
+
+  mat-card-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.25rem;
+  }
+
+  .kpi-icon {
+    font-size: 2rem;
+    width: 2rem;
+    height: 2rem;
+
+    &.total { color: $primary; }
+    &.ativas { color: $success; }
+    &.onboarding { color: $info; }
+    &.suspensas { color: $warning; }
+    &.usuarios { color: $purple; }
+    &.exportacoes { color: $teal; }
+  }
+
+  .kpi-info {
+    display: flex;
+    flex-direction: column;
+
+    .kpi-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: $dark;
+      line-height: 1;
+    }
+
+    .kpi-label {
+      font-size: 0.75rem;
+      color: #666;
+      margin-top: 0.2rem;
+    }
+  }
+}
+
+// === FILTERS ===
+.filters-card {
+  margin-bottom: 24px;
+  border-radius: 12px;
+
+  .filters-form {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+
+    mat-form-field {
+      flex: 0 0 auto;
+      min-width: 150px;
+    }
+
+    .search-field {
+      flex: 1;
+      min-width: 200px;
+    }
+  }
+}
+
+// === TABLE ===
+.table-card {
+  border-radius: 12px;
+
+  .table-container {
+    overflow-x: auto;
+  }
+
+  .empresas-table {
+    width: 100%;
+
+    th {
+      background: #f5f5f5;
+      color: $dark;
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+
+    td {
+      font-size: 0.85rem;
+    }
+
+    .empresa-name {
+      font-weight: 600;
+      color: $dark;
+    }
+  }
+}
+
+// === CHIPS AND BADGES ===
+.chip {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 16px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.tipo-chip {
+  &.tipo-exportador { background: color.adjust($info, $lightness: 40%); color: color.adjust($info, $lightness: -15%); }
+  &.tipo-trading { background: color.adjust($purple, $lightness: 40%); color: color.adjust($purple, $lightness: -10%); }
+  &.tipo-cooperativa { background: color.adjust($teal, $lightness: 40%); color: color.adjust($teal, $lightness: -15%); }
+  &.tipo-indústria { background: color.adjust($warning, $lightness: 35%); color: color.adjust($warning, $lightness: -15%); }
+  &.tipo-operador_logístico { background: color.adjust($primary, $lightness: 40%); color: $dark; }
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 16px;
+  font-size: 0.7rem;
+  font-weight: 600;
+
+  &.status-ativa { background: color.adjust($success, $lightness: 40%); color: color.adjust($success, $lightness: -15%); }
+  &.status-suspensa { background: color.adjust($warning, $lightness: 35%); color: color.adjust($warning, $lightness: -15%); }
+  &.status-bloqueada { background: color.adjust($danger, $lightness: 35%); color: color.adjust($danger, $lightness: -15%); }
+  &.status-em_onboarding { background: color.adjust($info, $lightness: 40%); color: color.adjust($info, $lightness: -15%); }
+
+  &.plano-starter { background: #e0e0e0; color: #424242; }
+  &.plano-professional { background: color.adjust($info, $lightness: 40%); color: color.adjust($info, $lightness: -15%); }
+  &.plano-enterprise { background: color.adjust($purple, $lightness: 40%); color: color.adjust($purple, $lightness: -10%); }
+}
+
+// === RESPONSIVE ===
+@media (max-width: 1400px) {
+  .kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .page-header .header-main {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filters-form {
+    flex-direction: column;
+
+    mat-form-field,
+    .search-field {
+      width: 100%;
+    }
+  }
+}

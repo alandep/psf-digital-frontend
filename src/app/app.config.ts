@@ -7,6 +7,7 @@ import { routes } from './app.routes';
 import { BffService } from './services/bff.service';
 import { NotificationService } from './services/notification.service';
 import { NCMClassificationMockService } from '../services/ncm-classification-mock.service';
+import { exportacaoServiceProvider } from './services/exportacao/exportacao-service.token';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -17,6 +18,7 @@ export const appConfig: ApplicationConfig = {
     BffService,
     NotificationService,
     NCMClassificationMockService,
+    exportacaoServiceProvider,
   ],
 };
 

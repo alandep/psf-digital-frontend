@@ -1,0 +1,411 @@
+@use 'sass:color';
+
+// Amber Theme - Cenários
+$primary: #ff8f00;
+$dark: #e65100;
+$light: #fff8e1;
+$accent: #ffb300;
+$success: #4caf50;
+$warn: #ff9800;
+$danger: #f44336;
+$info: #1565c0;
+
+.cenarios-container {
+  padding: 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+// Loading Bar
+.loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+// ================================
+// HEADER
+// ================================
+.page-header {
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, $primary, $dark);
+  border-radius: 16px;
+  padding: 32px;
+  color: white;
+
+  .header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .title-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .header-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    opacity: 0.9;
+  }
+
+  .title-content {
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      margin: 4px 0 0;
+      opacity: 0.85;
+      font-size: 14px;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 8px;
+
+    .new-btn {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      font-weight: 600;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+    }
+  }
+}
+
+// ================================
+// KPI CARDS
+// ================================
+.kpi-dashboard {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  }
+
+  mat-card-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px !important;
+  }
+
+  .kpi-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    mat-icon {
+      font-size: 22px;
+      width: 22px;
+      height: 22px;
+      color: white;
+    }
+  }
+
+  .kpi-info {
+    .kpi-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1a1a2e;
+      line-height: 1.2;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      color: #666;
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  }
+
+  &.kpi-total .kpi-icon { background: $primary; }
+  &.kpi-ativos .kpi-icon { background: $success; }
+  &.kpi-melhor .kpi-icon { background: #2e7d32; }
+  &.kpi-pior .kpi-icon { background: $danger; }
+  &.kpi-media .kpi-icon { background: $info; }
+  &.kpi-cambio .kpi-icon { background: #7b1fa2; }
+}
+
+// ================================
+// COMPARISON CARD (HERO)
+// ================================
+.comparison-card {
+  margin-bottom: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid color.adjust($primary, $lightness: 30%);
+
+  .comparison-header-icon {
+    background: $primary;
+    color: white;
+    border-radius: 8px;
+  }
+}
+
+.comparison-grid {
+  margin-top: 8px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+}
+
+.comparison-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr;
+  border-bottom: 1px solid #e8e8e8;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &.comparison-header-row {
+    background: #f5f5f5;
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+.comparison-cell {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  border-right: 1px solid #e8e8e8;
+
+  &:last-child {
+    border-right: none;
+  }
+
+  &.metric-cell {
+    font-weight: 600;
+    color: #333;
+    background: #fafafa;
+  }
+
+  &.value-cell {
+    justify-content: center;
+    font-weight: 600;
+  }
+
+  &.tipo-cell {
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+  }
+
+  &.otimista-header { background: $success; }
+  &.base-header { background: $info; }
+  &.conservador-header { background: $warn; }
+  &.adverso-header { background: $danger; }
+
+  &.cell-success { background: #e8f5e9; color: #2e7d32; }
+  &.cell-info { background: #e3f2fd; color: #1565c0; }
+  &.cell-warning { background: #fff8e1; color: #f57f17; }
+  &.cell-danger { background: #fbe9e7; color: #c62828; }
+}
+
+// ================================
+// FILTERS
+// ================================
+.filters-card {
+  margin-bottom: 24px;
+  border-radius: 12px;
+
+  .filters-form {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .filter-field {
+    flex: 1;
+    min-width: 150px;
+
+    &.search-field {
+      min-width: 280px;
+    }
+  }
+
+  .clear-filters-btn {
+    color: $primary;
+  }
+}
+
+// ================================
+// RESULTS TABLE
+// ================================
+.results-card {
+  border-radius: 12px;
+  overflow: hidden;
+
+  .results-header {
+    padding: 16px 0;
+    border-bottom: 1px solid #e0e0e0;
+
+    h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+    }
+  }
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+
+  th {
+    background: #f8f9fa;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #555;
+    white-space: nowrap;
+  }
+
+  td {
+    font-size: 13px;
+    color: #333;
+  }
+
+  .clickable-row {
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background: color.adjust($light, $lightness: 2%);
+    }
+  }
+}
+
+// ================================
+// TABLE-SPECIFIC STYLES
+// ================================
+.cenario-name {
+  font-weight: 600;
+  color: $dark;
+}
+
+.tipo-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &.tipo-otimista { background: #e8f5e9; color: #2e7d32; }
+  &.tipo-base { background: #e3f2fd; color: #1565c0; }
+  &.tipo-conservador { background: #fff8e1; color: #f57f17; }
+  &.tipo-adverso { background: #fbe9e7; color: #c62828; }
+}
+
+.margin-value {
+  font-weight: 700;
+
+  &.margin-good { color: $success; }
+  &.margin-warning { color: $warn; }
+  &.margin-danger { color: $danger; }
+}
+
+.risk-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &.risk-baixo { background: #e8f5e9; color: #2e7d32; }
+  &.risk-medio { background: #e3f2fd; color: #1565c0; }
+  &.risk-alto { background: #fff8e1; color: #f57f17; }
+  &.risk-critico { background: #fbe9e7; color: #c62828; }
+}
+
+// ================================
+// RESPONSIVE
+// ================================
+@media (max-width: 1200px) {
+  .kpi-dashboard {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .comparison-row {
+    grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .cenarios-container {
+    padding: 16px;
+  }
+
+  .page-header {
+    padding: 24px;
+
+    .header-main {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .title-content h1 {
+      font-size: 22px;
+    }
+  }
+
+  .kpi-dashboard {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .comparison-grid {
+    overflow-x: auto;
+  }
+
+  .comparison-row {
+    min-width: 600px;
+  }
+
+  .filters-card .filter-field {
+    min-width: 100%;
+  }
+}

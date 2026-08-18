@@ -1,0 +1,435 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Create `src/environments/environment.ts` with `useMockServices: true` and `bffBaseUrl: 'http://localhost:8080/api'`": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128734741
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128746158
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128828911
+      }
+    ],
+    "1.2 Create `src/environments/environment.prod.ts` with `useMockServices: false` and `bffBaseUrl: '/api'`": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128734937
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128836613
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128873649
+      }
+    ],
+    "1.3 Update `angular.json` to add `fileReplacements` for production builds": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128735112
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128877597
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128995403
+      }
+    ],
+    "2.1 Delete all backup/stub/dead files from `src/app/components/exportacao/novos-pedidos/`": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128735266
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783129000579
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783129050279
+      }
+    ],
+    "2.2 Delete dead HTML files from `steps/informacao-basica/`": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128735430
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783129054159
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783129088615
+      }
+    ],
+    "2.3 Relocate `novos-pedidos.service.ts` to `src/app/services/novos-pedidos.service.ts`": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128735565
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783129092646
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783129404603
+      }
+    ],
+    "2.4 Remove the `novos-pedidos/` directory (now empty except for `steps/`)": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128735679
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783129409499
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783129670035
+      }
+    ],
+    "3. Checkpoint - Verify build after file cleanup": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128735830
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783129676294
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783129774794
+      }
+    ],
+    "4.1 Create `IExportacaoService` interface at `src/app/services/exportacao/exportacao-service.interface.ts`": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128735996
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783129786826
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783129882052
+      }
+    ],
+    "4.2 Create `ExportacaoMockServiceAdapter` at `src/app/services/exportacao/exportacao-mock.service.ts`": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128736180
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783129886298
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130004081
+      }
+    ],
+    "4.3 Create `ExportacaoRealService` stub at `src/app/services/exportacao/exportacao-real.service.ts`": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128736315
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130008774
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130084082
+      }
+    ],
+    "4.4 Create InjectionToken and factory at `src/app/services/exportacao/exportacao-service.token.ts`": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128736522
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130089473
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130190733
+      }
+    ],
+    "4.5 Register the `exportacaoServiceProvider` in `src/app/app.config.ts`": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128736620
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130194910
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130290155
+      }
+    ],
+    "4.6 Update `ExportacaoDetalhesComponent` to use the InjectionToken": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128736715
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130294264
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130407898
+      }
+    ],
+    "5.1 Refactor `getUnreadCount()` in `src/app/services/notification.service.ts`": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128736797
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130428240
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130741583
+      }
+    ],
+    "6.1 Create `src/app/services/cambio.service.ts`": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128737021
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130429048
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130742222
+      }
+    ],
+    "6.2 Update `home-logged.component.ts` to use CambioService": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128737124
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130755755
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130949318
+      }
+    ],
+    "7.1 Refactor `handleMenuClick()` in `home-logged.component.ts`": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128737203
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130429810
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130743139
+      }
+    ],
+    "8.1 Clean up `src/app/app.routes.ts`": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128737303
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130430641
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130743796
+      }
+    ],
+    "9.1 Create `src/app/components/shared/coming-soon/coming-soon.component.ts`": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128737381
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130431221
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130744701
+      }
+    ],
+    "9.2 Create a wrapper route component or update `navigateTo()` in `home-logged.component.ts`": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128737464
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130756232
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130950006
+      }
+    ],
+    "10. Checkpoint - Full build and test verification": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128737540
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130955809
+      },
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783131055785
+      }
+    ],
+    "1. Create environment configuration files": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783128995492
+      }
+    ],
+    "2. Remove dead code and backup files from novos-pedidos/": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783129671695
+      }
+    ],
+    "4. Implement service abstraction layer": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130407972
+      }
+    ],
+    "5. Fix NotificationService memory leak": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130741892
+      }
+    ],
+    "7. Fix sidenav closing mechanism": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130743416
+      }
+    ],
+    "8. Remove console.log from route definitions": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130743883
+      }
+    ],
+    "6. Create CambioService and fix hardcoded exchange rate": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130949547
+      }
+    ],
+    "9. Create Coming Soon component and wire unimplemented routes": [
+      {
+        "executionId": "f66b70a7-3cf2-4b79-85f9-34bd5b1c7a87",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1783130950207
+      }
+    ]
+  }
+}

@@ -1,0 +1,293 @@
+@use 'sass:color';
+
+// Configurações Theme - Blue Grey
+$primary: #546e7a;
+$dark: #37474f;
+$light: #cfd8dc;
+$accent: #78909c;
+$success: #4caf50;
+$warn: #ff9800;
+
+.configuracoes-container {
+  padding: 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+// Loading Bar
+.loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+// ================================
+// HEADER
+// ================================
+.page-header {
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, $primary, $dark);
+  border-radius: 16px;
+  padding: 32px;
+  color: white;
+
+  .header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .title-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .header-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    opacity: 0.9;
+  }
+
+  .title-content {
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      margin: 4px 0 0;
+      opacity: 0.85;
+      font-size: 14px;
+    }
+  }
+
+  .header-actions {
+    .save-btn {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+
+      &:hover:not([disabled]) {
+        background: rgba(255, 255, 255, 0.25);
+      }
+
+      &[disabled] {
+        opacity: 0.5;
+      }
+    }
+  }
+}
+
+// ================================
+// CONFIG LAYOUT
+// ================================
+.config-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+// ================================
+// CATEGORY NAVIGATION
+// ================================
+.categories-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 24px;
+
+  mat-card-content {
+    padding: 8px !important;
+  }
+}
+
+.category-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.category-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: all 0.2s;
+
+  &:hover {
+    background: color.adjust($light, $lightness: 5%);
+  }
+
+  &.active {
+    background: color.adjust($primary, $lightness: 50%);
+    border-left: 3px solid $primary;
+
+    .category-icon {
+      color: $primary;
+    }
+
+    .category-label {
+      color: $dark;
+      font-weight: 600;
+    }
+  }
+
+  .category-icon {
+    color: #666;
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+
+  .category-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+
+    .category-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+    }
+
+    .category-desc {
+      font-size: 11px;
+      color: #888;
+      margin-top: 2px;
+    }
+  }
+
+  .arrow-icon {
+    color: #ccc;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+// ================================
+// CONFIG FORM CARD
+// ================================
+.config-form-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  .form-header-icon {
+    background: $primary;
+    color: white;
+    border-radius: 8px;
+  }
+}
+
+.config-form {
+  padding-top: 16px;
+}
+
+.config-item {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+
+  .config-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .config-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .config-meta {
+    font-size: 11px;
+    color: #999;
+  }
+
+  .config-description {
+    font-size: 13px;
+    color: #666;
+    margin: 0 0 12px;
+  }
+
+  .config-field {
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .toggle-field {
+    padding: 8px 0;
+  }
+
+  mat-divider {
+    margin-top: 16px;
+  }
+}
+
+// ================================
+// RESPONSIVE
+// ================================
+@media (max-width: 1024px) {
+  .config-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .categories-card {
+    position: static;
+  }
+
+  .category-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .category-item {
+    flex: 0 0 auto;
+    width: auto;
+
+    .category-desc {
+      display: none;
+    }
+
+    .arrow-icon {
+      display: none;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .configuracoes-container {
+    padding: 16px;
+  }
+
+  .page-header {
+    padding: 24px;
+
+    .header-main {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .title-content h1 {
+      font-size: 22px;
+    }
+  }
+}

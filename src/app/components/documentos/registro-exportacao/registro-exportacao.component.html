@@ -1,0 +1,605 @@
+<!-- Main Container -->
+<div class="re-container">
+
+  <!-- Loading Bar -->
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header Premium -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">receipt_long</mat-icon>
+        <div class="title-content">
+          <h1>Registro de Exportação (RE)</h1>
+          <p class="subtitle">Consulta, validação e conversão de registros legados para DU-E</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button color="primary" (click)="importRE()">
+          <mat-icon>upload_file</mat-icon> Importar RE
+        </button>
+        <button mat-raised-button color="primary" (click)="exportPDF()">
+          <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Dashboard Cards -->
+  <div class="kpi-dashboard">
+    <mat-card class="kpi-card kpi-total">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>receipt_long</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.totalREs || 0 }}</div>
+          <div class="kpi-label">Total REs</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-imported">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>download_done</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.importedCount || 0 }}</div>
+          <div class="kpi-label">Importados</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-converted">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>swap_horiz</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.convertedCount || 0 }}</div>
+          <div class="kpi-label">Convertidos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-pending">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>hourglass_top</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.pendingCount || 0 }}</div>
+          <div class="kpi-label">Pendentes</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-score">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>insights</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.avgMigrationScore || 0 }}%</div>
+          <div class="kpi-label">Score Migração Médio</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Filters Section -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <div class="filter-row">
+          <!-- Status Filter -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Exporter Filter -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Exportador</mat-label>
+            <mat-select formControlName="exporterName">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let e of exporters" [value]="e">{{ e }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Country Filter -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>País Destino</mat-label>
+            <mat-select formControlName="destinationCountry">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let c of countries" [value]="c">{{ c }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Product Filter -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Produto</mat-label>
+            <mat-select formControlName="productName">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let p of productsList" [value]="p">{{ p }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="filter-row">
+          <!-- Date Start -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Data Início</mat-label>
+            <input matInput [matDatepicker]="dateStart" formControlName="dateStart">
+            <mat-datepicker-toggle matIconSuffix [for]="dateStart"></mat-datepicker-toggle>
+            <mat-datepicker #dateStart></mat-datepicker>
+          </mat-form-field>
+
+          <!-- Date End -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Data Fim</mat-label>
+            <input matInput [matDatepicker]="dateEnd" formControlName="dateEnd">
+            <mat-datepicker-toggle matIconSuffix [for]="dateEnd"></mat-datepicker-toggle>
+            <mat-datepicker #dateEnd></mat-datepicker>
+          </mat-form-field>
+
+          <!-- Linked DUE Filter -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Vinculação DU-E</mat-label>
+            <mat-select formControlName="linkedDue">
+              <mat-option value="">Todos</mat-option>
+              <mat-option value="COM_DUE">Com DU-E vinculada</mat-option>
+              <mat-option value="SEM_DUE">Sem DU-E vinculada</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Clear Filters -->
+          <div class="filter-field clear-filter-wrapper">
+            <button mat-raised-button color="warn" (click)="clearFilters()" class="clear-filters-btn">
+              <mat-icon>clear</mat-icon> Limpar Filtros
+            </button>
+          </div>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Results Grid -->
+  <mat-card class="grid-card">
+    <div class="grid-toolbar">
+      <h2>Registros de Exportação</h2>
+      <div class="grid-actions">
+        <span class="results-count">{{ filteredRegistros.length }} registros encontrados</span>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table mat-table [dataSource]="filteredRegistros" class="re-table">
+
+        <!-- RE Number Column -->
+        <ng-container matColumnDef="reNumber">
+          <th mat-header-cell *matHeaderCellDef>Nº RE</th>
+          <td mat-cell *matCellDef="let re">
+            <span class="re-number">{{ re.reNumber }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Exporter Column -->
+        <ng-container matColumnDef="exporterName">
+          <th mat-header-cell *matHeaderCellDef>Exportador</th>
+          <td mat-cell *matCellDef="let re">{{ re.exporterName }}</td>
+        </ng-container>
+
+        <!-- Client Column -->
+        <ng-container matColumnDef="clientName">
+          <th mat-header-cell *matHeaderCellDef>Cliente</th>
+          <td mat-cell *matCellDef="let re">{{ re.clientName }}</td>
+        </ng-container>
+
+        <!-- Country Column -->
+        <ng-container matColumnDef="destinationCountry">
+          <th mat-header-cell *matHeaderCellDef>Destino</th>
+          <td mat-cell *matCellDef="let re">{{ re.destinationCountry }}</td>
+        </ng-container>
+
+        <!-- Product Column -->
+        <ng-container matColumnDef="productName">
+          <th mat-header-cell *matHeaderCellDef>Produto</th>
+          <td mat-cell *matCellDef="let re">{{ re.productName }}</td>
+        </ng-container>
+
+        <!-- Status Column -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let re">
+            <span class="status-chip" [ngClass]="'status-' + getStatusColor(re.status)">
+              <mat-icon class="status-icon">{{ getStatusIcon(re.status) }}</mat-icon>
+              {{ re.status }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Migration Score Column -->
+        <ng-container matColumnDef="migrationScore">
+          <th mat-header-cell *matHeaderCellDef>Migração</th>
+          <td mat-cell *matCellDef="let re">
+            <span class="score-badge" [ngClass]="'score-' + getScoreColor(re.migrationScore)">
+              {{ re.migrationScore }}%
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Linked DU-E Column -->
+        <ng-container matColumnDef="linkedDueNumber">
+          <th mat-header-cell *matHeaderCellDef>DU-E Vinculada</th>
+          <td mat-cell *matCellDef="let re">
+            <span *ngIf="re.linkedDueNumber" class="due-link">
+              <mat-icon class="due-icon">link</mat-icon>
+              {{ re.linkedDueNumber }}
+            </span>
+            <span *ngIf="!re.linkedDueNumber" class="no-due">—</span>
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Ações</th>
+          <td mat-cell *matCellDef="let re">
+            <button mat-icon-button [matMenuTriggerFor]="actionMenu" (click)="$event.stopPropagation()">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #actionMenu="matMenu">
+              <button mat-menu-item (click)="selectRE(re)">
+                <mat-icon>visibility</mat-icon> Visualizar
+              </button>
+              <button mat-menu-item (click)="selectRE(re); convertToDUE()"
+                      [disabled]="re.status === 'CONVERTIDO' || re.status === 'ARQUIVADO'">
+                <mat-icon>swap_horiz</mat-icon> Converter para DU-E
+              </button>
+              <button mat-menu-item (click)="selectRE(re); validateConsistency()">
+                <mat-icon>fact_check</mat-icon> Validar
+              </button>
+              <button mat-menu-item (click)="exportPDF()">
+                <mat-icon>picture_as_pdf</mat-icon> Exportar
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+            (click)="selectRE(row)"
+            class="re-row"
+            [class.selected-row]="selectedRE?.id === row.id">
+        </tr>
+      </table>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="filteredRegistros.length === 0 && !isLoading">
+      <mat-icon>search_off</mat-icon>
+      <p>Nenhum registro de exportação encontrado com os filtros aplicados</p>
+      <button mat-stroked-button color="primary" (click)="clearFilters()">Limpar Filtros</button>
+    </div>
+  </mat-card>
+
+  <!-- Detail Panel -->
+  <mat-card class="detail-panel" *ngIf="isDetailOpen && selectedRE">
+    <div class="detail-header">
+      <div class="detail-title">
+        <mat-icon>receipt_long</mat-icon>
+        <h2>{{ selectedRE.reNumber }}</h2>
+        <span class="status-chip" [ngClass]="'status-' + getStatusColor(selectedRE.status)">
+          {{ selectedRE.status }}
+        </span>
+      </div>
+      <div class="detail-actions">
+        <button mat-raised-button color="primary" (click)="convertToDUE()"
+                [disabled]="selectedRE.status === 'CONVERTIDO' || selectedRE.status === 'ARQUIVADO'"
+                matTooltip="Converter para DU-E">
+          <mat-icon>swap_horiz</mat-icon> Converter
+        </button>
+        <button mat-icon-button (click)="closeDetail()" matTooltip="Fechar">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <mat-tab-group animationDuration="200ms">
+
+      <!-- Tab 1 - Dados Gerais -->
+      <mat-tab label="Dados Gerais">
+        <div class="tab-content">
+          <mat-list class="detail-list">
+            <mat-list-item>
+              <mat-icon matListItemIcon>tag</mat-icon>
+              <span matListItemTitle>Número do RE</span>
+              <span matListItemLine>{{ selectedRE.reNumber }}</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>business</mat-icon>
+              <span matListItemTitle>Exportador</span>
+              <span matListItemLine>{{ selectedRE.exporterName }} ({{ selectedRE.exporterCnpj }})</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>person</mat-icon>
+              <span matListItemTitle>Cliente</span>
+              <span matListItemLine>{{ selectedRE.clientName }}</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>flight_takeoff</mat-icon>
+              <span matListItemTitle>País Destino</span>
+              <span matListItemLine>{{ selectedRE.destinationCountry }}</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>swap_vert</mat-icon>
+              <span matListItemTitle>Incoterm</span>
+              <span matListItemLine>{{ selectedRE.incoterm }}</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>anchor</mat-icon>
+              <span matListItemTitle>Porto de Origem</span>
+              <span matListItemLine>{{ selectedRE.portOrigin }}</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>local_shipping</mat-icon>
+              <span matListItemTitle>Modo de Transporte</span>
+              <span matListItemLine>{{ selectedRE.transportMode }}</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>description</mat-icon>
+              <span matListItemTitle>Natureza da Operação</span>
+              <span matListItemLine>{{ selectedRE.operationNature }}</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>source</mat-icon>
+              <span matListItemTitle>Fonte Original</span>
+              <span matListItemLine>{{ selectedRE.originalSource }}</span>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+            <mat-list-item>
+              <mat-icon matListItemIcon>link</mat-icon>
+              <span matListItemTitle>DU-E Vinculada</span>
+              <span matListItemLine>{{ selectedRE.linkedDueNumber || 'Nenhuma' }}</span>
+            </mat-list-item>
+          </mat-list>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 2 - Produtos -->
+      <mat-tab label="Produtos">
+        <div class="tab-content">
+          <table mat-table [dataSource]="products" class="products-table">
+            <ng-container matColumnDef="productName">
+              <th mat-header-cell *matHeaderCellDef>Produto</th>
+              <td mat-cell *matCellDef="let p">{{ p.productName }}</td>
+            </ng-container>
+            <ng-container matColumnDef="ncm">
+              <th mat-header-cell *matHeaderCellDef>NCM</th>
+              <td mat-cell *matCellDef="let p">{{ p.ncm }}</td>
+            </ng-container>
+            <ng-container matColumnDef="quantity">
+              <th mat-header-cell *matHeaderCellDef>Quantidade</th>
+              <td mat-cell *matCellDef="let p">{{ p.quantity | number:'1.0-0' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="unit">
+              <th mat-header-cell *matHeaderCellDef>Unidade</th>
+              <td mat-cell *matCellDef="let p">{{ p.unit }}</td>
+            </ng-container>
+            <ng-container matColumnDef="value">
+              <th mat-header-cell *matHeaderCellDef>Valor</th>
+              <td mat-cell *matCellDef="let p">{{ formatCurrency(p.value) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="netWeight">
+              <th mat-header-cell *matHeaderCellDef>Peso Líquido (kg)</th>
+              <td mat-cell *matCellDef="let p">{{ p.netWeight | number:'1.0-0' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="grossWeight">
+              <th mat-header-cell *matHeaderCellDef>Peso Bruto (kg)</th>
+              <td mat-cell *matCellDef="let p">{{ p.grossWeight | number:'1.0-0' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="linkedLot">
+              <th mat-header-cell *matHeaderCellDef>Lote Vinculado</th>
+              <td mat-cell *matCellDef="let p">{{ p.linkedLot }}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="productColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: productColumns;"></tr>
+          </table>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 3 - Documentos -->
+      <mat-tab label="Documentos">
+        <div class="tab-content">
+          <table mat-table [dataSource]="documents" class="docs-table">
+            <ng-container matColumnDef="documentType">
+              <th mat-header-cell *matHeaderCellDef>Tipo</th>
+              <td mat-cell *matCellDef="let doc">{{ doc.documentType }}</td>
+            </ng-container>
+            <ng-container matColumnDef="documentNumber">
+              <th mat-header-cell *matHeaderCellDef>Número</th>
+              <td mat-cell *matCellDef="let doc">{{ doc.documentNumber }}</td>
+            </ng-container>
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Status</th>
+              <td mat-cell *matCellDef="let doc">
+                <span class="status-chip" [ngClass]="'status-' + getDocStatusColor(doc.status)">
+                  {{ getDocStatusLabel(doc.status) }}
+                </span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="issueDate">
+              <th mat-header-cell *matHeaderCellDef>Emissão</th>
+              <td mat-cell *matCellDef="let doc">{{ formatDate(doc.issueDate) }}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="documentColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: documentColumns;"></tr>
+          </table>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 4 - Divergências -->
+      <mat-tab label="Divergências">
+        <div class="tab-content">
+          <div *ngIf="divergences.length === 0" class="empty-state">
+            <mat-icon>check_circle</mat-icon>
+            <p>Nenhuma divergência identificada</p>
+          </div>
+
+          <table mat-table [dataSource]="divergences" class="divergence-table" *ngIf="divergences.length > 0">
+            <ng-container matColumnDef="field">
+              <th mat-header-cell *matHeaderCellDef>Campo</th>
+              <td mat-cell *matCellDef="let d">
+                <strong>{{ d.field }}</strong>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="reValue">
+              <th mat-header-cell *matHeaderCellDef>Valor no RE</th>
+              <td mat-cell *matCellDef="let d">
+                <span class="re-value">{{ d.reValue }}</span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="currentValue">
+              <th mat-header-cell *matHeaderCellDef>Valor Atual</th>
+              <td mat-cell *matCellDef="let d">
+                <span class="current-value">{{ d.currentValue }}</span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="severity">
+              <th mat-header-cell *matHeaderCellDef>Severidade</th>
+              <td mat-cell *matCellDef="let d">
+                <span class="status-chip" [ngClass]="'status-' + getSeverityColor(d.severity)">
+                  {{ d.severity }}
+                </span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="suggestion">
+              <th mat-header-cell *matHeaderCellDef>Sugestão IA</th>
+              <td mat-cell *matCellDef="let d">
+                <div class="suggestion-cell">
+                  <mat-icon class="ai-icon">auto_awesome</mat-icon>
+                  <span>{{ d.suggestion }}</span>
+                  <span class="confidence-badge">{{ (d.aiConfidence * 100) | number:'1.0-0' }}%</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="divergenceColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: divergenceColumns;"
+                [ngClass]="'divergence-row-' + getSeverityColor(row.severity)">
+            </tr>
+          </table>
+
+          <div class="validate-action" *ngIf="divergences.length > 0">
+            <button mat-raised-button color="primary" (click)="validateConsistency()">
+              <mat-icon>refresh</mat-icon> Revalidar Consistência
+            </button>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 5 - Timeline -->
+      <mat-tab label="Timeline">
+        <div class="tab-content">
+          <div class="timeline-container">
+            <div class="timeline-event" *ngFor="let event of timeline"
+                 [ngClass]="event.event.includes('Conversão') ? 'event-green' : 'event-blue'">
+              <div class="timeline-marker">
+                <mat-icon>{{ event.event.includes('Criação') ? 'add_circle' :
+                             event.event.includes('Importação') ? 'download' :
+                             event.event.includes('Validação') ? 'fact_check' :
+                             event.event.includes('Conversão') ? 'swap_horiz' :
+                             'warning' }}</mat-icon>
+              </div>
+              <div class="timeline-content">
+                <div class="timeline-event-header">
+                  <h4>{{ event.event }}</h4>
+                  <span class="timeline-date">{{ formatDate(event.date) }}</span>
+                </div>
+                <p class="timeline-description">{{ event.details }}</p>
+                <div class="timeline-meta">
+                  <span class="meta-item"><mat-icon>person</mat-icon> {{ event.user }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 6 - IA & Insights -->
+      <mat-tab label="IA & Insights">
+        <div class="tab-content" *ngIf="aiInsights">
+          <div class="insights-section">
+
+            <!-- Score Gauges -->
+            <div class="insights-scores">
+              <div class="score-card">
+                <h4>Score de Migração</h4>
+                <div class="score-gauge">
+                  <div class="gauge-fill" [style.width.%]="aiInsights.migrationScore"
+                       [ngClass]="'gauge-' + getScoreColor(aiInsights.migrationScore)">
+                  </div>
+                </div>
+                <span class="gauge-value">{{ aiInsights.migrationScore }}/100</span>
+              </div>
+              <div class="score-card">
+                <h4>Score de Consistência</h4>
+                <div class="score-gauge">
+                  <div class="gauge-fill" [style.width.%]="aiInsights.consistencyScore"
+                       [ngClass]="'gauge-' + getScoreColor(aiInsights.consistencyScore)">
+                  </div>
+                </div>
+                <span class="gauge-value">{{ aiInsights.consistencyScore }}/100</span>
+              </div>
+            </div>
+
+            <!-- Conversion Readiness -->
+            <div class="risk-badge-section">
+              <span class="risk-label">Prontidão para Conversão:</span>
+              <span class="risk-badge" [ngClass]="'risk-' + getReadinessColor(aiInsights.conversionReadiness)">
+                {{ getReadinessLabel(aiInsights.conversionReadiness) }}
+              </span>
+            </div>
+
+            <!-- Executive Summary -->
+            <div class="executive-summary">
+              <h4><mat-icon>auto_awesome</mat-icon> Resumo Executivo</h4>
+              <p>{{ aiInsights.executiveSummary }}</p>
+            </div>
+
+            <!-- AI Suggestions -->
+            <div class="suggestions-section" *ngIf="aiInsights.suggestions.length > 0">
+              <h4><mat-icon>lightbulb</mat-icon> Sugestões da IA</h4>
+              <div class="suggestion-item" *ngFor="let s of aiInsights.suggestions">
+                <div class="suggestion-header">
+                  <strong>{{ s.field }}</strong>
+                  <span class="confidence-badge">{{ (s.confidence * 100) | number:'1.0-0' }}% confiança</span>
+                </div>
+                <p class="suggestion-text">{{ s.suggestion }}</p>
+                <p class="suggestion-reason"><em>Razão:</em> {{ s.reason }}</p>
+                <span class="suggestion-source">Fonte: {{ s.source }}</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </mat-tab>
+
+    </mat-tab-group>
+  </mat-card>
+
+</div>

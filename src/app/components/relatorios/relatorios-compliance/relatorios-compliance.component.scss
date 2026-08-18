@@ -1,0 +1,464 @@
+@use 'sass:color';
+
+// Compliance Theme - Purple
+$primary: #4527a0;
+$dark: #311b92;
+$light: #ede7f6;
+$accent: #7c4dff;
+$success: #4caf50;
+$warn: #ff9800;
+$danger: #f44336;
+
+.compliance-container {
+  padding: 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+// Loading Bar
+.loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+// ================================
+// HEADER
+// ================================
+.page-header {
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, $primary, $dark);
+  border-radius: 16px;
+  padding: 32px;
+  color: white;
+
+  .header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .title-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .header-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    opacity: 0.9;
+  }
+
+  .title-content {
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      margin: 4px 0 0;
+      opacity: 0.85;
+      font-size: 14px;
+    }
+  }
+
+  .header-actions {
+    .export-btn {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.25);
+      }
+    }
+  }
+}
+
+// ================================
+// KPI CARDS
+// ================================
+.kpi-dashboard {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  }
+
+  mat-card-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px !important;
+  }
+
+  .kpi-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    mat-icon {
+      font-size: 22px;
+      width: 22px;
+      height: 22px;
+      color: white;
+    }
+  }
+
+  .kpi-info {
+    .kpi-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1a1a2e;
+      line-height: 1.2;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      color: #666;
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  }
+
+  &.kpi-total .kpi-icon { background: $primary; }
+  &.kpi-conforme .kpi-icon { background: $success; }
+  &.kpi-parcial .kpi-icon { background: $warn; }
+  &.kpi-nao-conforme .kpi-icon { background: $danger; }
+  &.kpi-score .kpi-icon { background: $accent; }
+  &.kpi-critical .kpi-icon { background: #c62828; }
+  &.kpi-actions .kpi-icon { background: #1565c0; }
+  &.kpi-nao-avaliado .kpi-icon { background: #78909c; }
+}
+
+// ================================
+// AREA BREAKDOWN
+// ================================
+.area-card {
+  margin-bottom: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  .area-header-icon {
+    background: $primary;
+    color: white;
+    border-radius: 8px;
+  }
+}
+
+.area-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 8px;
+}
+
+.area-item {
+  .area-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .area-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+  }
+
+  .area-score {
+    font-size: 14px;
+    font-weight: 700;
+    color: $primary;
+  }
+
+  .stacked-bar {
+    display: flex;
+    height: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+    background: #f0f0f0;
+  }
+
+  .bar-segment {
+    height: 100%;
+    transition: width 0.3s ease;
+
+    &.bar-conforme { background: $success; }
+    &.bar-parcial { background: $warn; }
+    &.bar-nao-conforme { background: $danger; }
+  }
+
+  .area-counts {
+    display: flex;
+    gap: 16px;
+    margin-top: 4px;
+
+    span {
+      font-size: 11px;
+      color: #888;
+    }
+
+    .count-conforme { color: #2e7d32; }
+    .count-parcial { color: #e65100; }
+    .count-nao-conforme { color: #c62828; }
+  }
+}
+
+.legend {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+  margin-top: 16px;
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #666;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+
+    &.conforme { background: $success; }
+    &.parcial { background: $warn; }
+    &.nao-conforme { background: $danger; }
+  }
+}
+
+// ================================
+// FILTERS
+// ================================
+.filters-card {
+  margin-bottom: 24px;
+  border-radius: 12px;
+
+  .filters-form {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .filter-field {
+    flex: 1;
+    min-width: 150px;
+
+    &.search-field {
+      min-width: 280px;
+    }
+  }
+
+  .clear-filters-btn {
+    color: $primary;
+  }
+}
+
+// ================================
+// RESULTS TABLE
+// ================================
+.results-card {
+  border-radius: 12px;
+  overflow: hidden;
+
+  .results-header {
+    padding: 16px 0;
+    border-bottom: 1px solid #e0e0e0;
+
+    h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+    }
+  }
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+
+  th {
+    background: #f8f9fa;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #555;
+    white-space: nowrap;
+  }
+
+  td {
+    font-size: 13px;
+    color: #333;
+  }
+
+  .clickable-row {
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background: color.adjust($light, $lightness: 2%);
+    }
+  }
+}
+
+// ================================
+// BADGES
+// ================================
+.requirement-text {
+  font-weight: 500;
+}
+
+.regulation-badge {
+  font-size: 11px;
+  background: #f5f5f5;
+  padding: 3px 6px;
+  border-radius: 4px;
+  color: #555;
+  border: 1px solid #e0e0e0;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &.status-conforme {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  &.status-parcial {
+    background: #fff3e0;
+    color: #e65100;
+  }
+
+  &.status-nao-conforme,
+  &.status-nao_conforme {
+    background: #ffebee;
+    color: #c62828;
+  }
+
+  &.status-nao-avaliado,
+  &.status-nao_avaliado {
+    background: #eceff1;
+    color: #546e7a;
+  }
+}
+
+// Risk bar
+.risk-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.risk-bar {
+  height: 6px;
+  border-radius: 3px;
+  min-width: 4px;
+  max-width: 60px;
+  transition: width 0.3s;
+
+  &.risk-low { background: $success; }
+  &.risk-medium { background: $warn; }
+  &.risk-high { background: #e65100; }
+  &.risk-critical { background: $danger; }
+}
+
+.risk-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+}
+
+.actions-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+  background: #f5f5f5;
+  color: #666;
+
+  &.has-actions {
+    background: color.adjust($primary, $lightness: 55%);
+    color: $dark;
+  }
+}
+
+// ================================
+// RESPONSIVE
+// ================================
+@media (max-width: 1024px) {
+  .kpi-dashboard {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .compliance-container {
+    padding: 16px;
+  }
+
+  .page-header {
+    padding: 24px;
+
+    .header-main {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .title-content h1 {
+      font-size: 22px;
+    }
+  }
+
+  .kpi-dashboard {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .filters-card .filter-field {
+    min-width: 100%;
+  }
+}

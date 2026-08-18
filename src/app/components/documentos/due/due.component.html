@@ -1,0 +1,555 @@
+<!-- Main Container -->
+<div class="due-container">
+
+  <!-- Loading Bar -->
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header Premium -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">description</mat-icon>
+        <div class="title-content">
+          <h1>DU-E — Declaração Única de Exportação</h1>
+          <p class="subtitle">Copiloto inteligente para despacho aduaneiro</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button (click)="createDue()">
+          <mat-icon>add</mat-icon> Nova DU-E
+        </button>
+        <button mat-raised-button (click)="exportPDF()">
+          <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
+        </button>
+        <button mat-raised-button (click)="exportXML()">
+          <mat-icon>code</mat-icon> Exportar XML
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Dashboard Cards -->
+  <div class="kpi-dashboard" *ngIf="metrics">
+    <mat-card class="kpi-card kpi-total">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>description</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.totalDues }}</div>
+          <div class="kpi-label">Total DU-Es</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    <mat-card class="kpi-card kpi-draft">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>draft</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.draftCount }}</div>
+          <div class="kpi-label">Rascunhos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    <mat-card class="kpi-card kpi-sent">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>send</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.sentCount }}</div>
+          <div class="kpi-label">Enviadas</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    <mat-card class="kpi-card kpi-approved">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>check_circle</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.approvedCount }}</div>
+          <div class="kpi-label">Aprovadas</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    <mat-card class="kpi-card kpi-score">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>analytics</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.avgComplianceScore }}%</div>
+          <div class="kpi-label">Score Conformidade Médio</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Filters Card -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <div class="filter-row">
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Exportador</mat-label>
+            <mat-select formControlName="exporterName">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let e of exporters" [value]="e">{{ e }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>País Destino</mat-label>
+            <mat-select formControlName="destinationCountry">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let c of countries" [value]="c">{{ c }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Produto</mat-label>
+            <mat-select formControlName="productName">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let p of productsList" [value]="p">{{ p }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Porto Origem</mat-label>
+            <mat-select formControlName="portOrigin">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let port of ports" [value]="port">{{ port }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <div class="clear-filter-wrapper">
+            <button mat-raised-button color="warn" class="clear-filters-btn" (click)="clearFilters()">
+              <mat-icon>filter_alt_off</mat-icon> Limpar Filtros
+            </button>
+          </div>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Results Grid -->
+  <mat-card class="grid-card">
+    <div class="grid-toolbar">
+      <h2>DU-Es Registradas</h2>
+      <div class="grid-actions">
+        <span class="results-count">{{ filteredDues.length }} registros</span>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table mat-table [dataSource]="filteredDues" class="dues-table">
+
+        <!-- DU-E Number -->
+        <ng-container matColumnDef="dueNumber">
+          <th mat-header-cell *matHeaderCellDef>Nº DU-E</th>
+          <td mat-cell *matCellDef="let due">
+            <span class="due-number">{{ due.dueNumber }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Exporter -->
+        <ng-container matColumnDef="exporterName">
+          <th mat-header-cell *matHeaderCellDef>Exportador</th>
+          <td mat-cell *matCellDef="let due">{{ due.exporterName }}</td>
+        </ng-container>
+
+        <!-- Importer -->
+        <ng-container matColumnDef="importerName">
+          <th mat-header-cell *matHeaderCellDef>Importador</th>
+          <td mat-cell *matCellDef="let due">{{ due.importerName }}</td>
+        </ng-container>
+
+        <!-- Country -->
+        <ng-container matColumnDef="destinationCountry">
+          <th mat-header-cell *matHeaderCellDef>País Destino</th>
+          <td mat-cell *matCellDef="let due">{{ due.destinationCountry }}</td>
+        </ng-container>
+
+        <!-- Product -->
+        <ng-container matColumnDef="productName">
+          <th mat-header-cell *matHeaderCellDef>Produto</th>
+          <td mat-cell *matCellDef="let due">{{ due.productName }}</td>
+        </ng-container>
+
+        <!-- Status -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let due">
+            <span class="status-chip" [ngClass]="'status-' + getStatusColor(due.status)">
+              <mat-icon class="chip-icon">{{ getStatusIcon(due.status) }}</mat-icon>
+              {{ getStatusLabel(due.status) }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Completion -->
+        <ng-container matColumnDef="completionPercentage">
+          <th mat-header-cell *matHeaderCellDef>Completude</th>
+          <td mat-cell *matCellDef="let due">
+            <div class="completion-bar">
+              <mat-progress-bar mode="determinate" [value]="due.completionPercentage"></mat-progress-bar>
+              <span class="completion-value">{{ due.completionPercentage }}%</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- AI Score -->
+        <ng-container matColumnDef="aiComplianceScore">
+          <th mat-header-cell *matHeaderCellDef>Score IA</th>
+          <td mat-cell *matCellDef="let due">
+            <span class="score-badge" [ngClass]="'score-' + getScoreColor(due.aiComplianceScore)">
+              {{ due.aiComplianceScore }}%
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Actions -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Ações</th>
+          <td mat-cell *matCellDef="let due">
+            <button mat-icon-button [matMenuTriggerFor]="actionMenu" (click)="$event.stopPropagation()">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #actionMenu="matMenu">
+              <button mat-menu-item (click)="selectDue(due)">
+                <mat-icon>visibility</mat-icon> Visualizar
+              </button>
+              <button mat-menu-item (click)="selectDue(due)">
+                <mat-icon>edit</mat-icon> Editar
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+            class="due-row"
+            [class.selected-row]="selectedDue?.id === row.id"
+            (click)="selectDue(row)"></tr>
+      </table>
+    </div>
+  </mat-card>
+
+  <!-- Detail Panel -->
+  <mat-card class="detail-panel" *ngIf="isDetailOpen && selectedDue">
+    <div class="detail-header">
+      <div class="detail-title">
+        <mat-icon>description</mat-icon>
+        <h2>{{ selectedDue.dueNumber }}</h2>
+        <span class="status-chip" [ngClass]="'status-' + getStatusColor(selectedDue.status)">
+          <mat-icon class="chip-icon">{{ getStatusIcon(selectedDue.status) }}</mat-icon>
+          {{ getStatusLabel(selectedDue.status) }}
+        </span>
+      </div>
+      <div class="detail-actions">
+        <button mat-raised-button color="primary" (click)="sendToSiscomex()"
+                *ngIf="selectedDue.status === 'PRONTO_ENVIO'"
+                matTooltip="Enviar ao Siscomex">
+          <mat-icon>send</mat-icon> Enviar Siscomex
+        </button>
+        <button mat-icon-button (click)="syncSiscomex()" matTooltip="Sincronizar Siscomex">
+          <mat-icon>sync</mat-icon>
+        </button>
+        <button mat-icon-button (click)="closeDetail()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <mat-tab-group>
+      <!-- Tab 1: Dados Gerais -->
+      <mat-tab label="Dados Gerais">
+        <div class="tab-content">
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label">Exportador</span>
+              <span class="detail-value">{{ selectedDue.exporterName }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">CNPJ</span>
+              <span class="detail-value">{{ selectedDue.exporterCnpj }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Importador</span>
+              <span class="detail-value">{{ selectedDue.importerName }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">País Destino</span>
+              <span class="detail-value">{{ selectedDue.destinationCountry }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Porto Origem</span>
+              <span class="detail-value">{{ selectedDue.portOrigin }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Porto Destino</span>
+              <span class="detail-value">{{ selectedDue.portDestination }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Incoterm</span>
+              <span class="detail-value">{{ selectedDue.incoterm }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Modal Transporte</span>
+              <span class="detail-value">{{ selectedDue.transportMode }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Contrato</span>
+              <span class="detail-value">{{ selectedDue.contractNumber }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Invoice</span>
+              <span class="detail-value">{{ selectedDue.invoiceNumber }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Valor Total</span>
+              <span class="detail-value">{{ formatCurrency(selectedDue.totalValue, selectedDue.currency) }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Última Sincronia</span>
+              <span class="detail-value">{{ formatDate(selectedDue.lastSiscomexSync) }}</span>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 2: Produtos -->
+      <mat-tab label="Produtos">
+        <div class="tab-content">
+          <table mat-table [dataSource]="products" class="products-table">
+            <ng-container matColumnDef="productName">
+              <th mat-header-cell *matHeaderCellDef>Produto</th>
+              <td mat-cell *matCellDef="let p">{{ p.productName }}</td>
+            </ng-container>
+            <ng-container matColumnDef="ncm">
+              <th mat-header-cell *matHeaderCellDef>NCM</th>
+              <td mat-cell *matCellDef="let p">{{ p.ncm }}</td>
+            </ng-container>
+            <ng-container matColumnDef="quantity">
+              <th mat-header-cell *matHeaderCellDef>Qtd</th>
+              <td mat-cell *matCellDef="let p">{{ p.quantity | number:'1.0-0' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="unit">
+              <th mat-header-cell *matHeaderCellDef>Unid</th>
+              <td mat-cell *matCellDef="let p">{{ p.unit }}</td>
+            </ng-container>
+            <ng-container matColumnDef="unitPrice">
+              <th mat-header-cell *matHeaderCellDef>Preço Unit.</th>
+              <td mat-cell *matCellDef="let p">{{ formatCurrency(p.unitPrice) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="totalValue">
+              <th mat-header-cell *matHeaderCellDef>Valor Total</th>
+              <td mat-cell *matCellDef="let p">{{ formatCurrency(p.totalValue) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="netWeight">
+              <th mat-header-cell *matHeaderCellDef>Peso Líq (t)</th>
+              <td mat-cell *matCellDef="let p">{{ p.netWeight | number:'1.2-2' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="grossWeight">
+              <th mat-header-cell *matHeaderCellDef>Peso Bruto (t)</th>
+              <td mat-cell *matCellDef="let p">{{ p.grossWeight | number:'1.2-2' }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="productColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: productColumns;"></tr>
+          </table>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 3: Atributos -->
+      <mat-tab label="Atributos">
+        <div class="tab-content">
+          <table mat-table [dataSource]="attributes" class="attributes-table">
+            <ng-container matColumnDef="attributeName">
+              <th mat-header-cell *matHeaderCellDef>Atributo</th>
+              <td mat-cell *matCellDef="let a">{{ a.attributeName }}</td>
+            </ng-container>
+            <ng-container matColumnDef="attributeValue">
+              <th mat-header-cell *matHeaderCellDef>Valor</th>
+              <td mat-cell *matCellDef="let a">{{ a.attributeValue }}</td>
+            </ng-container>
+            <ng-container matColumnDef="required">
+              <th mat-header-cell *matHeaderCellDef>Obrigatório</th>
+              <td mat-cell *matCellDef="let a">
+                <mat-icon [class.text-green]="a.required" [class.text-grey]="!a.required">
+                  {{ a.required ? 'check_circle' : 'remove_circle_outline' }}
+                </mat-icon>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="aiSuggested">
+              <th mat-header-cell *matHeaderCellDef>IA Sugerido</th>
+              <td mat-cell *matCellDef="let a">
+                <mat-icon *ngIf="a.aiSuggested" class="text-blue">smart_toy</mat-icon>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="aiConfidence">
+              <th mat-header-cell *matHeaderCellDef>Confiança IA</th>
+              <td mat-cell *matCellDef="let a">
+                <span class="confidence-badge" *ngIf="a.aiSuggested"
+                      [ngClass]="'score-' + getScoreColor(a.aiConfidence)">
+                  {{ a.aiConfidence }}%
+                </span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="source">
+              <th mat-header-cell *matHeaderCellDef>Fonte</th>
+              <td mat-cell *matCellDef="let a">{{ a.source }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="attributeColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: attributeColumns;"></tr>
+          </table>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 4: Documentos -->
+      <mat-tab label="Documentos">
+        <div class="tab-content">
+          <table mat-table [dataSource]="documents" class="docs-table">
+            <ng-container matColumnDef="documentType">
+              <th mat-header-cell *matHeaderCellDef>Tipo</th>
+              <td mat-cell *matCellDef="let d">{{ d.documentType }}</td>
+            </ng-container>
+            <ng-container matColumnDef="documentNumber">
+              <th mat-header-cell *matHeaderCellDef>Número</th>
+              <td mat-cell *matCellDef="let d">{{ d.documentNumber }}</td>
+            </ng-container>
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Status</th>
+              <td mat-cell *matCellDef="let d">
+                <span class="status-chip" [ngClass]="'status-' + getDocStatusColor(d.status)">
+                  {{ d.status }}
+                </span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="issueDate">
+              <th mat-header-cell *matHeaderCellDef>Data Emissão</th>
+              <td mat-cell *matCellDef="let d">{{ formatDate(d.issueDate) }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="documentColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: documentColumns;"></tr>
+          </table>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 5: Validação -->
+      <mat-tab label="Validação">
+        <div class="tab-content">
+          <div class="validations-list">
+            <div class="validation-item" *ngFor="let v of validations"
+                 [ngClass]="'validation-' + getValidationColor(v.status)">
+              <mat-icon [ngClass]="'text-' + getValidationColor(v.status)">
+                {{ getValidationIcon(v.status) }}
+              </mat-icon>
+              <div class="validation-info">
+                <div class="validation-header">
+                  <strong>{{ v.checkName }}</strong>
+                  <span class="severity-badge" [ngClass]="'severity-' + getSeverityColor(v.severity)">
+                    {{ v.severity }}
+                  </span>
+                </div>
+                <span class="validation-message">{{ v.message }}</span>
+                <span class="validation-suggestion" *ngIf="v.suggestion">
+                  <mat-icon>lightbulb</mat-icon> {{ v.suggestion }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 6: Timeline -->
+      <mat-tab label="Timeline">
+        <div class="tab-content">
+          <div class="timeline-container">
+            <div class="timeline-event" *ngFor="let event of timeline"
+                 [ngClass]="'event-' + getStatusColor(event.status)">
+              <div class="timeline-marker">
+                <mat-icon>{{ getStatusIcon(event.status) }}</mat-icon>
+              </div>
+              <div class="timeline-event-header">
+                <h4>{{ getStatusLabel(event.status) }}</h4>
+                <span class="timeline-date">{{ formatDate(event.date) }}</span>
+              </div>
+              <p class="timeline-description">{{ event.observations }}</p>
+              <div class="timeline-meta">
+                <span class="meta-item">
+                  <mat-icon>person</mat-icon> {{ event.user }}
+                </span>
+                <span class="meta-item">
+                  <mat-icon>integration_instructions</mat-icon> {{ event.integration }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 7: IA & Insights -->
+      <mat-tab label="IA & Insights">
+        <div class="tab-content" *ngIf="aiInsights">
+          <div class="insights-section">
+
+            <!-- Scores -->
+            <div class="insights-scores">
+              <div class="score-card">
+                <h4>Score de Conformidade</h4>
+                <div class="score-gauge">
+                  <div class="gauge-fill" [ngClass]="'gauge-' + getScoreColor(aiInsights.complianceScore)"
+                       [style.width.%]="aiInsights.complianceScore"></div>
+                </div>
+                <span class="gauge-value">{{ aiInsights.complianceScore }}%</span>
+              </div>
+              <div class="score-card">
+                <h4>Probabilidade de Rejeição</h4>
+                <div class="score-gauge">
+                  <div class="gauge-fill gauge-red"
+                       [style.width.%]="aiInsights.rejectionProbability"></div>
+                </div>
+                <span class="gauge-value">{{ aiInsights.rejectionProbability }}%</span>
+              </div>
+            </div>
+
+            <!-- Bottlenecks -->
+            <div class="alerts-section">
+              <h4><mat-icon>warning</mat-icon> Gargalos Identificados</h4>
+              <div class="alert-item alert-orange" *ngFor="let b of aiInsights.bottlenecks">
+                <mat-icon>report_problem</mat-icon>
+                <span>{{ b }}</span>
+              </div>
+            </div>
+
+            <!-- Suggestions -->
+            <div class="suggestions-section">
+              <h4><mat-icon>lightbulb</mat-icon> Recomendações IA</h4>
+              <div class="suggestion-item" *ngFor="let s of aiInsights.suggestions">
+                <div class="suggestion-header">
+                  <strong>{{ s.field }}</strong>
+                  <span class="impact-badge" [ngClass]="'impact-' + s.impact.toLowerCase()">{{ s.impact }}</span>
+                </div>
+                <p class="suggestion-text">{{ s.suggestion }}</p>
+                <div class="suggestion-meta">
+                  <span><mat-icon>info</mat-icon> {{ s.reason }}</span>
+                  <span><mat-icon>source</mat-icon> {{ s.source }}</span>
+                  <span class="confidence-badge" [ngClass]="'score-' + getScoreColor(s.confidence)">
+                    {{ s.confidence }}% confiança
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Executive Summary -->
+            <div class="executive-summary">
+              <h4><mat-icon>summarize</mat-icon> Resumo Executivo</h4>
+              <p>{{ aiInsights.executiveSummary }}</p>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card>
+
+</div>

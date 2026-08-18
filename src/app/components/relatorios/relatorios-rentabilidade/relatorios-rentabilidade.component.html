@@ -1,0 +1,323 @@
+<!-- Main Container -->
+<div class="rentabilidade-container">
+
+  <!-- Loading Bar -->
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">trending_up</mat-icon>
+        <div class="title-content">
+          <h1>Relatório de Rentabilidade</h1>
+          <p class="subtitle">Análise de margens e performance financeira por operação</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button class="export-btn" (click)="exportPDF()">
+          <mat-icon>picture_as_pdf</mat-icon> PDF
+        </button>
+        <button mat-raised-button class="export-btn" (click)="exportExcel()">
+          <mat-icon>table_chart</mat-icon> Excel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Dashboard Cards (4x2) -->
+  <div class="kpi-dashboard">
+    <mat-card class="kpi-card kpi-revenue">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>payments</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">R$ {{ metrics.totalRevenue | number:'1.0-0' }}</div>
+          <div class="kpi-label">Receita Total</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-cost">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>account_balance_wallet</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">R$ {{ metrics.totalCost | number:'1.0-0' }}</div>
+          <div class="kpi-label">Custo Total</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-margin">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>percent</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.avgMargin }}%</div>
+          <div class="kpi-label">Margem Média %</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-best-product">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>emoji_events</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value kpi-value-small">{{ metrics.bestProduct }}</div>
+          <div class="kpi-label">Melhor Produto</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-best-client">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>star</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value kpi-value-small">{{ metrics.bestClient }}</div>
+          <div class="kpi-label">Melhor Cliente</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-worst">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>trending_down</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value kpi-value-small">{{ metrics.worstMarginOp }}</div>
+          <div class="kpi-label">Pior Operação</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-above">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>thumb_up</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.operationsAboveTarget }}</div>
+          <div class="kpi-label">Acima da Meta</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-below">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>thumb_down</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.operationsBelowTarget }}</div>
+          <div class="kpi-label">Abaixo da Meta</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Product Margin Card -->
+  <mat-card class="performance-card">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="perf-header-icon">inventory_2</mat-icon>
+      <mat-card-title>Margem por Produto</mat-card-title>
+      <mat-card-subtitle>Análise de margem percentual por produto exportado</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="margins-list">
+        <div class="margin-item" *ngFor="let product of productMargins">
+          <div class="margin-header">
+            <span class="margin-name">{{ product.product }}</span>
+            <span class="margin-rate" [ngClass]="getMarginColorClass(product.marginPercent)">{{ product.marginPercent }}%</span>
+          </div>
+          <div class="margin-bar-container">
+            <div class="margin-bar"
+                 [style.width.%]="(product.marginPercent / getMaxProductMargin()) * 100"
+                 [ngClass]="getMarginColorClass(product.marginPercent)">
+            </div>
+          </div>
+          <div class="margin-details">
+            <span>Receita: R$ {{ product.revenue | number:'1.0-0' }}</span>
+            <span>Margem: R$ {{ product.margin | number:'1.0-0' }}</span>
+            <span>Volume: {{ product.volume | number:'1.0-0' }} ton</span>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Client Margin Card -->
+  <mat-card class="performance-card">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="perf-header-icon">groups</mat-icon>
+      <mat-card-title>Margem por Cliente</mat-card-title>
+      <mat-card-subtitle>Rentabilidade por cliente nas operações</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="margins-list">
+        <div class="margin-item" *ngFor="let client of clientMargins">
+          <div class="margin-header">
+            <span class="margin-name">{{ client.client }}</span>
+            <span class="margin-rate" [ngClass]="getMarginColorClass(client.marginPercent)">{{ client.marginPercent }}%</span>
+          </div>
+          <div class="margin-bar-container">
+            <div class="margin-bar"
+                 [style.width.%]="(client.marginPercent / getMaxClientMargin()) * 100"
+                 [ngClass]="getMarginColorClass(client.marginPercent)">
+            </div>
+          </div>
+          <div class="margin-details">
+            <span>Receita: R$ {{ client.revenue | number:'1.0-0' }}</span>
+            <span>Margem: R$ {{ client.margin | number:'1.0-0' }}</span>
+            <span>{{ client.operations }} operações</span>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Filters -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <mat-form-field appearance="outline" class="filter-field search-field">
+          <mat-label>Buscar</mat-label>
+          <input matInput formControlName="searchText" placeholder="Operação, cliente, produto, país...">
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Produto</mat-label>
+          <mat-select formControlName="product">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let p of productMargins" [value]="p.product">{{ p.product }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Cliente</mat-label>
+          <mat-select formControlName="client">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let c of clientMargins" [value]="c.client">{{ c.client }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <button mat-button class="clear-filters-btn" (click)="clearFilters()">
+          <mat-icon>filter_list_off</mat-icon> Limpar
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Table -->
+  <mat-card class="results-card">
+    <mat-card-content>
+      <div class="results-header">
+        <h3>Operações ({{ dataSource.filteredData.length }})</h3>
+      </div>
+
+      <div class="table-container">
+        <table mat-table [dataSource]="dataSource" matSort #rentabilidadeSort="matSort" class="data-table">
+
+          <!-- Operation -->
+          <ng-container matColumnDef="operation">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Operação</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="operation-id">{{ row.operation }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Client -->
+          <ng-container matColumnDef="client">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Cliente</th>
+            <td mat-cell *matCellDef="let row">{{ row.client }}</td>
+          </ng-container>
+
+          <!-- Product -->
+          <ng-container matColumnDef="product">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Produto</th>
+            <td mat-cell *matCellDef="let row">{{ row.product }}</td>
+          </ng-container>
+
+          <!-- Country -->
+          <ng-container matColumnDef="country">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>País</th>
+            <td mat-cell *matCellDef="let row">{{ row.country }}</td>
+          </ng-container>
+
+          <!-- Volume -->
+          <ng-container matColumnDef="volume">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Volume (ton)</th>
+            <td mat-cell *matCellDef="let row">{{ row.volume | number:'1.0-0' }}</td>
+          </ng-container>
+
+          <!-- Revenue -->
+          <ng-container matColumnDef="revenue">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Receita</th>
+            <td mat-cell *matCellDef="let row">R$ {{ row.revenue | number:'1.0-0' }}</td>
+          </ng-container>
+
+          <!-- Total Cost -->
+          <ng-container matColumnDef="totalCost">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Custo Total</th>
+            <td mat-cell *matCellDef="let row">R$ {{ row.totalCost | number:'1.0-0' }}</td>
+          </ng-container>
+
+          <!-- Gross Margin -->
+          <ng-container matColumnDef="grossMargin">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Margem Bruta</th>
+            <td mat-cell *matCellDef="let row">R$ {{ row.grossMargin | number:'1.0-0' }}</td>
+          </ng-container>
+
+          <!-- Margin Percent -->
+          <ng-container matColumnDef="marginPercent">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Margem %</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="margin-badge" [ngClass]="getMarginColorClass(row.marginPercent)">
+                {{ row.marginPercent }}%
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Logistics Cost -->
+          <ng-container matColumnDef="logisticsCost">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Custo Logístico</th>
+            <td mat-cell *matCellDef="let row">R$ {{ row.logisticsCost | number:'1.0-0' }}</td>
+          </ng-container>
+
+          <!-- Financial Cost -->
+          <ng-container matColumnDef="financialCost">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Custo Financeiro</th>
+            <td mat-cell *matCellDef="let row">R$ {{ row.financialCost | number:'1.0-0' }}</td>
+          </ng-container>
+
+          <!-- Incoterm -->
+          <ng-container matColumnDef="incoterm">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Incoterm</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="incoterm-badge">{{ row.incoterm }}</span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="clickable-row"></tr>
+        </table>
+      </div>
+
+      <mat-paginator #rentabilidadePaginator
+        [pageSizeOptions]="[10, 25, 50, 100]"
+        [pageSize]="10"
+        showFirstLastButtons>
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+
+</div>

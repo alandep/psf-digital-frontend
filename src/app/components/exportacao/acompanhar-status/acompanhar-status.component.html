@@ -1,0 +1,735 @@
+<div class="acompanhar-status-container">
+
+  <!-- ====== HEADER PREMIUM COM MÉTRICAS ====== -->
+  <div class="status-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">track_changes</mat-icon>
+        <div class="title-content">
+          <h1>Acompanhar Status das Exportações</h1>
+          <p class="subtitle">Monitoramento inteligente em tempo real com IA preditiva</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button mat-icon-button 
+                [color]="realTimeUpdates ? 'primary' : 'basic'"
+                (click)="toggleRealTimeUpdates()"
+                matTooltip="Toggle atualizações em tempo real">
+          <mat-icon>{{ realTimeUpdates ? 'sync' : 'sync_disabled' }}</mat-icon>
+        </button>
+        
+        <button mat-icon-button (click)="refreshManual()" matTooltip="Atualizar dados">
+          <mat-icon [class.spinning]="loading">refresh</mat-icon>
+        </button>
+        
+        <button mat-stroked-button (click)="exportToExcel()" class="export-btn">
+          <mat-icon>download</mat-icon>
+          Exportar
+        </button>
+      </div>
+    </div>
+
+    <!-- Métricas em Tempo Real -->
+    <div class="metrics-dashboard" *ngIf="dashboardData">
+      <div class="metric-card total">
+        <div class="metric-icon">
+          <mat-icon>inventory_2</mat-icon>
+        </div>
+        <div class="metric-content">
+          <div class="metric-value">{{ dashboardData.totalExportacoes }}</div>
+          <div class="metric-label">Total de Exportações</div>
+          <div class="metric-change positive">↗ +12% este mês</div>
+        </div>
+      </div>
+
+      <div class="metric-card pending">
+        <div class="metric-icon">
+          <mat-icon>hourglass_empty</mat-icon>
+        </div>
+        <div class="metric-content">
+          <div class="metric-value">{{ dashboardData.exportacoesPendentes }}</div>
+          <div class="metric-label">Pendentes</div>
+          <div class="metric-change neutral">{{ dashboardData.exportacoesPendentes > 0 ? 'Requer atenção' : 'Em dia' }}</div>
+        </div>
+      </div>
+
+      <div class="metric-card in-progress">
+        <div class="metric-icon">
+          <mat-icon>local_shipping</mat-icon>
+        </div>
+        <div class="metric-content">
+          <div class="metric-value">{{ dashboardData.exportacoesEmAndamento }}</div>
+          <div class="metric-label">Em Andamento</div>
+          <div class="metric-change positive">Dentro do prazo</div>
+        </div>
+      </div>
+
+      <div class="metric-card completed">
+        <div class="metric-icon">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <div class="metric-content">
+          <div class="metric-value">{{ dashboardData.exportacoesCompletas }}</div>
+          <div class="metric-label">Concluídas</div>
+          <div class="metric-change positive">↗ 95% success rate</div>
+        </div>
+      </div>
+
+      <div class="metric-card blocked" *ngIf="dashboardData.exportacoesBloqueadas > 0">
+        <div class="metric-icon">
+          <mat-icon>block</mat-icon>
+        </div>
+        <div class="metric-content">
+          <div class="metric-value">{{ dashboardData.exportacoesBloqueadas }}</div>
+          <div class="metric-label">Bloqueadas</div>
+          <div class="metric-change negative">Requer ação imediata</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== ALERTAS INTELIGENTES ====== -->
+  <div class="alerts-section" *ngIf="alerts.length > 0">
+    <mat-expansion-panel class="alerts-panel" [expanded]="hasCriticalAlerts()">>
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          <mat-icon class="alert-icon critical" *ngIf="hasCriticalAlerts()">error</mat-icon>
+          <mat-icon class="alert-icon warning" *ngIf="!hasCriticalAlerts() && hasWarningAlerts()">warning</mat-icon>
+          <mat-icon class="alert-icon info" *ngIf="hasOnlyInfoAlerts()">info</mat-icon>
+          Alertas Inteligentes
+        </mat-panel-title>
+        <mat-panel-description>
+          <mat-chip-set>
+            <mat-chip class="alert-chip critical" *ngIf="getCriticalAlertsCount() > 0">
+              {{ getCriticalAlertsCount() }} Crítico(s)
+            </mat-chip>
+            <mat-chip class="alert-chip warning" *ngIf="getWarningAlertsCount() > 0">
+              {{ getWarningAlertsCount() }} Aviso(s)  
+            </mat-chip>
+            <mat-chip class="alert-chip info" *ngIf="getInfoAlertsCount() > 0">
+              {{ getInfoAlertsCount() }} Info
+            </mat-chip>
+          </mat-chip-set>
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <div class="alerts-content">
+        <div class="alert-item" 
+             *ngFor="let alert of alerts" 
+             [class]="'alert-type-' + alert.type">
+          <div class="alert-icon-container">
+            <mat-icon [color]="getAlertColor(alert.type)">{{ getAlertIcon(alert.type) }}</mat-icon>
+          </div>
+          <div class="alert-content">
+            <div class="alert-title">{{ alert.title }}</div>
+            <div class="alert-message">{{ alert.message }}</div>
+            <div class="alert-meta">
+              <span class="alert-time">{{ alert.timestamp | date:'short' }}</span>
+              <mat-chip *ngIf="alert.actionRequired" class="action-required-chip">Ação Requerida</mat-chip>
+            </div>
+            <div class="alert-suggestion" *ngIf="alert.suggestedAction">
+              <mat-icon>lightbulb</mat-icon>
+              <span>{{ alert.suggestedAction }}</span>
+            </div>
+          </div>
+          <div class="alert-actions">
+            <button mat-icon-button (click)="resolveAlert(alert)" matTooltip="Resolver alerta">
+              <mat-icon>done</mat-icon>
+            </button>
+            <button mat-icon-button matTooltip="Ver detalhes">
+              <mat-icon>open_in_new</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </mat-expansion-panel>
+  </div>
+
+  <!-- ====== FILTROS INTELIGENTES ====== -->
+  <mat-card class="filters-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>filter_list</mat-icon>
+        Filtros Inteligentes
+      </mat-card-title>
+      <div class="filter-actions">
+        <button mat-button (click)="clearFilters()" color="accent">
+          <mat-icon>clear</mat-icon>
+          Limpar
+        </button>
+      </div>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <div class="filter-row primary">
+          <mat-form-field appearance="outline" class="search-field">
+            <mat-label>Pesquisar</mat-label>
+            <mat-icon matPrefix>search</mat-icon>
+            <input matInput formControlName="searchText" placeholder="Número, produto, importador...">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status" multiple>
+              <mat-option *ngFor="let status of statusOptions" [value]="status.value">
+                <mat-chip [class]="'status-chip-' + status.color">{{ status.label }}</mat-chip>
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Data Início</mat-label>
+            <input matInput [matDatepicker]="startPicker" formControlName="dateFrom">
+            <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+            <mat-datepicker #startPicker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Data Fim</mat-label>
+            <input matInput [matDatepicker]="endPicker" formControlName="dateTo">
+            <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
+            <mat-datepicker #endPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        <div class="filter-row secondary">
+          <mat-form-field appearance="outline">
+            <mat-label>Importador</mat-label>
+            <mat-icon matPrefix>business</mat-icon>
+            <input matInput formControlName="importer" placeholder="Nome do importador">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Produto</mat-label>
+            <mat-icon matPrefix>inventory</mat-icon>
+            <input matInput formControlName="product" placeholder="Nome do produto">
+          </mat-form-field>
+
+          <div class="filter-toggles">
+            <mat-slide-toggle formControlName="alertsOnly" color="accent">
+              <mat-icon>warning</mat-icon>
+              Apenas com Alertas
+            </mat-slide-toggle>
+
+            <mat-slide-toggle formControlName="delayedOnly" color="warn">
+              <mat-icon>schedule</mat-icon>
+              Apenas Atrasados
+            </mat-slide-toggle>
+          </div>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- ====== CONTROLES DE VISUALIZAÇÃO ====== -->
+  <div class="view-controls">
+    <mat-button-toggle-group [(value)]="selectedView" (change)="changeView($event.value)">
+      <mat-button-toggle value="cards">
+        <mat-icon>view_module</mat-icon>
+        Cards
+      </mat-button-toggle>
+      <mat-button-toggle value="timeline">
+        <mat-icon>timeline</mat-icon>
+        Timeline
+      </mat-button-toggle>
+      <mat-button-toggle value="table">
+        <mat-icon>table_view</mat-icon>
+        Tabela
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+
+    <div class="view-info">
+      <span class="result-count">{{ dataSource.data.length }} exportações encontradas</span>
+      <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
+    </div>
+  </div>
+
+  <!-- ====== VISUALIZAÇÃO EM CARDS ====== -->
+  <div class="cards-view" *ngIf="selectedView === 'cards'">
+    <div class="export-cards-grid">
+      <mat-card class="export-card" 
+               *ngFor="let exportacao of dataSource.data; trackBy: trackByExportId"
+               (click)="selectExport(exportacao)"
+               [class.has-alerts]="hasAlertsForExport(exportacao.export_id)">
+        
+        <mat-card-header>
+          <mat-card-title>
+            <div class="card-title">
+              <span class="export-number">{{ exportacao.export_number }}</span>
+              <mat-chip [class]="'status-chip status-' + getStatusColor(exportacao.export_status)">
+                {{ getStatusLabel(exportacao.export_status) }}
+              </mat-chip>
+            </div>
+          </mat-card-title>
+          
+          <mat-card-subtitle>
+            <div class="product-info">
+              <mat-icon>inventory</mat-icon>
+              {{ exportacao.product_name }}
+            </div>
+          </mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <div class="export-details">
+            <div class="detail-row">
+              <mat-icon>business</mat-icon>
+              <span>{{ exportacao.importer_name }}</span>
+            </div>
+            
+            <div class="detail-row">
+              <mat-icon>public</mat-icon>
+              <span>{{ exportacao.destination_country }}</span>
+            </div>
+            
+            <div class="detail-row">
+              <mat-icon>scale</mat-icon>
+              <span>{{ exportacao.quantity | number }} {{ exportacao.unit }}</span>
+            </div>
+
+            <div class="detail-row">
+              <mat-icon>attach_money</mat-icon>
+              <span>{{ exportacao.total_value | currency:'USD':'symbol':'1.2-2' }}</span>
+            </div>
+
+            <div class="detail-row" *ngIf="exportacao.eta">
+              <mat-icon>event</mat-icon>
+              <span>{{ exportacao.eta | date:'shortDate' }}</span>
+            </div>
+          </div>
+
+          <!-- Barra de Progresso -->
+          <div class="progress-section">
+            <div class="progress-label">
+              <span>Progresso</span>
+              <span class="progress-percent">{{ getProgressPercentage(exportacao.export_status) }}%</span>
+            </div>
+            <mat-progress-bar 
+              mode="determinate" 
+              [value]="getProgressPercentage(exportacao.export_status)"
+              [color]="getProgressPercentage(exportacao.export_status) === 100 ? 'primary' : 'accent'">
+            </mat-progress-bar>
+          </div>
+
+          <!-- Alertas na carta -->
+          <div class="card-alerts" *ngIf="hasAlertsForExport(exportacao.export_id)">
+            <mat-chip-set>
+              <mat-chip *ngFor="let alert of getAlertsForExport(exportacao.export_id).slice(0, 2)"
+                        [class]="'alert-chip-small ' + alert.type">
+                <mat-icon>{{ getAlertIcon(alert.type) }}</mat-icon>
+                {{ alert.title }}
+              </mat-chip>
+            </mat-chip-set>
+          </div>
+        </mat-card-content>
+
+        <mat-card-actions>
+          <button mat-button (click)="viewDetails(exportacao); $event.stopPropagation()">
+            <mat-icon>visibility</mat-icon>
+            Detalhes
+          </button>
+          <button mat-button (click)="selectExport(exportacao); $event.stopPropagation()">
+            <mat-icon>timeline</mat-icon>
+            Timeline
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+
+    <!-- Mensagem quando não há dados -->
+    <div class="no-data" *ngIf="dataSource.data.length === 0 && !loading">
+      <mat-icon>search_off</mat-icon>
+      <h3>Nenhuma exportação encontrada</h3>
+      <p>Tente ajustar os filtros ou criar uma nova exportação</p>
+      <button mat-raised-button color="primary" routerLink="/home-logged/exportacao/novo">
+        <mat-icon>add</mat-icon>
+        Nova Exportação
+      </button>
+    </div>
+  </div>
+
+  <!-- ====== VISUALIZAÇÃO EM TIMELINE ====== -->
+  <div class="timeline-view" *ngIf="selectedView === 'timeline'">
+    <div class="timeline-container" *ngFor="let tracking of trackingData">
+      <mat-card class="timeline-card">
+        <mat-card-header>
+          <mat-card-title>
+            {{ tracking.exportacao.export_number }} - {{ tracking.exportacao.product_name }}
+          </mat-card-title>
+          <mat-card-subtitle>
+            {{ tracking.exportacao.importer_name }} | {{ tracking.exportacao.destination_country }}
+          </mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <div class="timeline-events">
+            <div class="timeline-event" 
+                 *ngFor="let event of tracking.timeline"
+                 [class]="'event-' + getTimelineStatus(event)">
+              
+              <div class="event-marker">
+                <mat-icon [class]="'icon-' + getTimelineStatus(event)">{{ getTimelineIcon(event) }}</mat-icon>
+              </div>
+
+              <div class="event-content">
+                <div class="event-header">
+                  <h4 class="event-title">{{ event.title }}</h4>
+                  <span class="event-date">{{ event.date | date:'short' }}</span>
+                </div>
+                
+                <p class="event-description">{{ event.description }}</p>
+                
+                <div class="event-details" *ngIf="event.details">
+                  <mat-icon>info</mat-icon>
+                  <span>{{ event.details }}</span>
+                </div>
+
+                <div class="event-documents" *ngIf="event.documents?.length">
+                  <mat-icon>attach_file</mat-icon>
+                  <mat-chip-set>
+                    <mat-chip *ngFor="let doc of event.documents">{{ doc }}</mat-chip>
+                  </mat-chip-set>
+                </div>
+
+                <div class="event-estimated" *ngIf="event.estimatedCompletion && event.status === 'current'">
+                  <mat-icon>schedule</mat-icon>
+                  <span>Estimativa: {{ event.estimatedCompletion | date:'short' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+
+  <!-- ====== VISUALIZAÇÃO EM TABELA ====== -->
+  <div class="table-view" *ngIf="selectedView === 'table'">
+    <mat-card class="table-card">
+      <mat-table [dataSource]="dataSource" matSort class="export-table">
+        
+        <!-- Checkbox Column -->
+        <ng-container matColumnDef="select">
+          <mat-header-cell *matHeaderCellDef>
+            <mat-checkbox></mat-checkbox>
+          </mat-header-cell>
+          <mat-cell *matCellDef="let element">
+            <mat-checkbox></mat-checkbox>
+          </mat-cell>
+        </ng-container>
+
+        <!-- Export Number Column -->
+        <ng-container matColumnDef="export_number">
+          <mat-header-cell *matHeaderCellDef mat-sort-header> Número </mat-header-cell>
+          <mat-cell *matCellDef="let element" class="export-number-cell">
+            <div class="cell-content">
+              <strong>{{ element.export_number }}</strong>
+              <small>{{ element.created_at | date:'shortDate' }}</small>
+            </div>
+          </mat-cell>
+        </ng-container>
+
+        <!-- Product Column -->
+        <ng-container matColumnDef="product_name">
+          <mat-header-cell *matHeaderCellDef mat-sort-header> Produto </mat-header-cell>
+          <mat-cell *matCellDef="let element">
+            <div class="product-cell">
+              <div class="product-name">{{ element.product_name }}</div>
+              <div class="product-details">
+                NCM: {{ element.ncm_code }} | {{ element.quantity | number }} {{ element.unit }}
+              </div>
+            </div>
+          </mat-cell>
+        </ng-container>
+
+        <!-- Importer Column -->
+        <ng-container matColumnDef="importer_name">
+          <mat-header-cell *matHeaderCellDef mat-sort-header> Importador </mat-header-cell>
+          <mat-cell *matCellDef="let element">
+            <div class="importer-cell">
+              <div class="importer-name">{{ element.importer_name }}</div>
+              <div class="importer-country">{{ element.destination_country }}</div>
+            </div>
+          </mat-cell>
+        </ng-container>
+
+        <!-- Status Column -->
+        <ng-container matColumnDef="status">
+          <mat-header-cell *matHeaderCellDef mat-sort-header> Status </mat-header-cell>
+          <mat-cell *matCellDef="let element">
+            <mat-chip [class]="'status-chip status-' + getStatusColor(element.export_status)">
+              {{ getStatusLabel(element.export_status) }}
+            </mat-chip>
+          </mat-cell>
+        </ng-container>
+
+        <!-- Progress Column -->
+        <ng-container matColumnDef="progress">
+          <mat-header-cell *matHeaderCellDef> Progresso </mat-header-cell>
+          <mat-cell *matCellDef="let element">
+            <div class="progress-cell">
+              <mat-progress-bar 
+                mode="determinate" 
+                [value]="getProgressPercentage(element.export_status)">
+              </mat-progress-bar>
+              <span class="progress-text">{{ getProgressPercentage(element.export_status) }}%</span>
+            </div>
+          </mat-cell>
+        </ng-container>
+
+        <!-- Delivery Column -->
+        <ng-container matColumnDef="eta_delivery">
+          <mat-header-cell *matHeaderCellDef mat-sort-header> Entrega Prevista </mat-header-cell>
+          <mat-cell *matCellDef="let element">
+            <div class="delivery-cell" *ngIf="element.eta">
+              <mat-icon>event</mat-icon>
+              {{ element.eta | date:'shortDate' }}
+            </div>
+            <span *ngIf="!element.eta" class="no-date">Não definida</span>
+          </mat-cell>
+        </ng-container>
+
+        <!-- Alerts Column -->
+        <ng-container matColumnDef="alerts">
+          <mat-header-cell *matHeaderCellDef> Alertas </mat-header-cell>
+          <mat-cell *matCellDef="let element">
+            <div class="alerts-cell">
+              <mat-chip-set *ngIf="hasAlertsForExport(element.export_id)">
+                <mat-chip *ngFor="let alert of getAlertsForExport(element.export_id).slice(0, 1)"
+                          [class]="'alert-chip-mini ' + alert.type"
+                          matTooltip="{{ alert.message }}">
+                  <mat-icon>{{ getAlertIcon(alert.type) }}</mat-icon>
+                </mat-chip>
+                <mat-chip *ngIf="hasMultipleAlertsForExport(element.export_id)"
+                          class="alert-count">
+                  +{{ getAlertCountForExport(element.export_id) - 1 }}
+                </mat-chip>
+              </mat-chip-set>
+              <span *ngIf="!hasAlertsForExport(element.export_id)" class="no-alerts">
+                <mat-icon>check_circle</mat-icon>
+              </span>
+            </div>
+          </mat-cell>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <mat-header-cell *matHeaderCellDef> Ações </mat-header-cell>
+          <mat-cell *matCellDef="let element">
+            <button mat-icon-button [matMenuTriggerFor]="actionsMenu" matTooltip="Ações">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #actionsMenu="matMenu">
+              <button mat-menu-item (click)="viewDetails(element)">
+                <mat-icon>visibility</mat-icon>
+                <span>Ver Detalhes</span>
+              </button>
+              <button mat-menu-item (click)="selectExport(element)">
+                <mat-icon>timeline</mat-icon>
+                <span>Timeline</span>
+              </button>
+              <mat-divider></mat-divider>
+              <button mat-menu-item>
+                <mat-icon>edit</mat-icon>
+                <span>Editar</span>
+              </button>
+              <button mat-menu-item>
+                <mat-icon>file_download</mat-icon>
+                <span>Exportar PDF</span>
+              </button>
+            </mat-menu>
+          </mat-cell>
+        </ng-container>
+
+        <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+        <mat-row *matRowDef="let row; columns: displayedColumns;" 
+                 (click)="selectExport(row)"
+                 class="table-row"></mat-row>
+      </mat-table>
+
+      <mat-paginator [pageSizeOptions]="[5, 10, 20, 50]" showFirstLastButtons></mat-paginator>
+    </mat-card>
+  </div>
+
+  <!-- ====== LOADING STATE ====== -->
+  <div class="loading-container" *ngIf="loading && dataSource.data.length === 0">
+    <mat-spinner diameter="60"></mat-spinner>
+    <p>Carregando dados de exportação...</p>
+  </div>
+
+</div>
+
+<!-- ====== SIDENAV PARA DETALHES ====== -->
+<mat-sidenav-container class="detail-sidenav-container">
+  <mat-sidenav #detailSidenav 
+               [(opened)]="sidenavOpened" 
+               mode="over" 
+               position="end"
+               class="detail-sidenav">
+    
+    <div class="sidenav-header" *ngIf="selectedExport">
+      <button mat-icon-button (click)="sidenavOpened = false" class="close-btn">
+        <mat-icon>close</mat-icon>
+      </button>
+      <div class="export-title">
+        <h2>{{ selectedExport.export_number }}</h2>
+        <p>{{ selectedExport.product_name }}</p>
+      </div>
+    </div>
+
+    <div class="sidenav-content" *ngIf="selectedExport">
+      <mat-tab-group>
+        <mat-tab label="Resumo">
+          <div class="tab-content summary-content">
+            <!-- Informações Principais -->
+            <mat-card class="info-card">
+              <mat-card-header>
+                <mat-card-title>Informações Gerais</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <mat-icon>business</mat-icon>
+                    <div>
+                      <label>Importador</label>
+                      <span>{{ selectedExport.importer_name }}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="info-item">
+                    <mat-icon>public</mat-icon>
+                    <div>
+                      <label>Destino</label>
+                      <span>{{ selectedExport.destination_country }}</span>
+                    </div>
+                  </div>
+
+                  <div class="info-item">
+                    <mat-icon>attach_money</mat-icon>
+                    <div>
+                      <label>Valor Total</label>
+                      <span>{{ selectedExport.total_value | currency:'USD':'symbol':'1.2-2' }}</span>
+                    </div>
+                  </div>
+
+                  <div class="info-item">
+                    <mat-icon>local_shipping</mat-icon>
+                    <div>
+                      <label>Incoterm</label>
+                      <span>{{ selectedExport.incoterm }}</span>
+                    </div>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Status atual -->
+            <mat-card class="status-card">
+              <mat-card-header>
+                <mat-card-title>Status Atual</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="current-status">
+                  <mat-chip [class]="'status-chip-large status-' + getStatusColor(selectedExport.export_status)">
+                    {{ getStatusLabel(selectedExport.export_status) }}
+                  </mat-chip>
+                  <mat-progress-bar 
+                    mode="determinate" 
+                    [value]="getProgressPercentage(selectedExport.export_status)"
+                    class="status-progress">
+                  </mat-progress-bar>
+                  <p class="status-description">Progresso: {{ getProgressPercentage(selectedExport.export_status) }}%</p>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </mat-tab>
+
+        <mat-tab label="Timeline">
+          <div class="tab-content timeline-content">
+            <div class="timeline-detail" *ngFor="let tracking of trackingData">
+              <div class="timeline-events-detail" *ngIf="tracking.exportacao.export_id === selectedExport.export_id">
+                <div class="timeline-event-detail" 
+                     *ngFor="let event of tracking.timeline"
+                     [class]="'event-detail-' + getTimelineStatus(event)">
+                  
+                  <div class="event-marker-detail">
+                    <mat-icon [class]="'icon-detail-' + getTimelineStatus(event)">
+                      {{ getTimelineIcon(event) }}
+                    </mat-icon>
+                  </div>
+
+                  <div class="event-content-detail">
+                    <div class="event-header-detail">
+                      <h4>{{ event.title }}</h4>
+                      <span class="event-date">{{ event.date | date:'medium' }}</span>
+                    </div>
+                    
+                    <p>{{ event.description }}</p>
+                    
+                    <div class="event-meta" *ngIf="event.details || event.documents || event.estimatedCompletion">
+                      <div class="meta-item" *ngIf="event.details">
+                        <mat-icon>info</mat-icon>
+                        <span>{{ event.details }}</span>
+                      </div>
+                      
+                      <div class="meta-item" *ngIf="event.documents?.length">
+                        <mat-icon>attach_file</mat-icon>
+                        <mat-chip-set>
+                          <mat-chip *ngFor="let doc of event.documents">{{ doc }}</mat-chip>
+                        </mat-chip-set>
+                      </div>
+
+                      <div class="meta-item estimated" *ngIf="event.estimatedCompletion && event.status === 'current'">
+                        <mat-icon>schedule</mat-icon>
+                        <span>Estimativa: {{ event.estimatedCompletion | date:'short' }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <mat-tab label="Alertas" [disabled]="!hasAlertsForExport(selectedExport.export_id)">
+          <div class="tab-content alerts-content">
+            <div class="alert-detail" *ngFor="let alert of getAlertsForExport(selectedExport.export_id)">
+              <mat-card [class]="'alert-card alert-card-' + alert.type">
+                <mat-card-content>
+                  <div class="alert-detail-header">
+                    <mat-icon [class]="'alert-icon-' + alert.type">{{ getAlertIcon(alert.type) }}</mat-icon>
+                    <div class="alert-detail-title">
+                      <h4>{{ alert.title }}</h4>
+                      <span class="alert-timestamp">{{ alert.timestamp | date:'medium' }}</span>
+                    </div>
+                  </div>
+                  
+                  <p class="alert-detail-message">{{ alert.message }}</p>
+                  
+                  <div class="alert-suggestion" *ngIf="alert.suggestedAction">
+                    <mat-icon>lightbulb</mat-icon>
+                    <span><strong>Sugestão:</strong> {{ alert.suggestedAction }}</span>
+                  </div>
+                  
+                  <div class="alert-actions" *ngIf="alert.actionRequired">
+                    <button mat-raised-button color="primary" (click)="resolveAlert(alert)">
+                      <mat-icon>done</mat-icon>
+                      Resolver
+                    </button>
+                    <button mat-button>
+                      <mat-icon>schedule</mat-icon>
+                      Lembrar Mais Tarde
+                    </button>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            </div>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </div>
+  </mat-sidenav>
+</mat-sidenav-container>

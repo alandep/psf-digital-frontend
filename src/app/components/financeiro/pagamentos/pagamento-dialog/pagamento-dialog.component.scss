@@ -1,0 +1,111 @@
+@use 'sass:color';
+
+// === VARIABLES ===
+$primary: #00796b;
+$primary-dark: #004d40;
+
+// === HOST - PREVENT OVERFLOW ===
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+// === DIALOG HEADER ===
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 28px;
+  background: linear-gradient(135deg, $primary, $primary-dark);
+  color: white;
+  flex-shrink: 0;
+  min-height: 64px;
+
+  h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.02em;
+
+    mat-icon {
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+    }
+  }
+
+  button {
+    color: white;
+    opacity: 0.9;
+    transition: opacity 0.2s;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+// === DIALOG CONTENT ===
+mat-dialog-content {
+  flex: 1;
+  padding: 24px 28px !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin: 0 !important;
+  max-height: none !important;
+}
+
+// === DIALOG ACTIONS ===
+mat-dialog-actions {
+  flex-shrink: 0;
+  padding: 16px 28px !important;
+  margin: 0 !important;
+  border-top: 1px solid #e0e0e0;
+  background: #fafafa;
+  gap: 12px;
+
+  button {
+    min-width: 120px;
+  }
+}
+
+// === TAB CONTENT ===
+.tab-content {
+  padding: 24px 4px;
+}
+
+// === FORM STYLES ===
+.payment-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  .form-field-full {
+    grid-column: 1 / -1;
+  }
+}
+
+// === RESPONSIVE ===
+@media (max-width: 768px) {
+  .dialog-header {
+    padding: 16px 20px;
+
+    h2 {
+      font-size: 1.15rem;
+    }
+  }
+
+  mat-dialog-content {
+    padding: 16px 20px !important;
+  }
+
+  .payment-form {
+    grid-template-columns: 1fr;
+  }
+}

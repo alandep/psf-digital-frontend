@@ -1,0 +1,690 @@
+<!-- HEADER PREMIUM DO MODAL -->
+<div class="certification-dialog-header">
+  <div class="dialog-title-section">
+    <mat-icon class="dialog-icon">{{ isCreating ? 'add_circle' : isEditing ? 'edit' : 'visibility' }}</mat-icon>
+    <div class="title-content">
+      <h2 class="dialog-title">
+        {{ isCreating ? 'Nova Certificação' : 
+           isEditing ? 'Editar Certificação' : 
+           'Detalhes da Certificação' }}
+      </h2>
+      <p class="dialog-subtitle">
+        {{ isCreating ? 'Configure todas as informações da nova certificação' : 
+           isEditing ? 'Atualize os dados da certificação selecionada' : 
+           'Visualize todos os detalhes da certificação' }}
+      </p>
+    </div>
+  </div>
+  
+  <button mat-icon-button 
+          mat-dialog-close 
+          class="close-button">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<!-- CONTEÚDO PREMIUM COM TABS -->
+<mat-dialog-content class="certification-dialog-content">
+  
+  <!-- FORMULÁRIO PREMIUM COM TABS -->
+  <mat-tab-group class="certification-tab-group" 
+                 *ngIf="certificationForm && (isCreating || isEditing)"
+                 [(selectedIndex)]="selectedTabIndex">
+    
+    <!-- TAB 1: IDENTIFICAÇÃO -->
+    <mat-tab label="Identificação">
+      <div class="tab-content identification-content">
+        <form [formGroup]="certificationForm">
+          <div formGroupName="identification" class="premium-form-section" *ngIf="certificationForm.get('identification')">`
+            
+            <!-- Card: Dados Básicos -->
+            <mat-card class="form-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>inventory</mat-icon>
+                  Informações do Produto
+                </mat-card-title>
+                <mat-card-subtitle>Dados básicos do produto e tipo de certificação</mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="form-grid">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>ID do Produto</mat-label>
+                    <input matInput formControlName="product_id" required>
+                    <mat-icon matSuffix>qr_code</mat-icon>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Nome do Produto</mat-label>
+                    <input matInput formControlName="product_name" required>
+                    <mat-icon matSuffix>inventory_2</mat-icon>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Tipo de Certificação</mat-label>
+                    <mat-select formControlName="certification_type" required>
+                      <mat-option *ngFor="let type of certificationTypes" [value]="type">
+                        {{ type | titlecase }}
+                      </mat-option>
+                    </mat-select>
+                    <mat-icon matSuffix>verified_user</mat-icon>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Categoria</mat-label>
+                    <mat-select formControlName="certification_category" required>
+                      <mat-option *ngFor="let category of certificationCategories" [value]="category">
+                        {{ category | titlecase }}
+                      </mat-option>
+                    </mat-select>
+                    <mat-icon matSuffix>category</mat-icon>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width description-field">
+                    <mat-label>Descrição</mat-label>
+                    <textarea matInput formControlName="description" 
+                              rows="3" 
+                              placeholder="Descrição opcional da certificação"></textarea>
+                    <mat-icon matSuffix>description</mat-icon>
+                  </mat-form-field>
+                </div>
+              </mat-card-content>
+            </mat-card>
+            
+          </div>
+        </form>
+      </div>
+    </mat-tab>
+
+    <!-- TAB 2: CERTIFICADO -->
+    <mat-tab label="Certificado">
+      <div class="tab-content certificate-content">
+        <form [formGroup]="certificationForm">
+          <div formGroupName="certificate" class="premium-form-section">
+            
+            <!-- Card: Upload de Documento -->
+            <mat-card class="form-card upload-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>cloud_upload</mat-icon>
+                  Upload de Documento
+                </mat-card-title>
+                <mat-card-subtitle>
+                  Anexe o certificado oficial (OCR + IA será aplicado)
+                </mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="premium-upload-zone" (click)="processDocumentOCR()">
+                  <mat-icon class="upload-icon">cloud_upload</mat-icon>
+                  <h4>Arraste o arquivo ou clique para selecionar</h4>
+                  <p>Suporte: PDF, JPG, PNG (Máx: 10MB)</p>
+                  <mat-chip class="ai-chip">
+                    <mat-icon>psychology</mat-icon>
+                    OCR + IA
+                  </mat-chip>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Card: Dados do Certificado -->
+            <mat-card class="form-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>description</mat-icon>
+                  Dados do Certificado
+                </mat-card-title>
+                <mat-card-subtitle>
+                  Informações extraídas automaticamente via IA/OCR
+                </mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="form-grid">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Número do Certificado</mat-label>
+                    <input matInput formControlName="certification_number" required>
+                    <mat-icon matSuffix>confirmation_number</mat-icon>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Órgão Emissor</mat-label>
+                    <mat-select formControlName="issuing_authority" required>
+                      <mat-option *ngFor="let authority of issuingAuthorities" [value]="authority">
+                        {{ authority }}
+                      </mat-option>
+                    </mat-select>
+                    <mat-icon matSuffix>account_balance</mat-icon>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>País Emissor</mat-label>
+                    <input matInput formControlName="issuing_country" required>
+                    <mat-icon matSuffix>public</mat-icon>
+                  </mat-form-field>
+
+                  <div class="date-row">
+                    <mat-form-field appearance="outline" class="date-field">
+                      <mat-label>Data de Emissão</mat-label>
+                      <input matInput [matDatepicker]="issueDatePicker1"
+                             formControlName="issue_date" required>
+                      <mat-datepicker-toggle matSuffix [for]="issueDatePicker1"></mat-datepicker-toggle>
+                      <mat-datepicker #issueDatePicker1></mat-datepicker>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="date-field">
+                      <mat-label>Data de Validade</mat-label>
+                      <input matInput [matDatepicker]="expiryDatePicker1"
+                             formControlName="expiry_date">
+                      <mat-datepicker-toggle matSuffix [for]="expiryDatePicker1"></mat-datepicker-toggle>
+                      <mat-datepicker #expiryDatePicker1></mat-datepicker>
+                    </mat-form-field>
+                  </div>
+
+                  <div class="checkbox-section">
+                    <mat-checkbox formControlName="digital_signature" class="premium-checkbox">
+                      <mat-icon>verified_user</mat-icon>
+                      Possui Assinatura Digital
+                    </mat-checkbox>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+            
+          </div>
+        </form>
+      </div>
+    </mat-tab>
+
+    <!-- TAB 3: COMPLIANCE -->
+    <mat-tab label="Compliance">
+      <div class="tab-content compliance-content">
+        <div class="premium-form-section">
+          
+          <!-- Card: Exigências por País -->
+          <mat-card class="form-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>flag</mat-icon>
+                Exigências Internacionais
+              </mat-card-title>
+              <mat-card-subtitle>
+                Requisitos de compliance por país de destino
+              </mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="compliance-grid">
+                <mat-card class="compliance-item-card" *ngFor="let compliance of countryCompliances; trackBy: trackByCertId">
+                  <mat-card-header>
+                    <mat-card-title>{{ compliance.destination_country }}</mat-card-title>
+                    <mat-chip [class]="compliance.mandatory ? 'priority-chip warn' : 'priority-chip accent'">
+                      {{ compliance.mandatory ? 'Obrigatório' : 'Opcional' }}
+                    </mat-chip>
+                  </mat-card-header>
+                  <mat-card-content class="compliance-details">
+                    <div class="detail-item">
+                      <mat-icon>gavel</mat-icon>
+                      <span><strong>Exigência:</strong> {{ compliance.regulatory_requirement }}</span>
+                    </div>
+                    <div class="detail-item">
+                      <mat-icon>business</mat-icon>  
+                      <span><strong>Órgão:</strong> {{ compliance.issuing_agency_required }}</span>
+                    </div>
+                    <mat-chip [class]="'status-chip ' + getComplianceColor(compliance.compliance_status)">
+                      <mat-icon>{{ compliance.compliance_status === 'OK' ? 'check_circle' : 
+                                 compliance.compliance_status === 'WARNING' ? 'warning' : 'error' }}</mat-icon>
+                      {{ compliance.compliance_status }}
+                    </mat-chip>
+                  </mat-card-content>
+                </mat-card>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+        </div>
+      </div>
+    </mat-tab>
+
+      <!-- TAB 2: CERTIFICADO -->
+      <mat-tab label="Certificado">
+        <div class="tab-content certificate-content">
+          <div class="premium-form-section">
+            
+            <!-- Card: Upload do Certificado -->
+            <mat-card class="form-card upload-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>cloud_upload</mat-icon>
+                  Upload do Certificado
+                </mat-card-title>
+                <mat-card-subtitle>
+                  Faça upload do arquivo de certificado para extração automática via IA
+                </mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="upload-zone">
+                  <mat-icon class="upload-icon">cloud_upload</mat-icon>
+                  <p>Arraste o arquivo aqui ou clique para selecionar</p>
+                  <p class="upload-hint">PDF, JPG, PNG - Máximo 10MB</p>
+                  <mat-chip class="ai-chip">
+                    <mat-icon>psychology</mat-icon>
+                    Extração Automática via IA
+                  </mat-chip>
+                </div>
+              </mat-card-content>
+            </mat-card>
+            
+            <!-- Card: Dados do Certificado -->
+            <mat-card class="form-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>description</mat-icon>
+                  Dados do Certificado
+                </mat-card-title>
+                <mat-card-subtitle>Informações extraídas ou inseridas manualmente</mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="form-grid" *ngIf="certificationForm">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Número da Certificação</mat-label>
+                    <input matInput formControlName="certification_number" required>
+                    <mat-icon matSuffix>confirmation_number</mat-icon>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Autoridade Emissora</mat-label>
+                    <mat-select formControlName="issuing_authority" required>
+                      <mat-option *ngFor="let authority of issuingAuthorities" [value]="authority">
+                        {{ authority }}
+                      </mat-option>
+                    </mat-select>
+                    <mat-icon matSuffix>account_balance</mat-icon>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Data de Emissão</mat-label>
+                    <input matInput formControlName="issue_date" [matDatepicker]="issuePicker2" required>
+                    <mat-hint>DD/MM/YYYY</mat-hint>
+                    <mat-datepicker-toggle matSuffix [for]="issuePicker2"></mat-datepicker-toggle>
+                    <mat-datepicker #issuePicker2></mat-datepicker>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Data de Validade</mat-label>
+                    <input matInput formControlName="expiry_date" [matDatepicker]="expiryPicker2">
+                    <mat-hint>DD/MM/YYYY (opcional)</mat-hint>
+                    <mat-datepicker-toggle matSuffix [for]="expiryPicker2"></mat-datepicker-toggle>
+                    <mat-datepicker #expiryPicker2></mat-datepicker>
+                  </mat-form-field>
+                </div>
+              </mat-card-content>
+            </mat-card>
+            
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- TAB 3: CONFORMIDADE -->
+      <mat-tab label="Conformidade">
+        <div class="tab-content compliance-content">
+          <div class="premium-form-section">
+            
+            <!-- Card: Países de Destino -->
+            <mat-card class="form-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>public</mat-icon>
+                  Conformidade por País
+                </mat-card-title>
+                <mat-card-subtitle>Verificação automática de exigências regulatórias</mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="compliance-grid">
+                  <div *ngFor="let compliance of countryCompliances" class="compliance-item">
+                    <div class="country-header">
+                      <span class="country-name">{{ compliance.destination_country }}</span>
+                      <mat-chip [color]="getComplianceColor(compliance.compliance_status)">
+                        {{ compliance.compliance_status }}
+                      </mat-chip>
+                    </div>
+                    <div class="requirements">
+                      <span *ngIf="compliance.regulatory_requirement">{{ compliance.regulatory_requirement }}</span>
+                    </div>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+            
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- TAB 4: FINALIZAR -->
+      <mat-tab label="Finalizar">
+        <div class="tab-content finalize-content">
+          <div class="premium-form-section">
+            
+            <!-- Card: Resumo -->
+            <mat-card class="form-card summary-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>checklist</mat-icon>
+                  Resumo da Certificação
+                </mat-card-title>
+                <mat-card-subtitle>Revise as informações antes de finalizar</mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="summary-grid" *ngIf="certificationForm">
+                  <div class="summary-item">
+                    <label>Produto:</label>
+                    <span>{{ certificationForm.get('identification.product_name')?.value || 'Não informado' }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <label>Tipo:</label>
+                    <span>{{ certificationForm.get('identification.certification_type')?.value || 'Não informado' }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <label>Número:</label>
+                    <span>{{ certificationForm.get('certificate.certification_number')?.value || 'Não informado' }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <label>Autoridade:</label>
+                    <span>{{ certificationForm.get('certificate.issuing_authority')?.value || 'Não informado' }}</span>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+            
+          </div>
+      </div>
+    </mat-tab>
+
+    <!-- TAB 3: CONFORMIDADE / EXPORTAÇÃO -->
+    <mat-tab label="Conformidade">
+      <div class="tab-content conformidade-content">
+        <form [formGroup]="certificationForm">
+          <div formGroupName="export_integration" class="premium-form-section" *ngIf="certificationForm.get('export_integration')">
+            <!-- Card: Integração com Exportação -->
+            <mat-card class="form-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>local_shipping</mat-icon>
+                  Exportação
+                </mat-card-title>
+                <mat-card-subtitle>
+                  Integração com embarques e DUE
+                </mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="form-grid">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>ID da Exportação</mat-label>
+                    <input matInput formControlName="export_id">
+                    <mat-icon matSuffix>export</mat-icon>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>ID do Embarque</mat-label>
+                    <input matInput formControlName="shipment_id">
+                    <mat-icon matSuffix>inventory</mat-icon>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Número da DUE</mat-label>
+                    <input matInput formControlName="due_number">
+                    <mat-icon matSuffix>receipt_long</mat-icon>
+                  </mat-form-field>
+
+                  <div class="checkbox-section">
+                    <mat-checkbox class="premium-checkbox" formControlName="auto_attach_to_export">
+                      <mat-icon>link</mat-icon>
+                      Anexar automaticamente às exportações
+                    </mat-checkbox>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+          </div>
+          
+          <div formGroupName="ai_automation" class="premium-form-section" *ngIf="certificationForm.get('ai_automation')">
+            <!-- Card: IA & Automação -->
+            <mat-card class="form-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>psychology</mat-icon>
+                  Inteligência Artificial
+                </mat-card-title>
+                <mat-card-subtitle>
+                  Configurações de automação e IA
+                </mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="form-grid">
+                  <div class="checkbox-section">
+                    <mat-checkbox class="premium-checkbox" formControlName="ai_generated">
+                      <mat-icon>auto_awesome</mat-icon>
+                      Certificação gerada por IA
+                    </mat-checkbox>
+
+                    <mat-checkbox class="premium-checkbox" formControlName="ai_document_extracted">
+                      <mat-icon>scanner</mat-icon>
+                      OCR aplicado no documento
+                    </mat-checkbox>
+
+                    <mat-checkbox class="premium-checkbox" formControlName="ai_compliance_check">
+                      <mat-icon>verified_user</mat-icon>
+                      Validação automática de compliance
+                    </mat-checkbox>
+                  </div>
+
+                  <!-- Métricas IA -->
+                  <div class="ai-metrics" *ngIf="certificationForm.get('ai_automation.ai_confidence_score')?.value > 0">
+                    <h5>
+                      <mat-icon>analytics</mat-icon>
+                      Métricas de IA
+                    </h5>
+                    <div class="metric-item">
+                      <span>Confiança:</span>
+                      <mat-progress-bar mode="determinate" 
+                                        [value]="certificationForm.get('ai_automation.ai_confidence_score')?.value * 100"
+                                        color="accent">
+                      </mat-progress-bar>
+                      <span>{{ formatPercentage(certificationForm.get('ai_automation.ai_confidence_score')?.value) }}</span>
+                    </div>
+
+                    <div class="metric-item">
+                      <span>Risco:</span>
+                      <mat-progress-bar mode="determinate" 
+                                        [value]="certificationForm.get('ai_automation.ai_risk_score')?.value * 100"
+                                        [color]="getRiskColor(certificationForm.get('ai_automation.ai_risk_level')?.value)">
+                      </mat-progress-bar>
+                      <span>{{ formatPercentage(certificationForm.get('ai_automation.ai_risk_score')?.value) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </form>
+      </div>
+    </mat-tab>
+
+    <!-- TAB 4: AUDITORIA -->
+    <mat-tab label="Auditoria">
+      <div class="tab-content audit-content">
+        <form [formGroup]="certificationForm">
+          <div formGroupName="audit" class="premium-form-section" *ngIf="certificationForm.get('audit')">
+            <!-- Card: Auditoria -->
+            <mat-card class="form-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>history</mat-icon>
+                  Auditoria
+                </mat-card-title>
+                <mat-card-subtitle>
+                  Informações de controle e rastreabilidade
+                </mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="form-grid">
+                  <div class="date-row">
+                    <mat-form-field appearance="outline" class="date-field">
+                      <mat-label>Criado em</mat-label>
+                      <input matInput formControlName="created_at" readonly>
+                      <mat-icon matSuffix>schedule</mat-icon>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="date-field">
+                      <mat-label>Criado por</mat-label>
+                      <input matInput formControlName="created_by" readonly>
+                      <mat-icon matSuffix>person</mat-icon>
+                    </mat-form-field>
+                  </div>
+
+                  <div class="date-row">
+                    <mat-form-field appearance="outline" class="date-field">
+                      <mat-label>Atualizado em</mat-label>
+                      <input matInput formControlName="updated_at" readonly>
+                      <mat-icon matSuffix>update</mat-icon>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="date-field">
+                      <mat-label>Atualizado por</mat-label>
+                      <input matInput formControlName="updated_by" readonly>
+                      <mat-icon matSuffix>edit</mat-icon>
+                    </mat-form-field>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </form>
+      </div>
+    </mat-tab>
+
+  </mat-tab-group>
+
+  <!-- VISUALIZAÇÃO PREMIUM APENAS LEITURA -->
+  <div class="premium-details-view" *ngIf="!isCreating && !isEditing && certification">
+    <mat-tab-group class="details-tab-group">
+      
+      <mat-tab label="Resumo">
+        <div class="tab-content summary-content">
+          <mat-card class="info-card">
+            <mat-card-header>
+              <mat-card-title>{{ certification.product_name }}</mat-card-title>
+              <mat-chip class="status-chip">
+                {{ certification.certification_status | titlecase }}
+              </mat-chip>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="info-grid">
+                <div class="info-item">
+                  <mat-icon>confirmation_number</mat-icon>
+                  <div>
+                    <label>Número</label>
+                    <span>{{ certification.certification_number }}</span>
+                  </div>
+                </div>
+                
+                <div class="info-item">
+                  <mat-icon>category</mat-icon>
+                  <div>
+                    <label>Tipo</label>
+                    <span>{{ certification.certification_type }}</span>
+                  </div>
+                </div>
+
+                <div class="info-item">
+                  <mat-icon>account_balance</mat-icon>
+                  <div>
+                    <label>Emissor</label>
+                    <span>{{ certification.issuing_authority }}</span>
+                  </div>
+                </div>
+
+                <div class="info-item">
+                  <mat-icon>event</mat-icon>
+                  <div>
+                    <label>Validade</label>
+                    <span>{{ formatDate(certification.expiry_date) }}</span>
+                  </div>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Análise de IA -->
+          <mat-card class="ai-insights-card" *ngIf="certification.ai_generated">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>psychology</mat-icon>
+                Análise de IA
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="ai-metrics-grid">
+                <div class="ai-metric-item">
+                  <span class="metric-label">Confiança</span>
+                  <mat-progress-bar [value]="certification.ai_confidence_score * 100" color="primary"></mat-progress-bar>
+                  <span class="metric-value">{{ formatPercentage(certification.ai_confidence_score) }}</span>
+                </div>
+                <div class="ai-metric-item">
+                  <span class="metric-label">Risco</span>
+                  <mat-progress-bar [value]="certification.ai_risk_score * 100" 
+                                    [color]="getRiskColor(certification.ai_risk_level)"></mat-progress-bar>
+                  <span class="metric-value">{{ formatPercentage(certification.ai_risk_score) }}</span>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+      
+    </mat-tab-group>
+  </div>
+
+  <!-- FALLBACK QUANDO NÃO HÁ CONDIÇÕES ADEQUADAS -->
+  <div class="modal-fallback" *ngIf="!isCreating && !isEditing && !certification">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>warning</mat-icon>
+          Estado do Modal Não Definido
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p>O modal não foi configurado corretamente para exibição.</p>
+        <p>Por favor, feche e tente novamente.</p>
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-button (click)="onCancel()">
+          <mat-icon>close</mat-icon>
+          Fechar
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+</mat-dialog-content>
+
+<!-- AÇÕES DO MODAL -->
+<mat-dialog-actions class="dialog-actions" *ngIf="isCreating || isEditing">
+  <div class="actions-container">
+    <button mat-button 
+            class="cancel-button"
+            (click)="onCancel()">
+      <mat-icon>close</mat-icon>
+      Cancelar
+    </button>
+    
+    <button mat-raised-button 
+            color="primary"
+            class="save-button"
+            [disabled]="!isFormValid || isLoading"
+            (click)="saveCertification()">
+      <mat-icon>{{ isLoading ? 'hourglass_empty' : (isCreating ? 'add' : 'save') }}</mat-icon>
+      <span *ngIf="!isLoading">{{ isCreating ? 'Criar Certificação' : 'Salvar Alterações' }}</span>
+      <span *ngIf="isLoading">Processando...</span>
+    </button>
+  </div>
+</mat-dialog-actions>

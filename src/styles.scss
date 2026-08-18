@@ -126,3 +126,14 @@ mat-icon {
   -webkit-font-feature-settings: 'liga' !important;
   -webkit-font-smoothing: antialiased !important;
 }
+
+// Dialog panel override - ensure proper sizing
+.novo-usuario-panel .mat-mdc-dialog-container .mdc-dialog__surface {
+  overflow: visible !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.novo-usuario-panel .mat-mdc-dialog-container {
+  max-height: 85vh !important;
+}

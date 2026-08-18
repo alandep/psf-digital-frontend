@@ -1,0 +1,354 @@
+<!-- Main Container -->
+<div class="lotes-container">
+
+  <!-- Loading Bar -->
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header Premium -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">inventory_2</mat-icon>
+        <div class="title-content">
+          <h1>Controle de Lotes</h1>
+          <p class="subtitle">Gerenciamento inteligente de lotes para exportação com IA</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button color="primary" (click)="createLot()">
+          <mat-icon>add</mat-icon> Novo Lote
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Dashboard Cards -->
+  <div class="kpi-dashboard">
+    <mat-card class="kpi-card kpi-available">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>inventory_2</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ kpiMetrics?.totalAvailableQty | number:'1.0-0' }} kg</div>
+          <div class="kpi-label">Quantidade Disponível</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-blocked">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>block</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ kpiMetrics?.blockedCount || 0 }}</div>
+          <div class="kpi-label">Lotes Bloqueados</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-expiring">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>schedule</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ kpiMetrics?.expiringSoonCount || 0 }}</div>
+          <div class="kpi-label">Vencendo em 30 dias</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-score">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>insights</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ kpiMetrics?.avgAIScore | number:'1.1-1' }}</div>
+          <div class="kpi-label">Score IA Médio</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Filters Section -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <!-- Global Search -->
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Buscar lotes</mat-label>
+          <input matInput formControlName="searchText" placeholder="Buscar por número, produto, armazém, safra ou país...">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <div class="filter-row">
+          <!-- Product Filter -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Produto</mat-label>
+            <mat-select formControlName="product">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let product of products" [value]="product">{{ product }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Harvest Filter -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Safra</mat-label>
+            <mat-select formControlName="harvest">
+              <mat-option value="">Todas</mat-option>
+              <mat-option *ngFor="let harvest of harvests" [value]="harvest">{{ harvest }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Status Filter -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let status of statuses" [value]="status">{{ status }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Warehouse Filter -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Armazém</mat-label>
+            <mat-select formControlName="warehouseId">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let wh of warehouses" [value]="wh.id">{{ wh.name }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Country Filter -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>País Destino</mat-label>
+            <mat-select formControlName="destinationCountry">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let country of countries" [value]="country">{{ country }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="filter-row">
+          <!-- Expiry Date Range -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Vencimento De</mat-label>
+            <input matInput [matDatepicker]="expiryStart" formControlName="expiryDateStart">
+            <mat-datepicker-toggle matSuffix [for]="expiryStart"></mat-datepicker-toggle>
+            <mat-datepicker #expiryStart></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Vencimento Até</mat-label>
+            <input matInput [matDatepicker]="expiryEnd" formControlName="expiryDateEnd">
+            <mat-datepicker-toggle matSuffix [for]="expiryEnd"></mat-datepicker-toggle>
+            <mat-datepicker #expiryEnd></mat-datepicker>
+          </mat-form-field>
+
+          <!-- AI Score Range -->
+          <mat-form-field appearance="outline" class="filter-field filter-field-small">
+            <mat-label>Score IA Mín</mat-label>
+            <input matInput type="number" formControlName="aiScoreMin" min="0" max="100">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field filter-field-small">
+            <mat-label>Score IA Máx</mat-label>
+            <input matInput type="number" formControlName="aiScoreMax" min="0" max="100">
+          </mat-form-field>
+
+          <!-- Clear Filters -->
+          <div class="filter-field clear-filter-wrapper">
+            <button mat-raised-button color="warn" (click)="clearFilters()" class="clear-filters-btn">
+              <mat-icon>clear</mat-icon> Limpar Filtros
+            </button>
+          </div>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Smart Grid -->
+  <mat-card class="grid-card">
+    <div class="grid-toolbar">
+      <h2>Lotes de Exportação</h2>
+      <div class="grid-actions">
+        <span class="results-count">{{ filteredLots.length }} lotes encontrados</span>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table mat-table [dataSource]="filteredLots" matSort class="lots-table" [trackBy]="trackByLotId">
+
+        <!-- Lote Number Column -->
+        <ng-container matColumnDef="loteNumber">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Nº Lote</th>
+          <td mat-cell *matCellDef="let lot">
+            <span class="lot-number">{{ lot.loteNumber }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Product Name Column -->
+        <ng-container matColumnDef="productName">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Produto</th>
+          <td mat-cell *matCellDef="let lot">{{ lot.productName }}</td>
+        </ng-container>
+
+        <!-- Harvest Column -->
+        <ng-container matColumnDef="harvest">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Safra</th>
+          <td mat-cell *matCellDef="let lot">{{ lot.harvest }}</td>
+        </ng-container>
+
+        <!-- Status Column -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+          <td mat-cell *matCellDef="let lot">
+            <span class="status-chip" [ngClass]="'status-' + getStatusColor(lot.status)">
+              <mat-icon class="status-icon">{{ getStatusIcon(lot.status) }}</mat-icon>
+              {{ lot.status }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Warehouse Column -->
+        <ng-container matColumnDef="warehouseName">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Armazém</th>
+          <td mat-cell *matCellDef="let lot">{{ lot.warehouseName }}</td>
+        </ng-container>
+
+        <!-- Quantity Column -->
+        <ng-container matColumnDef="quantity">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Quantidade</th>
+          <td mat-cell *matCellDef="let lot">{{ formatQuantity(lot.availableQuantity) }}</td>
+        </ng-container>
+
+        <!-- Expiry Date Column -->
+        <ng-container matColumnDef="expiryDate">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Vencimento</th>
+          <td mat-cell *matCellDef="let lot">{{ formatDate(lot.expiryDate) }}</td>
+        </ng-container>
+
+        <!-- AI Score Column -->
+        <ng-container matColumnDef="aiScore">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Score IA</th>
+          <td mat-cell *matCellDef="let lot">
+            <span class="score-badge" [ngClass]="'score-' + getScoreColor(lot.aiScore)">
+              {{ lot.aiScore }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Ações</th>
+          <td mat-cell *matCellDef="let lot">
+            <button mat-icon-button [matMenuTriggerFor]="actionsMenu" matTooltip="Ações">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #actionsMenu="matMenu">
+              <button mat-menu-item (click)="selectLot(lot)">
+                <mat-icon>visibility</mat-icon>
+                <span>Visualizar</span>
+              </button>
+              <button mat-menu-item (click)="editLot(lot)">
+                <mat-icon>edit</mat-icon>
+                <span>Editar</span>
+              </button>
+              <mat-divider></mat-divider>
+              <button mat-menu-item (click)="blockLot(lot)" *ngIf="lot.status === 'DISPONÍVEL'">
+                <mat-icon>block</mat-icon>
+                <span>Bloquear</span>
+              </button>
+              <button mat-menu-item (click)="unblockLot(lot)" *ngIf="lot.status === 'BLOQUEADO'">
+                <mat-icon>lock_open</mat-icon>
+                <span>Desbloquear</span>
+              </button>
+              <button mat-menu-item (click)="reserveLot(lot)" *ngIf="lot.status === 'DISPONÍVEL'">
+                <mat-icon>bookmark</mat-icon>
+                <span>Reservar</span>
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+            (click)="selectLot(row)"
+            class="lot-row"
+            [class.selected-row]="selectedLot?.id === row.id">
+        </tr>
+      </table>
+    </div>
+
+    <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" showFirstLastButtons></mat-paginator>
+  </mat-card>
+
+  <!-- AI Insights Panel -->
+  <mat-expansion-panel class="ai-panel" *ngIf="aiInsights">
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <mat-icon>psychology</mat-icon>
+        Insights de IA - Score: {{ aiInsights.score }}
+      </mat-panel-title>
+      <mat-panel-description>
+        <span class="score-badge" [ngClass]="'score-' + getScoreColor(aiInsights.score)">
+          {{ aiInsights.score }}/100
+        </span>
+      </mat-panel-description>
+    </mat-expansion-panel-header>
+
+    <div class="ai-insights-content">
+      <!-- Score Gauge -->
+      <div class="ai-score-section">
+        <h3>Qualidade Geral</h3>
+        <div class="score-gauge">
+          <div class="gauge-fill" [style.width.%]="aiInsights.score"
+               [ngClass]="'gauge-' + getScoreColor(aiInsights.score)">
+          </div>
+        </div>
+        <span class="gauge-label">{{ aiInsights.score }}/100</span>
+      </div>
+
+      <!-- Export Suggestions -->
+      <div class="ai-suggestions-section" *ngIf="aiInsights.exportSuggestions.length > 0">
+        <h3><mat-icon>flight_takeoff</mat-icon> Sugestões de Exportação</h3>
+        <div class="suggestion-list">
+          <div class="suggestion-item" *ngFor="let suggestion of aiInsights.exportSuggestions">
+            <div class="suggestion-header">
+              <strong>{{ suggestion.destination }}</strong>
+              <span class="confidence-badge">{{ suggestion.confidence * 100 | number:'1.0-0' }}%</span>
+            </div>
+            <p class="suggestion-reason">{{ suggestion.reason }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Anomaly Alerts -->
+      <div class="ai-anomalies-section" *ngIf="aiInsights.anomalyAlerts.length > 0">
+        <h3><mat-icon>warning</mat-icon> Alertas de Anomalia</h3>
+        <div class="anomaly-list">
+          <div class="anomaly-item" *ngFor="let anomaly of aiInsights.anomalyAlerts"
+               [ngClass]="'severity-' + getSeverityColor(anomaly.severity)">
+            <mat-icon>{{ anomaly.severity === 'CRITICAL' ? 'dangerous' : 'warning' }}</mat-icon>
+            <div class="anomaly-info">
+              <span class="anomaly-severity">{{ anomaly.severity }}</span>
+              <span class="anomaly-description">{{ anomaly.description }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Expiry Prediction -->
+      <div class="ai-expiry-section" *ngIf="aiInsights.expiryPrediction">
+        <h3><mat-icon>event</mat-icon> Previsão de Vencimento</h3>
+        <div class="expiry-info" [ngClass]="'risk-' + aiInsights.expiryPrediction.riskLevel">
+          <span class="days-count">{{ aiInsights.expiryPrediction.daysToExpiry }} dias</span>
+          <span class="risk-label">Risco: {{ aiInsights.expiryPrediction.riskLevel }}</span>
+        </div>
+      </div>
+    </div>
+  </mat-expansion-panel>
+
+</div>

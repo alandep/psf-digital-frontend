@@ -1,0 +1,299 @@
+<!-- Main Container -->
+<div class="compliance-container">
+
+  <!-- Loading Bar -->
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">verified_user</mat-icon>
+        <div class="title-content">
+          <h1>Relatório de Compliance</h1>
+          <p class="subtitle">Análise de conformidade regulatória e gestão de riscos</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button class="export-btn" (click)="exportPDF()">
+          <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Dashboard Cards (4x2) -->
+  <div class="kpi-dashboard">
+    <mat-card class="kpi-card kpi-total">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>fact_check</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.totalRequirements }}</div>
+          <div class="kpi-label">Total Requisitos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-conforme">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.conformeCount }}</div>
+          <div class="kpi-label">Conformes</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-parcial">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>pending</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.parcialCount }}</div>
+          <div class="kpi-label">Parciais</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-nao-conforme">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>cancel</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.naoConformeCount }}</div>
+          <div class="kpi-label">Não Conformes</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-score">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>speed</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.overallScore }}%</div>
+          <div class="kpi-label">Score Geral</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-critical">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>warning</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.criticalRisks }}</div>
+          <div class="kpi-label">Riscos Críticos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-actions">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>assignment</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.pendingActions }}</div>
+          <div class="kpi-label">Ações Pendentes</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-nao-avaliado">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>help_outline</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.naoAvaliadoCount }}</div>
+          <div class="kpi-label">Não Avaliados</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Compliance by Area -->
+  <mat-card class="area-card">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="area-header-icon">analytics</mat-icon>
+      <mat-card-title>Compliance por Área</mat-card-title>
+      <mat-card-subtitle>Distribuição de conformidade por área regulatória</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="area-list">
+        <div class="area-item" *ngFor="let area of areaBreakdowns">
+          <div class="area-header">
+            <span class="area-name">{{ area.area }}</span>
+            <span class="area-score">{{ area.score }}%</span>
+          </div>
+          <div class="stacked-bar">
+            <div class="bar-segment bar-conforme" [style.width.%]="getAreaBarWidth(area, 'conforme')"
+                 [matTooltip]="'Conforme: ' + area.conforme">
+            </div>
+            <div class="bar-segment bar-parcial" [style.width.%]="getAreaBarWidth(area, 'parcial')"
+                 [matTooltip]="'Parcial: ' + area.parcial">
+            </div>
+            <div class="bar-segment bar-nao-conforme" [style.width.%]="getAreaBarWidth(area, 'naoConforme')"
+                 [matTooltip]="'Não Conforme: ' + area.naoConforme">
+            </div>
+          </div>
+          <div class="area-counts">
+            <span class="count-conforme">{{ area.conforme }} conformes</span>
+            <span class="count-parcial">{{ area.parcial }} parciais</span>
+            <span class="count-nao-conforme">{{ area.naoConforme }} não conformes</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot conforme"></span> Conforme</span>
+        <span class="legend-item"><span class="legend-dot parcial"></span> Parcial</span>
+        <span class="legend-item"><span class="legend-dot nao-conforme"></span> Não Conforme</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Filters -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <mat-form-field appearance="outline" class="filter-field search-field">
+          <mat-label>Buscar</mat-label>
+          <input matInput formControlName="searchText" placeholder="Requisito, regulamentação, responsável...">
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Área</mat-label>
+          <mat-select formControlName="area">
+            <mat-option value="">Todas</mat-option>
+            <mat-option *ngFor="let area of areas" [value]="area">{{ area }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let s of statuses" [value]="s">{{ getStatusLabel(s) }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <button mat-button class="clear-filters-btn" (click)="clearFilters()">
+          <mat-icon>filter_list_off</mat-icon> Limpar
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Compliance Table -->
+  <mat-card class="results-card">
+    <mat-card-content>
+      <div class="results-header">
+        <h3>Requisitos de Compliance ({{ dataSource.filteredData.length }})</h3>
+      </div>
+
+      <div class="table-container">
+        <table mat-table [dataSource]="dataSource" matSort #complianceSort="matSort" class="data-table">
+
+          <!-- Area -->
+          <ng-container matColumnDef="area">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Área</th>
+            <td mat-cell *matCellDef="let row">{{ row.area }}</td>
+          </ng-container>
+
+          <!-- Requirement -->
+          <ng-container matColumnDef="requirement">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Requisito</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="requirement-text">{{ row.requirement }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Regulation -->
+          <ng-container matColumnDef="regulation">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Regulamentação</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="regulation-badge">{{ row.regulation }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Status -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="status-badge" [ngClass]="'status-' + row.status.toLowerCase().replace('ã', 'a').replace('_', '-')">
+                {{ getStatusLabel(row.status) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Risk Score -->
+          <ng-container matColumnDef="riskScore">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Risco</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="risk-bar-container">
+                <div class="risk-bar" [style.width.%]="row.riskScore"
+                     [ngClass]="{
+                       'risk-low': row.riskScore < 30,
+                       'risk-medium': row.riskScore >= 30 && row.riskScore < 60,
+                       'risk-high': row.riskScore >= 60 && row.riskScore < 80,
+                       'risk-critical': row.riskScore >= 80
+                     }">
+                </div>
+                <span class="risk-value">{{ row.riskScore }}%</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Responsible -->
+          <ng-container matColumnDef="responsible">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Responsável</th>
+            <td mat-cell *matCellDef="let row">{{ row.responsible }}</td>
+          </ng-container>
+
+          <!-- Due Date -->
+          <ng-container matColumnDef="dueDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Prazo</th>
+            <td mat-cell *matCellDef="let row">{{ row.dueDate | date:'dd/MM/yyyy' }}</td>
+          </ng-container>
+
+          <!-- Last Assessment -->
+          <ng-container matColumnDef="lastAssessment">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Última Avaliação</th>
+            <td mat-cell *matCellDef="let row">{{ row.lastAssessment | date:'dd/MM/yyyy' }}</td>
+          </ng-container>
+
+          <!-- Actions count -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Ações</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="actions-count" [class.has-actions]="row.actions > 0">
+                {{ row.actions }}
+              </span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="clickable-row"></tr>
+        </table>
+      </div>
+
+      <mat-paginator #compliancePaginator
+        [pageSizeOptions]="[10, 25, 50, 100]"
+        [pageSize]="10"
+        showFirstLastButtons>
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+
+</div>

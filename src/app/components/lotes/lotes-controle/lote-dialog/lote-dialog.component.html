@@ -1,0 +1,362 @@
+<!-- Dialog Header -->
+<div class="dialog-header">
+  <h2>
+    <mat-icon>{{ getDialogIcon() }}</mat-icon>
+    {{ getDialogTitle() }}
+  </h2>
+  <button mat-icon-button (click)="close()" matTooltip="Fechar">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<!-- Dialog Content -->
+<mat-dialog-content>
+
+  <!-- Create/Edit Form -->
+  <div class="dialog-form" *ngIf="data.mode === 'create' || data.mode === 'edit'">
+    <form [formGroup]="createForm" class="create-form">
+      <mat-form-field appearance="outline" class="form-field-full">
+        <mat-label>ID do Produto</mat-label>
+        <input matInput formControlName="productId">
+        <mat-error>Campo obrigatório</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field-full">
+        <mat-label>Nome do Produto</mat-label>
+        <mat-select formControlName="productName">
+          <mat-option *ngFor="let p of data.products" [value]="p">{{ p }}</mat-option>
+        </mat-select>
+        <mat-error>Campo obrigatório</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field-half">
+        <mat-label>Safra</mat-label>
+        <mat-select formControlName="harvest">
+          <mat-option *ngFor="let h of data.harvests" [value]="h">{{ h }}</mat-option>
+        </mat-select>
+        <mat-error>Campo obrigatório</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field-half">
+        <mat-label>Armazém</mat-label>
+        <mat-select formControlName="warehouseId" (selectionChange)="createForm.patchValue({warehouseName: $event.source.triggerValue})">
+          <mat-option *ngFor="let wh of data.warehouses" [value]="wh.id">{{ wh.name }}</mat-option>
+        </mat-select>
+        <mat-error>Campo obrigatório</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field-half">
+        <mat-label>Quantidade (kg)</mat-label>
+        <input matInput type="number" formControlName="quantity">
+        <mat-error>Informe uma quantidade válida</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field-half">
+        <mat-label>Data de Vencimento</mat-label>
+        <input matInput [matDatepicker]="createExpiry" formControlName="expiryDate">
+        <mat-datepicker-toggle matSuffix [for]="createExpiry"></mat-datepicker-toggle>
+        <mat-datepicker #createExpiry></mat-datepicker>
+        <mat-error>Campo obrigatório</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field-full">
+        <mat-label>País de Destino</mat-label>
+        <mat-select formControlName="destinationCountry">
+          <mat-option *ngFor="let c of data.countries" [value]="c">{{ c }}</mat-option>
+        </mat-select>
+        <mat-error>Campo obrigatório</mat-error>
+      </mat-form-field>
+
+      <h3 class="section-title">Localização Física</h3>
+
+      <mat-form-field appearance="outline" class="form-field-third">
+        <mat-label>Seção</mat-label>
+        <input matInput formControlName="section">
+        <mat-error>Campo obrigatório</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field-third">
+        <mat-label>Fileira</mat-label>
+        <input matInput formControlName="row">
+        <mat-error>Campo obrigatório</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field-third">
+        <mat-label>Posição</mat-label>
+        <input matInput formControlName="position">
+        <mat-error>Campo obrigatório</mat-error>
+      </mat-form-field>
+    </form>
+  </div>
+
+  <!-- Detail View Tabs -->
+  <div class="dialog-tabs" *ngIf="data.mode === 'view' && data.lot">
+    <mat-tab-group animationDuration="200ms">
+
+      <!-- Tab 1: Dados Gerais -->
+      <mat-tab label="Dados Gerais">
+        <div class="tab-content">
+          <div class="detail-section">
+            <h3>Informações do Lote</h3>
+            <mat-list>
+              <mat-list-item>
+                <span class="detail-label">Número do Lote</span>
+                <span class="detail-value">{{ data.lot.loteNumber }}</span>
+              </mat-list-item>
+              <mat-list-item>
+                <span class="detail-label">Produto</span>
+                <span class="detail-value">{{ data.lot.productName }}</span>
+              </mat-list-item>
+              <mat-list-item>
+                <span class="detail-label">Safra</span>
+                <span class="detail-value">{{ data.lot.harvest }}</span>
+              </mat-list-item>
+              <mat-list-item>
+                <span class="detail-label">Status</span>
+                <span class="status-chip" [ngClass]="'status-' + getStatusColor(data.lot.status)">
+                  {{ data.lot.status }}
+                </span>
+              </mat-list-item>
+              <mat-list-item>
+                <span class="detail-label">Armazém</span>
+                <span class="detail-value">{{ data.lot.warehouseName }}</span>
+              </mat-list-item>
+              <mat-list-item>
+                <span class="detail-label">Localização</span>
+                <span class="detail-value">
+                  Seção {{ data.lot.physicalLocation.section }} /
+                  Fileira {{ data.lot.physicalLocation.row }} /
+                  Posição {{ data.lot.physicalLocation.position }}
+                </span>
+              </mat-list-item>
+              <mat-list-item>
+                <span class="detail-label">País de Destino</span>
+                <span class="detail-value">{{ data.lot.destinationCountry }}</span>
+              </mat-list-item>
+              <mat-list-item>
+                <span class="detail-label">Criado em</span>
+                <span class="detail-value">{{ formatDate(data.lot.createdAt) }}</span>
+              </mat-list-item>
+              <mat-list-item>
+                <span class="detail-label">Vencimento</span>
+                <span class="detail-value">{{ formatDate(data.lot.expiryDate) }}</span>
+              </mat-list-item>
+            </mat-list>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 2: Estoque -->
+      <mat-tab label="Estoque">
+        <div class="tab-content">
+          <div class="detail-section">
+            <h3>Balanço de Estoque</h3>
+            <div class="stock-grid">
+              <div class="stock-item">
+                <span class="stock-label">Quantidade Inicial</span>
+                <span class="stock-value">{{ formatQuantity(data.lot.quantity) }}</span>
+              </div>
+              <div class="stock-item">
+                <span class="stock-label">Reservado</span>
+                <span class="stock-value stock-reserved">{{ formatQuantity(data.lot.reservedQuantity) }}</span>
+              </div>
+              <div class="stock-item">
+                <span class="stock-label">Exportado</span>
+                <span class="stock-value stock-exported">{{ formatQuantity(data.lot.exportedQuantity) }}</span>
+              </div>
+              <mat-divider></mat-divider>
+              <div class="stock-item stock-available">
+                <span class="stock-label">Disponível</span>
+                <span class="stock-value">{{ formatQuantity(data.lot.availableQuantity) }}</span>
+              </div>
+            </div>
+
+            <mat-progress-bar
+              mode="determinate"
+              [value]="(data.lot.availableQuantity / data.lot.quantity) * 100"
+              class="stock-progress">
+            </mat-progress-bar>
+            <span class="stock-percentage">
+              {{ ((data.lot.availableQuantity / data.lot.quantity) * 100) | number:'1.0-0' }}% disponível
+            </span>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 3: Qualidade -->
+      <mat-tab label="Qualidade">
+        <div class="tab-content">
+          <!-- Latest Inspections -->
+          <div class="detail-section" *ngIf="data.qualityInspections.length > 0">
+            <h3>Última Inspeção</h3>
+            <div class="inspection-data">
+              <div class="inspection-item">
+                <span class="insp-label">Umidade</span>
+                <span class="insp-value">{{ data.qualityInspections[0].humidity | number:'1.1-1' }}%</span>
+              </div>
+              <div class="inspection-item">
+                <span class="insp-label">Impureza</span>
+                <span class="insp-value">{{ data.qualityInspections[0].impurity | number:'1.2-2' }}%</span>
+              </div>
+              <div class="inspection-item">
+                <span class="insp-label">Proteína</span>
+                <span class="insp-value">{{ data.qualityInspections[0].protein | number:'1.1-1' }}%</span>
+              </div>
+              <div class="inspection-item">
+                <span class="insp-label">pH</span>
+                <span class="insp-value">{{ data.qualityInspections[0].pH | number:'1.1-1' }}</span>
+              </div>
+              <div class="inspection-item">
+                <span class="insp-label">Temperatura</span>
+                <span class="insp-value">{{ data.qualityInspections[0].temperature | number:'1.1-1' }}°C</span>
+              </div>
+              <div class="inspection-item">
+                <span class="insp-label">Inspetor</span>
+                <span class="insp-value">{{ data.qualityInspections[0].inspectedBy }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quality Inspection Form -->
+          <div class="detail-section">
+            <h3>Nova Inspeção de Qualidade</h3>
+            <form [formGroup]="qualityForm" class="quality-form">
+              <div class="quality-form-grid">
+                <mat-form-field appearance="outline">
+                  <mat-label>Umidade (%)</mat-label>
+                  <input matInput type="number" formControlName="humidity">
+                  <mat-error *ngIf="qualityForm.get('humidity')?.hasError('min') || qualityForm.get('humidity')?.hasError('max')">
+                    Valor entre 0 e 100
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Impureza (%)</mat-label>
+                  <input matInput type="number" formControlName="impurity">
+                  <mat-error>Valor entre 0 e 100</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Proteína (%)</mat-label>
+                  <input matInput type="number" formControlName="protein">
+                  <mat-error>Valor entre 0 e 100</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>pH</mat-label>
+                  <input matInput type="number" formControlName="pH">
+                  <mat-error *ngIf="qualityForm.get('pH')?.hasError('min') || qualityForm.get('pH')?.hasError('max')">
+                    Valor entre 0 e 14
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Peso (kg)</mat-label>
+                  <input matInput type="number" formControlName="weight">
+                  <mat-error>Informe um peso válido</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Temperatura (°C)</mat-label>
+                  <input matInput type="number" formControlName="temperature">
+                  <mat-error *ngIf="qualityForm.get('temperature')?.hasError('min') || qualityForm.get('temperature')?.hasError('max')">
+                    Valor entre -40 e 60
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Cor</mat-label>
+                  <input matInput formControlName="color">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Odor</mat-label>
+                  <input matInput formControlName="odor">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field-full">
+                  <mat-label>Resultados Laboratoriais</mat-label>
+                  <textarea matInput formControlName="labResults" rows="2"></textarea>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Inspetor</mat-label>
+                  <input matInput formControlName="inspectedBy">
+                  <mat-error>Campo obrigatório</mat-error>
+                </mat-form-field>
+              </div>
+
+              <div class="form-actions">
+                <button mat-raised-button color="primary" (click)="saveQualityInspection()"
+                        [disabled]="qualityForm.invalid">
+                  <mat-icon>save</mat-icon> Salvar Inspeção
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 4: Certificados -->
+      <mat-tab label="Certificados">
+        <div class="tab-content">
+          <div class="detail-section">
+            <h3>Certificados Associados</h3>
+            <div class="empty-state" *ngIf="true">
+              <mat-icon>description</mat-icon>
+              <p>Nenhum certificado associado a este lote.</p>
+              <button mat-stroked-button color="primary">
+                <mat-icon>add</mat-icon> Associar Certificado
+              </button>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 5: Histórico -->
+      <mat-tab label="Histórico">
+        <div class="tab-content">
+          <div class="detail-section">
+            <h3>Histórico de Movimentações</h3>
+            <div class="movement-list" *ngIf="data.movementHistory.length > 0">
+              <div class="movement-item" *ngFor="let movement of data.movementHistory">
+                <div class="movement-header">
+                  <span class="movement-type">
+                    <mat-icon>{{ getMovementIcon(movement.movementType) }}</mat-icon>
+                    {{ movement.movementType }}
+                  </span>
+                  <span class="movement-date">{{ formatDate(movement.timestamp) }}</span>
+                </div>
+                <div class="movement-details">
+                  <span *ngIf="movement.fromStatus" class="movement-transition">
+                    {{ movement.fromStatus }} → {{ movement.toStatus }}
+                  </span>
+                  <span *ngIf="!movement.fromStatus" class="movement-transition">
+                    → {{ movement.toStatus }}
+                  </span>
+                  <span class="movement-user">{{ movement.userName }}</span>
+                </div>
+                <p class="movement-notes" *ngIf="movement.notes">{{ movement.notes }}</p>
+                <mat-divider></mat-divider>
+              </div>
+            </div>
+            <div class="empty-state" *ngIf="data.movementHistory.length === 0">
+              <mat-icon>history</mat-icon>
+              <p>Nenhuma movimentação registrada.</p>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+    </mat-tab-group>
+  </div>
+
+</mat-dialog-content>
+
+<!-- Dialog Actions -->
+<mat-dialog-actions align="end" *ngIf="data.mode === 'create' || data.mode === 'edit'">
+  <button mat-stroked-button (click)="close()">Cancelar</button>
+  <button mat-raised-button color="primary" (click)="saveLot()" [disabled]="createForm.invalid">
+    <mat-icon>save</mat-icon> {{ data.mode === 'create' ? 'Criar Lote' : 'Salvar Alterações' }}
+  </button>
+</mat-dialog-actions>

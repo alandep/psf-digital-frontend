@@ -1,0 +1,536 @@
+<!-- Main Container -->
+<div class="certificados-container">
+
+  <!-- Loading Bar -->
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header Premium -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">verified</mat-icon>
+        <div class="title-content">
+          <h1>Certificados de Exportação</h1>
+          <p class="subtitle">Centro inteligente de gestão de certificações com IA</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button (click)="createCertificado()">
+          <mat-icon>add</mat-icon> Novo Certificado
+        </button>
+        <button mat-raised-button (click)="exportPDF()">
+          <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Dashboard Cards -->
+  <div class="kpi-dashboard" *ngIf="metrics">
+    <mat-card class="kpi-card kpi-total">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>verified</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.totalCertificates }}</div>
+          <div class="kpi-label">Total Certificados</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    <mat-card class="kpi-card kpi-valid">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>check_circle</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.validCount }}</div>
+          <div class="kpi-label">Válidos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    <mat-card class="kpi-card kpi-expired">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>cancel</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.expiredCount }}</div>
+          <div class="kpi-label">Vencidos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    <mat-card class="kpi-card kpi-pending">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>hourglass_top</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.pendingCount }}</div>
+          <div class="kpi-label">Pendentes</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    <mat-card class="kpi-card kpi-score">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>analytics</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.avgComplianceScore }}%</div>
+          <div class="kpi-label">Score Conformidade Médio</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Filters Card -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <div class="filter-row">
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Tipo</mat-label>
+            <mat-select formControlName="tipo">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let t of tipos" [value]="t.value">{{ t.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>País Destino</mat-label>
+            <mat-select formControlName="destinationCountry">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let c of countries" [value]="c">{{ c }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Produto</mat-label>
+            <mat-select formControlName="productName">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let p of products" [value]="p">{{ p }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Órgão Emissor</mat-label>
+            <mat-select formControlName="issuingAuthority">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let a of authorities" [value]="a">{{ a }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <div class="clear-filter-wrapper">
+            <button mat-raised-button color="warn" class="clear-filters-btn" (click)="clearFilters()">
+              <mat-icon>filter_alt_off</mat-icon> Limpar Filtros
+            </button>
+          </div>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Results Grid -->
+  <mat-card class="grid-card">
+    <div class="grid-toolbar">
+      <h2>Certificados Registrados</h2>
+      <div class="grid-actions">
+        <span class="results-count">{{ filteredCertificados.length }} registros</span>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table mat-table [dataSource]="filteredCertificados" class="certificados-table">
+
+        <!-- Certificate Number -->
+        <ng-container matColumnDef="certificateNumber">
+          <th mat-header-cell *matHeaderCellDef>Nº Certificado</th>
+          <td mat-cell *matCellDef="let cert">
+            <span class="cert-number">{{ cert.certificateNumber }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Tipo -->
+        <ng-container matColumnDef="tipo">
+          <th mat-header-cell *matHeaderCellDef>Tipo</th>
+          <td mat-cell *matCellDef="let cert">
+            <span class="tipo-chip" [ngClass]="'tipo-' + getTipoColor(cert.tipo)">
+              {{ getTipoLabel(cert.tipo) }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Product -->
+        <ng-container matColumnDef="productName">
+          <th mat-header-cell *matHeaderCellDef>Produto</th>
+          <td mat-cell *matCellDef="let cert">{{ cert.productName }}</td>
+        </ng-container>
+
+        <!-- Country -->
+        <ng-container matColumnDef="destinationCountry">
+          <th mat-header-cell *matHeaderCellDef>País Destino</th>
+          <td mat-cell *matCellDef="let cert">{{ cert.destinationCountry }}</td>
+        </ng-container>
+
+        <!-- Status -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let cert">
+            <span class="status-chip" [ngClass]="'status-' + getStatusColor(cert.status)">
+              <mat-icon class="chip-icon">{{ getStatusIcon(cert.status) }}</mat-icon>
+              {{ getStatusLabel(cert.status) }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Issue Date -->
+        <ng-container matColumnDef="issueDate">
+          <th mat-header-cell *matHeaderCellDef>Emissão</th>
+          <td mat-cell *matCellDef="let cert">{{ formatDate(cert.issueDate) }}</td>
+        </ng-container>
+
+        <!-- Expiry Date -->
+        <ng-container matColumnDef="expiryDate">
+          <th mat-header-cell *matHeaderCellDef>Validade</th>
+          <td mat-cell *matCellDef="let cert">
+            <span [class.expiry-warning]="isExpiringSoon(cert.expiryDate)">
+              {{ formatDate(cert.expiryDate) }}
+              <mat-icon *ngIf="isExpiringSoon(cert.expiryDate)" class="expiry-icon"
+                        matTooltip="Expira em {{ getDaysToExpiry(cert.expiryDate) }} dias">
+                warning
+              </mat-icon>
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- AI Score -->
+        <ng-container matColumnDef="aiComplianceScore">
+          <th mat-header-cell *matHeaderCellDef>Score IA</th>
+          <td mat-cell *matCellDef="let cert">
+            <span class="score-badge" [ngClass]="'score-' + getScoreColor(cert.aiComplianceScore)">
+              {{ cert.aiComplianceScore }}%
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Actions -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Ações</th>
+          <td mat-cell *matCellDef="let cert">
+            <button mat-icon-button [matMenuTriggerFor]="actionMenu" (click)="$event.stopPropagation()">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #actionMenu="matMenu">
+              <button mat-menu-item (click)="selectCertificado(cert)">
+                <mat-icon>visibility</mat-icon> Visualizar
+              </button>
+              <button mat-menu-item (click)="selectCertificado(cert); validateCertificate()">
+                <mat-icon>fact_check</mat-icon> Validar
+              </button>
+              <button mat-menu-item (click)="selectCertificado(cert); renewCertificate()">
+                <mat-icon>refresh</mat-icon> Renovar
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+            class="cert-row"
+            [class.selected-row]="selectedCertificado?.id === row.id"
+            (click)="selectCertificado(row)"></tr>
+      </table>
+    </div>
+  </mat-card>
+
+  <!-- Detail Panel -->
+  <mat-card class="detail-panel" *ngIf="isDetailOpen && selectedCertificado">
+    <div class="detail-header">
+      <div class="detail-title">
+        <mat-icon>verified</mat-icon>
+        <h2>{{ selectedCertificado.certificateNumber }}</h2>
+        <span class="tipo-chip" [ngClass]="'tipo-' + getTipoColor(selectedCertificado.tipo)">
+          {{ getTipoLabel(selectedCertificado.tipo) }}
+        </span>
+        <span class="status-chip" [ngClass]="'status-' + getStatusColor(selectedCertificado.status)">
+          <mat-icon class="chip-icon">{{ getStatusIcon(selectedCertificado.status) }}</mat-icon>
+          {{ getStatusLabel(selectedCertificado.status) }}
+        </span>
+      </div>
+      <div class="detail-actions">
+        <button mat-raised-button color="primary" (click)="validateCertificate()" matTooltip="Validar Certificado">
+          <mat-icon>fact_check</mat-icon> Validar
+        </button>
+        <button mat-raised-button (click)="renewCertificate()" matTooltip="Renovar Certificado"
+                *ngIf="selectedCertificado.status === 'VENCIDO' || selectedCertificado.status === 'VÁLIDO'">
+          <mat-icon>refresh</mat-icon> Renovar
+        </button>
+        <button mat-icon-button (click)="closeDetail()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <mat-tab-group>
+      <!-- Tab 1: Dados Gerais -->
+      <mat-tab label="Dados Gerais">
+        <div class="tab-content">
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label">Nº Certificado</span>
+              <span class="detail-value">{{ selectedCertificado.certificateNumber }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Tipo</span>
+              <span class="detail-value">{{ getTipoLabel(selectedCertificado.tipo) }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Produto</span>
+              <span class="detail-value">{{ selectedCertificado.productName }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">NCM</span>
+              <span class="detail-value">{{ selectedCertificado.ncm }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">País Destino</span>
+              <span class="detail-value">{{ selectedCertificado.destinationCountry }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Exportador</span>
+              <span class="detail-value">{{ selectedCertificado.exporterName }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Importador</span>
+              <span class="detail-value">{{ selectedCertificado.importerName }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Órgão Emissor</span>
+              <span class="detail-value">{{ selectedCertificado.issuingAuthority }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Data Emissão</span>
+              <span class="detail-value">{{ formatDate(selectedCertificado.issueDate) }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Validade</span>
+              <span class="detail-value" [class.text-red]="selectedCertificado.status === 'VENCIDO'">
+                {{ formatDate(selectedCertificado.expiryDate) }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Exportação Vinculada</span>
+              <span class="detail-value">{{ selectedCertificado.linkedExportId }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Lote Vinculado</span>
+              <span class="detail-value">{{ selectedCertificado.linkedLoteNumber }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">DU-E Vinculada</span>
+              <span class="detail-value">{{ selectedCertificado.linkedDueNumber }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Score Conformidade</span>
+              <span class="detail-value">
+                <span class="score-badge" [ngClass]="'score-' + getScoreColor(selectedCertificado.aiComplianceScore)">
+                  {{ selectedCertificado.aiComplianceScore }}%
+                </span>
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Risco de Rejeição</span>
+              <span class="detail-value">
+                <span class="risk-badge" [ngClass]="'risk-' + getRiskColor(selectedCertificado.rejectionRisk)">
+                  {{ getRiskLabel(selectedCertificado.rejectionRisk) }}
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 2: Exigências por País -->
+      <mat-tab label="Exigências por País">
+        <div class="tab-content">
+          <div class="requirements-header">
+            <h3>Exigências de {{ selectedCertificado.destinationCountry }} para {{ selectedCertificado.productName }}</h3>
+          </div>
+          <table mat-table [dataSource]="countryRequirements" class="requirements-table" *ngIf="countryRequirements.length > 0">
+            <ng-container matColumnDef="certificateType">
+              <th mat-header-cell *matHeaderCellDef>Certificado</th>
+              <td mat-cell *matCellDef="let req">{{ getTipoLabel(req.certificateType) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="level">
+              <th mat-header-cell *matHeaderCellDef>Nível</th>
+              <td mat-cell *matCellDef="let req">
+                <span class="requirement-chip" [ngClass]="'req-' + getRequirementLevelColor(req.level)">
+                  {{ getRequirementLevelLabel(req.level) }}
+                </span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="issuingAuthority">
+              <th mat-header-cell *matHeaderCellDef>Órgão Emissor</th>
+              <td mat-cell *matCellDef="let req">{{ req.issuingAuthority }}</td>
+            </ng-container>
+            <ng-container matColumnDef="estimatedProcessingDays">
+              <th mat-header-cell *matHeaderCellDef>Prazo Estimado</th>
+              <td mat-cell *matCellDef="let req">{{ req.estimatedProcessingDays }} dias</td>
+            </ng-container>
+            <ng-container matColumnDef="validityMonths">
+              <th mat-header-cell *matHeaderCellDef>Validade</th>
+              <td mat-cell *matCellDef="let req">{{ req.validityMonths }} meses</td>
+            </ng-container>
+            <ng-container matColumnDef="notes">
+              <th mat-header-cell *matHeaderCellDef>Observações</th>
+              <td mat-cell *matCellDef="let req">{{ req.notes }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="requirementColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: requirementColumns;"></tr>
+          </table>
+          <div class="empty-state" *ngIf="countryRequirements.length === 0">
+            <mat-icon>info</mat-icon>
+            <p>Nenhuma exigência específica cadastrada para esta combinação país/produto.</p>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 3: Validação -->
+      <mat-tab label="Validação">
+        <div class="tab-content">
+          <div class="validations-list">
+            <div class="validation-item" *ngFor="let v of validations"
+                 [ngClass]="'validation-' + getValidationColor(v.status)">
+              <mat-icon [ngClass]="'text-' + getValidationColor(v.status)">
+                {{ getValidationIcon(v.status) }}
+              </mat-icon>
+              <div class="validation-info">
+                <div class="validation-header">
+                  <strong>{{ v.checkName }}</strong>
+                  <span class="severity-badge" [ngClass]="'severity-' + getSeverityColor(v.severity)">
+                    {{ v.severity }}
+                  </span>
+                </div>
+                <span class="validation-message">{{ v.message }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 4: Documentos Relacionados -->
+      <mat-tab label="Documentos Relacionados">
+        <div class="tab-content">
+          <table mat-table [dataSource]="relatedDocs" class="related-docs-table" *ngIf="relatedDocs.length > 0">
+            <ng-container matColumnDef="documentType">
+              <th mat-header-cell *matHeaderCellDef>Tipo</th>
+              <td mat-cell *matCellDef="let doc">{{ doc.documentType }}</td>
+            </ng-container>
+            <ng-container matColumnDef="documentNumber">
+              <th mat-header-cell *matHeaderCellDef>Número</th>
+              <td mat-cell *matCellDef="let doc">{{ doc.documentNumber }}</td>
+            </ng-container>
+            <ng-container matColumnDef="entity">
+              <th mat-header-cell *matHeaderCellDef>Entidade</th>
+              <td mat-cell *matCellDef="let doc">{{ doc.entity }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="relatedDocsColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: relatedDocsColumns;"></tr>
+          </table>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 5: Timeline -->
+      <mat-tab label="Timeline">
+        <div class="tab-content">
+          <div class="timeline-container">
+            <div class="timeline-event" *ngFor="let event of timeline; let i = index"
+                 [ngClass]="i === timeline.length - 1 ? 'event-blue' : 'event-green'">
+              <div class="timeline-marker">
+                <mat-icon>{{ i === timeline.length - 1 ? 'radio_button_checked' : 'check_circle' }}</mat-icon>
+              </div>
+              <div class="timeline-event-header">
+                <h4>{{ event.event }}</h4>
+                <span class="timeline-date">{{ formatDate(event.date) }}</span>
+              </div>
+              <p class="timeline-description">{{ event.observations }}</p>
+              <div class="timeline-meta">
+                <span class="meta-item">
+                  <mat-icon>person</mat-icon> {{ event.user }}
+                </span>
+                <span class="meta-item">
+                  <mat-icon>integration_instructions</mat-icon> {{ event.origin }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 6: IA & Insights -->
+      <mat-tab label="IA & Insights">
+        <div class="tab-content" *ngIf="aiInsights">
+          <div class="insights-section">
+
+            <!-- Scores -->
+            <div class="insights-scores">
+              <div class="score-card">
+                <h4>Score de Conformidade</h4>
+                <div class="score-gauge">
+                  <div class="gauge-fill" [ngClass]="'gauge-' + getScoreColor(aiInsights.complianceScore)"
+                       [style.width.%]="aiInsights.complianceScore"></div>
+                </div>
+                <span class="gauge-value">{{ aiInsights.complianceScore }}%</span>
+              </div>
+              <div class="score-card">
+                <h4>Risco de Rejeição</h4>
+                <span class="risk-badge risk-large" [ngClass]="'risk-' + getRiskColor(aiInsights.rejectionRisk)">
+                  {{ getRiskLabel(aiInsights.rejectionRisk) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Alerts -->
+            <div class="alerts-section" *ngIf="aiInsights.alerts.length > 0">
+              <h4><mat-icon>warning</mat-icon> Alertas</h4>
+              <div class="alert-item" *ngFor="let alert of aiInsights.alerts"
+                   [ngClass]="'alert-' + getSeverityColor(alert.severity)">
+                <mat-icon>report_problem</mat-icon>
+                <div class="alert-content">
+                  <span class="alert-message">{{ alert.message }}</span>
+                  <span class="severity-badge" [ngClass]="'severity-' + getSeverityColor(alert.severity)">
+                    {{ alert.severity }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Suggestions -->
+            <div class="suggestions-section">
+              <h4><mat-icon>lightbulb</mat-icon> Recomendações IA</h4>
+              <div class="suggestion-item" *ngFor="let s of aiInsights.suggestions">
+                <div class="suggestion-header">
+                  <strong>{{ s.action }}</strong>
+                  <span class="impact-badge" [ngClass]="'impact-' + s.impact.toLowerCase()">{{ s.impact }}</span>
+                </div>
+                <p class="suggestion-text">{{ s.reason }}</p>
+                <div class="suggestion-meta">
+                  <span><mat-icon>gavel</mat-icon> {{ s.norm }}</span>
+                  <span class="confidence-badge" [ngClass]="'score-' + getScoreColor(s.confidence)">
+                    {{ s.confidence }}% confiança
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Executive Summary -->
+            <div class="executive-summary">
+              <h4><mat-icon>summarize</mat-icon> Resumo Executivo</h4>
+              <p>{{ aiInsights.executiveSummary }}</p>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card>
+
+</div>
