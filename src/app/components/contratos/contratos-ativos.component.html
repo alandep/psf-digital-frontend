@@ -1,0 +1,333 @@
+<div class="contratos-ativos-container">
+
+  <!-- Header Premium -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">assignment_turned_in</mat-icon>
+        <div class="title-content">
+          <h1>Contratos Ativos</h1>
+          <p class="subtitle">Gestão de contratos ativados e em andamento</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button (click)="goToNewContracts()">
+          <mat-icon>add</mat-icon> Novo Contrato
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-dashboard">
+
+    <mat-card class="kpi-card kpi-active">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>trending_up</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ activeContracts }}</div>
+          <div class="kpi-label">Contratos Ativos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-value-total">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>attach_money</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ formatCurrency(totalActiveValue, 'USD') }}</div>
+          <div class="kpi-label">Valor Total Ativo</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-shipments">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>schedule</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ upcomingShipments }}</div>
+          <div class="kpi-label">Embarques Próximos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-countries">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>public</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ uniqueCountries }}</div>
+          <div class="kpi-label">Países Atendidos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+  </div>
+
+  <!-- Filtros Específicos para Contratos Ativos -->
+  <mat-card class="filters-card" *ngIf="filterOptions">
+    <mat-card-header>
+      <mat-card-title class="filters-title">
+        <mat-icon>filter_list</mat-icon>
+        Filtros para Contratos Ativos
+      </mat-card-title>
+      <mat-card-subtitle>Refine sua busca nos contratos em andamento</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="filtroForm" class="filters-form">
+        <div class="filters-grid">
+
+          <!-- Moeda -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Moeda</mat-label>
+            <mat-select formControlName="currency" multiple>
+              <mat-option *ngFor="let currency of activeCurrencies" [value]="currency">
+                {{ getCurrencyLabel(currency) }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Incoterm -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Incoterm</mat-label>
+            <mat-select formControlName="incoterm" multiple>
+              <mat-option *ngFor="let incoterm of activeIncoterms" [value]="incoterm.value">
+                {{ incoterm.label }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- País de Destino -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>País de Destino</mat-label>
+            <mat-select formControlName="countries" multiple>
+              <mat-option *ngFor="let country of activeCountries" [value]="country.code">
+                {{ country.name }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Exportador -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Exportador</mat-label>
+            <mat-select formControlName="exporter_id" multiple>
+              <mat-option *ngFor="let exporter of filterOptions.exporters" [value]="exporter.id">
+                {{ exporter.name }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Faixa de Valor -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Valor Mínimo (USD)</mat-label>
+            <input matInput type="number" formControlName="value_min" placeholder="0">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Valor Máximo (USD)</mat-label>
+            <input matInput type="number" formControlName="value_max" placeholder="999999999">
+          </mat-form-field>
+
+          <!-- Data de Embarque -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Embarque a partir de</mat-label>
+            <input matInput [matDatepicker]="dateFromPicker" formControlName="date_from">
+            <mat-datepicker-toggle matSuffix [for]="dateFromPicker"></mat-datepicker-toggle>
+            <mat-datepicker #dateFromPicker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Embarque até</mat-label>
+            <input matInput [matDatepicker]="dateToPicker" formControlName="date_to">
+            <mat-datepicker-toggle matSuffix [for]="dateToPicker"></mat-datepicker-toggle>
+            <mat-datepicker #dateToPicker></mat-datepicker>
+          </mat-form-field>
+
+        </div>
+
+        <!-- Botões de Filtro -->
+        <div class="filter-actions">
+          <button mat-raised-button color="primary" (click)="applyFilters()" [disabled]="isLoading">
+            <mat-icon>search</mat-icon>
+            Filtrar
+          </button>
+          <button mat-button (click)="clearFilters()" [disabled]="isLoading">
+            <mat-icon>clear</mat-icon>
+            Limpar
+          </button>
+        </div>
+
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="loading-state">
+    <mat-progress-spinner mode="indeterminate" diameter="50" color="primary"></mat-progress-spinner>
+    <p>Carregando contratos ativos...</p>
+  </div>
+
+  <!-- Lista de Contratos Ativos -->
+  <mat-card class="list-card" *ngIf="!isLoading">
+    <mat-card-header>
+      <mat-card-title class="list-title">
+        <div class="list-title-left">
+          <mat-icon>assignment_turned_in</mat-icon>
+          <span>Contratos Ativos</span>
+          <span class="count-chip">{{ activeContracts }} ativos</span>
+        </div>
+        <button mat-raised-button color="primary" (click)="goToNewContracts()">
+          <mat-icon>add</mat-icon>
+          Novo Contrato
+        </button>
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+
+      <!-- Grid de contratos ativos -->
+      <div class="contracts-list">
+
+        <div *ngFor="let contract of contracts" class="active-contract-card">
+
+          <!-- Header do contrato com status ativo -->
+          <div class="contract-header">
+
+            <!-- Info principal -->
+            <div class="contract-info">
+              <div class="contract-title-row">
+                <h3 class="contract-number">{{ contract.contract_number }}</h3>
+                <span class="chip chip-active">
+                  <mat-icon>check_circle</mat-icon>
+                  ATIVO
+                </span>
+                <span class="chip chip-soon" *ngIf="isShipmentSoon(contract.shipment_date)">
+                  <mat-icon>schedule</mat-icon>
+                  Embarque próximo
+                </span>
+              </div>
+              <div class="contract-meta">
+                <div><strong>Importador:</strong> {{ contract.importer_name }}</div>
+                <div><strong>País:</strong> {{ contract.country_destination }}</div>
+                <div><strong>Exportador:</strong> {{ contract.exporter_name }}</div>
+                <div><strong>Embarque:</strong> {{ formatDate(contract.shipment_date) }}</div>
+              </div>
+            </div>
+
+            <!-- Menu de ações -->
+            <div class="contract-actions">
+              <button mat-fab
+                      color="primary"
+                      class="edit-fab"
+                      (click)="editContract(contract)"
+                      matTooltip="Editar contrato">
+                <mat-icon>edit</mat-icon>
+              </button>
+
+              <button mat-icon-button
+                      class="more-btn"
+                      [matMenuTriggerFor]="contractMenu"
+                      matTooltip="Mais ações">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+
+              <mat-menu #contractMenu="matMenu">
+                <button mat-menu-item (click)="viewContractDetails(contract)">
+                  <mat-icon>visibility</mat-icon>
+                  Ver Detalhes
+                </button>
+                <button mat-menu-item (click)="generateDocuments(contract)">
+                  <mat-icon>description</mat-icon>
+                  Documentos
+                </button>
+                <button mat-menu-item (click)="trackShipment(contract)">
+                  <mat-icon>local_shipping</mat-icon>
+                  Rastrear Embarque
+                </button>
+                <button mat-menu-item (click)="sendToReceita(contract)">
+                  <mat-icon>send</mat-icon>
+                  Enviar p/ Receita
+                </button>
+                <mat-divider></mat-divider>
+                <button mat-menu-item class="menu-danger" (click)="closeContract(contract)">
+                  <mat-icon>close</mat-icon>
+                  Fechar Contrato
+                </button>
+              </mat-menu>
+            </div>
+          </div>
+
+          <!-- Detalhes comerciais -->
+          <div class="commercial-grid">
+
+            <div class="detail-item">
+              <div class="detail-label">Valor do Contrato</div>
+              <div class="detail-value detail-value-success">
+                {{ formatCurrency(contract.total_value, contract.currency) }}
+              </div>
+            </div>
+
+            <div class="detail-item">
+              <div class="detail-label">Incoterm</div>
+              <div class="detail-value">{{ getIncotermLabel(contract.incoterm) }}</div>
+            </div>
+
+            <div class="detail-item">
+              <div class="detail-label">Data do Contrato</div>
+              <div class="detail-value detail-value-sm">{{ formatDate(contract.contract_date) }}</div>
+            </div>
+
+            <div class="detail-item">
+              <div class="detail-label">Dias até Embarque</div>
+              <div class="detail-value" [style.color]="getDaysColor(contract.shipment_date)">
+                {{ getDaysUntilShipment(contract.shipment_date) }} dias
+              </div>
+            </div>
+          </div>
+
+          <!-- Custos e margens (se disponível) -->
+          <div class="financial-card" *ngIf="contract.calculated_costs">
+            <div class="financial-header">
+              <mat-icon>calculate</mat-icon>
+              <span>Análise Financeira</span>
+            </div>
+            <div class="financial-grid">
+              <div>
+                <span class="financial-label">Custos Totais:</span>
+                <strong class="financial-warning">{{ formatCurrency(contract.calculated_costs.total_costs || 0, contract.currency) }}</strong>
+              </div>
+              <div>
+                <span class="financial-label">Valor Líquido:</span>
+                <strong class="financial-success">{{ formatCurrency(contract.calculated_costs.net_value || 0, contract.currency) }}</strong>
+              </div>
+              <div>
+                <span class="financial-label">Margem:</span>
+                <strong class="financial-blue">{{ contract.calculated_costs.margin }}%</strong>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Estado vazio -->
+      <div *ngIf="contracts.length === 0" class="empty-state">
+        <mat-icon>assignment_turned_in</mat-icon>
+        <h3>Nenhum contrato ativo encontrado</h3>
+        <p>Não há contratos ativos que atendam aos filtros aplicados.</p>
+        <button mat-raised-button color="primary" (click)="clearFilters()">
+          <mat-icon>clear</mat-icon>
+          Limpar Filtros
+        </button>
+      </div>
+
+    </mat-card-content>
+  </mat-card>
+
+</div>

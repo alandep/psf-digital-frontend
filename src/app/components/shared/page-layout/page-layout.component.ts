@@ -136,7 +136,7 @@ import { NotificationBellComponent } from '../notification-bell/notification-bel
   `]
 })
 export class PageLayoutComponent implements OnInit {
-  @Input() pageTitle: string = 'PSF Digital';
+  @Input() pageTitle: string = 'Export Intelligence Platform';
   
   private router = inject(Router);
   private notificationService = inject(NotificationService);

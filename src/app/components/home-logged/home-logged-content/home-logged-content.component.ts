@@ -27,7 +27,7 @@ interface LoggedUser {
       <div class="content-wrapper">
         <div class="welcome-section">
           <h1>Bem-vindo, {{loggedUser.name}}!</h1>
-          <p>Sistema PSF Digital - {{loggedUser.city}}</p>
+          <p>Sistema Export Intelligence Platform - {{loggedUser.city}}</p>
           <p>PSF: {{loggedUser.psf}}</p>
         </div>
 

@@ -32,7 +32,7 @@ import { Router } from '@angular/router';
   ],
   template: `
     <div class="dialog-header">
-      <h2 mat-dialog-title>Login PSF Digital</h2>
+      <h2 mat-dialog-title>Login Export Intelligence Platform</h2>
       <button mat-icon-button 
               class="close-button" 
               (click)="onCancel()"
@@ -295,7 +295,7 @@ export class LoginDialogComponent {
         this.isLoading = false;
         this.notificationService.hideLoading();
         this.notificationService.showSuccess('Login realizado com sucesso!');
-        this.notificationService.addNotification('Bem-vindo ao PSF Digital!', 'success');
+        this.notificationService.addNotification('Bem-vindo ao Export Intelligence Platform!', 'success');
         
         // Fechar o diálogo e redirecionar para home logada
         this.dialogRef.close({ success: true, data: this.loginForm.value });

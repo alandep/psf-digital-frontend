@@ -22,7 +22,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatTableModule } from '@angular/material/table';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatMenuModule } from '@angular/material/menu';
 
 @Component({
@@ -52,8 +52,9 @@ import { MatMenuModule } from '@angular/material/menu';
 })
 export class ExportacaoDetalhesComponent implements OnInit {
   
-  exportacao!: Exportacao;
+  exportacao?: Exportacao;
   loading = false;
+  notFound = false;
   isDialog: boolean = false;
   exportacaoId?: string;
   
@@ -71,6 +72,7 @@ export class ExportacaoDetalhesComponent implements OnInit {
     @Inject(EXPORTACAO_SERVICE) private exportacaoService: IExportacaoService,
     private router: Router,
     private route: ActivatedRoute,
+    private snackBar: MatSnackBar,
     @Optional() public dialogRef?: MatDialogRef<ExportacaoDetalhesComponent>,
     @Optional() @Inject(MAT_DIALOG_DATA) public data?: { exportacao: Exportacao }
   ) {
@@ -84,15 +86,21 @@ export class ExportacaoDetalhesComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    if (!this.isDialog && this.exportacaoId) {
+    if (this.isDialog && this.exportacao) {
+      // Modo dialog: exportação já veio via MAT_DIALOG_DATA
+      this.loadExportacaoDetails();
+    } else if (this.exportacaoId) {
+      // Modo rota: carregar pelo ID informado na URL
       this.loadExportacaoById(this.exportacaoId);
     } else {
-      this.loadExportacaoDetails();
+      this.notFound = true;
+      this.loading = false;
     }
   }
 
   private loadExportacaoById(id: string): void {
     this.loading = true;
+    this.notFound = false;
     this.exportacaoService.getExportacaoById(id).subscribe({
       next: (exportacao: any) => {
         if (exportacao) {
@@ -100,17 +108,23 @@ export class ExportacaoDetalhesComponent implements OnInit {
           this.loadExportacaoDetails();
         } else {
           console.error('Exportação não encontrada');
+          this.notFound = true;
           this.loading = false;
         }
       },
       error: (error: any) => {
         console.error('Erro ao carregar exportação:', error);
+        this.notFound = true;
         this.loading = false;
       }
     });
   }
 
   private async loadExportacaoDetails(): Promise<void> {
+    if (!this.exportacao) {
+      this.loading = false;
+      return;
+    }
     this.loading = true;
     try {
       // Carregar detalhes completos
@@ -170,7 +184,7 @@ export class ExportacaoDetalhesComponent implements OnInit {
   }
 
   getProgressPercentage(): number {
-    return this.exportacao.completion_percentage || 0;
+    return this.exportacao?.completion_percentage || 0;
   }
 
   getProgressColor(): string {
@@ -180,78 +194,130 @@ export class ExportacaoDetalhesComponent implements OnInit {
     return 'primary';
   }
 
+  // Utilitário: exibe uma notificação (snackbar)
+  private notify(message: string, action: string = 'OK'): void {
+    this.snackBar.open(message, action, { duration: 4000 });
+  }
+
+  // Gera um blob (mock) descrevendo o documento para download/visualização
+  private buildDocumentBlob(document: ExportacaoDocumento): Blob {
+    const content = {
+      documento: document.document_name,
+      tipo: document.document_type,
+      status: document.status,
+      exportacao: this.exportacao?.export_number,
+      gerado_em: new Date().toISOString()
+    };
+    return new Blob([JSON.stringify(content, null, 2)], { type: 'application/json' });
+  }
+
+  // Normaliza o nome do documento para um nome de arquivo seguro
+  private buildFileName(document: ExportacaoDocumento): string {
+    const base = (document.document_name || 'documento')
+      .trim()
+      .replace(/[^\w.-]+/g, '_');
+    return base.toLowerCase().endsWith('.json') ? base : `${base}.json`;
+  }
+
   // Ações
   downloadDocument(document: ExportacaoDocumento): void {
-    console.log('Download document:', document.document_name);
-    // TODO: Implementar download real
+    const blob = this.buildDocumentBlob(document);
+    const url = URL.createObjectURL(blob);
+
+    const anchor = window.document.createElement('a');
+    anchor.href = url;
+    anchor.download = this.buildFileName(document);
+    window.document.body.appendChild(anchor);
+    anchor.click();
+    window.document.body.removeChild(anchor);
+
+    // Libera o objeto URL após o disparo do download
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    this.notify(`Download iniciado: ${document.document_name}`);
   }
 
   viewDocument(document: ExportacaoDocumento): void {
-    console.log('View document:', document.document_name);
-    // TODO: Implementar visualização
+    const blob = this.buildDocumentBlob(document);
+    const url = URL.createObjectURL(blob);
+
+    const opened = window.open(url, '_blank');
+
+    if (!opened) {
+      this.notify(`Não foi possível abrir o documento: ${document.document_name}`);
+    } else {
+      this.notify(`Abrindo documento: ${document.document_name}`);
+    }
+
+    // Libera o objeto URL depois de dar tempo da aba carregar
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
   }
 
   regenerateDocument(document: ExportacaoDocumento): void {
-    console.log('Regenerate document:', document.document_name);
-    
+    if (!this.exportacao) { return; }
     this.exportacaoService.regenerateDocument(this.exportacao.export_id, document.document_id).subscribe({
       next: (newDoc: ExportacaoDocumento) => {
-        console.log('Document regenerated:', newDoc);
         this.loadExportacaoDetails();
+        this.notify('Documento regenerado');
       },
       error: (error: any) => {
-        console.error('Erro ao regenerar documento:', error);
+        this.notify('Erro ao regenerar documento');
       }
     });
   }
 
   // Validação de compliance
   revalidateCompliance(): void {
+    if (!this.exportacao) { return; }
     this.loading = true;
     
     this.exportacaoService.validateCompliance(this.exportacao.export_id).subscribe({
       next: (result: any) => {
-        console.log('Compliance revalidated:', result);
         this.complianceData = result;
         this.loading = false;
+        this.notify('Compliance revalidado');
       },
       error: (error: any) => {
-        console.error('Erro na revalidação:', error);
         this.loading = false;
+        this.notify('Erro ao revalidar compliance');
       }
     });
   }
 
   // Siscomex
   sendToSiscomex(): void {
+    if (!this.exportacao) { return; }
     this.loading = true;
     
     this.exportacaoService.sendToSiscomex(this.exportacao.export_id).subscribe({
       next: (result: any) => {
-        console.log('Sent to Siscomex:', result);
-        this.exportacao.siscomex_status = 'Sent';
+        if (this.exportacao) {
+          this.exportacao.siscomex_status = 'Sent';
+        }
         this.loading = false;
+        this.notify('Exportação enviada para o Siscomex');
       },
       error: (error: any) => {
-        console.error('Erro ao enviar para Siscomex:', error);
         this.loading = false;
+        this.notify('Erro ao enviar para o Siscomex');
       }
     });
   }
 
   // Análise IA
   runAIAnalysis(): void {
+    if (!this.exportacao) { return; }
     this.loading = true;
     
     this.exportacaoService.runAIAnalysis(this.exportacao.export_id).subscribe({
       next: (analysis: any) => {
-        console.log('AI Analysis completed:', analysis);
         this.aiAnalysis = analysis;
         this.loading = false;
+        this.notify('Análise de IA concluída');
       },
       error: (error: any) => {
-        console.error('Erro na análise IA:', error);
         this.loading = false;
+        this.notify('Erro na análise de IA');
       }
     });
   }
@@ -269,7 +335,7 @@ export class ExportacaoDetalhesComponent implements OnInit {
   onEdit(): void {
     if (this.isDialog && this.dialogRef) {
       this.dialogRef.close({ action: 'edit', exportacao: this.exportacao });
-    } else {
+    } else if (this.exportacao) {
       this.router.navigate(['/home-logged/exportacao/editar', this.exportacao.export_id]);
     }
   }

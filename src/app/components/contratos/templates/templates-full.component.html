@@ -1,0 +1,284 @@
+<div class="templates-container">
+
+  <!-- HERO HEADER -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">content_copy</mat-icon>
+        <div class="title-content">
+          <h1>Templates de Contratos</h1>
+          <p class="subtitle">Gestão de modelos reutilizáveis de contratos EIP</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button (click)="openNewTemplate()">
+          <mat-icon>add</mat-icon>
+          Novo Template
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-dashboard">
+    <mat-card class="kpi-card kpi-total">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>library_books</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ totalTemplates }}</div>
+          <div class="kpi-label">Templates Totais</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-active">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ activeTemplates }}</div>
+          <div class="kpi-label">Templates Ativos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-ai">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>psychology</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ templatesComIA }}</div>
+          <div class="kpi-label">Com IA Habilitada</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-commodities">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>public</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ uniqueCommodities }}</div>
+          <div class="kpi-label">Commodities</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- FILTROS -->
+  <mat-card *ngIf="filterOptions" class="filters-card">
+    <mat-card-header>
+      <mat-card-title class="filters-title">
+        <mat-icon>filter_list</mat-icon>
+        Filtros para Templates
+      </mat-card-title>
+      <mat-card-subtitle>Refine sua busca nos templates de contratos</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="filtroForm" class="filters-form">
+        <div class="filters-grid">
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Busca geral</mat-label>
+            <input matInput formControlName="search" placeholder="Nome, código ou descrição">
+            <mat-icon matSuffix>search</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Commodity</mat-label>
+            <mat-select formControlName="commodity" multiple>
+              <mat-option *ngFor="let commodity of filterOptions.commodities" [value]="commodity.value">
+                {{ commodity.label }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="active">
+              <mat-option [value]="null">Todos</mat-option>
+              <mat-option [value]="true">Ativos</mat-option>
+              <mat-option [value]="false">Inativos</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <div class="filter-actions">
+            <button mat-raised-button color="primary" (click)="applyFilters()" [disabled]="isLoading">
+              <mat-icon>search</mat-icon>
+              Filtrar
+            </button>
+            <button mat-button (click)="clearFilters()" [disabled]="isLoading">
+              <mat-icon>clear</mat-icon>
+              Limpar
+            </button>
+          </div>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- LOADING -->
+  <div *ngIf="isLoading" class="loading-state">
+    <mat-progress-spinner mode="indeterminate" diameter="50" color="primary"></mat-progress-spinner>
+    <p>Carregando templates...</p>
+  </div>
+
+  <!-- LISTA -->
+  <mat-card *ngIf="!isLoading" class="list-card">
+    <mat-card-header>
+      <mat-card-title class="list-title">
+        <div class="list-title-left">
+          <mat-icon>content_copy</mat-icon>
+          <span>Templates de Contratos</span>
+          <span class="count-chip">{{ totalTemplates }} templates</span>
+        </div>
+        <button mat-raised-button color="primary" (click)="openNewTemplate()">
+          <mat-icon>add</mat-icon>
+          Novo Template
+        </button>
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+
+      <div class="templates-list">
+        <div *ngFor="let template of templates" class="template-card">
+
+          <!-- Header do template -->
+          <div class="template-header">
+            <div class="template-info">
+              <div class="template-title-row">
+                <h3 class="template-name">{{ template.template_name }}</h3>
+                <span class="chip" [class.chip-active]="template.active" [class.chip-inactive]="!template.active">
+                  <mat-icon>{{ template.active ? 'check_circle' : 'cancel' }}</mat-icon>
+                  {{ template.active ? 'ATIVO' : 'INATIVO' }}
+                </span>
+                <span *ngIf="template.ai_config.ai_enabled" class="chip chip-ai">
+                  <mat-icon>psychology</mat-icon>
+                  IA Habilitada
+                </span>
+              </div>
+              <div class="template-meta">
+                <div><strong>Código:</strong> {{ template.template_code }}</div>
+                <div><strong>Versão:</strong> {{ template.version }}</div>
+                <div><strong>Commodity:</strong> {{ getCommodityLabel(template.commodity) }}</div>
+                <div><strong>Tipo:</strong> {{ getContractTypeLabel(template.contract_type) }}</div>
+              </div>
+              <div class="template-description">{{ template.description }}</div>
+            </div>
+
+            <!-- Ações -->
+            <div class="template-actions">
+              <button mat-fab color="primary" class="edit-fab" (click)="editTemplate(template)"
+                      matTooltip="Editar template">
+                <mat-icon>edit</mat-icon>
+              </button>
+
+              <button mat-icon-button [matMenuTriggerFor]="templateMenu" matTooltip="Mais ações" class="more-btn">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+
+              <mat-menu #templateMenu="matMenu">
+                <button mat-menu-item (click)="viewTemplate(template)">
+                  <mat-icon>visibility</mat-icon>
+                  Ver Detalhes
+                </button>
+                <button mat-menu-item (click)="duplicateTemplate(template)">
+                  <mat-icon>content_copy</mat-icon>
+                  Duplicar
+                </button>
+                <button mat-menu-item (click)="createVersion(template)">
+                  <mat-icon>update</mat-icon>
+                  Nova Versão
+                </button>
+                <button mat-menu-item (click)="generateContract(template)">
+                  <mat-icon>description</mat-icon>
+                  Gerar Contrato
+                </button>
+                <mat-divider></mat-divider>
+                <button mat-menu-item (click)="validateTemplate(template)">
+                  <mat-icon>check_circle</mat-icon>
+                  Validar Template
+                </button>
+                <button mat-menu-item (click)="analyzeRisk(template)">
+                  <mat-icon>warning</mat-icon>
+                  Analisar Riscos
+                </button>
+                <button mat-menu-item (click)="toggleActive(template)"
+                        [style.color]="template.active ? '#f44336' : '#4caf50'">
+                  <mat-icon>{{ template.active ? 'toggle_off' : 'toggle_on' }}</mat-icon>
+                  {{ template.active ? 'Desativar' : 'Ativar' }}
+                </button>
+                <mat-divider></mat-divider>
+                <button mat-menu-item (click)="deleteTemplate(template)" class="menu-danger">
+                  <mat-icon>delete</mat-icon>
+                  Excluir
+                </button>
+              </mat-menu>
+            </div>
+          </div>
+
+          <!-- Detalhes comerciais -->
+          <div class="commercial-grid">
+            <div class="detail-item">
+              <div class="detail-label">Incoterm</div>
+              <div class="detail-value detail-value-blue">{{ template.incoterm }}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Moeda</div>
+              <div class="detail-value detail-value-success">{{ template.currency }}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Quantidade</div>
+              <div class="detail-value detail-value-sm">
+                {{ formatNumber(template.quantity_min) }}-{{ formatNumber(template.quantity_max) }} {{ template.quantity_unit }}
+              </div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Pagamento</div>
+              <div class="detail-value detail-value-sm detail-value-ellipsis" [matTooltip]="template.payment_terms">
+                {{ template.payment_terms }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer logística -->
+          <div class="logistics-card">
+            <div class="logistics-header">
+              <mat-icon>flight_takeoff</mat-icon>
+              <span>LOGÍSTICA</span>
+            </div>
+            <div class="logistics-route">
+              <div class="route-origin">
+                <div class="route-value detail-value-ellipsis" [matTooltip]="template.port_origin">{{ template.port_origin }}</div>
+                <div class="route-label">Origem</div>
+              </div>
+              <mat-icon class="route-arrow">arrow_forward</mat-icon>
+              <div class="route-destination">
+                <div class="route-value detail-value-ellipsis" [matTooltip]="template.port_destination">{{ template.port_destination }}</div>
+                <div class="route-label">Destino</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Estado vazio -->
+      <div *ngIf="templates.length === 0" class="empty-state">
+        <mat-icon>content_copy</mat-icon>
+        <h3>Nenhum template encontrado</h3>
+        <p>Crie seu primeiro template ou ajuste os filtros.</p>
+        <button mat-raised-button color="primary" (click)="openNewTemplate()">
+          <mat-icon>add</mat-icon>
+          Criar Primeiro Template
+        </button>
+      </div>
+
+    </mat-card-content>
+  </mat-card>
+
+</div>

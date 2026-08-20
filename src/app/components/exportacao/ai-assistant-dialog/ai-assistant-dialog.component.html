@@ -1,0 +1,102 @@
+<div class="ai-dialog">
+  <!-- Cabeçalho -->
+  <div class="ai-dialog-header">
+    <div class="ai-avatar">
+      <mat-icon>smart_toy</mat-icon>
+    </div>
+    <div class="ai-title-block">
+      <h2 class="ai-title">{{ title }}</h2>
+      <p class="ai-subtitle">{{ subtitle }}</p>
+    </div>
+    <button
+      mat-icon-button
+      class="ai-close-button"
+      mat-dialog-close
+      matTooltip="Fechar"
+      aria-label="Fechar assistente de IA">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Área de mensagens -->
+  <div #messagesContainer class="ai-messages-area">
+    <!-- Boas-vindas -->
+    <div class="ai-welcome" *ngIf="messages.length === 0">
+      <div class="welcome-icon-wrapper">
+        <mat-icon class="welcome-icon">psychology</mat-icon>
+      </div>
+      <h3>Como posso ajudar?</h3>
+      <p>Pergunte sobre:</p>
+      <ul>
+        <li><mat-icon>insights</mat-icon> Status de exportações</li>
+        <li><mat-icon>description</mat-icon> Documentos pendentes</li>
+        <li><mat-icon>verified_user</mat-icon> Validação de compliance</li>
+        <li><mat-icon>tips_and_updates</mat-icon> Sugestões de otimização</li>
+      </ul>
+    </div>
+
+    <!-- Bolhas de conversa -->
+    <div class="ai-messages" *ngIf="messages.length > 0">
+      <div
+        *ngFor="let message of messages"
+        class="message-row"
+        [class.row-user]="message.type === 'user'"
+        [class.row-assistant]="message.type === 'assistant'">
+        <div class="message-bubble" [class]="'bubble-' + message.type">
+          {{ message.message }}
+        </div>
+        <div class="message-time">{{ formatTime(message.timestamp) }}</div>
+      </div>
+    </div>
+
+    <!-- Indicador "Pensando..." -->
+    <div class="message-row row-assistant" *ngIf="processing">
+      <div class="message-bubble bubble-assistant thinking-bubble">
+        <span class="thinking-label">Pensando...</span>
+        <mat-progress-bar mode="indeterminate" color="accent"></mat-progress-bar>
+      </div>
+    </div>
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <!-- Rodapé de entrada -->
+  <div class="ai-input-footer">
+    <mat-form-field appearance="outline" class="ai-input-field">
+      <mat-label>Digite sua pergunta...</mat-label>
+      <textarea
+        matInput
+        cdkFocusInitial
+        [(ngModel)]="query"
+        (keydown.enter)="onEnter($event)"
+        [disabled]="processing"
+        rows="2"
+        placeholder="Ex: O que falta para liberar a exportação EXP-2026-0001?"></textarea>
+    </mat-form-field>
+
+    <div class="ai-actions">
+      <button
+        *ngIf="data.secondaryActionLabel"
+        mat-stroked-button
+        color="accent"
+        type="button"
+        (click)="triggerSecondaryAction()"
+        [disabled]="processing"
+        class="ai-secondary-button">
+        <mat-icon>auto_awesome</mat-icon>
+        {{ data.secondaryActionLabel }}
+      </button>
+
+      <button
+        mat-raised-button
+        color="primary"
+        type="button"
+        (click)="send()"
+        [disabled]="processing || !query.trim()"
+        class="ai-send-button">
+        <mat-icon>send</mat-icon>
+        {{ processing ? 'Processando...' : 'Enviar' }}
+      </button>
+    </div>
+  </div>
+</div>

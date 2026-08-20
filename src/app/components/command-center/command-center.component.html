@@ -141,7 +141,7 @@
           *ngFor="let milestone of selectedOperation.milestones"
           class="timeline-milestone"
           [class.completed]="milestone.completed"
-          [class.active]="milestone.completed && !selectedOperation.milestones[selectedOperation.milestones.indexOf(milestone) + 1]?.completed">
+          [class.active]="isLastActiveMilestone(milestone)">
           <div class="milestone-dot"></div>
           <div class="milestone-label">{{ milestone.label }}</div>
           <div class="milestone-date" *ngIf="milestone.date">

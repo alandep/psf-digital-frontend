@@ -14,7 +14,6 @@ import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatListModule } from '@angular/material/list';
 
 import { KnowledgeCenterMockService } from '../../../../services/knowledgeCenterMockService';
 import {
@@ -40,8 +39,7 @@ import {
     MatSnackBarModule,
     MatTooltipModule,
     MatDividerModule,
-    MatProgressBarModule,
-    MatListModule
+    MatProgressBarModule
   ],
   templateUrl: './knowledge-center.component.html',
   styleUrls: ['./knowledge-center.component.scss']

@@ -54,7 +54,7 @@ export interface PsfUbs {
           <mat-icon>business</mat-icon>
           Cadastro de PSF/UBS
         </h1>
-        <p>Gerencie as unidades de saúde do sistema PSF Digital</p>
+        <p>Gerencie as unidades de saúde do sistema Export Intelligence Platform</p>
       </div>
 
       <!-- Card Principal -->

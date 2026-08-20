@@ -1,53 +1,83 @@
 <div class="knowledge-container">
-  <!-- Header -->
+
+  <!-- Loading Bar -->
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header Premium -->
   <div class="page-header">
-    <div class="header-left">
-      <h1>Central de Conhecimento</h1>
-      <p class="subtitle">Documentação, tutoriais e boas práticas para sua operação</p>
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">menu_book</mat-icon>
+        <div class="title-content">
+          <h1>Central de Conhecimento</h1>
+          <p class="subtitle">Documentação, tutoriais e boas práticas para sua operação</p>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- KPI Cards -->
-  <div class="kpi-grid" *ngIf="metrics">
-    <mat-card class="kpi-card">
-      <mat-icon>article</mat-icon>
-      <div class="kpi-content">
-        <span class="kpi-value">{{ metrics.totalArtigos }}</span>
-        <span class="kpi-label">Artigos</span>
-      </div>
+  <!-- KPI Dashboard Cards -->
+  <div class="kpi-dashboard" *ngIf="metrics">
+    <mat-card class="kpi-card kpi-articles">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>article</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.totalArtigos }}</div>
+          <div class="kpi-label">Artigos</div>
+        </div>
+      </mat-card-content>
     </mat-card>
-    <mat-card class="kpi-card">
-      <mat-icon>help</mat-icon>
-      <div class="kpi-content">
-        <span class="kpi-value">{{ metrics.faqs }}</span>
-        <span class="kpi-label">FAQs</span>
-      </div>
+
+    <mat-card class="kpi-card kpi-faqs">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>help</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.faqs }}</div>
+          <div class="kpi-label">FAQs</div>
+        </div>
+      </mat-card-content>
     </mat-card>
-    <mat-card class="kpi-card">
-      <mat-icon>play_circle</mat-icon>
-      <div class="kpi-content">
-        <span class="kpi-value">{{ metrics.tutoriaisVideo }}</span>
-        <span class="kpi-label">Tutoriais</span>
-      </div>
+
+    <mat-card class="kpi-card kpi-tutorials">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>play_circle</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.tutoriaisVideo }}</div>
+          <div class="kpi-label">Tutoriais</div>
+        </div>
+      </mat-card-content>
     </mat-card>
-    <mat-card class="kpi-card">
-      <mat-icon>star</mat-icon>
-      <div class="kpi-content">
-        <span class="kpi-value">{{ metrics.ratingMedio }}</span>
-        <span class="kpi-label">Rating Médio</span>
-      </div>
+
+    <mat-card class="kpi-card kpi-rating">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>star</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.ratingMedio }}</div>
+          <div class="kpi-label">Rating Médio</div>
+        </div>
+      </mat-card-content>
     </mat-card>
   </div>
 
   <!-- Search -->
   <mat-card class="search-card">
-    <form [formGroup]="filterForm">
-      <mat-form-field appearance="outline" class="search-field">
-        <mat-label>Buscar artigos</mat-label>
-        <input matInput formControlName="searchText" placeholder="Título, assunto, tag...">
-        <mat-icon matSuffix>search</mat-icon>
-      </mat-form-field>
-    </form>
+    <mat-card-content>
+      <form [formGroup]="filterForm">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Buscar artigos</mat-label>
+          <input matInput formControlName="searchText" placeholder="Título, assunto, tag...">
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+      </form>
+    </mat-card-content>
   </mat-card>
 
   <!-- Article Detail View -->
@@ -55,7 +85,7 @@
     <div class="detail-header">
       <div class="detail-title-section">
         <mat-icon class="detail-category-icon">{{ getCategoryIcon(selectedArticle.category) }}</mat-icon>
-        <div>
+        <div class="detail-title-content">
           <h2>{{ selectedArticle.title }}</h2>
           <div class="detail-meta">
             <span class="meta-item">{{ getCategoryLabel(selectedArticle.category) }}</span>
@@ -65,7 +95,7 @@
           </div>
         </div>
       </div>
-      <button mat-icon-button (click)="closeArticle()">
+      <button mat-icon-button class="detail-close" (click)="closeArticle()" matTooltip="Fechar">
         <mat-icon>close</mat-icon>
       </button>
     </div>
@@ -102,7 +132,9 @@
         <div class="articles-list">
           <mat-card *ngFor="let article of articles" class="article-card" (click)="selectArticle(article)">
             <div class="article-row">
-              <mat-icon class="article-icon">{{ getCategoryIcon(article.category) }}</mat-icon>
+              <div class="article-icon-wrapper">
+                <mat-icon class="article-icon">{{ getCategoryIcon(article.category) }}</mat-icon>
+              </div>
               <div class="article-content">
                 <h4>{{ article.title }}</h4>
                 <p>{{ article.summary }}</p>
@@ -117,13 +149,19 @@
               </div>
             </div>
           </mat-card>
+          <div class="empty-state" *ngIf="articles.length === 0">
+            <mat-icon>search_off</mat-icon>
+            <p>Nenhum artigo encontrado</p>
+          </div>
         </div>
       </mat-tab>
       <mat-tab *ngFor="let cat of categories" [label]="cat.label">
         <div class="articles-list">
           <mat-card *ngFor="let article of articles" class="article-card" (click)="selectArticle(article)">
             <div class="article-row">
-              <mat-icon class="article-icon">{{ getCategoryIcon(article.category) }}</mat-icon>
+              <div class="article-icon-wrapper">
+                <mat-icon class="article-icon">{{ getCategoryIcon(article.category) }}</mat-icon>
+              </div>
               <div class="article-content">
                 <h4>{{ article.title }}</h4>
                 <p>{{ article.summary }}</p>
@@ -137,6 +175,10 @@
               </div>
             </div>
           </mat-card>
+          <div class="empty-state" *ngIf="articles.length === 0">
+            <mat-icon>search_off</mat-icon>
+            <p>Nenhum artigo encontrado</p>
+          </div>
         </div>
       </mat-tab>
     </mat-tab-group>

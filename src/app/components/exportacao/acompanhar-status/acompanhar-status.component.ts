@@ -26,7 +26,7 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatDialogModule } from '@angular/material/dialog';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -45,6 +45,7 @@ import {
   SiscomexIntegration,
   AISuggestion
 } from '../../../../types/exportacao';
+import { StatusDetalheDialogComponent, StatusDetalheDialogData } from './status-detalhe-dialog/status-detalhe-dialog.component';
 
 interface StatusTrackingData {
   exportacao: Exportacao;
@@ -152,7 +153,6 @@ export class AcompanharStatusComponent implements OnInit, OnDestroy {
   // Estados da UI
   loading = false;
   realTimeUpdates = true;
-  sidenavOpened = false;
   selectedExport: Exportacao | null = null;
   
   // Configurações de atualização
@@ -195,7 +195,8 @@ export class AcompanharStatusComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private router: Router,
     private snackBar: MatSnackBar,
-    private exportService: ExportService
+    private exportService: ExportService,
+    private dialog: MatDialog
   ) {
     this.initializeFilterForm();
   }
@@ -502,7 +503,26 @@ export class AcompanharStatusComponent implements OnInit, OnDestroy {
 
   selectExport(exportacao: Exportacao): void {
     this.selectedExport = exportacao;
-    this.sidenavOpened = true;
+
+    const tracking = this.trackingData.find(t => t.exportacao.export_id === exportacao.export_id);
+
+    const data: StatusDetalheDialogData = {
+      exportacao,
+      timeline: tracking?.timeline ?? [],
+      alerts: this.getAlertsForExport(exportacao.export_id),
+      statusColor: this.getStatusColor(exportacao.export_status),
+      statusLabel: this.getStatusLabel(exportacao.export_status),
+      progress: this.getProgressPercentage(exportacao.export_status),
+      onResolveAlert: (alert) => this.resolveAlert(alert)
+    };
+
+    this.dialog.open(StatusDetalheDialogComponent, {
+      width: '640px',
+      maxWidth: '92vw',
+      autoFocus: true,
+      panelClass: 'status-detalhe-dialog-panel',
+      data
+    });
   }
 
   getStatusColor(status: string): string {
@@ -611,6 +631,40 @@ export class AcompanharStatusComponent implements OnInit, OnDestroy {
   resolveAlert(alert: StatusAlert): void {
     this.alerts = this.alerts.filter(a => a.id !== alert.id);
     this.showMessage('Alerta resolvido com sucesso', 'success');
+  }
+
+  editExport(exportacao: Exportacao): void {
+    this.router.navigate(['/home-logged/exportacao/editar', exportacao.export_id]);
+  }
+
+  exportRowToPDF(exportacao: Exportacao): void {
+    const columns = [
+      { key: 'export_number', label: 'Nº Exportação' },
+      { key: 'product_name', label: 'Produto' },
+      { key: 'importer_name', label: 'Importador' },
+      { key: 'destination_country', label: 'País Destino' },
+      { key: 'quantity', label: 'Quantidade' },
+      { key: 'total_value', label: 'Valor Total' },
+      { key: 'currency', label: 'Moeda' },
+      { key: 'incoterm', label: 'Incoterm' },
+      { key: 'port_origin', label: 'Porto Origem' },
+      { key: 'export_status', label: 'Status' },
+      { key: 'eta', label: 'ETA Entrega' }
+    ];
+    this.exportService.exportToPDF(
+      `Exportação ${exportacao.export_number}`,
+      [exportacao],
+      columns,
+      `exportacao-${exportacao.export_number}`
+    );
+    this.showMessage('PDF gerado com sucesso!', 'success');
+  }
+
+  openAlertExport(alert: StatusAlert): void {
+    const found = this.exportacoes.find(exp => exp.export_id === alert.exportId);
+    if (found) {
+      this.selectExport(found);
+    }
   }
 
   private showMessage(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info'): void {

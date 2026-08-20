@@ -1,0 +1,507 @@
+<div class="page-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="header-content">
+        <div class="header-icon-badge">
+          <mat-icon class="header-icon">add_shopping_cart</mat-icon>
+        </div>
+        <div class="header-text">
+          <h1>Novo Pedido de Exportação</h1>
+          <p class="subtitle">Sistema completo para criação de pedidos de exportação</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-button (click)="onCancel()">
+          <mat-icon>close</mat-icon>
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stepper Principal -->
+  <mat-card class="stepper-card">
+    <mat-vertical-stepper #stepper [linear]="true">
+
+      <!-- STEP 1: Informações Básicas -->
+      <mat-step [stepControl]="informacoesBasicasForm" label="Informações Básicas" icon="info">
+        <form [formGroup]="informacoesBasicasForm" class="step-form">
+          <div class="step-content">
+            <h3 class="step-title">
+              <mat-icon>business</mat-icon>
+              Dados Gerais da Exportação
+            </h3>
+
+            <div class="form-grid">
+              <mat-form-field appearance="outline">
+                <mat-label>Nome da Operação</mat-label>
+                <input matInput formControlName="nomeOperacao"
+                       placeholder="Ex: Exportação Soja - Safra 2025">
+                <mat-icon matSuffix>business</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Cliente/Importador</mat-label>
+                <mat-select formControlName="cliente">
+                  <mat-option *ngFor="let cliente of clientes" [value]="cliente.id">
+                    {{cliente.nome}} - {{cliente.pais}}
+                  </mat-option>
+                </mat-select>
+                <mat-icon matSuffix>person</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Data Esperada de Embarque</mat-label>
+                <input matInput [matDatepicker]="dataEsperadaPicker" formControlName="dataEsperada" readonly (click)="dataEsperadaPicker.open()">
+                <mat-datepicker-toggle matSuffix [for]="dataEsperadaPicker"></mat-datepicker-toggle>
+                <mat-datepicker #dataEsperadaPicker></mat-datepicker>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Prioridade</mat-label>
+                <mat-select formControlName="prioridade">
+                  <mat-option value="baixa">Baixa</mat-option>
+                  <mat-option value="media">Média</mat-option>
+                  <mat-option value="alta">Alta</mat-option>
+                  <mat-option value="urgente">Urgente</mat-option>
+                </mat-select>
+                <mat-icon matSuffix>priority_high</mat-icon>
+              </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Observações Gerais</mat-label>
+              <textarea matInput formControlName="observacoesGerais" rows="3"
+                        placeholder="Informações adicionais sobre a operação..."></textarea>
+              <mat-icon matSuffix>notes</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <div class="step-actions">
+            <button mat-raised-button color="primary" matStepperNext
+                    [disabled]="!informacoesBasicasForm.valid">
+              Próximo: Produtos
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- STEP 2: Produtos -->
+      <mat-step [stepControl]="produtosForm" label="Produtos" icon="inventory">
+        <form [formGroup]="produtosForm" class="step-form">
+          <div class="step-content">
+            <h3 class="step-title">
+              <mat-icon>inventory</mat-icon>
+              Especificação dos Produtos
+            </h3>
+
+            <div class="form-grid">
+              <mat-form-field appearance="outline">
+                <mat-label>Descrição do Produto</mat-label>
+                <input matInput formControlName="produtoDescricao"
+                       placeholder="Ex: Soja em grão para exportação">
+                <mat-icon matSuffix>agriculture</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>NCM</mat-label>
+                <input matInput formControlName="ncm"
+                       placeholder="1201.90.00">
+                <mat-icon matSuffix>qr_code</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Quantidade</mat-label>
+                <input matInput type="number" formControlName="quantidade"
+                       placeholder="1000">
+                <mat-icon matSuffix>straighten</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Unidade</mat-label>
+                <mat-select formControlName="unidade">
+                  <mat-option value="MT">MT - Toneladas Métricas</mat-option>
+                  <mat-option value="KG">KG - Quilogramas</mat-option>
+                  <mat-option value="TON">TON - Toneladas</mat-option>
+                </mat-select>
+                <mat-icon matSuffix>scale</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Valor Unitário (USD)</mat-label>
+                <input matInput type="number" formControlName="valorUnitario"
+                       placeholder="450.00">
+                <mat-icon matSuffix>attach_money</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Origem/Estado</mat-label>
+                <mat-select formControlName="origem">
+                  <mat-option value="MT">Mato Grosso</mat-option>
+                  <mat-option value="RS">Rio Grande do Sul</mat-option>
+                  <mat-option value="PR">Paraná</mat-option>
+                  <mat-option value="GO">Goiás</mat-option>
+                </mat-select>
+                <mat-icon matSuffix>place</mat-icon>
+              </mat-form-field>
+            </div>
+
+            <!-- Resumo do Produto -->
+            <mat-card class="produto-summary" *ngIf="produtosForm.valid">
+              <mat-card-header>
+                <mat-card-title>Resumo do Produto</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="summary-info">
+                  <div class="info-item">
+                    <strong>Total:</strong> {{ getTotalValue() | currency:'USD':'symbol':'1.2-2' }}
+                  </div>
+                  <div class="info-item">
+                    <strong>Peso Total:</strong> {{ produtosForm.get('quantidade')?.value || 0 }} {{ produtosForm.get('unidade')?.value }}
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+
+          <div class="step-actions">
+            <button mat-button matStepperPrevious>
+              <mat-icon>arrow_back</mat-icon>
+              Anterior
+            </button>
+            <button mat-raised-button color="primary" matStepperNext
+                    [disabled]="!produtosForm.valid">
+              Próximo: Logística
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- STEP 3: Logística -->
+      <mat-step [stepControl]="logisticaForm" label="Logística" icon="local_shipping">
+        <form [formGroup]="logisticaForm" class="step-form">
+          <div class="step-content">
+            <h3 class="step-title">
+              <mat-icon>local_shipping</mat-icon>
+              Logística e Transporte
+            </h3>
+
+            <div class="form-grid">
+              <mat-form-field appearance="outline">
+                <mat-label>Incoterm</mat-label>
+                <mat-select formControlName="incoterm">
+                  <mat-option value="FOB">FOB - Free On Board</mat-option>
+                  <mat-option value="CIF">CIF - Cost, Insurance & Freight</mat-option>
+                  <mat-option value="CFR">CFR - Cost & Freight</mat-option>
+                  <mat-option value="EXW">EXW - Ex Works</mat-option>
+                </mat-select>
+                <mat-icon matSuffix>local_shipping</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Porto de Embarque</mat-label>
+                <mat-select formControlName="portoEmbarque">
+                  <mat-option value="santos">Porto de Santos - SP</mat-option>
+                  <mat-option value="paranagua">Porto de Paranaguá - PR</mat-option>
+                  <mat-option value="rio-grande">Porto do Rio Grande - RS</mat-option>
+                  <mat-option value="vitoria">Porto de Vitória - ES</mat-option>
+                </mat-select>
+                <mat-icon matSuffix>directions_boat</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Porto de Destino</mat-label>
+                <input matInput formControlName="portoDestino"
+                       placeholder="Ex: Port of Hamburg">
+                <mat-icon matSuffix>flight_land</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Tipo de Transporte</mat-label>
+                <mat-select formControlName="tipoTransporte">
+                  <mat-option value="maritimo">Marítimo</mat-option>
+                  <mat-option value="aereo">Aéreo</mat-option>
+                  <mat-option value="rodoviario">Rodoviário</mat-option>
+                  <mat-option value="ferroviario">Ferroviário</mat-option>
+                </mat-select>
+                <mat-icon matSuffix>commute</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Empresa Transportadora</mat-label>
+                <input matInput formControlName="transportadora"
+                       placeholder="Nome da transportadora">
+                <mat-icon matSuffix>business</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Estimativa de Frete (USD)</mat-label>
+                <input matInput type="number" formControlName="estimativaFrete"
+                       placeholder="5000.00">
+                <mat-icon matSuffix>attach_money</mat-icon>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <div class="step-actions">
+            <button mat-button matStepperPrevious>
+              <mat-icon>arrow_back</mat-icon>
+              Anterior
+            </button>
+            <button mat-raised-button color="primary" matStepperNext
+                    [disabled]="!logisticaForm.valid">
+              Próximo: Documentação
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- STEP 4: Documentação -->
+      <mat-step [stepControl]="documentacaoForm" label="Documentação" icon="description">
+        <form [formGroup]="documentacaoForm" class="step-form">
+          <div class="step-content">
+            <h3 class="step-title">
+              <mat-icon>description</mat-icon>
+              Documentos Necessários
+            </h3>
+
+            <div class="form-grid">
+              <mat-form-field appearance="outline">
+                <mat-label>Moeda de Negociação</mat-label>
+                <mat-select formControlName="moeda">
+                  <mat-option value="USD">USD - Dólar Americano</mat-option>
+                  <mat-option value="EUR">EUR - Euro</mat-option>
+                  <mat-option value="BRL">BRL - Real Brasileiro</mat-option>
+                </mat-select>
+                <mat-icon matSuffix>currency_exchange</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Forma de Pagamento</mat-label>
+                <mat-select formControlName="formaPagamento">
+                  <mat-option value="carta-credito">Carta de Crédito</mat-option>
+                  <mat-option value="cobranca-documentaria">Cobrança Documentária</mat-option>
+                  <mat-option value="pagamento-direto">Pagamento Direto</mat-option>
+                  <mat-option value="antecipado">Pagamento Antecipado</mat-option>
+                </mat-select>
+                <mat-icon matSuffix>payment</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Prazo de Pagamento (dias)</mat-label>
+                <input matInput type="number" formControlName="prazoPagamento"
+                       placeholder="30">
+                <mat-icon matSuffix>schedule</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Banco do Importador</mat-label>
+                <input matInput formControlName="bancoImportador"
+                       placeholder="Nome do banco">
+                <mat-icon matSuffix>account_balance</mat-icon>
+              </mat-form-field>
+            </div>
+
+            <!-- Checklist de Documentos -->
+            <div class="documents-checklist">
+              <h4>Documentos Necessários</h4>
+              <div class="checklist-grid">
+                <mat-checkbox formControlName="faturaComercial">
+                  Fatura Comercial (Commercial Invoice)
+                </mat-checkbox>
+                <mat-checkbox formControlName="conhecimentoEmbarque">
+                  Conhecimento de Embarque (B/L)
+                </mat-checkbox>
+                <mat-checkbox formControlName="certificadoOrigem">
+                  Certificado de Origem
+                </mat-checkbox>
+                <mat-checkbox formControlName="licencaExportacao">
+                  Licença de Exportação
+                </mat-checkbox>
+                <mat-checkbox formControlName="certificadoFitossanitario">
+                  Certificado Fitossanitário
+                </mat-checkbox>
+                <mat-checkbox formControlName="apoliceSeguro">
+                  Apólice de Seguro
+                </mat-checkbox>
+              </div>
+            </div>
+          </div>
+
+          <div class="step-actions">
+            <button mat-button matStepperPrevious>
+              <mat-icon>arrow_back</mat-icon>
+              Anterior
+            </button>
+            <button mat-raised-button color="primary" matStepperNext
+                    [disabled]="!documentacaoForm.valid">
+              Próximo: Revisão
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- STEP 5: Revisão e Confirmação -->
+      <mat-step label="Revisão" icon="check_circle">
+        <div class="step-content">
+          <h3 class="step-title">
+            <mat-icon>check_circle</mat-icon>
+            Revisão Final do Pedido
+          </h3>
+
+          <!-- Status Validation -->
+          <mat-card class="validation-card" [ngClass]="{
+            'valid': getAllFormsValid(),
+            'invalid': !getAllFormsValid()
+          }">
+            <mat-card-content>
+              <div class="validation-status">
+                <mat-icon [ngClass]="getAllFormsValid() ? 'valid-icon' : 'invalid-icon'">
+                  {{ getAllFormsValid() ? 'check_circle' : 'error' }}
+                </mat-icon>
+                <span class="status-text">
+                  {{ getAllFormsValid() ? 'Pedido válido e pronto para submissão' : 'Por favor, complete todos os campos obrigatórios' }}
+                </span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <div class="review-sections">
+            <!-- Resumo Informações Básicas -->
+            <mat-expansion-panel class="review-panel">
+              <mat-expansion-panel-header>
+                <mat-panel-title>
+                  <mat-icon>info</mat-icon>
+                  Informações Básicas
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+              <div class="review-content">
+                <div class="info-grid">
+                  <div class="info-item">
+                    <strong>Operação:</strong> {{ informacoesBasicasForm.get('nomeOperacao')?.value }}
+                  </div>
+                  <div class="info-item">
+                    <strong>Cliente:</strong> {{ getClienteNome() }}
+                  </div>
+                  <div class="info-item">
+                    <strong>Data Esperada:</strong> {{ informacoesBasicasForm.get('dataEsperada')?.value | date:'dd/MM/yyyy' }}
+                  </div>
+                  <div class="info-item">
+                    <strong>Prioridade:</strong> {{ informacoesBasicasForm.get('prioridade')?.value }}
+                  </div>
+                </div>
+              </div>
+            </mat-expansion-panel>
+
+            <!-- Resumo Produtos -->
+            <mat-expansion-panel class="review-panel">
+              <mat-expansion-panel-header>
+                <mat-panel-title>
+                  <mat-icon>inventory</mat-icon>
+                  Produtos
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+              <div class="review-content">
+                <div class="info-grid">
+                  <div class="info-item">
+                    <strong>Produto:</strong> {{ produtosForm.get('produtoDescricao')?.value }}
+                  </div>
+                  <div class="info-item">
+                    <strong>NCM:</strong> {{ produtosForm.get('ncm')?.value }}
+                  </div>
+                  <div class="info-item">
+                    <strong>Quantidade:</strong> {{ produtosForm.get('quantidade')?.value }} {{ produtosForm.get('unidade')?.value }}
+                  </div>
+                  <div class="info-item">
+                    <strong>Valor Total:</strong> {{ getTotalValue() | currency:'USD':'symbol':'1.2-2' }}
+                  </div>
+                </div>
+              </div>
+            </mat-expansion-panel>
+
+            <!-- Resumo Logística -->
+            <mat-expansion-panel class="review-panel">
+              <mat-expansion-panel-header>
+                <mat-panel-title>
+                  <mat-icon>local_shipping</mat-icon>
+                  Logística
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+              <div class="review-content">
+                <div class="info-grid">
+                  <div class="info-item">
+                    <strong>Incoterm:</strong> {{ logisticaForm.get('incoterm')?.value }}
+                  </div>
+                  <div class="info-item">
+                    <strong>Porto Embarque:</strong> {{ logisticaForm.get('portoEmbarque')?.value }}
+                  </div>
+                  <div class="info-item">
+                    <strong>Porto Destino:</strong> {{ logisticaForm.get('portoDestino')?.value }}
+                  </div>
+                  <div class="info-item">
+                    <strong>Transporte:</strong> {{ logisticaForm.get('tipoTransporte')?.value }}
+                  </div>
+                </div>
+              </div>
+            </mat-expansion-panel>
+
+            <!-- Resumo Documentação -->
+            <mat-expansion-panel class="review-panel">
+              <mat-expansion-panel-header>
+                <mat-panel-title>
+                  <mat-icon>description</mat-icon>
+                  Documentação
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+              <div class="review-content">
+                <div class="info-grid">
+                  <div class="info-item">
+                    <strong>Moeda:</strong> {{ documentacaoForm.get('moeda')?.value }}
+                  </div>
+                  <div class="info-item">
+                    <strong>Forma Pagamento:</strong> {{ documentacaoForm.get('formaPagamento')?.value }}
+                  </div>
+                  <div class="info-item">
+                    <strong>Prazo:</strong> {{ documentacaoForm.get('prazoPagamento')?.value }} dias
+                  </div>
+                </div>
+              </div>
+            </mat-expansion-panel>
+          </div>
+        </div>
+
+        <div class="step-actions final-actions">
+          <button mat-button matStepperPrevious>
+            <mat-icon>arrow_back</mat-icon>
+            Anterior
+          </button>
+
+          <button mat-button (click)="onCancel()">
+            <mat-icon>close</mat-icon>
+            Cancelar
+          </button>
+
+          <button mat-raised-button color="accent"
+                  (click)="onSalvarRascunho()" [disabled]="salvando">
+            <mat-progress-spinner *ngIf="salvando" diameter="16" class="spinner"></mat-progress-spinner>
+            <mat-icon *ngIf="!salvando">save</mat-icon>
+            Salvar Rascunho
+          </button>
+
+          <button mat-raised-button color="primary"
+                  (click)="onSubmit()" [disabled]="!getAllFormsValid() || criando">
+            <mat-progress-spinner *ngIf="criando" diameter="16" class="spinner"></mat-progress-spinner>
+            <mat-icon *ngIf="!criando">send</mat-icon>
+            Criar Pedido de Exportação
+          </button>
+        </div>
+      </mat-step>
+
+    </mat-vertical-stepper>
+  </mat-card>
+</div>

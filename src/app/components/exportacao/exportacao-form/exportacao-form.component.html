@@ -1,11 +1,15 @@
 <div class="exportacao-form-container">
   <!-- Header do Dialog -->
   <div class="form-header">
-    <h2>
-      <mat-icon>{{ isEditMode ? 'edit' : 'add' }}</mat-icon>
-      {{ isEditMode ? 'Editar Exportação' : 'Nova Exportação' }}
-    </h2>
-    <p class="form-subtitle">{{ isEditMode ? 'Modificar dados da exportação' : 'Criação assistida por IA' }}</p>
+    <mat-icon class="header-icon">{{ isEditMode ? 'edit' : 'add' }}</mat-icon>
+    <div class="header-text">
+      <h2>{{ isEditMode ? 'Editar Exportação' : 'Nova Exportação' }}</h2>
+      <p class="form-subtitle">{{ isEditMode ? 'Modificar dados da exportação' : 'Criação assistida por IA' }}</p>
+    </div>
+    <button mat-icon-button (click)="openAIAssistant()" class="ai-assistant-button"
+            matTooltip="Assistente IA" aria-label="Abrir Assistente IA">
+      <mat-icon>smart_toy</mat-icon>
+    </button>
     <button mat-icon-button (click)="onCancel()" class="close-button">
       <mat-icon>close</mat-icon>
     </button>
@@ -930,48 +934,4 @@
     </mat-stepper>
   </div>
 
-  <!-- Assistente IA Lateral -->
-  <div class="ai-assistant-sidebar" *ngIf="aiSuggestions.length > 0 || aiProcessing">
-    <div class="ai-header">
-      <mat-icon>psychology</mat-icon>
-      <h4>Assistente IA</h4>
-    </div>
-
-    <div class="ai-content">
-      <div *ngIf="aiProcessing" class="ai-processing">
-        <mat-progress-spinner diameter="30"></mat-progress-spinner>
-        <p>Analisando dados...</p>
-      </div>
-
-      <div class="ai-suggestions" *ngIf="aiSuggestions.length > 0">
-        <div *ngFor="let suggestion of aiSuggestions" class="suggestion-item">
-          <mat-icon class="suggestion-icon">lightbulb</mat-icon>
-          <div class="suggestion-content">
-            <p>{{ suggestion.message || suggestion.text }}</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="ai-chat-input">
-        <mat-form-field appearance="outline" class="chat-input">
-          <mat-label>Pergunte ao assistente...</mat-label>
-          <textarea matInput [(ngModel)]="aiChat" rows="2"
-                    placeholder="Ex: Que documentos preciso para exportar para os EUA?"></textarea>
-        </mat-form-field>
-        <button mat-icon-button color="primary" 
-                (click)="sendAIMessage()"
-                [disabled]="!aiChat.trim() || aiProcessing">
-          <mat-icon>send</mat-icon>
-        </button>
-      </div>
-
-      <button mat-button color="accent" 
-              (click)="autoFillWithAI()"
-              [disabled]="aiProcessing"
-              class="ai-autofill">
-        <mat-icon>auto_awesome</mat-icon>
-        Preencher com IA
-      </button>
-    </div>
-  </div>
 </div>

@@ -1,2 +1,351 @@
-<!-- Este template está inline no component.ts -->
-<!-- O template foi implementado inline para facilitar a manutenção -->
+<div class="dialog-container">
+
+  <!-- Portos Header -->
+  <div mat-dialog-title class="dialog-header">
+    <div class="header-icon">
+      <mat-icon>{{ isEditMode ? 'edit' : 'add' }}</mat-icon>
+    </div>
+    <div class="header-text">
+      <h2 class="header-title">{{ isEditMode ? 'Editar Contrato' : 'Novo Contrato' }}</h2>
+      <p class="header-subtitle">Gestão de contratos de exportação</p>
+    </div>
+    <button mat-icon-button mat-dialog-close class="header-close" aria-label="Fechar">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content class="dialog-content">
+
+    <!-- Stepper para criação -->
+    <mat-stepper *ngIf="!isEditMode" [selectedIndex]="currentStep" orientation="horizontal">
+
+      <!-- Step 1: Informações Básicas -->
+      <mat-step [stepControl]="basicInfoForm" label="Informações Básicas">
+        <form [formGroup]="basicInfoForm" class="step-form">
+
+          <div class="form-grid form-grid-2">
+            <mat-form-field appearance="outline">
+              <mat-label>Número do Contrato</mat-label>
+              <input matInput formControlName="contract_number" placeholder="EXP/2024/001">
+              <mat-error *ngIf="basicInfoForm.get('contract_number')?.hasError('required')">
+                Número do contrato é obrigatório
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Status</mat-label>
+              <mat-select formControlName="status">
+                <mat-option *ngFor="let status of statusOptions" [value]="status.value">
+                  {{ status.label }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="form-grid form-grid-2">
+            <mat-form-field appearance="outline">
+              <mat-label>Exportador</mat-label>
+              <mat-select formControlName="exporter_id">
+                <mat-option *ngFor="let exporter of filterOptions?.exporters" [value]="exporter.id">
+                  {{ exporter.name }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="basicInfoForm.get('exporter_id')?.hasError('required')">
+                Exportador é obrigatório
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Nome do Importador</mat-label>
+              <input matInput formControlName="importer_name" placeholder="Nome da empresa importadora">
+              <mat-error *ngIf="basicInfoForm.get('importer_name')?.hasError('required')">
+                Nome do importador é obrigatório
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-grid form-grid-1">
+            <mat-form-field appearance="outline">
+              <mat-label>País do Importador</mat-label>
+              <mat-select formControlName="importer_country">
+                <mat-option *ngFor="let country of filterOptions?.countries" [value]="country.code">
+                  {{ country.name }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="basicInfoForm.get('importer_country')?.hasError('required')">
+                País do importador é obrigatório
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="step-actions step-actions-end">
+            <button mat-raised-button color="primary"
+                    (click)="nextStep()"
+                    [disabled]="!basicInfoForm.valid">
+              Próximo
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </div>
+
+        </form>
+      </mat-step>
+
+      <!-- Step 2: Detalhes Comerciais -->
+      <mat-step [stepControl]="commercialForm" label="Detalhes Comerciais">
+        <form [formGroup]="commercialForm" class="step-form">
+
+          <div class="form-grid form-grid-3">
+            <mat-form-field appearance="outline">
+              <mat-label>Incoterm</mat-label>
+              <mat-select formControlName="incoterm">
+                <mat-option *ngFor="let incoterm of incotermOptions" [value]="incoterm.value">
+                  {{ incoterm.label }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="commercialForm.get('incoterm')?.hasError('required')">
+                Incoterm é obrigatório
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Valor Total</mat-label>
+              <input matInput
+                     type="number"
+                     formControlName="total_value"
+                     placeholder="0.00"
+                     (input)="calculateCosts()">
+              <mat-error *ngIf="commercialForm.get('total_value')?.hasError('required')">
+                Valor é obrigatório
+              </mat-error>
+              <mat-error *ngIf="commercialForm.get('total_value')?.hasError('min')">
+                Valor mínimo: {{ formatCurrency(minValue, 'USD') }}
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Moeda</mat-label>
+              <mat-select formControlName="currency">
+                <mat-option *ngFor="let currency of currencyOptions" [value]="currency">
+                  {{ currency }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="commercialForm.get('currency')?.hasError('required')">
+                Moeda é obrigatória
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-grid form-grid-2">
+            <mat-form-field appearance="outline">
+              <mat-label>Porto de Origem</mat-label>
+              <mat-select formControlName="port_origin">
+                <mat-option *ngFor="let port of originPorts" [value]="port.code">
+                  {{ port.name }} ({{ port.code }})
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="commercialForm.get('port_origin')?.hasError('required')">
+                Porto de origem é obrigatório
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Porto de Destino</mat-label>
+              <mat-select formControlName="port_destination">
+                <mat-option *ngFor="let port of destinationPorts" [value]="port.code">
+                  {{ port.name }} ({{ port.code }})
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="commercialForm.get('port_destination')?.hasError('required')">
+                Porto de destino é obrigatório
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-grid form-grid-2">
+            <mat-form-field appearance="outline">
+              <mat-label>Data do Contrato</mat-label>
+              <input matInput [matDatepicker]="contractDatePicker" formControlName="contract_date">
+              <mat-datepicker-toggle matSuffix [for]="contractDatePicker"></mat-datepicker-toggle>
+              <mat-datepicker #contractDatePicker></mat-datepicker>
+              <mat-error *ngIf="commercialForm.get('contract_date')?.hasError('required')">
+                Data do contrato é obrigatória
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Data de Embarque</mat-label>
+              <input matInput [matDatepicker]="shipmentDatePicker" formControlName="shipment_date">
+              <mat-datepicker-toggle matSuffix [for]="shipmentDatePicker"></mat-datepicker-toggle>
+              <mat-datepicker #shipmentDatePicker></mat-datepicker>
+              <mat-error *ngIf="commercialForm.get('shipment_date')?.hasError('required')">
+                Data de embarque é obrigatória
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <!-- Custos calculados -->
+          <mat-card *ngIf="calculatedCosts" class="costs-card">
+            <mat-card-header>
+              <mat-card-title class="costs-title">
+                <mat-icon>calculate</mat-icon>
+                Custos Calculados ({{ getFormValue(commercialForm, 'incoterm') }})
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="costs-grid">
+                <div class="cost-item">
+                  <div class="cost-label">Frete</div>
+                  <div class="cost-value">{{ formatCurrency(calculatedCosts.freight_cost || 0, getFormValue(commercialForm, 'currency')) }}</div>
+                </div>
+                <div class="cost-item">
+                  <div class="cost-label">Seguro</div>
+                  <div class="cost-value">{{ formatCurrency(calculatedCosts.insurance_cost || 0, getFormValue(commercialForm, 'currency')) }}</div>
+                </div>
+                <div class="cost-item">
+                  <div class="cost-label">Manuseio</div>
+                  <div class="cost-value">{{ formatCurrency(calculatedCosts.handling_cost || 0, getFormValue(commercialForm, 'currency')) }}</div>
+                </div>
+                <div class="cost-item">
+                  <div class="cost-label">Total Custos</div>
+                  <div class="cost-value cost-value-warning">{{ formatCurrency(calculatedCosts.total_costs || 0, getFormValue(commercialForm, 'currency')) }}</div>
+                </div>
+                <div class="cost-item">
+                  <div class="cost-label">Valor Líquido</div>
+                  <div class="cost-value cost-value-success cost-value-large">{{ formatCurrency(calculatedCosts.net_value || 0, getFormValue(commercialForm, 'currency')) }}</div>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <div class="step-actions step-actions-between">
+            <button mat-button (click)="previousStep()">
+              <mat-icon>arrow_back</mat-icon>
+              Anterior
+            </button>
+            <button mat-raised-button color="primary"
+                    (click)="saveContract()"
+                    [disabled]="!isFormValid() || isLoading">
+              <span *ngIf="isLoading" class="btn-loading">
+                <mat-progress-spinner diameter="20" mode="indeterminate"></mat-progress-spinner>
+                Salvando...
+              </span>
+              <span *ngIf="!isLoading">
+                <mat-icon>save</mat-icon>
+                Criar Contrato
+              </span>
+            </button>
+          </div>
+
+        </form>
+      </mat-step>
+
+    </mat-stepper>
+
+    <!-- Formulário simples para edição -->
+    <form *ngIf="isEditMode" [formGroup]="editForm" class="step-form">
+
+      <div class="form-grid form-grid-2">
+        <mat-form-field appearance="outline">
+          <mat-label>Número do Contrato</mat-label>
+          <input matInput formControlName="contract_number" readonly>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            <mat-option *ngFor="let status of statusOptions" [value]="status.value">
+              {{ status.label }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="form-grid form-grid-2">
+        <mat-form-field appearance="outline">
+          <mat-label>Nome do Importador</mat-label>
+          <input matInput formControlName="importer_name">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>País do Importador</mat-label>
+          <mat-select formControlName="importer_country">
+            <mat-option *ngFor="let country of filterOptions?.countries" [value]="country.code">
+              {{ country.name }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="form-grid form-grid-3">
+        <mat-form-field appearance="outline">
+          <mat-label>Valor Total</mat-label>
+          <input matInput
+                 type="number"
+                 formControlName="total_value"
+                 (input)="calculateCostsEdit()">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Moeda</mat-label>
+          <mat-select formControlName="currency">
+            <mat-option *ngFor="let currency of currencyOptions" [value]="currency">
+              {{ currency }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Incoterm</mat-label>
+          <mat-select formControlName="incoterm" (selectionChange)="calculateCostsEdit()">
+            <mat-option *ngFor="let incoterm of incotermOptions" [value]="incoterm.value">
+              {{ incoterm.label }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Custos calculados para edição -->
+      <mat-card *ngIf="calculatedCostsEdit" class="costs-card">
+        <mat-card-header>
+          <mat-card-title class="costs-title">
+            <mat-icon>calculate</mat-icon>
+            Custos Atualizados
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="costs-grid">
+            <div class="cost-item">
+              <div class="cost-label">Valor Líquido</div>
+              <div class="cost-value cost-value-success cost-value-large">
+                {{ formatCurrency(calculatedCostsEdit.net_value || 0, getFormValue(editForm, 'currency')) }}
+              </div>
+            </div>
+            <div class="cost-item">
+              <div class="cost-label">Total Custos</div>
+              <div class="cost-value cost-value-warning">
+                {{ formatCurrency(calculatedCostsEdit.total_costs || 0, getFormValue(editForm, 'currency')) }}
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+    </form>
+
+  </mat-dialog-content>
+
+  <!-- Ações do Dialog para Edição -->
+  <mat-dialog-actions *ngIf="isEditMode" align="end" class="dialog-actions">
+    <button mat-button mat-dialog-close>Cancelar</button>
+    <button mat-raised-button color="primary"
+            (click)="saveContract()"
+            [disabled]="!editForm.valid || isLoading">
+      <span *ngIf="isLoading" class="btn-loading">
+        <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
+        Salvando...
+      </span>
+      <span *ngIf="!isLoading">Salvar Alterações</span>
+    </button>
+  </mat-dialog-actions>
+
+</div>

@@ -50,7 +50,7 @@ export interface Cidade {
           <mat-icon>location_city</mat-icon>
           Cadastro de Cidades
         </h1>
-        <p>Gerencie as cidades do sistema PSF Digital</p>
+        <p>Gerencie as cidades do sistema Export Intelligence Platform</p>
       </div>
 
       <!-- Card Principal -->

@@ -26,7 +26,7 @@ import { NotificationService } from '../../services/notification.service';
 
     <!-- Header -->
     <mat-toolbar color="primary" class="header-toolbar">
-      <span class="logo">PSF Digital</span>
+      <span class="logo">Export Intelligence Platform</span>
       <span class="spacer"></span>
       
       <div class="header-actions">
@@ -44,7 +44,7 @@ import { NotificationService } from '../../services/notification.service';
     <main class="main-content">
       <div class="hero-section">
         <div class="hero-header">
-          <h1 class="hero-title">Bem-vindo ao PSF Digital</h1>
+          <h1 class="hero-title">Bem-vindo ao Export Intelligence Platform</h1>
           <p class="hero-subtitle">Plataforma de Saúde da Família</p>
           <p class="hero-description">Acesse sua conta para gerenciar informações de saúde, agendar consultas e muito mais.</p>
         </div>
@@ -138,7 +138,7 @@ import { NotificationService } from '../../services/notification.service';
     <footer class="footer">
       <div class="footer-content">
         <div class="footer-section">
-          <h4>PSF Digital</h4>
+          <h4>Export Intelligence Platform</h4>
           <p>Plataforma de Saúde da Família</p>
         </div>
         <div class="footer-section">
@@ -153,7 +153,7 @@ import { NotificationService } from '../../services/notification.service';
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2024 PSF Digital. Todos os direitos reservados.</p>
+        <p>&copy; 2024 Export Intelligence Platform. Todos os direitos reservados.</p>
       </div>
     </footer>
   `,

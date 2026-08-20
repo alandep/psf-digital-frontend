@@ -1,8 +1,21 @@
-// Variáveis
-$primary-color: #1976d2;
-$accent-color: #00bcd4;
-$warn-color: #f44336;
-$success-color: #4caf50;
+@use 'sass:color';
+
+// === VARIABLES (Portos visual identity) ===
+$primary: #1976d2;
+$primary-dark: #1565c0;
+$success: #4caf50;
+$warning: #ff9800;
+$danger: #f44336;
+$purple: #9c27b0; // AI / secondary accent (replaces the old cyan)
+$blue: #2196f3;
+$teal: #009688;
+$grey: #9e9e9e;
+
+// Backwards-compatible aliases used across this file
+$primary-color: $primary;
+$accent-color: $purple; // AI/secondary accent
+$warn-color: $danger;
+$success-color: $success;
 
 .exportacao-form-container {
   max-width: 1200px;
@@ -10,68 +23,89 @@ $success-color: #4caf50;
   background: white;
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 
-  // Header
+  // === Header (Portos hero identity) ===
   .form-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 16px;
     padding: 24px 32px;
-    background: linear-gradient(135deg, $primary-color, #1565c0);
+    padding-right: 64px; // reserve room so content never sits under the close button
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
     color: white;
     position: relative;
+    box-shadow: 0 8px 32px rgba(25, 118, 210, 0.3);
 
-    h2 {
+    // Translucent circular icon badge (like Portos hero header-icon)
+    .header-icon {
+      font-size: 1.8rem;
+      width: 3rem;
+      height: 3rem;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      padding: 8px;
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin: 0;
-      font-weight: 400;
-      font-size: 1.5rem;
+      justify-content: center;
+      backdrop-filter: blur(10px);
+      flex-shrink: 0;
+      box-sizing: border-box;
+    }
 
-      mat-icon {
-        font-size: 1.8rem;
-        width: 1.8rem;
-        height: 1.8rem;
-      }
+    // Text block (title + subtitle) grows, leaving the close button pinned right
+    .header-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    h2 {
+      margin: 0;
+      font-weight: 300;
+      font-size: 1.6rem;
+      letter-spacing: -0.5px;
     }
 
     .form-subtitle {
       margin: 4px 0 0 0;
       opacity: 0.9;
       font-size: 0.9rem;
+      font-weight: 300;
     }
 
     .close-button {
       color: white;
-      
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      flex-shrink: 0;
+
       &:hover {
-        background: rgba(white, 0.1);
+        background: rgba(255, 255, 255, 0.15);
       }
     }
   }
 
-  // Loading Overlay
+  // === Loading Overlay ===
   .loading-overlay {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 64px;
-    
+
     p {
       margin-top: 16px;
       color: #666;
     }
   }
 
-  // Stepper Container
+  // === Stepper Container ===
   .stepper-container {
     padding: 32px;
-    
+
     .export-stepper {
-      // Customização do stepper header
       ::ng-deep .mat-stepper-horizontal-line {
         border-top-color: #e0e0e0;
         border-top-width: 2px;
@@ -79,13 +113,16 @@ $success-color: #4caf50;
 
       ::ng-deep .mat-step-header {
         padding: 16px 24px;
+        border-radius: 8px;
 
         .mat-step-icon {
           background-color: #e0e0e0;
           color: #666;
 
-          &.mat-step-icon-selected {
-            background-color: $primary-color;
+          &.mat-step-icon-selected,
+          &.mat-step-icon-state-done,
+          &.mat-step-icon-state-edit {
+            background-color: $primary;
             color: white;
           }
         }
@@ -94,14 +131,14 @@ $success-color: #4caf50;
           font-weight: 500;
 
           &.mat-step-label-selected {
-            color: $primary-color;
+            color: $primary;
           }
         }
       }
     }
   }
 
-  // Step Content
+  // === Step Content ===
   .step-content {
     min-height: 500px;
     padding: 24px 0;
@@ -139,15 +176,19 @@ $success-color: #4caf50;
         margin: 0;
 
         mat-icon {
-          color: $accent-color;
+          color: $purple;
           font-size: 1.2rem;
         }
       }
     }
   }
 
-  // Forms
-  .step-form {
+  // === Forms ===
+  // Same row layout applies to the main step form as well as the product
+  // cards and the packaging block, so fields get proper spacing everywhere.
+  .step-form,
+  .product-form,
+  .packaging-form {
     .form-row {
       display: flex;
       gap: 16px;
@@ -155,8 +196,8 @@ $success-color: #4caf50;
       flex-wrap: wrap;
 
       mat-form-field {
-        flex: 1;
-        min-width: 200px;
+        flex: 1 1 200px;
+        min-width: 0; // allow shrinking so labels/inputs never overflow the card
 
         &.full-width {
           flex: 1 1 100%;
@@ -164,10 +205,13 @@ $success-color: #4caf50;
 
         &.address-field {
           flex: 1 1 45%;
+          min-width: 240px;
         }
       }
     }
+  }
 
+  .step-form {
     .toggle-label {
       display: flex;
       align-items: center;
@@ -175,16 +219,18 @@ $success-color: #4caf50;
 
       mat-icon {
         font-size: 1.1rem;
-        color: $accent-color;
+        color: $purple;
       }
     }
   }
 
-  // Step Actions
+  // === Step Actions ===
   .step-actions {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
     margin-top: 32px;
     padding: 24px 0 0 0;
     border-top: 1px solid #e0e0e0;
@@ -202,13 +248,13 @@ $success-color: #4caf50;
       }
 
       &[color="primary"] {
-        background: linear-gradient(45deg, $primary-color, #1565c0);
+        background: linear-gradient(135deg, $primary, $primary-dark);
       }
     }
   }
 }
 
-// Produtos Section
+// === Produtos Section ===
 .products-section {
   margin: 24px 0;
 
@@ -242,16 +288,22 @@ $success-color: #4caf50;
 
     mat-card {
       border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      transition: transform 0.2s, box-shadow 0.2s;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      }
 
       mat-card-header {
         .product-avatar {
-          background: rgba($accent-color, 0.1);
-          color: $accent-color;
+          background: rgba($purple, 0.1);
+          color: $purple;
         }
 
         .remove-product {
-          color: $warn-color;
+          color: $danger;
           margin-left: auto;
         }
       }
@@ -270,7 +322,7 @@ $success-color: #4caf50;
   margin-top: 24px;
 }
 
-// Documents Section
+// === Documents Section ===
 .documents-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -281,7 +333,7 @@ $success-color: #4caf50;
     padding: 12px;
     background: white;
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
     .toggle-label {
       font-size: 0.9rem;
@@ -324,12 +376,13 @@ $success-color: #4caf50;
         gap: 12px;
 
         .document-icon {
-          color: $accent-color;
+          color: $purple;
           font-size: 1.5rem;
         }
 
         .document-details {
           flex: 1;
+          min-width: 0;
 
           .document-name {
             font-weight: 500;
@@ -347,20 +400,26 @@ $success-color: #4caf50;
             border-radius: 12px;
             display: inline-block;
             margin-top: 4px;
+            font-weight: 600;
 
             &.status-pending {
-              background: rgba(#ff9800, 0.1);
-              color: #ff9800;
+              background: rgba($warning, 0.1);
+              color: color.adjust($warning, $lightness: -15%);
+            }
+
+            &.status-generated {
+              background: rgba($blue, 0.12);
+              color: color.adjust($blue, $lightness: -12%);
             }
 
             &.status-approved {
-              background: rgba($success-color, 0.1);
-              color: $success-color;
+              background: rgba($success, 0.1);
+              color: color.adjust($success, $lightness: -15%);
             }
 
             &.status-rejected {
-              background: rgba($warn-color, 0.1);
-              color: $warn-color;
+              background: rgba($danger, 0.1);
+              color: color.adjust($danger, $lightness: -10%);
             }
           }
         }
@@ -371,16 +430,17 @@ $success-color: #4caf50;
   .add-documents-section {
     display: flex;
     align-items: flex-end;
+    flex-wrap: wrap;
     gap: 16px;
     margin-top: 24px;
     padding: 20px;
     background: white;
     border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
     .document-type-select {
-      flex: 1;
-      min-width: 200px;
+      flex: 1 1 200px;
+      min-width: 0;
     }
 
     button {
@@ -390,22 +450,22 @@ $success-color: #4caf50;
   }
 }
 
-// Review Section
+// === Review Section ===
 .review-summary {
   margin-bottom: 32px;
 
   .summary-card {
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
     mat-card-header {
-      background: rgba($primary-color, 0.05);
+      background: rgba($primary, 0.05);
 
       mat-card-title {
         display: flex;
         align-items: center;
         gap: 8px;
-        color: $primary-color;
+        color: $primary;
 
         mat-icon {
           font-size: 1.2rem;
@@ -450,7 +510,7 @@ $success-color: #4caf50;
     padding: 12px;
     background: white;
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 }
 
@@ -467,7 +527,7 @@ $success-color: #4caf50;
   }
 }
 
-// AI Assistant Sidebar
+// === AI Assistant Sidebar ===
 .ai-assistant-sidebar {
   position: fixed;
   top: 0;
@@ -475,7 +535,7 @@ $success-color: #4caf50;
   width: 320px;
   height: 100vh;
   background: white;
-  box-shadow: -4px 0 16px rgba(0,0,0,0.1);
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -485,7 +545,7 @@ $success-color: #4caf50;
     align-items: center;
     gap: 12px;
     padding: 20px;
-    background: linear-gradient(135deg, $accent-color, #00acc1);
+    background: linear-gradient(135deg, $purple, color.adjust($purple, $lightness: -10%));
     color: white;
 
     mat-icon {
@@ -523,12 +583,12 @@ $success-color: #4caf50;
         display: flex;
         gap: 12px;
         padding: 12px;
-        background: rgba($accent-color, 0.05);
+        background: rgba($purple, 0.05);
         border-radius: 8px;
         margin-bottom: 12px;
 
         .suggestion-icon {
-          color: $accent-color;
+          color: $purple;
           font-size: 1.1rem;
           margin-top: 2px;
         }
@@ -569,30 +629,36 @@ $success-color: #4caf50;
   }
 }
 
-// Responsividade
+// === Responsividade ===
 @media (max-width: 1024px) {
   .exportacao-form-container {
     margin: 16px;
-    
+
     .stepper-container {
       padding: 16px;
     }
-    
+
     .step-content {
-      .step-form {
+      .step-form,
+      .product-form,
+      .packaging-form {
         .form-row {
           flex-direction: column;
-          
+
           mat-form-field {
             width: 100%;
+
+            &.address-field {
+              flex: 1 1 100%;
+            }
           }
         }
       }
     }
   }
-  
+
   .ai-assistant-sidebar {
-    display: none; // Ocultar sidebar em telas menores
+    display: none; // Ocultar sidebar em telas menores (evita sobreposição do conteúdo)
   }
 }
 
@@ -600,12 +666,20 @@ $success-color: #4caf50;
   .exportacao-form-container {
     .form-header {
       padding: 16px 20px;
-      
+      padding-right: 56px;
+      gap: 12px;
+
+      .header-icon {
+        width: 2.4rem;
+        height: 2.4rem;
+        font-size: 1.5rem;
+      }
+
       h2 {
         font-size: 1.2rem;
       }
     }
-    
+
     .step-content {
       .step-header {
         h3 {
@@ -614,18 +688,19 @@ $success-color: #4caf50;
       }
     }
   }
-  
+
   .documents-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .add-documents-section {
     flex-direction: column;
-    
+    align-items: stretch;
+
     .document-type-select {
       width: 100%;
     }
-    
+
     button {
       width: 100%;
     }
@@ -635,21 +710,28 @@ $success-color: #4caf50;
 @media (max-width: 480px) {
   .exportacao-form-container {
     margin: 8px;
-    
+
     .form-header {
       padding: 12px 16px;
-      flex-direction: column;
-      align-items: flex-start;
-      
-      .close-button {
-        position: absolute;
-        top: 12px;
-        right: 16px;
-      }
+      padding-right: 52px;
     }
-    
+
     .stepper-container {
       padding: 12px;
+    }
+
+    // Actions stack full-width so buttons never overflow
+    .step-actions {
+      flex-direction: column;
+      align-items: stretch;
+
+      .spacer {
+        display: none;
+      }
+
+      button {
+        width: 100%;
+      }
     }
   }
 }

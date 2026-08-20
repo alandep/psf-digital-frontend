@@ -7,22 +7,22 @@ export const embarqueRoutes: Routes = [
   {
     path: '',
     component: EmbarqueListaComponent,
-    title: 'Embarques - PSF Digital'
+    title: 'Embarques - Export Intelligence Platform'
   },
   {
     path: 'novo',
     component: EmbarqueFormComponent,
-    title: 'Novo Embarque - PSF Digital'
+    title: 'Novo Embarque - Export Intelligence Platform'
   },
   {
     path: 'editar/:id',
     component: EmbarqueFormComponent,
-    title: 'Editar Embarque - PSF Digital'
+    title: 'Editar Embarque - Export Intelligence Platform'
   },
   {
     path: 'detalhes/:id',
     component: EmbarqueDetalhesComponent,
-    title: 'Detalhes do Embarque - PSF Digital'
+    title: 'Detalhes do Embarque - Export Intelligence Platform'
   },
   {
     path: '**',

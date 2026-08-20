@@ -1,0 +1,168 @@
+<div class="status-detalhe-dialog">
+  <!-- Cabeçalho com gradiente Portos -->
+  <div class="dialog-header">
+    <div class="header-badge">
+      <mat-icon>track_changes</mat-icon>
+    </div>
+    <div class="export-title">
+      <h2>{{ data.exportacao.export_number }}</h2>
+      <p>{{ data.exportacao.product_name }}</p>
+    </div>
+    <button mat-icon-button class="close-btn" mat-dialog-close matTooltip="Fechar">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Conteúdo -->
+  <div mat-dialog-content class="dialog-content">
+    <mat-tab-group>
+      <!-- ====== RESUMO ====== -->
+      <mat-tab label="Resumo">
+        <div class="tab-content summary-content">
+          <mat-card class="info-card">
+            <mat-card-header>
+              <mat-card-title>Informações Gerais</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="info-grid">
+                <div class="info-item">
+                  <mat-icon>business</mat-icon>
+                  <div>
+                    <label>Importador</label>
+                    <span>{{ data.exportacao.importer_name }}</span>
+                  </div>
+                </div>
+
+                <div class="info-item">
+                  <mat-icon>public</mat-icon>
+                  <div>
+                    <label>Destino</label>
+                    <span>{{ data.exportacao.destination_country }}</span>
+                  </div>
+                </div>
+
+                <div class="info-item">
+                  <mat-icon>attach_money</mat-icon>
+                  <div>
+                    <label>Valor Total</label>
+                    <span>{{ data.exportacao.total_value | currency:'USD':'symbol':'1.2-2' }}</span>
+                  </div>
+                </div>
+
+                <div class="info-item">
+                  <mat-icon>local_shipping</mat-icon>
+                  <div>
+                    <label>Incoterm</label>
+                    <span>{{ data.exportacao.incoterm }}</span>
+                  </div>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="status-card">
+            <mat-card-header>
+              <mat-card-title>Status Atual</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="current-status">
+                <mat-chip [class]="'status-chip-large status-' + data.statusColor">
+                  {{ data.statusLabel }}
+                </mat-chip>
+                <mat-progress-bar
+                  mode="determinate"
+                  [value]="data.progress"
+                  class="status-progress">
+                </mat-progress-bar>
+                <p class="status-description">Progresso: {{ data.progress }}%</p>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+
+      <!-- ====== TIMELINE ====== -->
+      <mat-tab label="Timeline">
+        <div class="tab-content timeline-content">
+          <div class="timeline-events-detail">
+            <div class="timeline-event-detail"
+                 *ngFor="let event of data.timeline"
+                 [class]="'event-detail-' + getTimelineStatus(event)">
+
+              <div class="event-marker-detail">
+                <mat-icon [class]="'icon-detail-' + getTimelineStatus(event)">
+                  {{ getTimelineIcon(event) }}
+                </mat-icon>
+              </div>
+
+              <div class="event-content-detail">
+                <div class="event-header-detail">
+                  <h4>{{ event.title }}</h4>
+                  <span class="event-date">{{ event.date | date:'medium' }}</span>
+                </div>
+
+                <p>{{ event.description }}</p>
+
+                <div class="event-meta" *ngIf="event.details || event.documents || event.estimatedCompletion">
+                  <div class="meta-item" *ngIf="event.details">
+                    <mat-icon>info</mat-icon>
+                    <span>{{ event.details }}</span>
+                  </div>
+
+                  <div class="meta-item" *ngIf="event.documents?.length">
+                    <mat-icon>attach_file</mat-icon>
+                    <mat-chip-set>
+                      <mat-chip *ngFor="let doc of event.documents">{{ doc }}</mat-chip>
+                    </mat-chip-set>
+                  </div>
+
+                  <div class="meta-item estimated" *ngIf="event.estimatedCompletion && event.status === 'current'">
+                    <mat-icon>schedule</mat-icon>
+                    <span>Estimativa: {{ event.estimatedCompletion | date:'short' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- ====== ALERTAS ====== -->
+      <mat-tab label="Alertas" [disabled]="!hasAlerts()">
+        <div class="tab-content alerts-content">
+          <div class="alert-detail" *ngFor="let alert of data.alerts">
+            <mat-card [class]="'alert-card alert-card-' + alert.type">
+              <mat-card-content>
+                <div class="alert-detail-header">
+                  <mat-icon [class]="'alert-icon-' + alert.type">{{ getAlertIcon(alert.type) }}</mat-icon>
+                  <div class="alert-detail-title">
+                    <h4>{{ alert.title }}</h4>
+                    <span class="alert-timestamp">{{ alert.timestamp | date:'medium' }}</span>
+                  </div>
+                </div>
+
+                <p class="alert-detail-message">{{ alert.message }}</p>
+
+                <div class="alert-suggestion" *ngIf="alert.suggestedAction">
+                  <mat-icon>lightbulb</mat-icon>
+                  <span><strong>Sugestão:</strong> {{ alert.suggestedAction }}</span>
+                </div>
+
+                <div class="alert-actions" *ngIf="alert.actionRequired">
+                  <button mat-raised-button color="primary" (click)="resolveAlert(alert)">
+                    <mat-icon>done</mat-icon>
+                    Resolver
+                  </button>
+                  <button mat-button>
+                    <mat-icon>schedule</mat-icon>
+                    Lembrar Mais Tarde
+                  </button>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+</div>

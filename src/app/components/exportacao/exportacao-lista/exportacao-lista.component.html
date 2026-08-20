@@ -1,119 +1,111 @@
 <div class="exportacao-lista-container">
   <!-- Header da página -->
   <div class="page-header">
-    <mat-card class="header-card">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">import_export</mat-icon>
+        <div class="title-content">
+          <h1>Gerenciar Exportações</h1>
+          <p class="subtitle">Orquestrador central do EIP - automação extrema com IA</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ações Principais em Cards Separados -->
+  <div class="actions-container">
+    <!-- Card: Automação IA -->
+    <mat-card class="action-card ai-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>psychology</mat-icon>
+          Criação Inteligente
+        </mat-card-title>
+        <mat-card-subtitle>Digite um comando em linguagem natural</mat-card-subtitle>
+      </mat-card-header>
       <mat-card-content>
-        <div class="header-content">
-          <div class="header-info">
-            <h1>
-              <mat-icon>import_export</mat-icon>
-              Gerenciar Exportações
-            </h1>
-            <p>Orquestrador central do EIP - automação extrema com IA</p>
-          </div>
+        <div class="ai-creation-panel">
+          <mat-form-field appearance="outline" class="nlp-input">
+            <mat-label>Comando inteligente</mat-label>
+            <input 
+              matInput
+              [(ngModel)]="nlpCommand"
+              (keyup.enter)="processNLPCommand()"
+              [disabled]="nlpProcessing"
+              placeholder="Ex: Exportar 1000 ton soja para EUA">
+            <mat-icon matSuffix>auto_awesome</mat-icon>
+          </mat-form-field>
+          <button 
+            mat-raised-button
+            (click)="processNLPCommand()"
+            [disabled]="nlpProcessing || !nlpCommand.trim()"
+            class="nlp-button">
+            <mat-icon>smart_toy</mat-icon>
+            {{ nlpProcessing ? 'Processando...' : 'Criar com IA' }}
+          </button>
         </div>
       </mat-card-content>
     </mat-card>
     
-    <!-- Ações Principais em Cards Separados -->
-    <div class="actions-container">
-      <!-- Card: Automação IA -->
-      <mat-card class="action-card ai-card">
-        <mat-card-header>
-          <mat-card-title>
-            <mat-icon>psychology</mat-icon>
-            Criação Inteligente
-          </mat-card-title>
-          <mat-card-subtitle>Digite um comando em linguagem natural</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="ai-creation-panel">
-            <mat-form-field appearance="outline" class="nlp-input">
-              <mat-label>Comando inteligente</mat-label>
-              <input 
-                matInput
-                [(ngModel)]="nlpCommand"
-                (keyup.enter)="processNLPCommand()"
-                [disabled]="nlpProcessing"
-                placeholder="Ex: Exportar 1000 ton soja para EUA">
-              <mat-icon matSuffix>auto_awesome</mat-icon>
-            </mat-form-field>
-            <button 
-              mat-raised-button
-              color="accent"
-              (click)="processNLPCommand()"
-              [disabled]="nlpProcessing || !nlpCommand.trim()"
-              class="nlp-button">
-              <mat-icon>smart_toy</mat-icon>
-              {{ nlpProcessing ? 'Processando...' : 'Criar com IA' }}
-            </button>
-          </div>
-        </mat-card-content>
-      </mat-card>
-      
-      <!-- Card: Ações Rápidas -->
-      <mat-card class="action-card quick-actions-card">
-        <mat-card-header>
-          <mat-card-title>
-            <mat-icon>flash_on</mat-icon>
-            Ações Rápidas
-          </mat-card-title>
-          <mat-card-subtitle>Operações e ferramentas</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="quick-actions">
-            <button 
-              mat-raised-button
-              color="primary"
-              (click)="createExportacao()"
-              class="primary-action">
-              <mat-icon>add_circle</mat-icon>
-              Nova Exportação
-            </button>
-            
-            <button 
-              mat-stroked-button
-              (click)="loadExportacoes()"
-              [disabled]="loading">
-              <mat-icon>refresh</mat-icon>
-              Atualizar
-            </button>
-            
-            <input #ocrFileInput type="file" [accept]="'.pdf,.png,.jpg,.jpeg'" 
-                   (change)="processOCRUpload($event)" style="display: none;">
-            <button 
-              mat-stroked-button
-              (click)="ocrFileInput.click()">
-              <mat-icon>document_scanner</mat-icon>
-              OCR Upload
-            </button>
-            
-            <button 
-              mat-icon-button
-              [color]="showAIAssistant ? 'accent' : 'primary'"
-              (click)="toggleAIAssistant()"
-              matTooltip="Assistente IA"
-              class="ai-toggle">
-              <mat-icon [matBadge]="aiMessages.length" [matBadgeHidden]="aiMessages.length === 0">smart_toy</mat-icon>
-            </button>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    </div>
+    <!-- Card: Ações Rápidas -->
+    <mat-card class="action-card quick-actions-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>flash_on</mat-icon>
+          Ações Rápidas
+        </mat-card-title>
+        <mat-card-subtitle>Operações e ferramentas</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="quick-actions">
+          <button 
+            mat-raised-button
+            color="primary"
+            (click)="createExportacao()"
+            class="primary-action">
+            <mat-icon>add_circle</mat-icon>
+            Nova Exportação
+          </button>
+          
+          <button 
+            mat-stroked-button
+            (click)="loadExportacoes()"
+            [disabled]="loading">
+            <mat-icon>refresh</mat-icon>
+            Atualizar
+          </button>
+          
+          <input #ocrFileInput type="file" [accept]="'.pdf,.png,.jpg,.jpeg'" 
+                 (change)="processOCRUpload($event)" style="display: none;">
+          <button 
+            mat-stroked-button
+            (click)="ocrFileInput.click()">
+            <mat-icon>document_scanner</mat-icon>
+            OCR Upload
+          </button>
+          
+          <button 
+            mat-icon-button
+            color="primary"
+            (click)="toggleAIAssistant()"
+            matTooltip="Assistente IA"
+            class="ai-toggle">
+            <mat-icon [matBadge]="aiMessages.length" [matBadgeHidden]="aiMessages.length === 0">smart_toy</mat-icon>
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
   </div>
 
   <!-- Loading Indicator -->
   <div *ngIf="loading" class="loading-container">
-    <mat-progress-spinner diameter="50"></mat-progress-spinner>
+    <mat-progress-spinner diameter="50" mode="indeterminate"></mat-progress-spinner>
     <p>Carregando exportações...</p>
   </div>
 
-  <!-- Layout principal com sidebar para IA -->
-  <div class="main-layout">
-    
-    <!-- Conteúdo principal -->
-    <div class="main-content">
-      
+  <!-- Conteúdo principal -->
+  <div class="main-content">
+
       <!-- Dashboard Executivo -->
       <div *ngIf="!loading && dashboardData" class="dashboard-section">
         <div class="section-header">
@@ -146,7 +138,7 @@
           <mat-card class="metric-card ai-automation">
             <mat-card-content>
               <div class="metric-header">
-                <div class="metric-icon-wrapper ai">
+                <div class="metric-icon-wrapper">
                   <mat-icon class="metric-icon">psychology</mat-icon>
                 </div>
                 <div class="metric-info">
@@ -168,7 +160,7 @@
           <mat-card class="metric-card compliance">
             <mat-card-content>
               <div class="metric-header">
-                <div class="metric-icon-wrapper compliance">
+                <div class="metric-icon-wrapper">
                   <mat-icon class="metric-icon">verified_user</mat-icon>
                 </div>
                 <div class="metric-info">
@@ -190,7 +182,7 @@
           <mat-card class="metric-card siscomex">
             <mat-card-content>
               <div class="metric-header">
-                <div class="metric-icon-wrapper siscomex">
+                <div class="metric-icon-wrapper">
                   <mat-icon class="metric-icon">cloud_sync</mat-icon>
                 </div>
                 <div class="metric-info">
@@ -275,7 +267,12 @@
             <div class="alerts-list">
               <div *ngFor="let alert of dashboardData.riskAlerts; trackBy: trackByAlertId" 
                    class="alert-item" 
-                   [class]="'alert-' + alert.severity">
+                   [class]="'alert-' + alert.severity"
+                   role="button"
+                   tabindex="0"
+                   (click)="openAlert(alert)"
+                   (keydown.enter)="openAlert(alert)"
+                   [matTooltip]="'Ver exportação ' + alert.export_number">
                 <div class="alert-icon">
                   <mat-icon>{{ alert.type === 'compliance' ? 'gavel' : alert.type === 'deadline' ? 'schedule' : 'warning' }}</mat-icon>
                 </div>
@@ -286,7 +283,10 @@
                     <span class="alert-time">{{ formatDateTime(alert.created_at) }}</span>
                   </div>
                 </div>
-                <button mat-icon-button class="alert-action">
+                <button mat-icon-button class="alert-action"
+                        (click)="openAlert(alert); $event.stopPropagation()"
+                        matTooltip="Abrir"
+                        [attr.aria-label]="'Abrir exportação ' + alert.export_number">
                   <mat-icon>chevron_right</mat-icon>
                 </button>
               </div>
@@ -393,56 +393,30 @@
           </div>
           <mat-card-title class="table-title">
             Lista de Exportações
-            <mat-chip class="record-count-chip">{{ totalItems }} registros</mat-chip>
+            <span class="record-count-chip">{{ totalItems }} registros</span>
           </mat-card-title>
           <mat-card-subtitle>Gerencie todo o ciclo de exportação</mat-card-subtitle>
-          
-          <div class="table-header-actions">
-            <mat-form-field appearance="outline" class="items-per-page-field">
-              <mat-label>Items por página</mat-label>
-              <mat-select [(ngModel)]="itemsPerPage" (selectionChange)="applyLocalFilters()">
-                <mat-option [value]="10">10</mat-option>
-                <mat-option [value]="25">25</mat-option>
-                <mat-option [value]="50">50</mat-option>
-                <mat-option [value]="100">100</mat-option>
-              </mat-select>
-            </mat-form-field>
-            
-            <div class="view-toggle">
-              <mat-button-toggle-group name="viewMode" [(ngModel)]="viewMode">
-                <mat-button-toggle value="table" matTooltip="Visão em Tabela">
-                  <mat-icon>view_list</mat-icon>
-                </mat-button-toggle>
-                <mat-button-toggle value="cards" matTooltip="Visão em Cards">
-                  <mat-icon>view_module</mat-icon>
-                </mat-button-toggle>
-                <mat-button-toggle value="kanban" matTooltip="Visão Kanban">
-                  <mat-icon>view_kanban</mat-icon>
-                </mat-button-toggle>
-              </mat-button-toggle-group>
-            </div>
-          </div>
         </mat-card-header>
         
         <mat-card-content class="table-content">
           
           <!-- Visão em Tabela -->
-          <div *ngIf="viewMode === 'table'" class="table-view">
+          <div class="table-view">
             <div class="table-container">
-              <table mat-table [dataSource]="filteredExportacoes" class="exportacoes-table">
+              <table mat-table [dataSource]="dataSource" matSort class="exportacoes-table">
                 
                 <!-- Coluna Número da Exportação -->
                 <ng-container matColumnDef="export_number">
-                  <th mat-header-cell *matHeaderCellDef>Nº Exportação</th>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>Nº Exportação</th>
                   <td mat-cell *matCellDef="let exp">
                     <div class="export-info">
                       <strong>{{ exp.export_number }}</strong>
                       <div class="export-id">ID: {{ exp.export_id.substring(0,8) }}...</div>
                       <div class="ai-generated" *ngIf="exp.ai_generated">
-                        <mat-chip class="ai-chip">
+                        <span class="ai-chip">
                           <mat-icon>auto_awesome</mat-icon>
                           IA
-                        </mat-chip>
+                        </span>
                       </div>
                     </div>
                   </td>
@@ -450,7 +424,7 @@
 
                 <!-- Coluna Produto -->
                 <ng-container matColumnDef="product_name">
-                  <th mat-header-cell *matHeaderCellDef>Produto</th>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>Produto</th>
                   <td mat-cell *matCellDef="let exp">
                     <div class="product-info">
                       <strong>{{ exp.product_name }}</strong>
@@ -462,7 +436,7 @@
 
                 <!-- Coluna Importador -->
                 <ng-container matColumnDef="importer_name">
-                  <th mat-header-cell *matHeaderCellDef>Importador</th>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>Importador</th>
                   <td mat-cell *matCellDef="let exp">
                     <div class="importer-info">
                       <strong>{{ exp.importer_name }}</strong>
@@ -473,7 +447,7 @@
 
                 <!-- Coluna País de Destino -->
                 <ng-container matColumnDef="destination_country">
-                  <th mat-header-cell *matHeaderCellDef>Destino</th>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>Destino</th>
                   <td mat-cell *matCellDef="let exp">
                     <div class="destination-info">
                       <mat-icon class="country-flag">flag</mat-icon>
@@ -484,7 +458,7 @@
 
                 <!-- Coluna Quantidade & Valor -->
                 <ng-container matColumnDef="quantity_value">
-                  <th mat-header-cell *matHeaderCellDef>Quantidade & Valor</th>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>Quantidade & Valor</th>
                   <td mat-cell *matCellDef="let exp">
                     <div class="quantity-value-info">
                       <div class="quantity">
@@ -500,16 +474,16 @@
 
                 <!-- Coluna Status & Compliance -->
                 <ng-container matColumnDef="status_compliance">
-                  <th mat-header-cell *matHeaderCellDef>Status</th>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
                   <td mat-cell *matCellDef="let exp">
                     <div class="status-compliance-info">
-                      <mat-chip [class]="getStatusChipClass(exp.export_status)">
+                      <span class="status-chip" [class]="getStatusChipClass(exp.export_status)">
                         {{ exp.export_status }}
-                      </mat-chip>
-                      <mat-chip [class]="getComplianceChipClass(exp.compliance_status)">
+                      </span>
+                      <span class="compliance-chip" [class]="getComplianceChipClass(exp.compliance_status)">
                         <mat-icon>{{ exp.compliance_status === 'OK' ? 'check' : exp.compliance_status === 'Error' ? 'error' : 'warning' }}</mat-icon>
                         {{ exp.compliance_status }}
-                      </mat-chip>
+                      </span>
                     </div>
                   </td>
                 </ng-container>
@@ -541,7 +515,7 @@
 
                 <!-- Coluna ETD & ETA -->
                 <ng-container matColumnDef="etd_eta">
-                  <th mat-header-cell *matHeaderCellDef>ETD / ETA</th>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>ETD / ETA</th>
                   <td mat-cell *matCellDef="let exp">
                     <div class="etd-eta-info">
                       <div class="etd" *ngIf="exp.etd">
@@ -553,10 +527,10 @@
                         <span>{{ formatDate(exp.eta) }}</span>
                       </div>
                       <div class="urgent-indicator" *ngIf="exp.is_urgent">
-                        <mat-chip class="urgent-chip">
+                        <span class="urgent-chip">
                           <mat-icon>schedule</mat-icon>
                           Urgente
-                        </mat-chip>
+                        </span>
                       </div>
                     </div>
                   </td>
@@ -564,7 +538,7 @@
 
                 <!-- Coluna Siscomex -->
                 <ng-container matColumnDef="siscomex_status">
-                  <th mat-header-cell *matHeaderCellDef>Siscomex</th>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>Siscomex</th>
                   <td mat-cell *matCellDef="let exp">
                     <div class="siscomex-info">
                       <div class="siscomex-status">
@@ -588,19 +562,20 @@
                       <button 
                         mat-icon-button
                         color="primary"
-                        (click)="viewExportacao(exp)"
+                        (click)="viewExportacao(exp); $event.stopPropagation()"
                         matTooltip="Visualizar">
                         <mat-icon>visibility</mat-icon>
                       </button>
                       <button 
                         mat-icon-button
-                        (click)="editExportacao(exp)"
+                        (click)="editExportacao(exp); $event.stopPropagation()"
                         matTooltip="Editar">
                         <mat-icon>edit</mat-icon>
                       </button>
 
                       <!-- Menu de ações avançadas -->
                       <button mat-icon-button [matMenuTriggerFor]="actionsMenu" 
+                              (click)="$event.stopPropagation()"
                               matTooltip="Mais Ações">
                         <mat-icon>more_vert</mat-icon>
                       </button>
@@ -652,7 +627,7 @@
           </div>
 
           <!-- Estado vazio -->
-          <div *ngIf="filteredExportacoes.length === 0" class="empty-state">
+          <div *ngIf="totalItems === 0" class="empty-state">
             <div class="empty-state-icon">
               <mat-icon>import_export</mat-icon>
             </div>
@@ -672,101 +647,11 @@
 
           <!-- Paginação -->
           <mat-paginator 
-            *ngIf="totalItems > itemsPerPage"
-            [length]="totalItems"
-            [pageSize]="itemsPerPage"
+            [pageSize]="25"
             [pageSizeOptions]="[10, 25, 50, 100]"
-            [pageIndex]="currentPage - 1"
-            (page)="onPageChange($event.pageIndex + 1)"
             showFirstLastButtons>
           </mat-paginator>
         </mat-card-content>
       </mat-card>
-    </div>
-
-    <!-- Assistente IA Lateral -->
-    <mat-drawer-container 
-      class="ai-sidebar-container"
-      [class.ai-open]="showAIAssistant" 
-      [hasBackdrop]="false">
-      <mat-drawer 
-        #aiDrawer 
-        mode="side" 
-        position="end" 
-        [opened]="showAIAssistant"
-        class="ai-sidebar">
-        
-        <div class="ai-sidebar-content">
-          <div class="ai-header">
-            <div class="ai-avatar">
-              <mat-icon>smart_toy</mat-icon>
-            </div>
-            <div class="ai-info">
-              <h3>Assistente IA</h3>
-              <p>Seu consultor inteligente de exportação</p>
-            </div>
-            <button 
-              mat-icon-button 
-              (click)="toggleAIAssistant()" 
-              class="close-ai-button"
-              matTooltip="Fechar Assistente"
-              aria-label="Fechar Assistente IA">
-              <mat-icon>close</mat-icon>
-            </button>
-          </div>
-
-          <mat-divider></mat-divider>
-
-          <div class="ai-chat-area">
-            <div class="ai-messages" *ngIf="aiMessages.length > 0">
-              <div *ngFor="let message of aiMessages" 
-                   class="ai-message" 
-                   [class]="'message-' + message.type">
-                <div class="message-content">
-                  {{ message.message }}
-                </div>
-                <div class="message-time">
-                  {{ formatDateTime(message.timestamp) }}
-                </div>
-              </div>
-            </div>
-
-            <div class="ai-welcome" *ngIf="aiMessages.length === 0">
-              <mat-icon class="welcome-icon">psychology</mat-icon>
-              <h4>Como posso ajudar?</h4>
-              <p>Pergunte sobre:</p>
-              <ul>
-                <li>Status de exportações</li>
-                <li>Documentos pendentes</li>
-                <li>Validação de compliance</li>
-                <li>Sugestões de otimização</li>
-              </ul>
-            </div>
-          </div>
-
-          <div class="ai-input-area">
-            <mat-form-field appearance="outline" class="ai-input-field">
-              <mat-label>Digite sua pergunta...</mat-label>
-              <textarea 
-                matInput
-                [(ngModel)]="aiQuery"
-                (keyup.enter)="sendAIQuery()"
-                [disabled]="aiProcessing"
-                rows="3"
-                placeholder="Ex: O que falta para liberar a exportação EXP-2026-0001?"></textarea>
-            </mat-form-field>
-            <button 
-              mat-raised-button
-              color="accent"
-              (click)="sendAIQuery()"
-              [disabled]="aiProcessing || !aiQuery.trim()"
-              class="ai-send-button">
-              <mat-icon>send</mat-icon>
-              {{ aiProcessing ? 'Processando...' : 'Enviar' }}
-            </button>
-          </div>
-        </div>
-      </mat-drawer>
-    </mat-drawer-container>
   </div>
 </div>

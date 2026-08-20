@@ -1,11 +1,15 @@
 import { Component, OnInit, Inject, ViewChild, Optional } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatStepper } from '@angular/material/stepper';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Observable, of, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
 import { ExportacaoMockService } from '@services/exportacaoMockService';
-import { Exportacao, ExportacaoDocumento, ExportacaoItem } from '../../../../types/exportacao';
+import { Exportacao, ExportacaoDocumento, ExportacaoItem, AIAssistantMessage } from '../../../../types/exportacao';
+import {
+  AiAssistantDialogComponent,
+  AiAssistantDialogData
+} from '../ai-assistant-dialog/ai-assistant-dialog.component';
 
 // Imports Angular Material
 import { CommonModule } from '@angular/common';
@@ -57,7 +61,6 @@ import { MatDividerModule } from '@angular/material/divider';
     MatSnackBarModule,
     MatDividerModule
   ],
-  providers: [ExportacaoMockService],
   templateUrl: './exportacao-form.component.html',
   styleUrls: ['./exportacao-form.component.scss']
 })
@@ -107,6 +110,7 @@ export class ExportacaoFormComponent implements OnInit {
   // IA Assistente
   aiSuggestions: any[] = [];
   aiChat: string = '';
+  aiMessages: AIAssistantMessage[] = [];
 
   // Observables para autocompletes
   filteredCountries: Observable<string[]> = of([]);
@@ -116,12 +120,17 @@ export class ExportacaoFormComponent implements OnInit {
   isDialog: boolean = false;
   exportacaoId?: string;
 
+  // Exportação atualmente carregada em modo edição (via rota ou dialog),
+  // usada para preservar o export_id e campos de auditoria ao salvar.
+  private loadedExportacao?: Exportacao;
+
   constructor(
     private formBuilder: FormBuilder,
     private exportacaoService: ExportacaoMockService,
     private snackBar: MatSnackBar,
     private router: Router,
     private route: ActivatedRoute,
+    private dialog: MatDialog,
     @Optional() public dialogRef?: MatDialogRef<ExportacaoFormComponent>,
     @Optional() @Inject(MAT_DIALOG_DATA) public data?: { exportacao?: Exportacao, mode: 'create' | 'edit' }
   ) {
@@ -311,6 +320,10 @@ export class ExportacaoFormComponent implements OnInit {
   }
 
   private populateFormsWithExportacao(exportacao: Exportacao): void {
+    // Guarda a exportação carregada para preservar id/auditoria ao salvar
+    // (funciona tanto no modo dialog quanto no modo rota).
+    this.loadedExportacao = exportacao;
+
     // Preencher Step 1
     this.basicInfoForm.patchValue({
       export_number: exportacao.export_number,
@@ -434,6 +447,33 @@ export class ExportacaoFormComponent implements OnInit {
         this.aiProcessing = false;
       }, 1000);
     }
+  }
+
+  /** Abre o assistente de IA em um diálogo centralizado e responsivo. */
+  openAIAssistant(): void {
+    const data: AiAssistantDialogData = {
+      messages: this.aiMessages,
+      onSend: (query: string) => {
+        const response = this.generateAIResponse(query);
+        const assistantMessage: AIAssistantMessage = {
+          id: this.generateId(),
+          type: 'assistant',
+          message: response,
+          timestamp: new Date()
+        };
+        return of([assistantMessage]);
+      },
+      secondaryActionLabel: 'Preencher com IA',
+      onSecondaryAction: () => this.autoFillWithAI()
+    };
+
+    this.dialog.open(AiAssistantDialogComponent, {
+      data,
+      width: '560px',
+      maxWidth: '92vw',
+      autoFocus: true,
+      panelClass: 'ai-assistant-dialog-panel'
+    });
   }
 
   private generateAIResponse(message: string): string {
@@ -569,8 +609,13 @@ export class ExportacaoFormComponent implements OnInit {
     const logistics = this.logisticsForm.value;
     const review = this.reviewForm.value;
 
+    // Exportação sendo editada, seja via dialog (this.data) ou via rota
+    // (this.loadedExportacao). Usada para preservar o id e os campos de
+    // auditoria em ambos os modos de edição.
+    const editing = this.isEditMode ? (this.data?.exportacao ?? this.loadedExportacao) : undefined;
+
     return {
-      export_id: this.isEditMode && this.isDialog && this.data?.exportacao ? this.data.exportacao.export_id : this.generateId(),
+      export_id: editing ? editing.export_id : this.generateId(),
       export_number: basicInfo.export_number,
       contract_id: 'cnt_' + this.generateId(), // Required field
       exporter_id: 'exp_' + this.generateId(), // Required field  
@@ -601,8 +646,8 @@ export class ExportacaoFormComponent implements OnInit {
       transport_mode: logistics.transport_mode || 'Marítimo',
       
       // Status fields
-      export_status: this.isEditMode && this.isDialog && this.data?.exportacao ? this.data.exportacao.export_status : 'Draft',
-      export_date: this.isEditMode && this.isDialog && this.data?.exportacao ? this.data.exportacao.export_date : undefined,
+      export_status: editing ? editing.export_status : 'Draft',
+      export_date: editing ? editing.export_date : undefined,
       export_type: basicInfo.export_type,
       priority: basicInfo.priority,
       description: basicInfo.description,
@@ -624,7 +669,7 @@ export class ExportacaoFormComponent implements OnInit {
       ai_compliance_check: true,
       
       // Audit fields
-        created_at: this.isEditMode && this.isDialog && this.data?.exportacao ? this.data.exportacao.created_at : new Date(),
+      created_at: editing ? editing.created_at : new Date(),
       updated_at: new Date(),
       created_by: basicInfo.created_by || 'current_user',
       created_by_name: basicInfo.created_by_name || 'Usuário Atual',

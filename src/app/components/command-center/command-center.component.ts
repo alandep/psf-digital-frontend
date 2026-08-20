@@ -14,7 +14,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 import { CommandCenterMockService } from '../../../services/commandCenterMockService';
 import { ExportService } from '../../../services/exportService';
-import { ActiveOperation, CommandCenterMetrics } from '../../../types/command-center';
+import { ActiveOperation, CommandCenterMetrics, OperationMilestone } from '../../../types/command-center';
 
 @Component({
   selector: 'app-command-center',
@@ -103,6 +103,12 @@ export class CommandCenterComponent implements OnInit, OnDestroy, AfterViewInit 
 
   selectOperation(op: ActiveOperation): void {
     this.selectedOperation = this.selectedOperation?.id === op.id ? null : op;
+  }
+
+  isLastActiveMilestone(milestone: OperationMilestone): boolean {
+    const list = this.selectedOperation?.milestones ?? [];
+    const next = list[list.indexOf(milestone) + 1];
+    return milestone.completed && !(next && next.completed);
   }
 
   getStatusColor(status: string): string {

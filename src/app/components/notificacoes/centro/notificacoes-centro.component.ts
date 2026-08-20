@@ -6,14 +6,12 @@ import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatListModule } from '@angular/material/list';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 
@@ -35,14 +33,12 @@ import {
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatListModule,
     MatChipsModule,
     MatFormFieldModule,
     MatInputModule,
     MatSnackBarModule,
     MatBadgeModule,
     MatButtonToggleModule,
-    MatDividerModule,
     MatTooltipModule,
     MatProgressBarModule
   ],

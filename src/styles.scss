@@ -200,3 +200,99 @@ body.dark-mode {
     color: #ccc !important;
   }
 }
+
+// Painel do Assistente de IA (Exportações) - dialog centralizado
+.ai-assistant-dialog-panel .mat-mdc-dialog-container .mdc-dialog__surface {
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18) !important;
+}
+
+.ai-assistant-dialog-panel .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+.ai-assistant-dialog-panel .mat-mdc-dialog-container {
+  --mdc-dialog-container-shape: 16px;
+}
+
+.ai-assistant-dialog-panel .mat-mdc-dialog-content,
+.ai-assistant-dialog-panel .mat-mdc-dialog-container .mdc-dialog__content {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* ====== Dialog de detalhes do status (Acompanhar Status) ====== */
+.status-detalhe-dialog-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden;
+    padding: 0;
+  }
+
+  .mat-mdc-dialog-content {
+    padding: 0;
+    margin: 0;
+    max-height: none;
+  }
+}
+
+/* ====== Dialog de Contrato (Novo / Editar) - identidade Portos ====== */
+.contract-dialog-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  /* Zera o padding da superfície para o header em gradiente alcançar as bordas */
+  .mat-mdc-dialog-container .mdc-dialog__content,
+  .mat-mdc-dialog-content {
+    padding: 0;
+  }
+
+  .mat-mdc-dialog-container .mat-mdc-dialog-title {
+    padding: 0;
+    margin: 0;
+  }
+
+  .mat-mdc-dialog-container .mat-mdc-dialog-title::before {
+    display: none;
+  }
+}
+
+/* ====== Dialog de Template de Contrato (Novo / Editar) - identidade Portos ====== */
+.template-dialog-panel {
+  .mat-mdc-dialog-container {
+    max-height: 90vh;
+  }
+
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden; /* the inner .dialog-content scrolls, not the surface */
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* let our component's mat-dialog-content control scrolling; container flex handles height */
+  .mat-mdc-dialog-content {
+    max-height: none;
+  }
+}
+
+/* ====== Dialog de Validação de Template - identidade Portos ====== */
+.template-validation-dialog-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden; /* keep the gradient header corners clean */
+  }
+
+  /* remove default container padding so the gradient header reaches the edges */
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+  }
+
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+}

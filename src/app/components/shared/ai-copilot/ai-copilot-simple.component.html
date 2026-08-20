@@ -1,0 +1,104 @@
+<!-- Main Container -->
+<div class="copilot-container">
+
+  <!-- Header Premium -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">smart_toy</mat-icon>
+        <div class="title-content">
+          <h1>Assistente de IA</h1>
+          <p class="subtitle">Chat inteligente para análises, relatórios e insights do Export Intelligence Platform</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <mat-card class="quick-actions-card">
+    <mat-card-content>
+      <div class="quick-actions-header">
+        <mat-icon>bolt</mat-icon>
+        <span>Ações rápidas</span>
+      </div>
+      <div class="quick-actions-list">
+        <button mat-stroked-button
+                type="button"
+                class="quick-action-btn"
+                *ngFor="let action of quickActions"
+                (click)="executeQuickAction(action)"
+                [disabled]="isProcessing"
+                [matTooltip]="action.command">
+          <mat-icon>{{ action.icon }}</mat-icon>
+          <span>{{ action.label }}</span>
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Chat Card -->
+  <mat-card class="chat-card">
+    <mat-card-content class="chat-content">
+
+      <!-- Messages Area -->
+      <div #messagesContainer class="messages-container">
+
+        <!-- Welcome message quando não há mensagens -->
+        <div *ngIf="messages.length === 0" class="welcome-message">
+          <mat-icon class="welcome-icon">psychology</mat-icon>
+          <h3>Bem-vindo ao Assistente de IA!</h3>
+          <p>Faça perguntas sobre seus dados, solicite relatórios ou análises.</p>
+          <p>Experimente uma das ações rápidas acima ou digite sua pergunta abaixo.</p>
+        </div>
+
+        <!-- Chat messages -->
+        <div *ngFor="let message of messages; trackBy: trackByMessage"
+             class="message"
+             [class.user-message]="message.type === 'user'"
+             [class.ai-message]="message.type === 'ai'">
+
+          <div class="message-content">
+
+            <!-- Loading spinner para AI -->
+            <div *ngIf="message.loading" class="message-loading">
+              <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+              <span class="loading-label">Pensando...</span>
+            </div>
+
+            <!-- Content -->
+            <div *ngIf="!message.loading" class="message-body" [innerHTML]="message.content"></div>
+
+            <!-- Timestamp -->
+            <div *ngIf="!message.loading" class="message-time">
+              {{ message.timestamp | date:'HH:mm' }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input Area (sticky footer) -->
+      <div class="input-area">
+        <mat-form-field class="input-field" appearance="outline">
+          <mat-label>Digite sua pergunta...</mat-label>
+          <input matInput
+                 [(ngModel)]="userInput"
+                 (keydown.enter)="sendMessage()"
+                 [disabled]="isProcessing"
+                 placeholder="Ex: Gere um relatório de recebimentos em USD">
+        </mat-form-field>
+
+        <button mat-fab
+                color="primary"
+                class="send-btn"
+                type="button"
+                (click)="sendMessage()"
+                [disabled]="!userInput.trim() || isProcessing"
+                matTooltip="Enviar mensagem">
+          <mat-icon>send</mat-icon>
+        </button>
+      </div>
+
+    </mat-card-content>
+  </mat-card>
+
+</div>

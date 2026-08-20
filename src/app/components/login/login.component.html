@@ -1,0 +1,64 @@
+<div class="login-container">
+  <mat-card class="login-card">
+    <div class="brand-header">
+      <div class="brand-badge">
+        <mat-icon>smart_toy</mat-icon>
+      </div>
+      <h1 class="brand-title">Export Intelligence Platform</h1>
+      <p class="brand-subtitle">Acesse sua conta</p>
+    </div>
+
+    <mat-card-content class="login-content">
+      <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>CPF</mat-label>
+          <input matInput formControlName="cpf" placeholder="Digite seu CPF" autocomplete="username">
+          <mat-icon matPrefix>badge</mat-icon>
+          <mat-error *ngIf="loginForm.get('cpf')?.hasError('required')">
+            CPF é obrigatório
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Senha</mat-label>
+          <input matInput
+                 [type]="hidePassword ? 'password' : 'text'"
+                 formControlName="password"
+                 placeholder="Digite sua senha"
+                 autocomplete="current-password">
+          <mat-icon matPrefix>lock</mat-icon>
+          <button mat-icon-button matSuffix
+                  (click)="hidePassword = !hidePassword"
+                  [attr.aria-label]="hidePassword ? 'Mostrar senha' : 'Ocultar senha'"
+                  [attr.aria-pressed]="!hidePassword"
+                  type="button">
+            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          <mat-error *ngIf="loginForm.get('password')?.hasError('required')">
+            Senha é obrigatória
+          </mat-error>
+        </mat-form-field>
+
+        <div class="login-actions">
+          <button mat-flat-button
+                  color="primary"
+                  type="submit"
+                  class="btn-primary full-width"
+                  [disabled]="isLoading">
+            <mat-spinner *ngIf="isLoading" diameter="20" class="btn-spinner"></mat-spinner>
+            <span>{{ isLoading ? 'Entrando...' : 'Entrar' }}</span>
+          </button>
+
+          <button mat-stroked-button
+                  color="primary"
+                  type="button"
+                  class="btn-demo full-width"
+                  (click)="loginAsDemo()"
+                  [disabled]="isLoading">
+            Acessar como Demo
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

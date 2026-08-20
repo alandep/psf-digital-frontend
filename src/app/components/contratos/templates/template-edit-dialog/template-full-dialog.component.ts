@@ -43,23 +43,25 @@ interface DialogData {
   template: `
     <div class="template-dialog-container" style="width: 100%; max-width: 1200px;">
       <!-- HEADER -->
-      <div mat-dialog-title class="dialog-header" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #e0e0e0;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <mat-icon color="primary" style="font-size: 28px;">{{ isEditMode ? 'edit' : 'add_circle' }}</mat-icon>
-          <h2 style="margin: 0; font-size: 24px; font-weight: 500;">{{ isEditMode ? 'Editar' : 'Criar' }} Template de Contrato</h2>
+      <div mat-dialog-title class="dialog-header">
+        <div class="dialog-header__left">
+          <div class="dialog-header__badge">
+            <mat-icon>{{ isEditMode ? 'edit' : 'add_circle' }}</mat-icon>
+          </div>
+          <h2 class="dialog-header__title">{{ isEditMode ? 'Editar' : 'Criar' }} Template de Contrato</h2>
           @if (isEditMode && templateForm.get('active')?.value) {
-            <mat-chip color="primary" selected>Ativo</mat-chip>
+            <span class="dialog-header__chip">Ativo</span>
           }
         </div>
-        <button mat-icon-button mat-dialog-close>
+        <button mat-icon-button mat-dialog-close class="dialog-header__close" aria-label="Fechar">
           <mat-icon>close</mat-icon>
         </button>
       </div>
 
       <!-- CONTENT WITH TABS -->
-      <mat-dialog-content class="dialog-content" style="max-height: 70vh; overflow-y: auto; padding: 0;">
+      <mat-dialog-content class="dialog-content" style="padding: 0;">
         
-        <mat-tab-group [(selectedIndex)]="selectedTabIndex" style="min-height: 500px;">
+        <mat-tab-group [(selectedIndex)]="selectedTabIndex" style="min-height: 320px;">
           
           <!-- ABA 1: GERAL -->
           <mat-tab label="🏷️ Geral">
@@ -80,7 +82,7 @@ interface DialogData {
                     <textarea matInput formControlName="description" rows="3" placeholder="Descrição detalhada do template"></textarea>
                   </mat-form-field>
 
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                  <div class="dialog-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <mat-form-field appearance="outline">
                       <mat-label>Tipo de Contrato *</mat-label>
                       <mat-select formControlName="contract_type">
@@ -95,7 +97,7 @@ interface DialogData {
                     </mat-form-field>
                   </div>
 
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                  <div class="dialog-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <mat-form-field appearance="outline">
                       <mat-label>Padrão Organizacional *</mat-label>
                       <mat-select formControlName="organization_standard">
@@ -133,7 +135,7 @@ interface DialogData {
                     </mat-select>
                   </mat-form-field>
 
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                  <div class="dialog-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <mat-form-field appearance="outline">
                       <mat-label>Quantidade Mínima (TM) *</mat-label>
                       <input matInput type="number" formControlName="quantity_min" placeholder="5000">
@@ -145,7 +147,7 @@ interface DialogData {
                     </mat-form-field>
                   </div>
 
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                  <div class="dialog-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <mat-form-field appearance="outline">
                       <mat-label>Preço Padrão *</mat-label>
                       <input matInput type="number" formControlName="default_price" placeholder="450.00">
@@ -178,7 +180,7 @@ interface DialogData {
               <form [formGroup]="templateForm">
                 <div style="display: grid; gap: 16px;">
                   
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                  <div class="dialog-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <mat-form-field appearance="outline">
                       <mat-label>Moeda *</mat-label>
                       <mat-select formControlName="currency">
@@ -199,7 +201,7 @@ interface DialogData {
                     </mat-form-field>
                   </div>
 
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                  <div class="dialog-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <mat-form-field appearance="outline">
                       <mat-label>Dias para Pagamento</mat-label>
                       <input matInput type="number" formControlName="payment_days" placeholder="30">
@@ -231,7 +233,7 @@ interface DialogData {
               <form [formGroup]="templateForm">
                 <div style="display: grid; gap: 16px;">
                   
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                  <div class="dialog-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <mat-form-field appearance="outline">
                       <mat-label>Porto/Local Origem</mat-label>
                       <input matInput formControlName="port_origin" placeholder="Santos, SP">
@@ -243,7 +245,7 @@ interface DialogData {
                     </mat-form-field>
                   </div>
 
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                  <div class="dialog-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <mat-form-field appearance="outline">
                       <mat-label>Início do Período (dias)</mat-label>
                       <input matInput type="number" formControlName="shipment_period_start" placeholder="30">
@@ -255,7 +257,7 @@ interface DialogData {
                     </mat-form-field>
                   </div>
 
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                  <div class="dialog-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <mat-form-field appearance="outline">
                       <mat-label>Tipo de Envio</mat-label>
                       <mat-select formControlName="shipment_type">
@@ -328,7 +330,7 @@ interface DialogData {
                       <h3 style="margin-top: 0; color: #1976d2;">Configurações de Inteligência Artificial</h3>
                       
                       <div style="display: grid; gap: 16px;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="dialog-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                           <div>
                             <mat-slide-toggle formControlName="ai_auto_fill">Preenchimento Automático</mat-slide-toggle>
                             <p style="font-size: 12px; color: #666; margin: 4px 0 0 0;">IA sugere valores baseados em templates similares</p>
@@ -339,7 +341,7 @@ interface DialogData {
                           </div>
                         </div>
 
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="dialog-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                           <div>
                             <mat-slide-toggle formControlName="ai_suggest_incoterm">Sugestão de Incoterms</mat-slide-toggle>
                             <p style="font-size: 12px; color: #666; margin: 4px 0 0 0;">Sugere incoterms baseados no destino</p>
@@ -392,33 +394,111 @@ interface DialogData {
   `,
   styles: [`
     .template-dialog-container {
-      min-width: 800px;
+      display: flex;
+      flex-direction: column;
+      max-height: 90vh;
+      min-width: 0;
+      width: 100%;
       max-width: 1200px;
     }
-    
-    .dialog-header h2 {
-      color: #333;
+
+    @media (min-width: 800px) {
+      .template-dialog-container {
+        min-width: 800px;
+      }
     }
-    
+
+    /* ===== Portos gradient hero header ===== */
+    .dialog-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      margin: 0;
+      background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .dialog-header__left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .dialog-header__badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .dialog-header__badge mat-icon {
+      color: white;
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+      line-height: 24px;
+    }
+
+    .dialog-header__title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .dialog-header__chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 500;
+      color: white;
+      background: rgba(255, 255, 255, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .dialog-header__close {
+      color: white;
+    }
+
     .dialog-content {
-      min-height: 500px;
+      flex: 1 1 auto;
+      overflow-y: auto;
+      min-height: 0;
     }
-    
+
+    .dialog-actions {
+      flex-shrink: 0;
+    }
+
     .mat-mdc-form-field {
       width: 100%;
     }
-    
+
     .mat-mdc-tab-group {
       --mdc-tab-indicator-active-indicator-color: #1976d2;
     }
-    
+
     .mat-mdc-slide-toggle {
       --mdc-switch-selected-track-color: #1976d2;
     }
-    
-    .mat-mdc-dialog-content {
-      overflow: visible !important;
-      max-height: none !important;
+
+    /* ===== Responsive: collapse 2-col grids on small screens ===== */
+    @media (max-width: 768px) {
+      .template-dialog-container {
+        min-width: 0;
+      }
+
+      .dialog-grid-2 {
+        grid-template-columns: 1fr !important;
+      }
     }
   `]
 })

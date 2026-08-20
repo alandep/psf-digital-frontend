@@ -1,12 +1,42 @@
-<div class="exportacao-detalhes-container">
+<div class="exportacao-detalhes-container"
+     [class.is-page]="!isDialog"
+     [class.is-dialog]="isDialog">
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-overlay">
+    <mat-progress-spinner diameter="50" mode="indeterminate"></mat-progress-spinner>
+    <p>Carregando dados...</p>
+  </div>
+
+  <!-- Not Found / Empty State -->
+  <div *ngIf="!loading && notFound" class="not-found-state">
+    <mat-card class="not-found-card">
+      <mat-card-content>
+        <div class="not-found-icon">
+          <mat-icon>search_off</mat-icon>
+        </div>
+        <h2>Exportação não encontrada</h2>
+        <p>Não foi possível localizar os dados desta exportação. Ela pode ter sido removida ou o identificador é inválido.</p>
+        <button mat-raised-button color="primary" (click)="onClose()">
+          <mat-icon>arrow_back</mat-icon>
+          Voltar para Gerenciar Exportações
+        </button>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Conteúdo principal (somente quando carregado e com dados) -->
+  <ng-container *ngIf="!loading && exportacao">
   <!-- Header -->
   <div class="details-header">
     <div class="header-info">
-      <h2>
+      <div class="header-icon-badge">
         <mat-icon>visibility</mat-icon>
-        Detalhes da Exportação
-      </h2>
-      <p class="export-number">{{ exportacao.export_number }}</p>
+      </div>
+      <div class="header-titles">
+        <h2>Detalhes da Exportação</h2>
+        <p class="export-number">{{ exportacao.export_number }}</p>
+      </div>
     </div>
     
     <div class="header-actions">
@@ -20,14 +50,8 @@
     </div>
   </div>
 
-  <!-- Loading Overlay -->
-  <div *ngIf="loading" class="loading-overlay">
-    <mat-progress-spinner diameter="50"></mat-progress-spinner>
-    <p>Carregando dados...</p>
-  </div>
-
   <!-- Resumo Executivo -->
-  <div *ngIf="!loading" class="executive-summary">
+  <div class="executive-summary">
     <mat-card class="summary-card">
       <mat-card-content>
         <div class="summary-grid">
@@ -128,7 +152,7 @@
   </div>
 
   <!-- Tabs de Detalhes -->
-  <div *ngIf="!loading" class="details-tabs">
+  <div class="details-tabs">
     <mat-tab-group animationDuration="300ms">
       
       <!-- Tab 1: Informações Gerais -->
@@ -625,4 +649,5 @@
       Editar Exportação
     </button>
   </div>
+  </ng-container>
 </div>
