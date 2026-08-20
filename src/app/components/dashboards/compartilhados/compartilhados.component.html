@@ -1,0 +1,85 @@
+<div class="compartilhados-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-text">
+        <h1>Dashboards Compartilhados</h1>
+        <p>Dashboards compartilhados com você por outros usuários</p>
+      </div>
+      <div class="header-actions">
+        <button mat-icon-button matTooltip="Exportar CSV" (click)="exportToCSV()">
+          <mat-icon>download</mat-icon>
+        </button>
+        <button mat-icon-button matTooltip="Exportar PDF" (click)="exportToPDF()">
+          <mat-icon>picture_as_pdf</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-section">
+    <div class="table-container">
+      <table mat-table [dataSource]="dataSource" matSort class="shared-table">
+
+        <ng-container matColumnDef="dashboardName">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Dashboard</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="dashboard-name-cell">
+              <mat-icon>dashboard</mat-icon>
+              <span>{{ row.dashboardName }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="ownerName">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Proprietário</th>
+          <td mat-cell *matCellDef="let row">{{ row.ownerName }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="sharedDate">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Data Compartilhamento</th>
+          <td mat-cell *matCellDef="let row">{{ formatDate(row.sharedDate) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="permission">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Permissão</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="permission-badge" [style.background-color]="getPermissionColor(row.permission)">
+              {{ getPermissionLabel(row.permission) }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="widgets">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Widgets</th>
+          <td mat-cell *matCellDef="let row">{{ row.widgets }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Ações</th>
+          <td mat-cell *matCellDef="let row">
+            <button mat-icon-button matTooltip="Abrir">
+              <mat-icon>open_in_new</mat-icon>
+            </button>
+            <button mat-icon-button matTooltip="Editar" [disabled]="isEditDisabled(row.permission)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button matTooltip="Remover Widget" [disabled]="isEditDisabled(row.permission)">
+              <mat-icon>remove_circle_outline</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+      <mat-paginator
+        [pageSizeOptions]="[10, 25, 50, 100]"
+        [pageSize]="10"
+        showFirstLastButtons>
+      </mat-paginator>
+    </div>
+  </div>
+</div>

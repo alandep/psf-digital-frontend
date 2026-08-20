@@ -1,0 +1,190 @@
+@use 'sass:color';
+
+$primary: #00897b;
+$dark: #00695c;
+
+.nova-tela-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  h1 {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: $dark;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    mat-icon {
+      color: $primary;
+      font-size: 2rem;
+      width: 2rem;
+      height: 2rem;
+    }
+  }
+}
+
+.builder-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 24px;
+}
+
+.config-card, .catalog-card, .preview-card {
+  border-radius: 12px;
+
+  h3 {
+    margin: 0 0 16px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: $dark;
+  }
+}
+
+.config-card {
+  grid-column: 1;
+}
+
+.catalog-card {
+  grid-column: 2;
+}
+
+.preview-card {
+  grid-column: 1 / -1;
+}
+
+.full-width {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.catalog-hint {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0 0 16px;
+}
+
+.widgets-catalog {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.widget-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  border: 2px dashed #e0e0e0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+
+  mat-icon {
+    font-size: 2rem;
+    width: 2rem;
+    height: 2rem;
+    color: $primary;
+  }
+
+  span {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #333;
+  }
+
+  &:hover {
+    border-color: $primary;
+    background: color.adjust($primary, $lightness: 45%);
+    transform: translateY(-2px);
+  }
+}
+
+.added-widgets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.added-widget-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+
+  .widget-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    mat-icon {
+      color: $primary;
+    }
+
+    strong {
+      display: block;
+      font-size: 0.9rem;
+    }
+
+    .widget-type-label {
+      font-size: 0.75rem;
+      color: #666;
+    }
+  }
+
+  .widget-actions {
+    display: flex;
+    gap: 4px;
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 32px;
+  color: #999;
+
+  mat-icon {
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+    color: #ccc;
+    margin-bottom: 12px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+}
+
+@media (max-width: 768px) {
+  .nova-tela-container {
+    padding: 16px;
+  }
+
+  .builder-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .config-card, .catalog-card, .preview-card {
+    grid-column: 1;
+  }
+}

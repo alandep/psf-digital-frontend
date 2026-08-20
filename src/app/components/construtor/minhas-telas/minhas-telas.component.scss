@@ -1,0 +1,106 @@
+@use 'sass:color';
+
+$primary: #00897b;
+$dark: #00695c;
+
+.minhas-telas-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  h1 {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: $dark;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    mat-icon {
+      color: $primary;
+      font-size: 2rem;
+      width: 2rem;
+      height: 2rem;
+    }
+  }
+}
+
+.table-card {
+  border-radius: 12px;
+  overflow: hidden;
+
+  .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, $primary, $dark);
+    color: white;
+
+    h3 {
+      margin: 0;
+      font-weight: 600;
+    }
+
+    .export-actions {
+      display: flex;
+      gap: 8px;
+    }
+  }
+}
+
+.full-width-table {
+  width: 100%;
+
+  th.mat-header-cell {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+  }
+
+  td.mat-cell {
+    font-size: 0.875rem;
+  }
+}
+
+.layout-chip {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #e0f2f1;
+  color: $dark;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &.PUBLICADA { background: #e8f5e9; color: #2e7d32; }
+  &.RASCUNHO { background: #f5f5f5; color: #616161; }
+  &.ARQUIVADA { background: #fff3e0; color: #e65100; }
+}
+
+.actions-cell {
+  display: flex;
+  gap: 4px;
+}
+
+@media (max-width: 768px) {
+  .minhas-telas-container {
+    padding: 16px;
+  }
+}

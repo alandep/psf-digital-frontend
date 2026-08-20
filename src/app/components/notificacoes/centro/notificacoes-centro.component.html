@@ -1,0 +1,129 @@
+<div class="notificacoes-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1>Centro de Notificações</h1>
+      <p class="subtitle">Gerencie todas as suas notificações em um único lugar</p>
+    </div>
+    <div class="header-actions">
+      <button mat-raised-button color="primary" (click)="markAllAsRead()">
+        <mat-icon>done_all</mat-icon> Marcar Todas como Lidas
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid" *ngIf="metrics">
+    <mat-card class="kpi-card">
+      <mat-icon>mark_email_unread</mat-icon>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ metrics.naoLidas }}</span>
+        <span class="kpi-label">Não Lidas</span>
+      </div>
+    </mat-card>
+    <mat-card class="kpi-card kpi-critical">
+      <mat-icon>error</mat-icon>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ metrics.criticasNaoLidas }}</span>
+        <span class="kpi-label">Críticas</span>
+      </div>
+    </mat-card>
+    <mat-card class="kpi-card">
+      <mat-icon>today</mat-icon>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ metrics.hoje }}</span>
+        <span class="kpi-label">Hoje</span>
+      </div>
+    </mat-card>
+    <mat-card class="kpi-card">
+      <mat-icon>date_range</mat-icon>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ metrics.estaSemana }}</span>
+        <span class="kpi-label">Esta Semana</span>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- Filter Panel -->
+  <mat-card class="filter-card">
+    <div class="filter-section">
+      <form [formGroup]="filterForm" class="search-row">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Buscar notificações</mat-label>
+          <input matInput formControlName="searchText" placeholder="Título, mensagem, remetente...">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+      </form>
+
+      <div class="chips-row">
+        <span class="filter-label">Canal:</span>
+        <mat-chip-set>
+          <mat-chip *ngFor="let ch of channels"
+            [highlighted]="isChannelSelected(ch.value)"
+            (click)="toggleChannel(ch.value)">
+            <mat-icon matChipAvatar>{{ ch.icon }}</mat-icon>
+            {{ ch.label }}
+          </mat-chip>
+        </mat-chip-set>
+      </div>
+
+      <div class="chips-row">
+        <span class="filter-label">Prioridade:</span>
+        <mat-chip-set>
+          <mat-chip *ngFor="let p of priorities"
+            [highlighted]="isPrioritySelected(p.value)"
+            (click)="togglePriority(p.value)">
+            {{ p.label }}
+          </mat-chip>
+        </mat-chip-set>
+      </div>
+
+      <div class="toggle-row">
+        <span class="filter-label">Status:</span>
+        <mat-button-toggle-group [value]="readStatus" (change)="setReadStatus($event.value)">
+          <mat-button-toggle value="all">Todas</mat-button-toggle>
+          <mat-button-toggle value="unread">Não lidas</mat-button-toggle>
+          <mat-button-toggle value="read">Lidas</mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
+    </div>
+  </mat-card>
+
+  <!-- Notifications List -->
+  <mat-card class="list-card">
+    <mat-progress-bar *ngIf="isLoading" mode="indeterminate"></mat-progress-bar>
+    <mat-list class="notification-list">
+      <mat-list-item *ngFor="let n of notifications" class="notification-item" [class.unread]="!n.isRead">
+        <div class="notification-row">
+          <div class="notification-icon-wrapper" [ngClass]="getPriorityClass(n.priority)">
+            <mat-icon>{{ getChannelIcon(n.channel) }}</mat-icon>
+          </div>
+          <div class="notification-content">
+            <div class="notification-header-row">
+              <span class="notification-title" [class.unread-title]="!n.isRead">{{ n.title }}</span>
+              <span class="notification-time">{{ getTimeAgo(n.createdAt) }}</span>
+            </div>
+            <p class="notification-message">{{ n.message }}</p>
+            <div class="notification-meta">
+              <span class="notification-sender">{{ n.sender }}</span>
+              <span class="priority-badge" [ngClass]="getPriorityClass(n.priority)">
+                {{ getPriorityLabel(n.priority) }}
+              </span>
+              <span class="category-badge">{{ n.category }}</span>
+            </div>
+          </div>
+          <div class="notification-actions">
+            <button mat-icon-button matTooltip="Marcar como lida" *ngIf="!n.isRead" (click)="markAsRead(n); $event.stopPropagation()">
+              <mat-icon>check_circle_outline</mat-icon>
+            </button>
+            <mat-icon *ngIf="n.isRead" class="read-indicator">check_circle</mat-icon>
+          </div>
+        </div>
+      </mat-list-item>
+      <div *ngIf="notifications.length === 0 && !isLoading" class="empty-state">
+        <mat-icon>notifications_off</mat-icon>
+        <p>Nenhuma notificação encontrada</p>
+      </div>
+    </mat-list>
+  </mat-card>
+</div>

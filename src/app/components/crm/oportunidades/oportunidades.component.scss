@@ -1,0 +1,183 @@
+@use 'sass:color';
+
+$crm-primary: #1565c0;
+$crm-dark: #0d47a1;
+$success: #4caf50;
+$warning: #ff9800;
+$danger: #f44336;
+$grey: #9e9e9e;
+$blue: #2196f3;
+
+.oportunidades-container {
+  padding: 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.page-header {
+  background: linear-gradient(135deg, $crm-primary 0%, $crm-dark 100%);
+  color: white;
+  padding: 2rem;
+  margin-bottom: 24px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(21, 101, 192, 0.3);
+
+  .header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .title-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+
+      .header-icon {
+        font-size: 3rem;
+        width: 3rem;
+        height: 3rem;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .title-content {
+        h1 { margin: 0; font-size: 2rem; font-weight: 300; }
+        .subtitle { margin: 0.4rem 0 0; opacity: 0.9; font-size: 1rem; font-weight: 300; }
+      }
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+
+      button {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        &:hover { background: rgba(255, 255, 255, 0.3); transform: translateY(-2px); }
+      }
+    }
+  }
+}
+
+// === PIPELINE SUMMARY ===
+.pipeline-summary {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.pipeline-card {
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+  border-top: 4px solid #ccc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s;
+
+  &:hover { transform: translateY(-2px); }
+
+  .pipeline-stage-name {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 8px;
+  }
+
+  .pipeline-count {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #333;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .pipeline-value {
+    font-size: 0.75rem;
+    color: #666;
+  }
+}
+
+// === FILTERS ===
+.filters-card {
+  margin-bottom: 24px;
+  border-radius: 12px;
+
+  .filters-form .filter-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr auto;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .filter-field { width: 100%; }
+}
+
+.filter-actions { display: flex; align-items: center; }
+.clear-filters-btn {
+  color: $grey;
+  font-size: 0.85rem;
+  &:hover { color: $crm-primary; }
+}
+
+// === TABLE ===
+.results-card {
+  border-radius: 12px;
+
+  .results-header {
+    margin-bottom: 16px;
+    h3 { margin: 0; color: #555; font-size: 0.95rem; font-weight: 500; }
+  }
+}
+
+.table-wrapper { overflow-x: auto; }
+
+.opportunities-table {
+  width: 100%;
+  .opp-title { font-weight: 600; color: #333; }
+  .value-text { font-weight: 600; color: $crm-primary; }
+}
+
+// === STAGE CHIPS ===
+.stage-chip {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+
+  &.stage-prospecting { background: rgba(#90caf9, 0.3); color: #1565c0; }
+  &.stage-qualification { background: rgba(#64b5f6, 0.3); color: #0d47a1; }
+  &.stage-proposal { background: rgba($blue, 0.12); color: color.adjust($blue, $lightness: -15%); }
+  &.stage-negotiation { background: rgba($crm-primary, 0.15); color: $crm-dark; }
+  &.stage-won { background: rgba($success, 0.12); color: color.adjust($success, $lightness: -15%); }
+  &.stage-lost { background: rgba($danger, 0.1); color: color.adjust($danger, $lightness: -10%); }
+}
+
+@media (max-width: 1200px) {
+  .pipeline-summary { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .oportunidades-container { padding: 16px; }
+  .page-header .header-main { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .pipeline-summary { grid-template-columns: repeat(2, 1fr); }
+  .filters-card .filters-form .filter-row { grid-template-columns: 1fr; }
+}

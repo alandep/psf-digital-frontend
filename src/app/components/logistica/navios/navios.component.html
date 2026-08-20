@@ -1,0 +1,279 @@
+@if (isLoading) {
+  <mat-progress-bar mode="indeterminate" class="loading-bar"></mat-progress-bar>
+}
+
+<div class="navios-container">
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">directions_boat</mat-icon>
+        <div class="title-content">
+          <h1>Navios</h1>
+          <p class="subtitle">Rastreamento e Monitoramento de Embarcações</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button (click)="openNovoNavioDialog()">
+          <mat-icon>add</mat-icon> Rastrear Navio
+        </button>
+        <button mat-raised-button (click)="exportCSV()"><mat-icon>download</mat-icon> CSV</button>
+        <button mat-raised-button (click)="exportPDF()"><mat-icon>picture_as_pdf</mat-icon> PDF</button>
+      </div>
+    </div>
+  </div>
+
+  @if (kpis) {
+    <div class="kpi-dashboard">
+      <mat-card class="kpi-card kpi-total">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>directions_boat</mat-icon></div>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ kpis.totalRastreados }}</span>
+            <span class="kpi-label">Total Rastreados</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="kpi-card kpi-transito">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>sailing</mat-icon></div>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ kpis.emTransito }}</span>
+            <span class="kpi-label">Em Trânsito</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="kpi-card kpi-porto">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>anchor</mat-icon></div>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ kpis.noPorto }}</span>
+            <span class="kpi-label">No Porto</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="kpi-card kpi-alerta">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>warning</mat-icon></div>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ kpis.comAlertaAtraso }}</span>
+            <span class="kpi-label">Com Alerta de Atraso</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <div class="filter-row">
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Buscar</mat-label>
+            <input matInput formControlName="searchText" placeholder="Nome, IMO, porto...">
+            <mat-icon matSuffix>search</mat-icon>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Tipo</mat-label>
+            <mat-select formControlName="vesselType">
+              <mat-option value="">Todos</mat-option>
+              @for (t of vesselTypes; track t) {
+                <mat-option [value]="t">{{ getVesselTypeLabel(t) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="">Todos</mat-option>
+              @for (s of statuses; track s) {
+                <mat-option [value]="s">{{ getStatusLabel(s) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Bandeira</mat-label>
+            <mat-select formControlName="flag">
+              <mat-option value="">Todas</mat-option>
+              @for (f of flags; track f) {
+                <mat-option [value]="f">{{ f }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </form>
+      <div class="clear-filter-wrapper">
+        <button mat-button class="clear-filters-btn" (click)="clearFilters()">
+          <mat-icon>clear_all</mat-icon> Limpar Filtros
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="results-card">
+    <mat-card-content>
+      <div class="results-header">
+        <h3>{{ dataSource.filteredData.length }} embarcação(ões)</h3>
+      </div>
+
+      <table mat-table [dataSource]="dataSource" matSort class="navios-table">
+        <ng-container matColumnDef="vesselName">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Navio</th>
+          <td mat-cell *matCellDef="let row"><span class="vessel-name">{{ row.vesselName }}</span></td>
+        </ng-container>
+
+        <ng-container matColumnDef="imoNumber">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>IMO</th>
+          <td mat-cell *matCellDef="let row"><span class="imo-number">{{ row.imoNumber }}</span></td>
+        </ng-container>
+
+        <ng-container matColumnDef="flag">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Bandeira</th>
+          <td mat-cell *matCellDef="let row">{{ row.flag }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="vesselType">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</th>
+          <td mat-cell *matCellDef="let row"><span class="type-chip">{{ getVesselTypeLabel(row.vesselType) }}</span></td>
+        </ng-container>
+
+        <ng-container matColumnDef="capacity">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Capacidade</th>
+          <td mat-cell *matCellDef="let row">{{ formatNumber(row.capacity) }} {{ row.capacityUnit }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="currentPort">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Localização</th>
+          <td mat-cell *matCellDef="let row">{{ row.currentPort }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="eta">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>ETA</th>
+          <td mat-cell *matCellDef="let row">
+            <span [class.delay-warning]="isDelayed(row)">{{ formatDate(row.eta) }}</span>
+            @if (isDelayed(row)) {
+              <mat-icon class="delay-icon">warning</mat-icon>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="status-badge" [ngClass]="getStatusColor(row.status)">
+              <mat-icon class="status-icon">{{ getStatusIcon(row.status) }}</mat-icon>
+              {{ getStatusLabel(row.status) }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Ações</th>
+          <td mat-cell *matCellDef="let row">
+            <button mat-icon-button matTooltip="Ver detalhes" (click)="selectNavio(row); $event.stopPropagation()">
+              <mat-icon>visibility</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+            [ngClass]="getRowClass(row)" class="clickable-row" (click)="selectNavio(row)"></tr>
+      </table>
+
+      <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" [pageSize]="10" showFirstLastButtons></mat-paginator>
+    </mat-card-content>
+  </mat-card>
+
+  @if (isDetailOpen && selectedNavio) {
+    <mat-card class="detail-card">
+      <mat-card-header>
+        <div class="detail-header">
+          <div class="detail-title-section">
+            <mat-icon class="detail-icon">directions_boat</mat-icon>
+            <div>
+              <h2>{{ selectedNavio.vesselName }}</h2>
+              <p>IMO {{ selectedNavio.imoNumber }} — {{ selectedNavio.flag }} — {{ getVesselTypeLabel(selectedNavio.vesselType) }}</p>
+            </div>
+          </div>
+          <div class="detail-header-actions">
+            <span class="status-badge" [ngClass]="getStatusColor(selectedNavio.status)">
+              <mat-icon class="status-icon">{{ getStatusIcon(selectedNavio.status) }}</mat-icon>
+              {{ getStatusLabel(selectedNavio.status) }}
+            </span>
+            <button mat-icon-button (click)="closeDetail()"><mat-icon>close</mat-icon></button>
+          </div>
+        </div>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-tab-group>
+          <mat-tab label="Especificações">
+            <div class="tab-content">
+              <div class="info-grid">
+                <div class="info-item"><span class="info-label">Proprietário</span><span class="info-value">{{ selectedNavio.owner }}</span></div>
+                <div class="info-item"><span class="info-label">Operador</span><span class="info-value">{{ selectedNavio.operator }}</span></div>
+                <div class="info-item"><span class="info-label">Ano Construção</span><span class="info-value">{{ selectedNavio.yearBuilt }}</span></div>
+                <div class="info-item"><span class="info-label">Comprimento</span><span class="info-value">{{ selectedNavio.length }}m</span></div>
+                <div class="info-item"><span class="info-label">Boca</span><span class="info-value">{{ selectedNavio.beam }}m</span></div>
+                <div class="info-item"><span class="info-label">Calado</span><span class="info-value">{{ selectedNavio.draft }}m</span></div>
+                <div class="info-item"><span class="info-label">Arqueação Bruta</span><span class="info-value">{{ formatNumber(selectedNavio.grossTonnage) }} GT</span></div>
+                <div class="info-item"><span class="info-label">Porte Bruto</span><span class="info-value">{{ formatNumber(selectedNavio.deadweight) }} DWT</span></div>
+                <div class="info-item"><span class="info-label">Capacidade</span><span class="info-value">{{ formatNumber(selectedNavio.capacity) }} {{ selectedNavio.capacityUnit }}</span></div>
+              </div>
+            </div>
+          </mat-tab>
+          <mat-tab label="Viagem Atual">
+            <div class="tab-content">
+              <div class="info-grid">
+                <div class="info-item"><span class="info-label">Viagem</span><span class="info-value">{{ selectedNavio.voyageNumber }}</span></div>
+                <div class="info-item"><span class="info-label">Rota</span><span class="info-value">{{ selectedNavio.route }}</span></div>
+                <div class="info-item"><span class="info-label">Velocidade</span><span class="info-value">{{ selectedNavio.speed }} nós</span></div>
+                <div class="info-item"><span class="info-label">ETA</span><span class="info-value">{{ formatDate(selectedNavio.eta) }}</span></div>
+                <div class="info-item"><span class="info-label">ETA Original</span><span class="info-value">{{ formatDate(selectedNavio.originalEta) }}</span></div>
+                <div class="info-item"><span class="info-label">ETD</span><span class="info-value">{{ formatDate(selectedNavio.etd) }}</span></div>
+              </div>
+            </div>
+          </mat-tab>
+          <mat-tab label="Histórico de Escalas">
+            <div class="tab-content">
+              <div class="port-calls-list">
+                @for (call of selectedNavio.portCalls; track call.port) {
+                  <div class="port-call-item">
+                    <div class="port-call-header">
+                      <mat-icon>location_on</mat-icon>
+                      <span class="port-name">{{ call.port }}, {{ call.country }}</span>
+                      <span class="port-purpose">{{ call.purpose }}</span>
+                    </div>
+                    <div class="port-call-details">
+                      <span>Chegada: {{ formatDate(call.arrivalDate) }}</span>
+                      <span>Saída: {{ formatDate(call.departureDate) }}</span>
+                      <span>Operação: {{ call.cargoOps }}</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </mat-tab>
+          <mat-tab label="Embarques Vinculados">
+            <div class="tab-content">
+              @if (selectedNavio.linkedShipments.length > 0) {
+                <div class="shipments-list">
+                  @for (shipment of selectedNavio.linkedShipments; track shipment) {
+                    <div class="shipment-item">
+                      <mat-icon>local_shipping</mat-icon>
+                      <span>{{ shipment }}</span>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="empty-state">
+                  <mat-icon>inbox</mat-icon>
+                  <p>Nenhum embarque vinculado</p>
+                </div>
+              }
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

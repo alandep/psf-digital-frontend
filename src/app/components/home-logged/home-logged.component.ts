@@ -318,7 +318,7 @@ interface LoggedUser {
       position: fixed !important;
       top: 0 !important;
       left: 0 !important;
-      width: 300px;
+      width: 340px;
       max-width: 85vw;
       height: 100vh !important;
       background: #fafafa;
@@ -613,10 +613,10 @@ interface LoggedUser {
         font-weight: 400;
         color: #424242;
         line-height: 1.4;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        white-space: normal !important;
-        max-width: 180px;
+        white-space: nowrap !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 220px;
       }
       
       mat-icon {
@@ -833,7 +833,7 @@ interface LoggedUser {
     /* Responsive - Melhorias para dispositivos móveis */
     @media (max-width: 1024px) {
       .sidenav {
-        width: 280px;
+        width: 320px;
         max-width: 80vw;
       }
       
@@ -864,7 +864,7 @@ interface LoggedUser {
       }
       
       .sidenav {
-        width: 260px;
+        width: 300px;
         max-width: 85vw;
       }
       
@@ -899,7 +899,7 @@ interface LoggedUser {
       }
       
       .sidenav {
-        width: 240px;
+        width: 280px;
         max-width: 90vw;
       }
       
@@ -959,6 +959,12 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit(): void {
     this.notificationService.showInfo('Bem-vindo à Export Intelligence Platform!');
+    
+    // Apply dark mode from localStorage
+    const savedDarkMode = localStorage.getItem('eip-dark-mode');
+    if (savedDarkMode === 'true') {
+      document.body.classList.add('dark-mode');
+    }
     
     // Detecção responsiva
     this.breakpointObserver.observe([
@@ -1066,7 +1072,9 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
         { name: 'DU-E', route: 'documentos/due', icon: 'description' },
         { name: 'RE', route: 'documentos/re', icon: 'receipt_long' },
         { name: 'Certificados', route: 'documentos/certificados', icon: 'verified' },
-        { name: 'Invoice', route: 'documentos/invoice', icon: 'receipt' }
+        { name: 'Invoice', route: 'documentos/invoice', icon: 'receipt' },
+        { name: 'Packing List', route: 'documentos/packing-list', icon: 'list_alt' },
+        { name: 'Bill of Lading', route: 'documentos/bill-of-lading', icon: 'sailing' }
       ]
     },
     {
@@ -1075,7 +1083,9 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
       items: [
         { name: 'Embarques', route: 'logistica/embarque', icon: 'departure_board' },
         { name: 'Portos', route: 'logistica/portos', icon: 'anchor' },
-        { name: 'Transportadoras', route: 'logistica/transportadoras', icon: 'truck' }
+        { name: 'Transportadoras', route: 'logistica/transportadoras', icon: 'truck' },
+        { name: 'Navios', route: 'logistica/navios', icon: 'directions_boat' },
+        { name: 'Containers', route: 'logistica/containers', icon: 'view_in_ar' }
       ]
     },
     {
@@ -1084,7 +1094,9 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
       items: [
         { name: 'Contas a Receber', route: 'financeiro/contas-receber', icon: 'trending_up' },
         { name: 'Câmbio', route: 'financeiro/cambio', icon: 'currency_exchange' },
-        { name: 'Pagamentos', route: 'financeiro/pagamentos', icon: 'payment' }
+        { name: 'Pagamentos', route: 'financeiro/pagamentos', icon: 'payment' },
+        { name: 'Trade Finance', route: 'financeiro/trade-finance', icon: 'account_balance' },
+        { name: 'Hedge Cambial', route: 'financeiro/hedge', icon: 'swap_horiz' }
       ]
     },
     {
@@ -1092,7 +1104,9 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
       icon: 'gavel',
       items: [
         { name: 'Licenças', route: 'compliance/licencas', icon: 'assignment' },
-        { name: 'Regulamentações', route: 'compliance/regulamentacoes', icon: 'policy' }
+        { name: 'Regulamentações', route: 'compliance/regulamentacoes', icon: 'policy' },
+        { name: 'Due Diligence', route: 'compliance/due-diligence', icon: 'policy' },
+        { name: 'Sanções', route: 'compliance/sancoes', icon: 'shield' }
       ]
     },
     {
@@ -1141,9 +1155,70 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
       ]
     },
     {
+      title: 'Clientes/CRM',
+      icon: 'people',
+      items: [
+        { name: 'Visão 360', route: 'clientes/visao-360', icon: 'account_circle' },
+        { name: 'Contatos', route: 'clientes/contatos', icon: 'contacts' },
+        { name: 'Oportunidades', route: 'clientes/oportunidades', icon: 'trending_up' }
+      ]
+    },
+    {
+      title: 'Supply Chain',
+      icon: 'inventory',
+      items: [
+        { name: 'Fornecedores', route: 'supply-chain/fornecedores', icon: 'factory' }
+      ]
+    },
+    {
+      title: 'ESG/Sustentabilidade',
+      icon: 'eco',
+      items: [
+        { name: 'Sustentabilidade', route: 'esg/sustentabilidade', icon: 'nature' }
+      ]
+    },
+    {
+      title: 'AI Operations',
+      icon: 'smart_toy',
+      items: [
+        { name: 'Dashboard IA', route: 'ai-operations/dashboard', icon: 'monitoring' }
+      ]
+    },
+    {
+      title: 'Command Center',
+      icon: 'hub',
+      route: 'command-center'
+    },
+    {
+      title: 'Notificações',
+      icon: 'notifications',
+      items: [
+        { name: 'Centro de Notificações', route: 'notificacoes/centro', icon: 'notifications_active' }
+      ]
+    },
+    {
+      title: 'Marketplace',
+      icon: 'storefront',
+      route: 'marketplace'
+    },
+    {
+      title: 'Conhecimento',
+      icon: 'school',
+      items: [
+        { name: 'Central de Conhecimento', route: 'conhecimento/centro', icon: 'menu_book' }
+      ]
+    },
+    {
       title: 'Assistente IA',
       icon: 'smart_toy',
       route: 'assistente-ia'
+    },
+    {
+      title: 'Analytics',
+      icon: 'insights',
+      items: [
+        { name: 'Data Explorer', route: 'analytics/data-explorer', icon: 'query_stats' }
+      ]
     },
     {
       title: 'Relatórios',
@@ -1181,10 +1256,37 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   performSearch(): void {
-    if (this.searchQuery.trim()) {
-      console.log('Searching for:', this.searchQuery);
-      this.notificationService.showInfo(`Buscando por: "${this.searchQuery}"`);
-      // Implementar busca global
+    if (!this.searchQuery.trim()) return;
+
+    const query = this.searchQuery.toLowerCase();
+
+    // Search through all menu items to find matching routes
+    const allRoutes: { name: string; route: string; icon: string }[] = [];
+
+    for (const item of this.menuItems) {
+      if (item.route) {
+        allRoutes.push({ name: item.title, route: item.route, icon: item.icon });
+      }
+      if (item.items) {
+        for (const sub of item.items) {
+          allRoutes.push({ name: `${item.title} > ${sub.name}`, route: sub.route, icon: sub.icon });
+        }
+      }
+    }
+
+    const matches = allRoutes.filter(r => r.name.toLowerCase().includes(query));
+
+    if (matches.length === 1) {
+      // Direct navigation if single match
+      this.navigateTo(matches[0].route);
+      this.searchQuery = '';
+    } else if (matches.length > 1) {
+      // Show matches in a snackbar with first result
+      this.notificationService.showInfo(`${matches.length} resultados encontrados. Navegando para: ${matches[0].name}`);
+      this.navigateTo(matches[0].route);
+      this.searchQuery = '';
+    } else {
+      this.notificationService.showInfo(`Nenhum resultado para "${this.searchQuery}"`);
     }
   }
 
@@ -1210,8 +1312,7 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   viewAllNotifications(): void {
-    console.log('View all notifications');
-    this.notificationService.showInfo('Abrindo painel de notificações');
+    this.navigateTo('notificacoes/centro');
   }
 
   refreshIntegrations(): void {
@@ -1251,29 +1352,24 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   viewProfile(): void {
-    this.notificationService.showInfo('Abrindo perfil do usuário');
+    this.navigateTo('perfil');
   }
 
   openSettings(): void {
-    this.notificationService.showInfo('Abrindo configurações');
+    this.navigateTo('admin/configuracoes');
   }
 
   viewHelp(): void {
-    this.notificationService.showInfo('Abrindo central de ajuda');
+    this.navigateTo('conhecimento/centro');
   }
 
   logout(): void {
-    this.notificationService.showInfo('Fazendo logout...');
-    // Implement logout logic
+    this.router.navigate(['/login']);
   }
 
-  // Função para toggle do AI Assistant
+  // Navega para a tela do Assistente de IA
   toggleAIAssistant(): void {
-    console.log('AI Assistant toggle clicked');
-    this.notificationService.showInfo('Abrindo AI Assistant...');
-    
-    // Para usar o AI assistant component que já existe
-    // Você pode adicionar lógica específica aqui se necessário
+    this.navigateTo('assistente-ia');
   }
 
   onBackdropClick(): void {

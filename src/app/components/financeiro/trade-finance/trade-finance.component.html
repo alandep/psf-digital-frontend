@@ -1,0 +1,293 @@
+<!-- Loading Bar -->
+@if (isLoading) {
+  <mat-progress-bar mode="indeterminate" class="loading-bar"></mat-progress-bar>
+}
+
+<div class="trade-finance-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">account_balance</mat-icon>
+        <div class="title-content">
+          <h1>Trade Finance</h1>
+          <p class="subtitle">Cartas de Crédito, Cobranças Documentárias e Garantias Bancárias</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button (click)="openNovaLCDialog()">
+          <mat-icon>add_card</mat-icon> Nova LC
+        </button>
+        <button mat-raised-button (click)="openNovaCobrancaDialog()">
+          <mat-icon>receipt_long</mat-icon> Nova Cobrança
+        </button>
+        <button mat-raised-button (click)="openNovaGarantiaDialog()">
+          <mat-icon>verified_user</mat-icon> Nova Garantia
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  @if (kpis) {
+    <div class="kpi-dashboard">
+      <mat-card class="kpi-card kpi-lcs">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>credit_card</mat-icon></div>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ kpis.lcsAtivas }}</span>
+            <span class="kpi-label">LCs Ativas</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="kpi-card kpi-valor">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>attach_money</mat-icon></div>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ formatCurrency(kpis.valorTotalLCs) }}</span>
+            <span class="kpi-label">Valor Total sob LCs</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="kpi-card kpi-cobrancas">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>pending_actions</mat-icon></div>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ kpis.cobrancasPendentes }}</span>
+            <span class="kpi-label">Cobranças Pendentes</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="kpi-card kpi-vencendo">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>schedule</mat-icon></div>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ kpis.instrumentosVencendo }}</span>
+            <span class="kpi-label">Instrumentos Vencendo (30d)</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+
+  <!-- Filters -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <div class="filter-row">
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Buscar</mat-label>
+            <input matInput formControlName="searchText" placeholder="Número, banco, beneficiário...">
+            <mat-icon matSuffix>search</mat-icon>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Tipo</mat-label>
+            <mat-select formControlName="type">
+              <mat-option value="">Todos</mat-option>
+              @for (t of types; track t) {
+                <mat-option [value]="t">{{ getTypeLabel(t) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="">Todos</mat-option>
+              @for (s of statuses; track s) {
+                <mat-option [value]="s">{{ s }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Banco</mat-label>
+            <mat-select formControlName="bank">
+              <mat-option value="">Todos</mat-option>
+              @for (b of banks; track b) {
+                <mat-option [value]="b">{{ b }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Moeda</mat-label>
+            <mat-select formControlName="currency">
+              <mat-option value="">Todas</mat-option>
+              @for (c of currencies; track c) {
+                <mat-option [value]="c">{{ c }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </form>
+      <div class="clear-filter-wrapper">
+        <button mat-button class="clear-filters-btn" (click)="clearFilters()">
+          <mat-icon>clear_all</mat-icon> Limpar Filtros
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Results Table -->
+  <mat-card class="results-card">
+    <mat-card-content>
+      <div class="results-header">
+        <h3>{{ dataSource.filteredData.length }} instrumento(s) encontrado(s)</h3>
+        <div class="export-actions">
+          <button mat-button (click)="exportCSV()" matTooltip="Exportar CSV">
+            <mat-icon>download</mat-icon> CSV
+          </button>
+          <button mat-button (click)="exportPDF()" matTooltip="Exportar PDF">
+            <mat-icon>picture_as_pdf</mat-icon> PDF
+          </button>
+        </div>
+      </div>
+
+      <table mat-table [dataSource]="dataSource" matSort class="instruments-table">
+        <ng-container matColumnDef="instrumentNumber">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Instrumento</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="instrument-number">{{ row.instrumentNumber }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="type">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="type-chip">{{ getTypeLabel(row.type) }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="status-chip" [ngClass]="getStatusColor(row.status)">{{ row.status }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="bank">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Banco</th>
+          <td mat-cell *matCellDef="let row">{{ row.bank }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="value">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Valor</th>
+          <td mat-cell *matCellDef="let row">{{ formatCurrency(row.value, row.currency) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="currency">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Moeda</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="currency-badge">{{ row.currency }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="expiryDate">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Vencimento</th>
+          <td mat-cell *matCellDef="let row">
+            <span [class.expiry-warning]="isExpiringSoon(row)">{{ formatDate(row.expiryDate) }}</span>
+            @if (isExpiringSoon(row)) {
+              <mat-icon class="warning-icon">warning</mat-icon>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="linkedContract">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Contrato Vinculado</th>
+          <td mat-cell *matCellDef="let row">{{ row.linkedContract }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Ações</th>
+          <td mat-cell *matCellDef="let row">
+            <button mat-icon-button matTooltip="Ver detalhes" (click)="selectInstrument(row); $event.stopPropagation()">
+              <mat-icon>visibility</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+            [ngClass]="getRowClass(row)"
+            class="clickable-row"
+            (click)="selectInstrument(row)"></tr>
+      </table>
+
+      <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" [pageSize]="10" showFirstLastButtons></mat-paginator>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Detail Panel -->
+  @if (isDetailOpen && selectedInstrument) {
+    <mat-card class="detail-card">
+      <mat-card-header>
+        <div class="detail-header">
+          <div class="detail-title-section">
+            <mat-icon class="detail-icon">account_balance</mat-icon>
+            <div>
+              <h2>{{ selectedInstrument.instrumentNumber }}</h2>
+              <p>{{ getTypeLabel(selectedInstrument.type) }} — {{ selectedInstrument.bank }}</p>
+            </div>
+          </div>
+          <div class="detail-header-actions">
+            <span class="status-chip" [ngClass]="getStatusColor(selectedInstrument.status)">{{ selectedInstrument.status }}</span>
+            <button mat-icon-button (click)="closeDetail()"><mat-icon>close</mat-icon></button>
+          </div>
+        </div>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-tab-group>
+          <mat-tab label="Informações Gerais">
+            <div class="tab-content">
+              <div class="info-grid">
+                <div class="info-item"><span class="info-label">Beneficiário</span><span class="info-value">{{ selectedInstrument.beneficiary }}</span></div>
+                <div class="info-item"><span class="info-label">Solicitante</span><span class="info-value">{{ selectedInstrument.applicant }}</span></div>
+                <div class="info-item"><span class="info-label">Valor</span><span class="info-value">{{ formatCurrency(selectedInstrument.value, selectedInstrument.currency) }}</span></div>
+                <div class="info-item"><span class="info-label">Emissão</span><span class="info-value">{{ formatDate(selectedInstrument.issueDate) }}</span></div>
+                <div class="info-item"><span class="info-label">Vencimento</span><span class="info-value">{{ formatDate(selectedInstrument.expiryDate) }}</span></div>
+                <div class="info-item"><span class="info-label">Incoterm</span><span class="info-value">{{ selectedInstrument.incoterm || 'N/A' }}</span></div>
+                <div class="info-item"><span class="info-label">Porto Embarque</span><span class="info-value">{{ selectedInstrument.portOfLoading || 'N/A' }}</span></div>
+                <div class="info-item"><span class="info-label">Porto Descarga</span><span class="info-value">{{ selectedInstrument.portOfDischarge || 'N/A' }}</span></div>
+                <div class="info-item"><span class="info-label">Emendas</span><span class="info-value">{{ selectedInstrument.amendments }}</span></div>
+              </div>
+            </div>
+          </mat-tab>
+          <mat-tab label="Documentos Requeridos">
+            <div class="tab-content">
+              <div class="documents-list">
+                @for (doc of selectedInstrument.documentsRequired; track doc) {
+                  <div class="document-item">
+                    <mat-icon>description</mat-icon>
+                    <span>{{ doc }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          </mat-tab>
+          <mat-tab label="Timeline">
+            <div class="tab-content">
+              <div class="timeline-list">
+                @for (event of timeline; track event.id; let last = $last) {
+                  <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    @if (!last) {
+                      <div class="timeline-connector"></div>
+                    }
+                    <div class="timeline-content">
+                      <div class="timeline-header">
+                        <span class="timeline-event">{{ event.event }}</span>
+                        <span class="timeline-date">{{ formatDate(event.date) }}</span>
+                      </div>
+                      <div class="timeline-details">
+                        <span>{{ event.details }}</span>
+                        <span class="timeline-user">{{ event.user }}</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

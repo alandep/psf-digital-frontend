@@ -1,0 +1,141 @@
+<div class="marketplace-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1>Marketplace</h1>
+      <p class="subtitle">Conectores e integrações para sua operação de exportação</p>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid" *ngIf="metrics">
+    <mat-card class="kpi-card">
+      <mat-icon>check_circle</mat-icon>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ metrics.conectoresAtivos }}</span>
+        <span class="kpi-label">Ativos</span>
+      </div>
+    </mat-card>
+    <mat-card class="kpi-card">
+      <mat-icon>cloud_download</mat-icon>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ metrics.disponiveis }}</span>
+        <span class="kpi-label">Disponíveis</span>
+      </div>
+    </mat-card>
+    <mat-card class="kpi-card">
+      <mat-icon>category</mat-icon>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ metrics.categorias }}</span>
+        <span class="kpi-label">Categorias</span>
+      </div>
+    </mat-card>
+    <mat-card class="kpi-card">
+      <mat-icon>new_releases</mat-icon>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ metrics.adicionadosRecentemente }}</span>
+        <span class="kpi-label">Recentes</span>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- Featured Section -->
+  <div class="featured-section" *ngIf="featured.length > 0">
+    <h2 class="section-title">Destaques</h2>
+    <div class="featured-grid">
+      <mat-card *ngFor="let item of featured" class="featured-card">
+        <div class="card-icon-wrapper">
+          <mat-icon>{{ item.icon }}</mat-icon>
+        </div>
+        <h3>{{ item.name }}</h3>
+        <p>{{ item.description }}</p>
+        <div class="card-rating">
+          <mat-icon *ngFor="let s of getStars(item.rating)" class="star filled">star</mat-icon>
+          <mat-icon *ngFor="let s of getEmptyStars(item.rating)" class="star empty">star_border</mat-icon>
+          <span class="rating-text">{{ item.rating }}</span>
+        </div>
+        <span class="status-badge" [ngClass]="getStatusClass(item.status)">{{ getStatusLabel(item.status) }}</span>
+      </mat-card>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <mat-card class="filter-card">
+    <div class="filter-section">
+      <form [formGroup]="filterForm" class="filter-row">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Buscar conectores</mat-label>
+          <input matInput formControlName="searchText" placeholder="Nome, descrição...">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="filter-select">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="">Todos</mat-option>
+            <mat-option value="ACTIVE">Ativo</mat-option>
+            <mat-option value="AVAILABLE">Disponível</mat-option>
+            <mat-option value="MAINTENANCE">Manutenção</mat-option>
+            <mat-option value="COMING_SOON">Em Breve</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="filter-select">
+          <mat-label>Ordenar por</mat-label>
+          <mat-select formControlName="sortBy">
+            <mat-option value="rating">Rating</mat-option>
+            <mat-option value="name">Nome</mat-option>
+            <mat-option value="category">Categoria</mat-option>
+            <mat-option value="recent">Recente</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </form>
+      <div class="chips-row">
+        <span class="filter-label">Categoria:</span>
+        <mat-chip-set>
+          <mat-chip *ngFor="let cat of categories"
+            [highlighted]="isCategorySelected(cat.value)"
+            (click)="toggleCategory(cat.value)">
+            {{ cat.label }}
+          </mat-chip>
+        </mat-chip-set>
+      </div>
+    </div>
+  </mat-card>
+
+  <!-- Connectors Grid -->
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate"></mat-progress-bar>
+  <div class="connectors-grid">
+    <mat-card *ngFor="let item of connectors" class="connector-card">
+      <div class="card-top">
+        <div class="card-icon-wrapper small">
+          <mat-icon>{{ item.icon }}</mat-icon>
+        </div>
+        <span class="status-badge" [ngClass]="getStatusClass(item.status)">{{ getStatusLabel(item.status) }}</span>
+      </div>
+      <h3 class="card-name">{{ item.name }}</h3>
+      <mat-chip class="category-chip">{{ getCategoryLabel(item.category) }}</mat-chip>
+      <div class="card-rating">
+        <mat-icon *ngFor="let s of getStars(item.rating)" class="star filled">star</mat-icon>
+        <mat-icon *ngFor="let s of getEmptyStars(item.rating)" class="star empty">star_border</mat-icon>
+        <span class="rating-text" *ngIf="item.rating > 0">{{ item.rating }} ({{ item.reviewCount }})</span>
+        <span class="rating-text" *ngIf="item.rating === 0">Sem avaliações</span>
+      </div>
+      <p class="card-description">{{ item.description }}</p>
+      <div class="card-footer">
+        <span class="pricing">{{ item.pricing }}</span>
+        <button mat-stroked-button
+          *ngIf="item.status === 'ACTIVE' || item.status === 'AVAILABLE'"
+          [color]="item.status === 'ACTIVE' ? 'warn' : 'primary'"
+          (click)="toggleActivation(item)">
+          {{ item.status === 'ACTIVE' ? 'Desativar' : 'Ativar' }}
+        </button>
+        <span *ngIf="item.status === 'COMING_SOON'" class="coming-soon-text">Em breve</span>
+        <span *ngIf="item.status === 'MAINTENANCE'" class="maintenance-text">Em manutenção</span>
+      </div>
+    </mat-card>
+  </div>
+
+  <div *ngIf="connectors.length === 0 && !isLoading" class="empty-state">
+    <mat-icon>storefront</mat-icon>
+    <p>Nenhum conector encontrado</p>
+  </div>
+</div>

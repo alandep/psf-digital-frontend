@@ -1,0 +1,236 @@
+<div class="esg-container">
+
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">eco</mat-icon>
+        <div class="title-content">
+          <h1>ESG &amp; Sustentabilidade</h1>
+          <p class="subtitle">Monitoramento de pegada de carbono e certificações ambientais</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button color="primary" (click)="openCertificacaoDialog()">
+          <mat-icon>add</mat-icon> Registrar Certificação
+        </button>
+        <button mat-raised-button color="primary" (click)="exportCSV()">
+          <mat-icon>download</mat-icon> Exportar CSV
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Dashboard -->
+  <div class="kpi-dashboard">
+    <mat-card class="kpi-card kpi-carbon">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>cloud</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ (metrics?.totalCarbonFootprint || 0) | number:'1.0-0' }}</div>
+          <div class="kpi-label">Pegada Carbono Total (kg CO₂)</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-traceability">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>track_changes</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value kpi-value-success">{{ getTraceabilityPercent() }}%</div>
+          <div class="kpi-label">Rastreabilidade</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-certs">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>verified</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.activeCertifications || 0 }}</div>
+          <div class="kpi-label">Certificações Ativas</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-score">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>psychology</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.esgScore || 0 }}</div>
+          <div class="kpi-label">ESG Score</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-rating">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>grade</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value" [ngClass]="getRatingClass(metrics?.avgRating || 'C')">{{ metrics?.avgRating || '-' }}</div>
+          <div class="kpi-label">Rating Médio</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-operations">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>inventory_2</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.totalOperations || 0 }}</div>
+          <div class="kpi-label">Operações</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Emissions Breakdown Card -->
+  <mat-card class="emissions-card" *ngIf="emissionsBreakdown">
+    <mat-card-content>
+      <h3 class="emissions-title">
+        <mat-icon>pie_chart</mat-icon> Breakdown de Emissões
+      </h3>
+      <div class="emissions-grid">
+        <div class="emission-item">
+          <div class="emission-label">
+            <span class="emission-dot production"></span> Produção
+          </div>
+          <mat-progress-bar mode="determinate" [value]="emissionsBreakdown.production" class="bar-production"></mat-progress-bar>
+          <span class="emission-value">{{ emissionsBreakdown.production }}%</span>
+        </div>
+        <div class="emission-item">
+          <div class="emission-label">
+            <span class="emission-dot transport"></span> Transporte
+          </div>
+          <mat-progress-bar mode="determinate" [value]="emissionsBreakdown.transport" class="bar-transport"></mat-progress-bar>
+          <span class="emission-value">{{ emissionsBreakdown.transport }}%</span>
+        </div>
+        <div class="emission-item">
+          <div class="emission-label">
+            <span class="emission-dot processing"></span> Processamento
+          </div>
+          <mat-progress-bar mode="determinate" [value]="emissionsBreakdown.processing" class="bar-processing"></mat-progress-bar>
+          <span class="emission-value">{{ emissionsBreakdown.processing }}%</span>
+        </div>
+        <div class="emission-item">
+          <div class="emission-label">
+            <span class="emission-dot packaging"></span> Embalagem
+          </div>
+          <mat-progress-bar mode="determinate" [value]="emissionsBreakdown.packaging" class="bar-packaging"></mat-progress-bar>
+          <span class="emission-value">{{ emissionsBreakdown.packaging }}%</span>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Filters -->
+  <mat-card class="filter-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filter-form">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Buscar</mat-label>
+          <input matInput formControlName="searchText" placeholder="Produto, destino...">
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Rating ESG</mat-label>
+          <mat-select formControlName="rating">
+            <mat-option value="">Todos</mat-option>
+            <mat-option value="A">A</mat-option>
+            <mat-option value="B">B</mat-option>
+            <mat-option value="C">C</mat-option>
+            <mat-option value="D">D</mat-option>
+            <mat-option value="E">E</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Rastreabilidade</mat-label>
+          <mat-select formControlName="traceability">
+            <mat-option value="">Todos</mat-option>
+            <mat-option value="FULL">Completa</mat-option>
+            <mat-option value="PARTIAL">Parcial</mat-option>
+            <mat-option value="NONE">Nenhuma</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Certificação</mat-label>
+          <mat-select formControlName="certification">
+            <mat-option value="">Todas</mat-option>
+            <mat-option value="ORGANIC">Orgânico</mat-option>
+            <mat-option value="FAIR_TRADE">Fair Trade</mat-option>
+            <mat-option value="RAINFOREST_ALLIANCE">Rainforest Alliance</mat-option>
+            <mat-option value="CARBON_NEUTRAL">Carbon Neutral</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Table -->
+  <mat-card class="table-card">
+    <mat-card-content>
+      <div class="table-container">
+        <table mat-table [dataSource]="dataSource" matSort class="esg-table">
+
+          <ng-container matColumnDef="exportId">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Export ID</th>
+            <td mat-cell *matCellDef="let row">{{ row.exportId }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="product">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Produto</th>
+            <td mat-cell *matCellDef="let row">{{ row.product }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="destination">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Destino</th>
+            <td mat-cell *matCellDef="let row">{{ row.destination }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="carbonFootprint">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Pegada Carbono</th>
+            <td mat-cell *matCellDef="let row">{{ formatCarbon(row.carbonFootprint) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="traceabilityStatus">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Rastreabilidade</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="trace-badge" [ngClass]="getTraceabilityClass(row.traceabilityStatus)">
+                {{ getTraceabilityLabel(row.traceabilityStatus) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="certifications">
+            <th mat-header-cell *matHeaderCellDef>Certificações</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="cert-chips">
+                <span class="cert-chip" *ngFor="let cert of row.certifications">{{ getCertLabel(cert) }}</span>
+                <span class="no-cert" *ngIf="row.certifications.length === 0">—</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="esgRating">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Rating ESG</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="rating-badge" [ngClass]="getRatingClass(row.esgRating)">
+                {{ row.esgRating }}
+              </span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </div>
+
+      <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" [pageSize]="10" showFirstLastButtons></mat-paginator>
+    </mat-card-content>
+  </mat-card>
+</div>

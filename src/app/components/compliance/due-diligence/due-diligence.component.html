@@ -1,0 +1,220 @@
+<div class="due-diligence-container">
+
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">policy</mat-icon>
+        <div class="title-content">
+          <h1>Due Diligence &mdash; Screening KYC/AML</h1>
+          <p class="subtitle">Centro de análise e verificação de conformidade</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button color="primary" (click)="createScreening()">
+          <mat-icon>add</mat-icon> Nova Screening
+        </button>
+        <button mat-raised-button color="primary" (click)="exportCSV()">
+          <mat-icon>download</mat-icon> Exportar CSV
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Dashboard -->
+  <div class="kpi-dashboard">
+    <mat-card class="kpi-card kpi-total">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>assignment</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.totalScreenings || 0 }}</div>
+          <div class="kpi-label">Total Screenings</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-pending">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>hourglass_empty</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value kpi-value-warning">{{ metrics?.pending || 0 }}</div>
+          <div class="kpi-label">Pendentes</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-flagged">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>flag</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value kpi-value-danger">{{ metrics?.flagged || 0 }}</div>
+          <div class="kpi-label">Sinalizados</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-completed">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>check_circle</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value kpi-value-success">{{ metrics?.completed || 0 }}</div>
+          <div class="kpi-label">Concluídos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-expired">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>timer_off</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value kpi-value-danger">{{ metrics?.expired || 0 }}</div>
+          <div class="kpi-label">Expirados</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-time">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>speed</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.avgResolutionTime || 0 }}d</div>
+          <div class="kpi-label">Tempo Médio Resolução</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Filters -->
+  <mat-card class="filter-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filter-form">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Buscar</mat-label>
+          <input matInput formControlName="searchText" placeholder="Entidade, país, analista...">
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Tipo Screening</mat-label>
+          <mat-select formControlName="screeningType">
+            <mat-option value="">Todos</mat-option>
+            <mat-option value="KYC">KYC</mat-option>
+            <mat-option value="AML">AML</mat-option>
+            <mat-option value="SANCTIONS">Sanções</mat-option>
+            <mat-option value="PEP">PEP</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Nível de Risco</mat-label>
+          <mat-select formControlName="riskLevel">
+            <mat-option value="">Todos</mat-option>
+            <mat-option value="LOW">Baixo</mat-option>
+            <mat-option value="MEDIUM">Médio</mat-option>
+            <mat-option value="HIGH">Alto</mat-option>
+            <mat-option value="CRITICAL">Crítico</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Tabs -->
+  <mat-tab-group (selectedIndexChange)="onTabChange($event)" [selectedIndex]="selectedTabIndex">
+    <mat-tab label="Pendentes"></mat-tab>
+    <mat-tab label="Concluídos"></mat-tab>
+    <mat-tab label="Sinalizados"></mat-tab>
+    <mat-tab label="Expirados"></mat-tab>
+  </mat-tab-group>
+
+  <!-- Table -->
+  <mat-card class="table-card">
+    <mat-card-content>
+      <div class="table-container">
+        <table mat-table [dataSource]="dataSource" matSort class="screenings-table">
+
+          <ng-container matColumnDef="entityName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Entidade</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="entity-info">
+                <span class="entity-name">{{ row.entityName }}</span>
+                <span class="entity-country">{{ row.country }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="entityType">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</th>
+            <td mat-cell *matCellDef="let row">
+              <mat-icon class="entity-type-icon">{{ row.entityType === 'INDIVIDUAL' ? 'person' : 'business' }}</mat-icon>
+              {{ row.entityType === 'INDIVIDUAL' ? 'Pessoa' : 'Empresa' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="screeningType">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Screening</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="screening-chip" [ngClass]="getScreeningTypeClass(row.screeningType)">
+                {{ getScreeningTypeLabel(row.screeningType) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="status-badge" [ngClass]="getStatusClass(row.status)">
+                {{ getStatusLabel(row.status) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="riskLevel">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Risco</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="risk-badge" [ngClass]="getRiskClass(row.riskLevel)">
+                {{ getRiskLabel(row.riskLevel) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="assignedAnalyst">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Analista</th>
+            <td mat-cell *matCellDef="let row">{{ row.assignedAnalyst }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Criado em</th>
+            <td mat-cell *matCellDef="let row">{{ formatDate(row.createdAt) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="slaDeadline">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>SLA</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="sla-badge" [ngClass]="{ 'sla-expired': isSlaExpired(row) }">
+                {{ getSlaStatus(row) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Ações</th>
+            <td mat-cell *matCellDef="let row">
+              <button mat-icon-button matTooltip="Resolver" (click)="openResolution(row)"
+                *ngIf="row.status !== 'COMPLETED'" color="primary">
+                <mat-icon>gavel</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </div>
+
+      <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" [pageSize]="10" showFirstLastButtons></mat-paginator>
+    </mat-card-content>
+  </mat-card>
+</div>

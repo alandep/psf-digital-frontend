@@ -1,0 +1,230 @@
+<!-- Header -->
+<div class="command-center-container">
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-text">
+        <h1>Command Center</h1>
+        <p>Cockpit executivo — visão global em tempo real</p>
+      </div>
+      <div class="header-actions">
+        <span class="refresh-indicator">
+          <mat-icon>schedule</mat-icon>
+          Atualizado: {{ lastUpdated }}
+        </span>
+        <button mat-raised-button class="toggle-btn" (click)="toggleViewMode()">
+          <mat-icon>{{ viewMode === 'operations' ? '3d_rotation' : 'grid_view' }}</mat-icon>
+          {{ viewMode === 'operations' ? 'Digital Twin' : 'Operações' }}
+        </button>
+        <button mat-icon-button matTooltip="Exportar CSV" (click)="exportToCSV()">
+          <mat-icon>download</mat-icon>
+        </button>
+        <button mat-icon-button matTooltip="Exportar PDF" (click)="exportToPDF()">
+          <mat-icon>picture_as_pdf</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid" *ngIf="metrics">
+    <mat-card class="kpi-card">
+      <div class="kpi-icon-wrapper blue">
+        <mat-icon>flight_takeoff</mat-icon>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-value">{{ metrics.activeOperations }}</span>
+        <span class="kpi-label">Operações Ativas</span>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <div class="kpi-icon-wrapper green">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-value">{{ metrics.onTimeDeliveryRate }}%</span>
+        <span class="kpi-label">OTIF</span>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <div class="kpi-icon-wrapper purple">
+        <mat-icon>attach_money</mat-icon>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-value">{{ formatCurrency(metrics.revenueInTransit) }}</span>
+        <span class="kpi-label">Revenue em Trânsito</span>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <div class="kpi-icon-wrapper orange">
+        <mat-icon>description</mat-icon>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-value">{{ metrics.pendingDocuments }}</span>
+        <span class="kpi-label">Docs Pendentes</span>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <div class="kpi-icon-wrapper red">
+        <mat-icon>warning</mat-icon>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-value">{{ metrics.complianceAlerts }}</span>
+        <span class="kpi-label">Alertas Compliance</span>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <div class="kpi-icon-wrapper teal">
+        <mat-icon>timer</mat-icon>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-value">{{ metrics.averageCycleTime }}d</span>
+        <span class="kpi-label">Ciclo Médio</span>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- Operations Map (Hero) -->
+  <div class="operations-map-section">
+    <h2 class="section-title">
+      <mat-icon>map</mat-icon>
+      Mapa de Operações
+    </h2>
+    <div class="operations-grid">
+      <mat-card
+        *ngFor="let op of operations"
+        class="operation-card"
+        [class.selected]="selectedOperation?.id === op.id"
+        [style.border-left-color]="getStatusColor(op.currentStatus)"
+        (click)="selectOperation(op)">
+        <div class="op-card-header">
+          <span class="op-customer">{{ op.customer }}</span>
+          <span class="op-status-badge" [style.background-color]="getStatusColor(op.currentStatus)">
+            {{ getStatusLabel(op.currentStatus) }}
+          </span>
+        </div>
+        <div class="op-card-body">
+          <div class="op-detail">
+            <mat-icon>inventory_2</mat-icon>
+            <span>{{ op.product }}</span>
+          </div>
+          <div class="op-detail">
+            <mat-icon>place</mat-icon>
+            <span>{{ op.destination }}</span>
+          </div>
+          <div class="op-detail">
+            <mat-icon>event</mat-icon>
+            <span>ETA: {{ formatDate(op.eta) }}</span>
+          </div>
+          <div class="op-detail">
+            <mat-icon>attach_money</mat-icon>
+            <span>{{ formatCurrency(op.value) }}</span>
+          </div>
+        </div>
+      </mat-card>
+    </div>
+  </div>
+
+  <!-- Timeline for Selected Operation -->
+  <div class="timeline-section" *ngIf="selectedOperation">
+    <h2 class="section-title">
+      <mat-icon>timeline</mat-icon>
+      Timeline — {{ selectedOperation.exportId }}
+    </h2>
+    <div class="timeline-container">
+      <div class="timeline-track">
+        <div
+          *ngFor="let milestone of selectedOperation.milestones"
+          class="timeline-milestone"
+          [class.completed]="milestone.completed"
+          [class.active]="milestone.completed && !selectedOperation.milestones[selectedOperation.milestones.indexOf(milestone) + 1]?.completed">
+          <div class="milestone-dot"></div>
+          <div class="milestone-label">{{ milestone.label }}</div>
+          <div class="milestone-date" *ngIf="milestone.date">
+            {{ formatDate(milestone.date) }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Operations Table -->
+  <div class="table-section">
+    <h2 class="section-title">
+      <mat-icon>table_chart</mat-icon>
+      Todas as Operações
+    </h2>
+    <div class="table-container">
+      <table mat-table [dataSource]="dataSource" matSort class="operations-table">
+
+        <ng-container matColumnDef="exportId">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Export ID</th>
+          <td mat-cell *matCellDef="let row">{{ row.exportId }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="customer">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Cliente</th>
+          <td mat-cell *matCellDef="let row">{{ row.customer }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="product">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Produto</th>
+          <td mat-cell *matCellDef="let row">{{ row.product }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="origin">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Origem</th>
+          <td mat-cell *matCellDef="let row">{{ row.origin }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="destination">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Destino</th>
+          <td mat-cell *matCellDef="let row">{{ row.destination }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="currentStatus">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="status-chip" [style.background-color]="getStatusColor(row.currentStatus)">
+              {{ getStatusLabel(row.currentStatus) }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="eta">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>ETA</th>
+          <td mat-cell *matCellDef="let row">{{ formatDate(row.eta) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="riskLevel">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Risco</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="risk-chip" [style.background-color]="getRiskColor(row.riskLevel)">
+              {{ getRiskLabel(row.riskLevel) }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="value">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Valor</th>
+          <td mat-cell *matCellDef="let row">{{ formatCurrency(row.value) }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+            (click)="selectOperation(row)"
+            [class.selected-row]="selectedOperation?.id === row.id"></tr>
+      </table>
+
+      <mat-paginator
+        [pageSizeOptions]="[10, 25, 50, 100]"
+        [pageSize]="10"
+        showFirstLastButtons>
+      </mat-paginator>
+    </div>
+  </div>
+</div>

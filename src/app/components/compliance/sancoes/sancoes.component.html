@@ -1,0 +1,176 @@
+<div class="sancoes-container">
+  <!-- Header -->
+  <div class="page-header">
+    <h1>
+      <mat-icon>shield</mat-icon>
+      Sanções - Screening
+    </h1>
+    <div class="header-actions">
+      <div class="auto-refresh-indicator">
+        <div class="pulse-dot"></div>
+        <span>Auto-refresh ativo</span>
+      </div>
+      <button mat-raised-button color="primary" (click)="runNewScreening()">
+        <mat-icon>search</mat-icon>
+        Nova Verificação
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="metrics-grid" *ngIf="metrics">
+    <div class="metric-card">
+      <div class="metric-header">
+        <mat-icon>people</mat-icon>
+        <span>Entidades Monitoradas</span>
+      </div>
+      <div class="metric-value">{{ metrics.entidadesMonitoradas }}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-header">
+        <mat-icon>warning</mat-icon>
+        <span>Matches Encontrados</span>
+      </div>
+      <div class="metric-value">{{ metrics.matchesEncontrados }}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-header">
+        <mat-icon>list</mat-icon>
+        <span>Listas Ativas</span>
+      </div>
+      <div class="metric-value">{{ metrics.listasAtivas }}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-header">
+        <mat-icon>schedule</mat-icon>
+        <span>Última Verificação</span>
+      </div>
+      <div class="metric-value" style="font-size: 1.1rem;">{{ metrics.ultimaVerificacao | date:'dd/MM HH:mm' }}</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Buscar entidade</mat-label>
+          <input matInput formControlName="searchText" placeholder="Nome, país, motivo...">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Lista</mat-label>
+          <mat-select formControlName="listType">
+            <mat-option value="">Todas</mat-option>
+            <mat-option *ngFor="let l of listTypes" [value]="l.value">{{ l.label }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let s of screeningStatuses" [value]="s.value">{{ s.label }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo Entidade</mat-label>
+          <mat-select formControlName="entityType">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let et of entityTypes" [value]="et.value">{{ et.label }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Table -->
+  <mat-card class="table-card">
+    <div class="table-header">
+      <h3>Resultados de Screening</h3>
+      <div class="export-actions">
+        <button mat-icon-button (click)="exportCSV()" matTooltip="Exportar CSV">
+          <mat-icon>download</mat-icon>
+        </button>
+        <button mat-icon-button (click)="exportPDF()" matTooltip="Exportar PDF">
+          <mat-icon>picture_as_pdf</mat-icon>
+        </button>
+      </div>
+    </div>
+    <mat-card-content>
+      <table mat-table [dataSource]="dataSource" matSort class="full-width-table">
+        <ng-container matColumnDef="entityName">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Entidade</th>
+          <td mat-cell *matCellDef="let row">{{ row.entityName }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="entityType">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</th>
+          <td mat-cell *matCellDef="let row">{{ getEntityTypeLabel(row.entityType) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="listMatched">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Lista</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="list-chip" [ngClass]="row.listMatched">{{ getListLabel(row.listMatched) }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="matchConfidence">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Confiança</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="confidence-bar">
+              <div class="bar-container">
+                <div class="bar-fill"
+                     [ngClass]="{ 'high': row.matchConfidence >= 80, 'medium': row.matchConfidence >= 60 && row.matchConfidence < 80, 'low': row.matchConfidence < 60 }"
+                     [style.width.%]="row.matchConfidence"></div>
+              </div>
+              <span class="bar-value">{{ row.matchConfidence }}%</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="country">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>País</th>
+          <td mat-cell *matCellDef="let row">{{ row.country }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="status-badge" [ngClass]="row.status">{{ getStatusLabel(row.status) }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="lastChecked">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Última Verificação</th>
+          <td mat-cell *matCellDef="let row">{{ row.lastChecked | date:'dd/MM/yyyy HH:mm' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Ações</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="actions-cell">
+              <button mat-icon-button matTooltip="Ver detalhes" (click)="viewEntity(row)">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button mat-icon-button matTooltip="Re-verificar" (click)="recheck(row)">
+                <mat-icon>refresh</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+      <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]"
+                     [pageSize]="10"
+                     showFirstLastButtons>
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+</div>

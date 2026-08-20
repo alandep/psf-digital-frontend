@@ -1,0 +1,195 @@
+<div class="perfil-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="avatar-section">
+        <div class="avatar-circle">
+          <mat-icon class="avatar-icon">person</mat-icon>
+        </div>
+      </div>
+      <div class="header-text">
+        <h1>Meu Perfil</h1>
+        <p>Gerencie suas informações pessoais e preferências</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="profile-content">
+    <form [formGroup]="profileForm">
+      <!-- Personal Information Card -->
+      <mat-card class="profile-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="card-icon">person</mat-icon>
+          <mat-card-title>Informações Pessoais</mat-card-title>
+          <mat-card-subtitle>Dados básicos da sua conta</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Nome</mat-label>
+              <input matInput formControlName="name" placeholder="Seu nome completo">
+              <mat-icon matPrefix>badge</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Email</mat-label>
+              <input matInput formControlName="email">
+              <mat-icon matPrefix>email</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Cargo</mat-label>
+              <input matInput formControlName="role">
+              <mat-icon matPrefix>work</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Empresa</mat-label>
+              <input matInput formControlName="company">
+              <mat-icon matPrefix>business</mat-icon>
+            </mat-form-field>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Contact Card -->
+      <mat-card class="profile-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="card-icon">contacts</mat-icon>
+          <mat-card-title>Contato</mat-card-title>
+          <mat-card-subtitle>Informações de contato</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Telefone</mat-label>
+              <input matInput formControlName="phone" placeholder="+55 11 99999-0000">
+              <mat-icon matPrefix>phone</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Departamento</mat-label>
+              <input matInput formControlName="department" placeholder="Seu departamento">
+              <mat-icon matPrefix>apartment</mat-icon>
+            </mat-form-field>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Preferences Card -->
+      <mat-card class="profile-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="card-icon">tune</mat-icon>
+          <mat-card-title>Preferências</mat-card-title>
+          <mat-card-subtitle>Personalize sua experiência</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="preferences-grid">
+            <div class="preference-item">
+              <div class="preference-label">
+                <mat-icon>dark_mode</mat-icon>
+                <span>Modo Escuro</span>
+              </div>
+              <mat-slide-toggle 
+                [checked]="darkMode" 
+                (change)="toggleDarkMode()"
+                color="primary">
+              </mat-slide-toggle>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="preference-item">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Idioma</mat-label>
+                <mat-select [(value)]="selectedLanguage">
+                  <mat-option *ngFor="let lang of languages" [value]="lang.value">
+                    {{ lang.label }}
+                  </mat-option>
+                </mat-select>
+                <mat-icon matPrefix>language</mat-icon>
+              </mat-form-field>
+            </div>
+
+            <div class="preference-item">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Fuso Horário</mat-label>
+                <mat-select [(value)]="selectedTimezone">
+                  <mat-option *ngFor="let tz of timezones" [value]="tz.value">
+                    {{ tz.label }}
+                  </mat-option>
+                </mat-select>
+                <mat-icon matPrefix>schedule</mat-icon>
+              </mat-form-field>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Security Card -->
+      <mat-card class="profile-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="card-icon">security</mat-icon>
+          <mat-card-title>Segurança</mat-card-title>
+          <mat-card-subtitle>Configurações de segurança da conta</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="security-grid">
+            <div class="security-item">
+              <div class="security-label">
+                <mat-icon [class.mfa-active]="userData.mfaEnabled">verified_user</mat-icon>
+                <div class="security-text">
+                  <span class="security-title">Autenticação Multi-Fator (MFA)</span>
+                  <span class="security-status" [class.active]="userData.mfaEnabled">
+                    {{ userData.mfaEnabled ? 'Ativado' : 'Desativado' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="security-item">
+              <div class="security-label">
+                <mat-icon>login</mat-icon>
+                <div class="security-text">
+                  <span class="security-title">Último Login</span>
+                  <span class="security-value">{{ userData.lastLogin }}</span>
+                </div>
+              </div>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="security-item">
+              <div class="security-label">
+                <mat-icon>event</mat-icon>
+                <div class="security-text">
+                  <span class="security-title">Conta Criada</span>
+                  <span class="security-value">{{ userData.accountCreated }}</span>
+                </div>
+              </div>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="security-item">
+              <button mat-raised-button color="warn" (click)="changePassword()">
+                <mat-icon>lock</mat-icon>
+                Alterar Senha
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </form>
+
+    <!-- Save Button -->
+    <div class="actions-footer">
+      <button mat-raised-button color="primary" class="save-btn" (click)="saveProfile()">
+        <mat-icon>save</mat-icon>
+        Salvar Alterações
+      </button>
+    </div>
+  </div>
+</div>

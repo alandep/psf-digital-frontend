@@ -1,0 +1,272 @@
+<div class="bill-of-lading-container">
+  <!-- Header -->
+  <div class="page-header">
+    <h1>
+      <mat-icon>sailing</mat-icon>
+      Bill of Lading
+    </h1>
+    <div class="header-actions">
+      <button mat-raised-button color="primary" (click)="openNewBLDialog()">
+        <mat-icon>add</mat-icon>
+        Novo BL
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="metrics-grid" *ngIf="metrics">
+    <div class="metric-card">
+      <div class="metric-header">
+        <mat-icon>receipt_long</mat-icon>
+        <span>Total BLs</span>
+      </div>
+      <div class="metric-value">{{ metrics.totalBLs }}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-header">
+        <mat-icon>check_circle</mat-icon>
+        <span>Emitidos</span>
+      </div>
+      <div class="metric-value">{{ metrics.emitidos }}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-header">
+        <mat-icon>pending</mat-icon>
+        <span>Pendentes</span>
+      </div>
+      <div class="metric-value">{{ metrics.pendentes }}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-header">
+        <mat-icon>swap_horiz</mat-icon>
+        <span>Surrendered</span>
+      </div>
+      <div class="metric-value">{{ metrics.surrendered }}</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Buscar</mat-label>
+          <input matInput formControlName="searchText" placeholder="BL, shipper, consignee...">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo</mat-label>
+          <mat-select formControlName="type">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let t of types" [value]="t.value">{{ t.label }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Table -->
+  <mat-card class="table-card">
+    <div class="table-header">
+      <h3>Bills of Lading</h3>
+      <div class="export-actions">
+        <button mat-icon-button (click)="exportCSV()" matTooltip="Exportar CSV">
+          <mat-icon>download</mat-icon>
+        </button>
+        <button mat-icon-button (click)="exportPDF()" matTooltip="Exportar PDF">
+          <mat-icon>picture_as_pdf</mat-icon>
+        </button>
+      </div>
+    </div>
+    <mat-card-content>
+      <table mat-table [dataSource]="dataSource" matSort class="full-width-table">
+        <ng-container matColumnDef="blNumber">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>BL Number</th>
+          <td mat-cell *matCellDef="let row">{{ row.blNumber }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="type">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="type-chip" [ngClass]="row.type">{{ row.type }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="shipper">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Shipper</th>
+          <td mat-cell *matCellDef="let row">{{ row.shipper }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="consignee">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Consignee</th>
+          <td mat-cell *matCellDef="let row">{{ row.consignee }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="vessel">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Vessel</th>
+          <td mat-cell *matCellDef="let row">{{ row.vessel }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="voyage">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Voyage</th>
+          <td mat-cell *matCellDef="let row">{{ row.voyage }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="portLoading">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Porto Embarque</th>
+          <td mat-cell *matCellDef="let row">{{ row.portLoading }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="portDischarge">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Porto Descarga</th>
+          <td mat-cell *matCellDef="let row">{{ row.portDischarge }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="containers">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Containers</th>
+          <td mat-cell *matCellDef="let row">{{ row.containers.length }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="status-badge" [ngClass]="row.status">{{ getStatusLabel(row.status) }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="issueDate">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Data Emissão</th>
+          <td mat-cell *matCellDef="let row">{{ row.issueDate | date:'dd/MM/yyyy' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Ações</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="actions-cell">
+              <button mat-icon-button matTooltip="Ver detalhes" (click)="viewDetails(row)">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button mat-icon-button matTooltip="Editar" (click)="editBL(row)">
+                <mat-icon>edit</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+            (click)="viewDetails(row)"
+            style="cursor: pointer;"></tr>
+      </table>
+
+      <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]"
+                     [pageSize]="10"
+                     showFirstLastButtons>
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+</div>
+
+<!-- Detail Panel -->
+<ng-container *ngIf="selectedBL">
+  <div class="overlay" (click)="closeDetail()"></div>
+  <div class="detail-panel">
+    <div class="detail-header">
+      <h2>{{ selectedBL.blNumber }}</h2>
+      <button mat-icon-button (click)="closeDetail()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="detail-section">
+      <h4>Informações Gerais</h4>
+      <div class="detail-grid">
+        <div class="detail-item">
+          <label>Tipo</label>
+          <span class="type-chip" [ngClass]="selectedBL.type">{{ selectedBL.type }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Status</label>
+          <span class="status-badge" [ngClass]="selectedBL.status">{{ getStatusLabel(selectedBL.status) }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Data Emissão</label>
+          <span>{{ selectedBL.issueDate | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Frete</label>
+          <span>{{ selectedBL.freightTerms }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h4>Partes</h4>
+      <div class="detail-grid">
+        <div class="detail-item">
+          <label>Shipper</label>
+          <span>{{ selectedBL.shipper }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Consignee</label>
+          <span>{{ selectedBL.consignee }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Notify Party</label>
+          <span>{{ selectedBL.notifyParty }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h4>Transporte</h4>
+      <div class="detail-grid">
+        <div class="detail-item">
+          <label>Vessel</label>
+          <span>{{ selectedBL.vessel }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Voyage</label>
+          <span>{{ selectedBL.voyage }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Porto Embarque</label>
+          <span>{{ selectedBL.portLoading }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Porto Descarga</label>
+          <span>{{ selectedBL.portDischarge }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Peso Bruto</label>
+          <span>{{ selectedBL.grossWeight | number:'1.2-2' }} kg</span>
+        </div>
+        <div class="detail-item">
+          <label>Medição</label>
+          <span>{{ selectedBL.measurement | number:'1.2-2' }} m³</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h4>Containers</h4>
+      <div class="containers-list">
+        <span *ngFor="let c of selectedBL.containers" class="container-chip">{{ c }}</span>
+      </div>
+    </div>
+
+    <div class="detail-section" *ngIf="selectedBL.observations">
+      <h4>Observações</h4>
+      <p>{{ selectedBL.observations }}</p>
+    </div>
+  </div>
+</ng-container>

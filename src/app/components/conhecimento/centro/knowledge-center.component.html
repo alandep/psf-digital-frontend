@@ -1,0 +1,177 @@
+<div class="knowledge-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1>Central de Conhecimento</h1>
+      <p class="subtitle">Documentação, tutoriais e boas práticas para sua operação</p>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid" *ngIf="metrics">
+    <mat-card class="kpi-card">
+      <mat-icon>article</mat-icon>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ metrics.totalArtigos }}</span>
+        <span class="kpi-label">Artigos</span>
+      </div>
+    </mat-card>
+    <mat-card class="kpi-card">
+      <mat-icon>help</mat-icon>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ metrics.faqs }}</span>
+        <span class="kpi-label">FAQs</span>
+      </div>
+    </mat-card>
+    <mat-card class="kpi-card">
+      <mat-icon>play_circle</mat-icon>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ metrics.tutoriaisVideo }}</span>
+        <span class="kpi-label">Tutoriais</span>
+      </div>
+    </mat-card>
+    <mat-card class="kpi-card">
+      <mat-icon>star</mat-icon>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ metrics.ratingMedio }}</span>
+        <span class="kpi-label">Rating Médio</span>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- Search -->
+  <mat-card class="search-card">
+    <form [formGroup]="filterForm">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Buscar artigos</mat-label>
+        <input matInput formControlName="searchText" placeholder="Título, assunto, tag...">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+    </form>
+  </mat-card>
+
+  <!-- Article Detail View -->
+  <mat-card class="detail-card" *ngIf="selectedArticle">
+    <div class="detail-header">
+      <div class="detail-title-section">
+        <mat-icon class="detail-category-icon">{{ getCategoryIcon(selectedArticle.category) }}</mat-icon>
+        <div>
+          <h2>{{ selectedArticle.title }}</h2>
+          <div class="detail-meta">
+            <span class="meta-item">{{ getCategoryLabel(selectedArticle.category) }}</span>
+            <span class="meta-item">{{ selectedArticle.author }}</span>
+            <span class="meta-item">{{ formatDate(selectedArticle.updatedAt) }}</span>
+            <span class="meta-item">{{ selectedArticle.viewCount }} visualizações</span>
+          </div>
+        </div>
+      </div>
+      <button mat-icon-button (click)="closeArticle()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <mat-divider></mat-divider>
+    <div class="detail-body">
+      <p class="detail-summary">{{ selectedArticle.summary }}</p>
+      <p class="detail-content">{{ selectedArticle.content }}</p>
+      <div class="detail-tags">
+        <mat-chip-set>
+          <mat-chip *ngFor="let tag of selectedArticle.tags">{{ tag }}</mat-chip>
+        </mat-chip-set>
+      </div>
+      <div *ngIf="selectedArticle.videoUrl" class="video-link">
+        <mat-icon>play_circle</mat-icon>
+        <span>Duração: {{ selectedArticle.videoDuration }}</span>
+      </div>
+    </div>
+    <mat-divider></mat-divider>
+    <div class="feedback-section">
+      <span>Este artigo foi útil?</span>
+      <button mat-icon-button matTooltip="Sim" (click)="rateArticle(true)">
+        <mat-icon>thumb_up</mat-icon>
+      </button>
+      <button mat-icon-button matTooltip="Não" (click)="rateArticle(false)">
+        <mat-icon>thumb_down</mat-icon>
+      </button>
+    </div>
+  </mat-card>
+
+  <!-- Content Tabs -->
+  <div class="content-section" *ngIf="!selectedArticle">
+    <mat-tab-group (selectedIndexChange)="onTabChange($event)" animationDuration="200ms">
+      <mat-tab label="Todos">
+        <div class="articles-list">
+          <mat-card *ngFor="let article of articles" class="article-card" (click)="selectArticle(article)">
+            <div class="article-row">
+              <mat-icon class="article-icon">{{ getCategoryIcon(article.category) }}</mat-icon>
+              <div class="article-content">
+                <h4>{{ article.title }}</h4>
+                <p>{{ article.summary }}</p>
+                <div class="article-meta">
+                  <span class="difficulty-badge" [ngClass]="getDifficultyClass(article.difficulty)">
+                    {{ getDifficultyLabel(article.difficulty) }}
+                  </span>
+                  <span class="meta-text">{{ article.author }}</span>
+                  <span class="meta-text">{{ article.viewCount }} views</span>
+                  <span class="meta-text">{{ article.rating }}/5</span>
+                </div>
+              </div>
+            </div>
+          </mat-card>
+        </div>
+      </mat-tab>
+      <mat-tab *ngFor="let cat of categories" [label]="cat.label">
+        <div class="articles-list">
+          <mat-card *ngFor="let article of articles" class="article-card" (click)="selectArticle(article)">
+            <div class="article-row">
+              <mat-icon class="article-icon">{{ getCategoryIcon(article.category) }}</mat-icon>
+              <div class="article-content">
+                <h4>{{ article.title }}</h4>
+                <p>{{ article.summary }}</p>
+                <div class="article-meta">
+                  <span class="difficulty-badge" [ngClass]="getDifficultyClass(article.difficulty)">
+                    {{ getDifficultyLabel(article.difficulty) }}
+                  </span>
+                  <span class="meta-text">{{ article.author }}</span>
+                  <span class="meta-text">{{ article.viewCount }} views</span>
+                </div>
+              </div>
+            </div>
+          </mat-card>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+
+  <!-- Most Viewed Section -->
+  <div class="section" *ngIf="!selectedArticle">
+    <h2 class="section-title">Mais Acessados</h2>
+    <div class="horizontal-list">
+      <mat-card *ngFor="let article of mostViewed; let i = index" class="mini-card" (click)="selectArticle(article)">
+        <div class="mini-card-row">
+          <span class="rank">#{{ i + 1 }}</span>
+          <div class="mini-card-content">
+            <span class="mini-title">{{ article.title }}</span>
+            <span class="mini-views">{{ article.viewCount }} views</span>
+          </div>
+          <mat-icon class="mini-icon">{{ getCategoryIcon(article.category) }}</mat-icon>
+        </div>
+      </mat-card>
+    </div>
+  </div>
+
+  <!-- Recently Updated Section -->
+  <div class="section" *ngIf="!selectedArticle">
+    <h2 class="section-title">Atualizados Recentemente</h2>
+    <div class="horizontal-list">
+      <mat-card *ngFor="let article of recentlyUpdated" class="mini-card" (click)="selectArticle(article)">
+        <div class="mini-card-row">
+          <mat-icon class="update-icon">update</mat-icon>
+          <div class="mini-card-content">
+            <span class="mini-title">{{ article.title }}</span>
+            <span class="mini-views">Atualizado: {{ formatDate(article.updatedAt) }}</span>
+          </div>
+        </div>
+      </mat-card>
+    </div>
+  </div>
+</div>

@@ -137,3 +137,66 @@ mat-icon {
 .novo-usuario-panel .mat-mdc-dialog-container {
   max-height: 85vh !important;
 }
+
+
+// Dark Mode
+body.dark-mode {
+  background-color: #121212 !important;
+  color: #e0e0e0 !important;
+
+  .mat-mdc-card {
+    background-color: #1e1e1e !important;
+    color: #e0e0e0 !important;
+  }
+
+  .mat-toolbar {
+    background-color: #1f1f1f !important;
+    color: #e0e0e0 !important;
+  }
+
+  .sidenav {
+    background-color: #1a1a1a !important;
+    color: #e0e0e0 !important;
+  }
+
+  .mat-mdc-table {
+    background-color: #1e1e1e !important;
+    color: #e0e0e0 !important;
+  }
+
+  .mat-mdc-row:hover {
+    background-color: #2a2a2a !important;
+  }
+
+  .mat-mdc-header-row {
+    background-color: #252525 !important;
+  }
+
+  .page-header {
+    background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%) !important;
+  }
+
+  .kpi-card, .kpi-dashboard .kpi-card {
+    background-color: #1e1e1e !important;
+    .kpi-value { color: #e0e0e0 !important; }
+    .kpi-label { color: #aaa !important; }
+  }
+
+  .filters-card {
+    background-color: #1e1e1e !important;
+  }
+
+  .mat-mdc-form-field {
+    .mdc-text-field--outlined {
+      background-color: #2a2a2a !important;
+    }
+  }
+
+  mat-sidenav {
+    background-color: #1a1a1a !important;
+  }
+
+  .nav-list .mat-mdc-list-item {
+    color: #ccc !important;
+  }
+}

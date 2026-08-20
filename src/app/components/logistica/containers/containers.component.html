@@ -1,0 +1,259 @@
+@if (isLoading) {
+  <mat-progress-bar mode="indeterminate" class="loading-bar"></mat-progress-bar>
+}
+
+<div class="containers-container">
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">inventory_2</mat-icon>
+        <div class="title-content">
+          <h1>Containers</h1>
+          <p class="subtitle">Rastreamento, Demurrage e Gestão de Containers</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button (click)="openNovoContainerDialog()">
+          <mat-icon>add</mat-icon> Novo Container
+        </button>
+        <button mat-raised-button (click)="exportCSV()"><mat-icon>download</mat-icon> CSV</button>
+        <button mat-raised-button (click)="exportPDF()"><mat-icon>picture_as_pdf</mat-icon> PDF</button>
+      </div>
+    </div>
+  </div>
+
+  @if (kpis) {
+    <div class="kpi-dashboard">
+      <mat-card class="kpi-card kpi-total">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>inventory_2</mat-icon></div>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ kpis.totalAtivos }}</span>
+            <span class="kpi-label">Total Ativos</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="kpi-card kpi-risco">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>warning</mat-icon></div>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ kpis.riscoDemurrage }}</span>
+            <span class="kpi-label">Risco Demurrage</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="kpi-card kpi-custo">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>attach_money</mat-icon></div>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ formatCurrency(kpis.custoDemurrageTotal) }}</span>
+            <span class="kpi-label">Custo Demurrage Total</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="kpi-card kpi-dwell">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>schedule</mat-icon></div>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ kpis.dwellTimeMedio }} dias</span>
+            <span class="kpi-label">Dwell Time Médio</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+
+  <!-- Status Filter Chips -->
+  <div class="status-chips-bar">
+    <mat-chip-set>
+      <mat-chip [class.active-chip]="activeStatusFilter === ''" (click)="filterByStatus('')">Todos</mat-chip>
+      @for (status of statusChips; track status) {
+        <mat-chip [class.active-chip]="activeStatusFilter === status" (click)="filterByStatus(status)">
+          {{ getStatusLabel(status) }}
+        </mat-chip>
+      }
+    </mat-chip-set>
+  </div>
+
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <div class="filter-row">
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Buscar</mat-label>
+            <input matInput formControlName="searchText" placeholder="Container, navio, booking...">
+            <mat-icon matSuffix>search</mat-icon>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Tamanho</mat-label>
+            <mat-select formControlName="size">
+              <mat-option value="">Todos</mat-option>
+              @for (s of sizes; track s) {
+                <mat-option [value]="s">{{ s }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Tipo</mat-label>
+            <mat-select formControlName="type">
+              <mat-option value="">Todos</mat-option>
+              @for (t of types; track t) {
+                <mat-option [value]="t">{{ getTypeLabel(t) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Navio</mat-label>
+            <mat-select formControlName="vessel">
+              <mat-option value="">Todos</mat-option>
+              @for (v of vessels; track v) {
+                <mat-option [value]="v">{{ v }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </form>
+      <div class="clear-filter-wrapper">
+        <button mat-button class="clear-filters-btn" (click)="clearFilters()">
+          <mat-icon>clear_all</mat-icon> Limpar Filtros
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="results-card">
+    <mat-card-content>
+      <div class="results-header">
+        <h3>{{ dataSource.filteredData.length }} container(s)</h3>
+      </div>
+
+      <table mat-table [dataSource]="dataSource" matSort class="containers-table">
+        <ng-container matColumnDef="containerNumber">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Container</th>
+          <td mat-cell *matCellDef="let row"><span class="container-number">{{ row.containerNumber }}</span></td>
+        </ng-container>
+
+        <ng-container matColumnDef="size">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Tamanho</th>
+          <td mat-cell *matCellDef="let row"><span class="size-chip">{{ row.size }}</span></td>
+        </ng-container>
+
+        <ng-container matColumnDef="type">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</th>
+          <td mat-cell *matCellDef="let row">{{ getTypeLabel(row.type) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="status-badge" [ngClass]="getStatusColor(row.status)">{{ getStatusLabel(row.status) }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="currentLocation">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Localização</th>
+          <td mat-cell *matCellDef="let row">{{ row.currentLocation }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="vessel">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Navio</th>
+          <td mat-cell *matCellDef="let row">{{ row.vessel }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="bookingRef">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Booking</th>
+          <td mat-cell *matCellDef="let row"><span class="booking-ref">{{ row.bookingRef }}</span></td>
+        </ng-container>
+
+        <ng-container matColumnDef="freeDaysRemaining">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Free Days</th>
+          <td mat-cell *matCellDef="let row">
+            <span [ngClass]="{'free-days-critical': row.freeDaysRemaining <= 0, 'free-days-warning': row.freeDaysRemaining > 0 && row.freeDaysRemaining <= 2}">
+              {{ row.freeDaysRemaining }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Ações</th>
+          <td mat-cell *matCellDef="let row">
+            <button mat-icon-button matTooltip="Ver detalhes" (click)="selectContainer(row); $event.stopPropagation()">
+              <mat-icon>visibility</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+            [ngClass]="getRowClass(row)" class="clickable-row" (click)="selectContainer(row)"></tr>
+      </table>
+
+      <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" [pageSize]="10" showFirstLastButtons></mat-paginator>
+    </mat-card-content>
+  </mat-card>
+
+  @if (isDetailOpen && selectedContainer) {
+    <mat-card class="detail-card">
+      <mat-card-header>
+        <div class="detail-header">
+          <div class="detail-title-section">
+            <mat-icon class="detail-icon">inventory_2</mat-icon>
+            <div>
+              <h2>{{ selectedContainer.containerNumber }}</h2>
+              <p>{{ selectedContainer.size }} {{ getTypeLabel(selectedContainer.type) }} — {{ selectedContainer.vessel }}</p>
+            </div>
+          </div>
+          <div class="detail-header-actions">
+            <span class="status-badge" [ngClass]="getStatusColor(selectedContainer.status)">{{ getStatusLabel(selectedContainer.status) }}</span>
+            <button mat-icon-button (click)="closeDetail()"><mat-icon>close</mat-icon></button>
+          </div>
+        </div>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-tab-group>
+          <mat-tab label="Informações">
+            <div class="tab-content">
+              <div class="info-grid">
+                <div class="info-item"><span class="info-label">Shipper</span><span class="info-value">{{ selectedContainer.shipper }}</span></div>
+                <div class="info-item"><span class="info-label">Consignee</span><span class="info-value">{{ selectedContainer.consignee }}</span></div>
+                <div class="info-item"><span class="info-label">Commodity</span><span class="info-value">{{ selectedContainer.commodity }}</span></div>
+                <div class="info-item"><span class="info-label">Peso</span><span class="info-value">{{ selectedContainer.weight > 0 ? selectedContainer.weight + ' kg' : '—' }}</span></div>
+                <div class="info-item"><span class="info-label">Selo</span><span class="info-value">{{ selectedContainer.sealNumber || '—' }}</span></div>
+                <div class="info-item"><span class="info-label">BL</span><span class="info-value">{{ selectedContainer.blNumber || '—' }}</span></div>
+                <div class="info-item"><span class="info-label">Origem</span><span class="info-value">{{ selectedContainer.origin }}</span></div>
+                <div class="info-item"><span class="info-label">Destino</span><span class="info-value">{{ selectedContainer.destination }}</span></div>
+                <div class="info-item"><span class="info-label">Exportação</span><span class="info-value">{{ selectedContainer.linkedExport }}</span></div>
+              </div>
+            </div>
+          </mat-tab>
+          <mat-tab label="Datas">
+            <div class="tab-content">
+              <div class="info-grid">
+                <div class="info-item"><span class="info-label">Gate-In</span><span class="info-value">{{ formatDate(selectedContainer.gateInDate) }}</span></div>
+                <div class="info-item"><span class="info-label">Embarque</span><span class="info-value">{{ formatDate(selectedContainer.loadDate) }}</span></div>
+                <div class="info-item"><span class="info-label">Descarga</span><span class="info-value">{{ formatDate(selectedContainer.dischargeDate) }}</span></div>
+                <div class="info-item"><span class="info-label">Gate-Out</span><span class="info-value">{{ formatDate(selectedContainer.gateOutDate) }}</span></div>
+                <div class="info-item"><span class="info-label">Devolução</span><span class="info-value">{{ formatDate(selectedContainer.returnDate) }}</span></div>
+                <div class="info-item"><span class="info-label">Última Atualização</span><span class="info-value">{{ formatDate(selectedContainer.lastUpdate) }}</span></div>
+              </div>
+            </div>
+          </mat-tab>
+          <mat-tab label="Demurrage">
+            <div class="tab-content">
+              <div class="demurrage-panel">
+                <div class="info-grid">
+                  <div class="info-item"><span class="info-label">Free Days Contratados</span><span class="info-value">{{ selectedContainer.freeDays }}</span></div>
+                  <div class="info-item"><span class="info-label">Free Days Restantes</span><span class="info-value" [class.critical-value]="selectedContainer.freeDaysRemaining <= 0">{{ selectedContainer.freeDaysRemaining }}</span></div>
+                  <div class="info-item"><span class="info-label">Taxa Demurrage/dia</span><span class="info-value">{{ formatCurrency(selectedContainer.demurrageRate) }}</span></div>
+                  <div class="info-item"><span class="info-label">Taxa Detention/dia</span><span class="info-value">{{ formatCurrency(selectedContainer.detentionRate) }}</span></div>
+                  <div class="info-item"><span class="info-label">Custo Demurrage Acumulado</span><span class="info-value critical-value">{{ formatCurrency(selectedContainer.totalDemurrageCost) }}</span></div>
+                  <div class="info-item"><span class="info-label">Projeção Demurrage</span><span class="info-value critical-value">{{ formatCurrency(calculateDemurrageProjection(selectedContainer)) }}</span></div>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

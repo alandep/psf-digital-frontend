@@ -1,0 +1,122 @@
+@use 'sass:color';
+
+$crm-primary: #1565c0;
+$crm-dark: #0d47a1;
+$success: #4caf50;
+$grey: #9e9e9e;
+
+.contatos-container {
+  padding: 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.page-header {
+  background: linear-gradient(135deg, $crm-primary 0%, $crm-dark 100%);
+  color: white;
+  padding: 2rem;
+  margin-bottom: 24px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(21, 101, 192, 0.3);
+
+  .header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .title-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+
+      .header-icon {
+        font-size: 3rem;
+        width: 3rem;
+        height: 3rem;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .title-content {
+        h1 { margin: 0; font-size: 2rem; font-weight: 300; }
+        .subtitle { margin: 0.4rem 0 0; opacity: 0.9; font-size: 1rem; font-weight: 300; }
+      }
+    }
+
+    .header-actions {
+      button {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        &:hover { background: rgba(255, 255, 255, 0.3); }
+      }
+    }
+  }
+}
+
+.filters-card {
+  margin-bottom: 24px;
+  border-radius: 12px;
+
+  .filters-form .filter-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr auto;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .filter-field { width: 100%; }
+}
+
+.filter-actions { display: flex; align-items: center; }
+.clear-filters-btn {
+  color: $grey;
+  font-size: 0.85rem;
+  &:hover { color: $crm-primary; }
+}
+
+.results-card {
+  border-radius: 12px;
+
+  .results-header {
+    margin-bottom: 16px;
+    h3 { margin: 0; color: #555; font-size: 0.95rem; font-weight: 500; }
+  }
+}
+
+.table-wrapper { overflow-x: auto; }
+
+.contacts-table {
+  width: 100%;
+  .contact-name { font-weight: 600; color: #333; }
+  .customer-link { color: $crm-primary; font-weight: 500; }
+}
+
+.status-chip {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+
+  &.status-active { background: rgba($success, 0.1); color: color.adjust($success, $lightness: -15%); }
+  &.status-inactive { background: rgba($grey, 0.15); color: #555; }
+}
+
+@media (max-width: 768px) {
+  .contatos-container { padding: 16px; }
+  .page-header .header-main { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .filters-card .filters-form .filter-row { grid-template-columns: 1fr; }
+}

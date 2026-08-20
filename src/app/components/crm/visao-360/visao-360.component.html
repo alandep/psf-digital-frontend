@@ -1,0 +1,328 @@
+<!-- Loading Bar -->
+@if (isLoading) {
+  <mat-progress-bar mode="indeterminate" class="loading-bar"></mat-progress-bar>
+}
+
+<div class="visao360-container">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">groups</mat-icon>
+        <div class="title-content">
+          <h1>Clientes — Visão 360</h1>
+          <p class="subtitle">Gestão completa do relacionamento com clientes</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button (click)="openNewCustomerDialog()">
+          <mat-icon>person_add</mat-icon> Novo Cliente
+        </button>
+        <button mat-icon-button [matMenuTriggerFor]="exportMenu" matTooltip="Exportar">
+          <mat-icon>download</mat-icon>
+        </button>
+        <mat-menu #exportMenu="matMenu">
+          <button mat-menu-item (click)="exportPDF()">
+            <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
+          </button>
+          <button mat-menu-item (click)="exportCSV()">
+            <mat-icon>grid_on</mat-icon> Exportar CSV
+          </button>
+        </mat-menu>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Dashboard -->
+  @if (metrics) {
+    <div class="kpi-dashboard">
+      <mat-card class="kpi-card kpi-customers">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>groups</mat-icon></div>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ metrics.totalCustomers }}</span>
+            <span class="kpi-label">Total Clientes</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="kpi-card kpi-revenue">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>attach_money</mat-icon></div>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ formatCurrency(metrics.totalRevenue) }}</span>
+            <span class="kpi-label">Receita Total</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="kpi-card kpi-contracts">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>description</mat-icon></div>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ metrics.activeContracts }}</span>
+            <span class="kpi-label">Contratos Ativos</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="kpi-card kpi-risk">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>shield</mat-icon></div>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ metrics.avgRiskScore }}</span>
+            <span class="kpi-label">Score Médio Risco</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="kpi-card kpi-opportunities">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>trending_up</mat-icon></div>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ metrics.opportunitiesOpen }}</span>
+            <span class="kpi-label">Oportunidades Abertas</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="kpi-card kpi-pipeline">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>monetization_on</mat-icon></div>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ formatCurrency(metrics.pipelineValue) }}</span>
+            <span class="kpi-label">Pipeline Total</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+
+  <!-- Filters -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filters-form">
+        <div class="filter-row">
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Buscar</mat-label>
+            <input matInput formControlName="searchText" placeholder="Nome, CNPJ, contato...">
+            <mat-icon matPrefix>search</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>País</mat-label>
+            <mat-select formControlName="country">
+              <mat-option value="">Todos</mat-option>
+              @for (c of countries; track c) {
+                <mat-option [value]="c">{{ c }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Segmento</mat-label>
+            <mat-select formControlName="segment">
+              <mat-option value="">Todos</mat-option>
+              @for (s of segments; track s) {
+                <mat-option [value]="s">{{ getSegmentLabel(s) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <div class="filter-actions">
+            <button mat-button (click)="clearFilters()" class="clear-filters-btn">
+              <mat-icon>clear_all</mat-icon> Limpar
+            </button>
+          </div>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Results Table -->
+  <mat-card class="results-card">
+    <mat-card-content>
+      <div class="results-header">
+        <h3>{{ dataSource.data.length }} clientes encontrados</h3>
+      </div>
+
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="dataSource" matSort class="customers-table">
+
+          <ng-container matColumnDef="companyName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Empresa</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="company-name">{{ row.companyName }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="tradeName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Nome Fantasia</th>
+            <td mat-cell *matCellDef="let row">{{ row.tradeName }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="taxId">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>CNPJ/Tax ID</th>
+            <td mat-cell *matCellDef="let row"><span class="tax-id">{{ row.taxId }}</span></td>
+          </ng-container>
+
+          <ng-container matColumnDef="country">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>País</th>
+            <td mat-cell *matCellDef="let row">{{ row.country }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="segment">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Segmento</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="segment-chip" [ngClass]="getSegmentClass(row.segment)">
+                {{ getSegmentLabel(row.segment) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="primaryContact">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Contato</th>
+            <td mat-cell *matCellDef="let row">{{ row.primaryContact }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="totalRevenue">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Receita</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="revenue-value">{{ formatCurrency(row.totalRevenue) }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="activeContracts">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Contratos</th>
+            <td mat-cell *matCellDef="let row">{{ row.activeContracts }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="riskScore">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Score Risco</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="score-indicator">
+                <mat-progress-bar mode="determinate" [value]="row.riskScore" [ngClass]="getScoreColor(row.riskScore)"></mat-progress-bar>
+                <span class="score-value">{{ row.riskScore }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="lastInteractionDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Última Interação</th>
+            <td mat-cell *matCellDef="let row">{{ formatDate(row.lastInteractionDate) }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+              class="clickable-row" (click)="selectCustomer(row)"></tr>
+        </table>
+      </div>
+
+      <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]"
+                     [pageSize]="10"
+                     showFirstLastButtons>
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Detail Panel -->
+  @if (isDetailOpen && selectedCustomer) {
+    <mat-card class="detail-card">
+      <mat-card-content>
+        <div class="detail-header">
+          <div class="detail-title-section">
+            <mat-icon class="detail-icon">business</mat-icon>
+            <div>
+              <h2>{{ selectedCustomer.companyName }}</h2>
+              <p>{{ selectedCustomer.tradeName }} | {{ selectedCustomer.country }}</p>
+            </div>
+          </div>
+          <div class="detail-header-actions">
+            <button mat-icon-button (click)="closeDetail()" matTooltip="Fechar">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <mat-tab-group>
+          <mat-tab label="Resumo">
+            <div class="tab-content">
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="info-label">Razão Social</span>
+                  <span class="info-value">{{ selectedCustomer.companyName }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">CNPJ/Tax ID</span>
+                  <span class="info-value">{{ selectedCustomer.taxId }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Segmento</span>
+                  <span class="info-value">{{ getSegmentLabel(selectedCustomer.segment) }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">País</span>
+                  <span class="info-value">{{ selectedCustomer.country }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Contato Principal</span>
+                  <span class="info-value">{{ selectedCustomer.primaryContact }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Score de Risco</span>
+                  <span class="info-value">{{ selectedCustomer.riskScore }}/100</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Receita Total</span>
+                  <span class="info-value">{{ formatCurrency(selectedCustomer.totalRevenue) }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Contratos Ativos</span>
+                  <span class="info-value">{{ selectedCustomer.activeContracts }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Cliente Desde</span>
+                  <span class="info-value">{{ formatDate(selectedCustomer.createdAt) }}</span>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+          <mat-tab label="Contratos">
+            <div class="tab-content">
+              <div class="empty-state">
+                <mat-icon>description</mat-icon>
+                <p>{{ selectedCustomer.activeContracts }} contratos ativos vinculados a este cliente</p>
+              </div>
+            </div>
+          </mat-tab>
+          <mat-tab label="Embarques">
+            <div class="tab-content">
+              <div class="empty-state">
+                <mat-icon>local_shipping</mat-icon>
+                <p>Histórico de embarques será carregado sob demanda</p>
+              </div>
+            </div>
+          </mat-tab>
+          <mat-tab label="Financeiro">
+            <div class="tab-content">
+              <div class="empty-state">
+                <mat-icon>account_balance</mat-icon>
+                <p>Dados financeiros consolidados do cliente</p>
+              </div>
+            </div>
+          </mat-tab>
+          <mat-tab label="Interações">
+            <div class="tab-content">
+              <div class="empty-state">
+                <mat-icon>chat</mat-icon>
+                <p>Última interação: {{ formatDate(selectedCustomer.lastInteractionDate) }}</p>
+              </div>
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+      </mat-card-content>
+    </mat-card>
+  }
+
+</div>

@@ -1,0 +1,57 @@
+<div class="templates-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1>
+        <mat-icon>auto_awesome</mat-icon>
+        Templates de Telas
+      </h1>
+      <p>Escolha um template pré-construído e personalize para suas necessidades</p>
+    </div>
+  </div>
+
+  <!-- Template Gallery -->
+  <div class="templates-grid">
+    <mat-card *ngFor="let template of templates" class="template-card">
+      <div class="template-header">
+        <div class="template-icon">
+          <mat-icon>{{ template.icon }}</mat-icon>
+        </div>
+        <div class="template-title-area">
+          <h3>{{ template.name }}</h3>
+          <span class="template-category">{{ template.category }}</span>
+        </div>
+      </div>
+
+      <div class="template-body">
+        <p class="template-description">{{ template.description }}</p>
+
+        <div class="template-meta">
+          <div class="meta-item">
+            <mat-icon>widgets</mat-icon>
+            <span>{{ template.widgetCount }} widgets</span>
+          </div>
+          <div class="meta-item">
+            <mat-icon>view_column</mat-icon>
+            <span>{{ getLayoutLabel(template.layout) }}</span>
+          </div>
+          <div class="meta-item">
+            <mat-icon>star</mat-icon>
+            <span>{{ template.popularity }}% popular</span>
+          </div>
+        </div>
+
+        <div class="widget-chips">
+          <span *ngFor="let wt of template.previewWidgets" class="widget-chip">{{ wt }}</span>
+        </div>
+      </div>
+
+      <div class="template-footer">
+        <button mat-raised-button color="primary" (click)="useTemplate(template)">
+          <mat-icon>content_copy</mat-icon>
+          Usar Template
+        </button>
+      </div>
+    </mat-card>
+  </div>
+</div>

@@ -1,0 +1,270 @@
+<div class="ai-ops-container">
+
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">smart_toy</mat-icon>
+        <div class="title-content">
+          <h1>AI Operations Center</h1>
+          <p class="subtitle">Monitoramento de agentes de inteligência artificial</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button color="primary" (click)="exportCSV()">
+          <mat-icon>download</mat-icon> Exportar CSV
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Dashboard -->
+  <div class="kpi-dashboard">
+    <mat-card class="kpi-card kpi-requests">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>api</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ (metrics?.totalRequests24h || 0) | number:'1.0-0' }}</div>
+          <div class="kpi-label">Requests (24h)</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-response">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>speed</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ formatResponseTime(metrics?.avgResponseTime || 0) }}</div>
+          <div class="kpi-label">Tempo Resposta</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-accuracy">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>target</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.accuracyRate || 0 }}%</div>
+          <div class="kpi-label">Acurácia</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-cost">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>attach_money</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ formatCost(metrics?.estimatedCost || 0) }}</div>
+          <div class="kpi-label">Custo (USD)</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-active">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>power</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value kpi-value-success">{{ metrics?.activeAgents || 0 }}</div>
+          <div class="kpi-label">Agentes Ativos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-total">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>hub</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.totalAgents || 0 }}</div>
+          <div class="kpi-label">Total Agentes</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Warning Section -->
+  <mat-card class="warning-card" *ngIf="lowAccuracyAgents.length > 0">
+    <mat-card-content>
+      <div class="warning-header">
+        <mat-icon class="warning-icon">warning</mat-icon>
+        <h3>Agentes com Acurácia Abaixo de 85%</h3>
+      </div>
+      <div class="warning-agents">
+        <div class="warning-agent" *ngFor="let agent of lowAccuracyAgents">
+          <div class="agent-info">
+            <span class="agent-name">{{ agent.name }}</span>
+            <span class="agent-module">{{ agent.module }}</span>
+          </div>
+          <div class="agent-accuracy">
+            <mat-progress-bar mode="determinate" [value]="agent.accuracy" class="accuracy-bar-low"></mat-progress-bar>
+            <span class="accuracy-value">{{ agent.accuracy }}%</span>
+            <span class="attention-badge">Atenção</span>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Filters -->
+  <mat-card class="filter-card">
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filter-form">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Buscar</mat-label>
+          <input matInput formControlName="searchText" placeholder="Nome do agente, módulo...">
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="">Todos</mat-option>
+            <mat-option value="ACTIVE">Ativo</mat-option>
+            <mat-option value="DEGRADED">Degradado</mat-option>
+            <mat-option value="OFFLINE">Offline</mat-option>
+            <mat-option value="MAINTENANCE">Manutenção</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Módulo</mat-label>
+          <mat-select formControlName="module">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let m of modules" [value]="m">{{ m }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Agent Table -->
+  <mat-card class="table-card">
+    <mat-card-content>
+      <div class="table-container">
+        <table mat-table [dataSource]="dataSource" matSort class="agents-table">
+
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Agente</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="agent-cell" (click)="selectAgent(row)">
+                <mat-icon class="agent-icon">smart_toy</mat-icon>
+                <span class="agent-name-link">{{ row.name }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="module">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Módulo</th>
+            <td mat-cell *matCellDef="let row">{{ row.module }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="requests24h">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Requests</th>
+            <td mat-cell *matCellDef="let row">{{ row.requests24h | number:'1.0-0' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="avgResponseTime">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Tempo Resp.</th>
+            <td mat-cell *matCellDef="let row">{{ formatResponseTime(row.avgResponseTime) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="accuracy">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Acurácia</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="accuracy-cell">
+                <mat-progress-bar mode="determinate" [value]="row.accuracy"
+                  [ngClass]="{ 'accuracy-bar-low': isLowAccuracy(row), 'accuracy-bar-ok': !isLowAccuracy(row) }">
+                </mat-progress-bar>
+                <span class="accuracy-text" [style.color]="getAccuracyColor(row.accuracy)">{{ row.accuracy }}%</span>
+                <mat-icon class="warning-accuracy-icon" *ngIf="isLowAccuracy(row)" matTooltip="Acurácia abaixo de 85%">warning</mat-icon>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="cost">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Custo</th>
+            <td mat-cell *matCellDef="let row">{{ formatCost(row.cost) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="status-badge" [ngClass]="getStatusClass(row.status)">
+                {{ getStatusLabel(row.status) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="lastError">
+            <th mat-header-cell *matHeaderCellDef>Último Erro</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="last-error" *ngIf="row.lastError" [matTooltip]="row.lastError">
+                {{ row.lastError | slice:0:40 }}...
+              </span>
+              <span class="no-error" *ngIf="!row.lastError">—</span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="selectAgent(row)" class="clickable-row"></tr>
+        </table>
+      </div>
+
+      <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" [pageSize]="10" showFirstLastButtons></mat-paginator>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Detail Panel -->
+  <mat-card class="detail-panel" *ngIf="isDetailOpen && selectedAgent">
+    <mat-card-content>
+      <div class="detail-header">
+        <div class="detail-title">
+          <mat-icon>smart_toy</mat-icon>
+          <h3>{{ selectedAgent.name }}</h3>
+          <span class="status-badge" [ngClass]="getStatusClass(selectedAgent.status)">{{ getStatusLabel(selectedAgent.status) }}</span>
+        </div>
+        <button mat-icon-button (click)="closeDetail()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="detail-stats">
+        <div class="stat-item">
+          <span class="stat-label">Módulo</span>
+          <span class="stat-value">{{ selectedAgent.module }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Requests (24h)</span>
+          <span class="stat-value">{{ selectedAgent.requests24h | number:'1.0-0' }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Tempo Resposta</span>
+          <span class="stat-value">{{ formatResponseTime(selectedAgent.avgResponseTime) }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Acurácia</span>
+          <span class="stat-value" [style.color]="getAccuracyColor(selectedAgent.accuracy)">{{ selectedAgent.accuracy }}%</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Custo</span>
+          <span class="stat-value">{{ formatCost(selectedAgent.cost) }}</span>
+        </div>
+      </div>
+
+      <h4 class="errors-title">Log de Erros</h4>
+      <div class="errors-list">
+        <div class="error-entry" *ngFor="let error of agentErrors">
+          <div class="error-time">{{ formatDateTime(error.timestamp) }}</div>
+          <div class="error-type">
+            <span class="error-type-badge">{{ error.type }}</span>
+          </div>
+          <div class="error-message">{{ error.message }}</div>
+        </div>
+        <div class="no-errors" *ngIf="agentErrors.length === 0">
+          Nenhum erro registrado para este agente.
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

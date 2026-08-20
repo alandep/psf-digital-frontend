@@ -1,0 +1,140 @@
+<div class="meus-dashboards-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-text">
+        <h1>Meus Dashboards</h1>
+        <p>Crie e gerencie seus dashboards personalizados</p>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button class="new-btn" (click)="openNewDashboardDialog()">
+          <mat-icon>add</mat-icon>
+          Novo Dashboard
+        </button>
+        <button mat-icon-button matTooltip="Exportar CSV" (click)="exportToCSV()">
+          <mat-icon>download</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid" *ngIf="metrics">
+    <mat-card class="kpi-card">
+      <div class="kpi-icon-wrapper teal">
+        <mat-icon>dashboard</mat-icon>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-value">{{ metrics.totalDashboards }}</span>
+        <span class="kpi-label">Total Dashboards</span>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <div class="kpi-icon-wrapper blue">
+        <mat-icon>widgets</mat-icon>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-value">{{ metrics.totalWidgets }}</span>
+        <span class="kpi-label">Total Widgets</span>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <div class="kpi-icon-wrapper green">
+        <mat-icon>share</mat-icon>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-value">{{ metrics.sharedCount }}</span>
+        <span class="kpi-label">Compartilhados</span>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <div class="kpi-icon-wrapper orange">
+        <mat-icon>update</mat-icon>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-value">{{ formatDate(metrics.lastModified) }}</span>
+        <span class="kpi-label">Último Update</span>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- Dashboard Cards Grid -->
+  <div class="dashboards-grid">
+    <mat-card
+      *ngFor="let dashboard of dashboards"
+      class="dashboard-card"
+      [class.selected]="selectedDashboard?.id === dashboard.id"
+      (click)="selectDashboard(dashboard)">
+      <div class="db-card-header">
+        <div class="db-title-row">
+          <h3>{{ dashboard.name }}</h3>
+          <div class="db-actions">
+            <button mat-icon-button matTooltip="Abrir" (click)="selectDashboard(dashboard); $event.stopPropagation()">
+              <mat-icon>open_in_new</mat-icon>
+            </button>
+            <button mat-icon-button matTooltip="Compartilhar" (click)="$event.stopPropagation()">
+              <mat-icon>share</mat-icon>
+            </button>
+            <button mat-icon-button matTooltip="Excluir" (click)="deleteDashboard($event, dashboard)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+        <p class="db-description">{{ dashboard.description }}</p>
+      </div>
+      <div class="db-card-footer">
+        <span class="db-meta">
+          <mat-icon>widgets</mat-icon>
+          {{ dashboard.widgets.length }} widgets
+        </span>
+        <span class="db-meta">
+          <mat-icon>view_column</mat-icon>
+          {{ getLayoutLabel(dashboard.layout) }}
+        </span>
+        <span class="db-meta">
+          <mat-icon>calendar_today</mat-icon>
+          {{ formatDate(dashboard.updatedAt) }}
+        </span>
+        <span class="db-shared-badge" *ngIf="dashboard.shared">
+          <mat-icon>public</mat-icon>
+          Compartilhado
+        </span>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- Dashboard Detail View -->
+  <div class="dashboard-detail" *ngIf="selectedDashboard">
+    <h2 class="section-title">
+      <mat-icon>view_quilt</mat-icon>
+      {{ selectedDashboard.name }} — Preview
+    </h2>
+    <div class="widget-grid" [style.grid-template-columns]="getLayoutColumns(selectedDashboard.layout)">
+      <mat-card *ngFor="let widget of selectedDashboard.widgets" class="widget-placeholder">
+        <div class="widget-header">
+          <mat-icon [style.color]="widget.color">{{ widget.icon }}</mat-icon>
+          <span>{{ widget.title }}</span>
+        </div>
+        <div class="widget-body">
+          <span class="widget-value" *ngIf="widget.type === 'KPI_CARD' || widget.type === 'STATUS_INDICATOR'">
+            {{ widget.value }}
+          </span>
+          <div class="widget-chart-placeholder" *ngIf="widget.type === 'LINE_CHART' || widget.type === 'BAR_CHART' || widget.type === 'PIE_CHART'">
+            <mat-icon>{{ widget.type === 'LINE_CHART' ? 'show_chart' : widget.type === 'BAR_CHART' ? 'bar_chart' : 'pie_chart' }}</mat-icon>
+            <span>{{ widget.type.replace('_', ' ') }}</span>
+          </div>
+          <div class="widget-table-placeholder" *ngIf="widget.type === 'DATA_TABLE'">
+            <mat-icon>table_chart</mat-icon>
+            <span>Data Table</span>
+          </div>
+        </div>
+        <div class="widget-module-badge" [style.background-color]="widget.color">
+          {{ widget.module }}
+        </div>
+      </mat-card>
+    </div>
+  </div>
+</div>

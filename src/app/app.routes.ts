@@ -321,6 +321,167 @@ export const routes: Routes = [
           import('./components/admin/usuarios/admin-usuarios.component').then((m) => m.AdminUsuariosComponent),
       },
 
+      // === MÓDULO CRM ===
+      {
+        path: 'clientes/visao-360',
+        loadComponent: () =>
+          import('./components/crm/visao-360/visao-360.component').then((m) => m.Visao360Component),
+      },
+      {
+        path: 'clientes/contatos',
+        loadComponent: () =>
+          import('./components/crm/contatos/contatos.component').then((m) => m.ContatosComponent),
+      },
+      {
+        path: 'clientes/oportunidades',
+        loadComponent: () =>
+          import('./components/crm/oportunidades/oportunidades.component').then((m) => m.OportunidadesComponent),
+      },
+
+      // === MÓDULO SUPPLY CHAIN - FORNECEDORES ===
+      {
+        path: 'supply-chain/fornecedores',
+        loadComponent: () =>
+          import('./components/supply-chain/fornecedores/fornecedores.component').then((m) => m.FornecedoresComponent),
+      },
+
+      // === MÓDULO COMPLIANCE - DUE DILIGENCE ===
+      {
+        path: 'compliance/due-diligence',
+        loadComponent: () =>
+          import('./components/compliance/due-diligence/due-diligence.component').then((m) => m.DueDiligenceComponent),
+      },
+
+      // === MÓDULO ESG / SUSTENTABILIDADE ===
+      {
+        path: 'esg/sustentabilidade',
+        loadComponent: () =>
+          import('./components/esg/sustentabilidade/sustentabilidade.component').then((m) => m.SustentabilidadeComponent),
+      },
+
+      // === MÓDULO AI OPERATIONS CENTER ===
+      {
+        path: 'ai-operations/dashboard',
+        loadComponent: () =>
+          import('./components/ai-operations/dashboard/ai-operations-dashboard.component').then((m) => m.AiOperationsDashboardComponent),
+      },
+
+      // === MÓDULO COMMAND CENTER ===
+      {
+        path: 'command-center',
+        loadComponent: () =>
+          import('./components/command-center/command-center.component').then((m) => m.CommandCenterComponent),
+      },
+
+      // === MÓDULO FINANCEIRO - TRADE FINANCE & HEDGE ===
+      {
+        path: 'financeiro/trade-finance',
+        loadComponent: () =>
+          import('./components/financeiro/trade-finance/trade-finance.component').then(m => m.TradeFinanceComponent),
+      },
+      {
+        path: 'financeiro/hedge',
+        loadComponent: () =>
+          import('./components/financeiro/hedge/hedge.component').then(m => m.HedgeComponent),
+      },
+
+      // === MÓDULO LOGÍSTICA - NAVIOS & CONTAINERS ===
+      {
+        path: 'logistica/navios',
+        loadComponent: () =>
+          import('./components/logistica/navios/navios.component').then(m => m.NaviosComponent),
+      },
+      {
+        path: 'logistica/containers',
+        loadComponent: () =>
+          import('./components/logistica/containers/containers.component').then(m => m.ContainersComponent),
+      },
+
+      // === MÓDULO DOCUMENTOS - PACKING LIST ===
+      {
+        path: 'documentos/packing-list',
+        loadComponent: () =>
+          import('./components/documentos/packing-list/packing-list.component').then(m => m.PackingListComponent),
+      },
+
+      // === MÓDULO NOTIFICAÇÕES ===
+      {
+        path: 'notificacoes/centro',
+        loadComponent: () =>
+          import('./components/notificacoes/centro/notificacoes-centro.component').then(m => m.NotificacoesCentroComponent),
+      },
+
+      // === MÓDULO MARKETPLACE ===
+      {
+        path: 'marketplace',
+        loadComponent: () =>
+          import('./components/marketplace/marketplace.component').then(m => m.MarketplaceComponent),
+      },
+
+      // === MÓDULO CONHECIMENTO ===
+      {
+        path: 'conhecimento/centro',
+        loadComponent: () =>
+          import('./components/conhecimento/centro/knowledge-center.component').then(m => m.KnowledgeCenterComponent),
+      },
+
+      // === MÓDULO DASHBOARDS BUILDER ===
+      {
+        path: 'dashboards/meus',
+        loadComponent: () =>
+          import('./components/dashboards/meus-dashboards/meus-dashboards.component').then((m) => m.MeusDashboardsComponent),
+      },
+      {
+        path: 'dashboards/compartilhados',
+        loadComponent: () =>
+          import('./components/dashboards/compartilhados/compartilhados.component').then((m) => m.CompartilhadosComponent),
+      },
+
+      // === MÓDULO CONSTRUTOR DE TELAS ===
+      {
+        path: 'construtor/nova-tela',
+        loadComponent: () =>
+          import('./components/construtor/nova-tela/nova-tela.component').then(m => m.NovaTelaComponent),
+      },
+      {
+        path: 'construtor/minhas-telas',
+        loadComponent: () =>
+          import('./components/construtor/minhas-telas/minhas-telas.component').then(m => m.MinhasTelasComponent),
+      },
+      {
+        path: 'construtor/templates',
+        loadComponent: () =>
+          import('./components/construtor/templates/templates-construtor.component').then(m => m.TemplatesConstrutorComponent),
+      },
+
+      // === MÓDULO DOCUMENTOS - BILL OF LADING ===
+      {
+        path: 'documentos/bill-of-lading',
+        loadComponent: () =>
+          import('./components/documentos/bill-of-lading/bill-of-lading.component').then(m => m.BillOfLadingComponent),
+      },
+
+      // === MÓDULO COMPLIANCE - SANÇÕES ===
+      {
+        path: 'compliance/sancoes',
+        loadComponent: () =>
+          import('./components/compliance/sancoes/sancoes.component').then(m => m.SancoesComponent),
+      },
+
+      // === MÓDULO ANALYTICS - DATA EXPLORER ===
+      {
+        path: 'analytics/data-explorer',
+        loadComponent: () =>
+          import('./components/analytics/data-explorer/data-explorer.component').then(m => m.DataExplorerComponent),
+      },
+
+      // === MÓDULO PERFIL ===
+      {
+        path: 'perfil',
+        loadComponent: () =>
+          import('./components/perfil/perfil.component').then(m => m.PerfilComponent),
+      },
+
       // Rota padrão - primeiro acesso após login
       {
         path: '',

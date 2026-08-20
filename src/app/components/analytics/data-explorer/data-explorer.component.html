@@ -1,0 +1,164 @@
+<div class="data-explorer-container">
+  <!-- Header -->
+  <div class="page-header">
+    <h1>
+      <mat-icon>query_stats</mat-icon>
+      Data Explorer
+    </h1>
+    <div class="header-actions">
+      <button mat-stroked-button (click)="exportResults()">
+        <mat-icon>download</mat-icon>
+        Exportar
+      </button>
+    </div>
+  </div>
+
+  <!-- Saved Queries -->
+  <div class="saved-queries-section">
+    <h3>Consultas Rápidas</h3>
+    <div class="queries-grid">
+      <mat-card *ngFor="let query of savedQueries" class="query-card" (click)="loadSavedQuery(query)">
+        <div class="query-card-content">
+          <mat-icon>{{ query.icon }}</mat-icon>
+          <div class="query-info">
+            <h4>{{ query.name }}</h4>
+            <p>{{ query.description }}</p>
+          </div>
+        </div>
+      </mat-card>
+    </div>
+  </div>
+
+  <!-- Query Builder -->
+  <mat-card class="query-builder-card">
+    <div class="builder-header">
+      <h3>Construtor de Consulta</h3>
+    </div>
+    <form [formGroup]="queryForm" class="builder-form">
+      <mat-form-field appearance="outline">
+        <mat-label>Dataset</mat-label>
+        <mat-select formControlName="dataset" (selectionChange)="onDatasetChange()">
+          <mat-option *ngFor="let ds of datasets" [value]="ds.type">{{ ds.name }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Agrupar por</mat-label>
+        <mat-select formControlName="groupBy">
+          <mat-option *ngFor="let dim of currentDimensions" [value]="dim">{{ dim }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Métrica</mat-label>
+        <mat-select formControlName="metric">
+          <mat-option value="COUNT">Contagem</mat-option>
+          <mat-option value="SUM">Soma</mat-option>
+          <mat-option value="AVG">Média</mat-option>
+          <mat-option value="MIN">Mínimo</mat-option>
+          <mat-option value="MAX">Máximo</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Campo Métrica</mat-label>
+        <mat-select formControlName="metricField">
+          <mat-option *ngFor="let m of currentMetrics" [value]="m">{{ m }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Filtro (opcional)</mat-label>
+        <mat-select formControlName="filterField">
+          <mat-option value="">Nenhum</mat-option>
+          <mat-option *ngFor="let f of currentFilters" [value]="f">{{ f }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" *ngIf="queryForm.get('filterField')?.value">
+        <mat-label>Valor do Filtro</mat-label>
+        <input matInput formControlName="filterValue" placeholder="Valor...">
+      </mat-form-field>
+    </form>
+    <div class="builder-actions">
+      <button mat-raised-button color="primary" (click)="executeQuery()" [disabled]="!queryForm.valid">
+        <mat-icon>play_arrow</mat-icon>
+        Executar Consulta
+      </button>
+    </div>
+  </mat-card>
+
+  <!-- Results -->
+  <div class="results-section" *ngIf="queryResults.length > 0">
+    <div class="results-header">
+      <h3>Resultados ({{ queryResults.length }} registros)</h3>
+      <div class="view-toggle">
+        <button mat-icon-button [class.active]="viewMode === 'TABLE'" (click)="setViewMode('TABLE')" matTooltip="Tabela">
+          <mat-icon>table_chart</mat-icon>
+        </button>
+        <button mat-icon-button [class.active]="viewMode === 'BAR_CHART'" (click)="setViewMode('BAR_CHART')" matTooltip="Gráfico">
+          <mat-icon>bar_chart</mat-icon>
+        </button>
+        <button mat-icon-button [class.active]="viewMode === 'KPI_CARDS'" (click)="setViewMode('KPI_CARDS')" matTooltip="KPI Cards">
+          <mat-icon>dashboard</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Table View -->
+    <mat-card class="results-table-card" *ngIf="viewMode === 'TABLE'">
+      <mat-card-content>
+        <table mat-table [dataSource]="resultsDataSource" matSort class="full-width-table">
+          <ng-container matColumnDef="label">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ queryForm.get('groupBy')?.value || 'Grupo' }}</th>
+            <td mat-cell *matCellDef="let row">{{ row.label }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="value">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Valor</th>
+            <td mat-cell *matCellDef="let row">{{ row.value | number:'1.0-0' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="percentage">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>%</th>
+            <td mat-cell *matCellDef="let row">{{ row.percentage }}%</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="resultColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: resultColumns;"></tr>
+        </table>
+
+        <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]"
+                       [pageSize]="10"
+                       showFirstLastButtons>
+        </mat-paginator>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Bar Chart View -->
+    <div class="bar-chart-view" *ngIf="viewMode === 'BAR_CHART'">
+      <div *ngFor="let result of queryResults" class="chart-bar-row">
+        <span class="bar-label">{{ result.label }}</span>
+        <div class="bar-container">
+          <div class="bar-fill" [style.width.%]="getBarWidth(result.value)"></div>
+        </div>
+        <span class="bar-value">{{ result.value | number:'1.0-0' }}</span>
+      </div>
+    </div>
+
+    <!-- KPI Cards View -->
+    <div class="kpi-view" *ngIf="viewMode === 'KPI_CARDS'">
+      <div *ngFor="let result of queryResults" class="kpi-result-card">
+        <div class="kpi-label">{{ result.label }}</div>
+        <div class="kpi-value">{{ result.value | number:'1.0-0' }}</div>
+        <div class="kpi-percentage">{{ result.percentage }}%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- No Results -->
+  <div class="no-results" *ngIf="queryResults.length === 0 && hasExecuted">
+    <mat-icon>search_off</mat-icon>
+    <p>Nenhum resultado encontrado. Tente ajustar os parâmetros da consulta.</p>
+  </div>
+</div>

@@ -1,0 +1,94 @@
+<div class="nova-tela-container">
+  <!-- Header -->
+  <div class="page-header">
+    <h1>
+      <mat-icon>add_box</mat-icon>
+      Nova Tela
+    </h1>
+    <div class="header-actions">
+      <button mat-raised-button color="primary" (click)="saveScreen()" [disabled]="!screenForm.valid || addedWidgets.length === 0">
+        <mat-icon>save</mat-icon>
+        Salvar Tela
+      </button>
+    </div>
+  </div>
+
+  <div class="builder-layout">
+    <!-- Form Section -->
+    <mat-card class="config-card">
+      <mat-card-content>
+        <h3>Configuração da Tela</h3>
+        <form [formGroup]="screenForm">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Nome da Tela</mat-label>
+            <input matInput formControlName="name" placeholder="Ex: Dashboard de Vendas">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Descrição</mat-label>
+            <textarea matInput formControlName="description" rows="2" placeholder="Descrição opcional..."></textarea>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Layout</mat-label>
+            <mat-select formControlName="layout">
+              <mat-option *ngFor="let l of layouts" [value]="l.value">{{ l.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Widget Catalog -->
+    <mat-card class="catalog-card">
+      <mat-card-content>
+        <h3>Catálogo de Widgets</h3>
+        <p class="catalog-hint">Clique para adicionar widgets à tela</p>
+        <div class="widgets-catalog">
+          <div *ngFor="let widget of widgetCatalog"
+               class="widget-item"
+               (click)="addWidget(widget)"
+               matTooltip="{{ widget.description }}">
+            <mat-icon>{{ widget.icon }}</mat-icon>
+            <span>{{ widget.name }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Preview / Added Widgets -->
+    <mat-card class="preview-card">
+      <mat-card-content>
+        <h3>Widgets Adicionados ({{ addedWidgets.length }})</h3>
+        <div class="added-widgets" *ngIf="addedWidgets.length > 0; else emptyState">
+          <div *ngFor="let widget of addedWidgets; let i = index" class="added-widget-item">
+            <div class="widget-info">
+              <mat-icon>{{ getWidgetIcon(widget.type) }}</mat-icon>
+              <div>
+                <strong>{{ widget.title }}</strong>
+                <span class="widget-type-label">{{ widget.type }}</span>
+              </div>
+            </div>
+            <div class="widget-actions">
+              <button mat-icon-button (click)="moveWidget(i, 'up')" [disabled]="i === 0" matTooltip="Mover para cima">
+                <mat-icon>arrow_upward</mat-icon>
+              </button>
+              <button mat-icon-button (click)="moveWidget(i, 'down')" [disabled]="i === addedWidgets.length - 1" matTooltip="Mover para baixo">
+                <mat-icon>arrow_downward</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="removeWidget(i)" matTooltip="Remover">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+        <ng-template #emptyState>
+          <div class="empty-state">
+            <mat-icon>widgets</mat-icon>
+            <p>Nenhum widget adicionado ainda.<br>Selecione widgets do catálogo.</p>
+          </div>
+        </ng-template>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
