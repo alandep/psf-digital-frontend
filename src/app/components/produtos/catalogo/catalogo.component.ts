@@ -22,9 +22,20 @@ import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 
 import { ProductCatalogMockService } from '../../../../services/productCatalogMockService';
 import { ImportCsvDialogComponent } from './import-csv-dialog/import-csv-dialog.component';
+import { AiCreateDialogComponent } from './ai-create-dialog/ai-create-dialog.component';
+import {
+  ProductValidationDialogComponent,
+  ProductValidationDialogData
+} from './product-validation-dialog/product-validation-dialog.component';
+import {
+  ConfirmarAcaoDialogComponent,
+  ConfirmDialogData
+} from '../../admin/usuarios/confirmar-acao-dialog/confirmar-acao-dialog.component';
 import { 
   Product, 
   ProductFilters, 
@@ -65,7 +76,9 @@ import {
     MatSnackBarModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
-    MatDividerModule
+    MatDividerModule,
+    MatDatepickerModule,
+    MatNativeDateModule
   ],
   templateUrl: './catalogo.component.html',
   styleUrls: ['./catalogo.component.scss']
@@ -96,6 +109,7 @@ export class CatalogoComponent implements OnInit {
   // Formulário inline das 7 abas
   public showProductForm = false;
   public editingProduct: Product | null = null;
+  public isViewMode = false;
   public selectedTabIndex = 0;
   public productForm: FormGroup;
   public isSaving = false;
@@ -103,8 +117,6 @@ export class CatalogoComponent implements OnInit {
   public filtroForm: FormGroup;
 
   constructor() {
-    console.log('🚀 CatalogoComponent inicializado!');
-    
     this.filtroForm = this.fb.group({
       search: [''],
       commodity_types: [[]],
@@ -118,7 +130,7 @@ export class CatalogoComponent implements OnInit {
     // Inicializar formulário das 7 abas completo
     this.productForm = this.fb.group({
       
-      // 📋 ABA 1: GERAL
+      // ABA 1: GERAL
       product_code: ['', [Validators.required, Validators.minLength(3)]],
       name: ['', [Validators.required, Validators.minLength(3)]],
       short_name: [''],
@@ -128,7 +140,7 @@ export class CatalogoComponent implements OnInit {
       origin_country: ['Brasil', [Validators.required]],
       active: [true],
       
-      // 💰 ABA 2: FISCAL
+      // ABA 2: FISCAL
       ncm_code: ['', [Validators.required, Validators.pattern(/^\d{4}\.\d{2}\.\d{2}$/)]],
       ncm_description: [''],
       hs_code: ['', [Validators.required]],
@@ -138,7 +150,7 @@ export class CatalogoComponent implements OnInit {
       requires_export_license: [false],
       export_license_type: [''],
 
-      // 📦 ABA 3: LOGÍSTICA
+      // ABA 3: LOGÍSTICA
       unit: ['MT', [Validators.required]],
       net_weight: [0, [Validators.min(0)]],
       gross_weight: [0, [Validators.min(0)]],
@@ -149,7 +161,7 @@ export class CatalogoComponent implements OnInit {
       tare_percentage: [0, [Validators.min(0), Validators.max(100)]],
       stowage_factor: [0, [Validators.min(0)]],
 
-      // 💵 ABA 4: COMERCIAL
+      // ABA 4: COMERCIAL
       standard_price: [0, [Validators.min(0)]],
       currency: ['USD'],
       price_unit: ['USD_MT'],
@@ -159,7 +171,7 @@ export class CatalogoComponent implements OnInit {
       current_futures_price: [{ value: 0, disabled: true }],
       price_last_update: [{ value: '', disabled: true }],
 
-      // 🔬 ABA 5: QUALIDADE
+      // ABA 5: QUALIDADE
       moisture_content: [0, [Validators.min(0), Validators.max(100)]],
       protein_content: [0, [Validators.min(0), Validators.max(100)]],
       oil_content: [0, [Validators.min(0), Validators.max(100)]],
@@ -169,7 +181,7 @@ export class CatalogoComponent implements OnInit {
       quality_certification: [''],
       analysis_expiry_date: [''],
 
-      // 🤖 ABA 6: INTELIGÊNCIA ARTIFICIAL
+      // ABA 6: INTELIGÊNCIA ARTIFICIAL
       ai_auto_update: [false],
       ai_auto_classify: [false],
       ai_price_prediction: [false],
@@ -178,7 +190,6 @@ export class CatalogoComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    console.log('📊 Carregando catálogo de produtos...');
     this.loadData();
   }
 
@@ -188,11 +199,10 @@ export class CatalogoComponent implements OnInit {
     // Carregar opções de filtro
     this.productService.getFilterOptions().subscribe({
       next: (options: ProductFilterOptions) => {
-        console.log('✅ Opções de filtro carregadas:', options);
         this.filterOptions = options;
       },
-      error: (error: any) => {
-        console.error('❌ Erro ao carregar opções de filtro:', error);
+      error: () => {
+        this.snackBar.open('Erro ao carregar opções de filtro', 'Fechar', { duration: 3000 });
       }
     });
 
@@ -209,13 +219,11 @@ export class CatalogoComponent implements OnInit {
     
     this.productService.getProducts(filters).subscribe({
       next: (products: Product[]) => {
-        console.log('✅ Produtos carregados:', products);
         this.products = products;
         this.calculateKPIs();
         this.isLoading = false;
       },
-      error: (error: any) => {
-        console.error('❌ Erro ao carregar produtos:', error);
+      error: () => {
         this.isLoading = false;
         this.snackBar.open('Erro ao carregar produtos', 'Fechar', { duration: 3000 });
       }
@@ -225,13 +233,12 @@ export class CatalogoComponent implements OnInit {
   private calculateKPIs(): void {
     this.totalProducts = this.products.length;
     this.activeProducts = this.products.filter(p => p.active).length;
-    this.aiGeneratedProducts = this.products.filter(p => p.ai_config.ai_generated).length;
+    this.aiGeneratedProducts = this.products.filter(p => p.ai_config?.ai_generated).length;
     this.uniqueCommodities = new Set(this.products.map(p => p.commodity_type)).size;
   }
 
   public applyFilters(): void {
     const formValue = this.filtroForm.value;
-    console.log('🔍 Aplicando filtros:', formValue);
     
     const filters: ProductFilters = {
       search: formValue.search || undefined,
@@ -261,11 +268,14 @@ export class CatalogoComponent implements OnInit {
   }
 
   public createProduct(): void {
-    console.log('➕ Criando novo produto');
     this.editingProduct = null;
+    this.isViewMode = false;
     this.selectedTabIndex = 0;
+    this.productForm.enable();
+    this.productForm.get('density')?.disable();
+    this.productForm.get('current_futures_price')?.disable();
+    this.productForm.get('price_last_update')?.disable();
     this.productForm.reset({
-      // Valores padrão para novo produto
       commodity_type: 'GRAO',
       origin_country: 'Brasil',
       active: true,
@@ -280,85 +290,184 @@ export class CatalogoComponent implements OnInit {
       stowage_factor: 0
     });
     this.showProductForm = true;
-    
-    // Scroll para o formulário
+    this.scrollToForm();
+  }
+
+  /**
+   * Popula o formulário inline com os dados de um produto existente.
+   * Mapeia campos aninhados (quality_specs, ai_config) para os controles planos.
+   */
+  private populateForm(product: Product): void {
+    const quality = product.quality_specs ?? {};
+    const ai = product.ai_config ?? ({} as Product['ai_config']);
+
+    this.productForm.reset();
+    this.productForm.patchValue({
+      // GERAL
+      product_code: product.product_code ?? '',
+      name: product.name ?? '',
+      short_name: product.short_name ?? '',
+      scientific_name: product.scientific_name ?? '',
+      description: product.description ?? '',
+      commodity_type: product.commodity_type ?? 'GRAO',
+      origin_country: product.origin_country ?? 'Brasil',
+      active: product.active ?? true,
+
+      // FISCAL
+      ncm_code: product.ncm_code ?? '',
+      ncm_description: product.ncm_description ?? '',
+      hs_code: product.hs_code ?? '',
+      export_tax: product.export_tax ?? 0,
+      cfop: product.cfop ?? '',
+      cest: product.cest ?? '',
+      requires_export_license: product.requires_export_license ?? false,
+      export_license_type: product.export_license_type ?? '',
+
+      // LOGÍSTICA
+      unit: product.unit ?? 'MT',
+      net_weight: product.net_weight ?? 0,
+      gross_weight: product.gross_weight ?? 0,
+      volume: product.volume_m3 ?? 0,
+      package_type: product.package_type ?? 'BULK',
+      storage_type: product.storage_type ?? 'DRY',
+      tare_percentage: 0,
+      stowage_factor: 0,
+
+      // COMERCIAL
+      standard_price: product.standard_price ?? 0,
+      currency: product.currency ?? 'USD',
+      price_unit: product.price_unit ?? 'USD_MT',
+      min_order_quantity: product.minimum_quantity ?? 0,
+      max_order_quantity: product.maximum_quantity ?? 0,
+      futures_exchange: product.futures_exchange ?? '',
+
+      // QUALIDADE
+      moisture_content: quality.moisture_max ?? 0,
+      protein_content: quality.protein_min ?? 0,
+      oil_content: quality.oil_content_min ?? 0,
+      foreign_matter: quality.foreign_material_max ?? 0,
+      broken_grains: quality.broken_kernels_max ?? 0,
+      inspection_standard: quality.inspection_standard ?? '',
+      quality_certification: '',
+      analysis_expiry_date: '',
+
+      // IA
+      ai_auto_update: ai.ai_auto_update_enabled ?? false,
+      ai_auto_classify: ai.ai_auto_classify ?? false,
+      ai_price_prediction: ai.ai_price_prediction ?? false,
+      ai_confidence_level: ai.ai_confidence_level ?? 'MEDIUM'
+    });
+  }
+
+  private scrollToForm(): void {
     setTimeout(() => {
       document.getElementById('product-form-container')?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
   }
 
   public createProductWithAI(): void {
-    console.log('🤖 Criando produto com IA');
-    
-    const userDescription = prompt('🤖 Descreva o produto que deseja criar\\n\\nExemplos:\\n• "Soja em grão para exportação"\\n• "Milho amarelo #2"\\n• "Café arábica Santos"');
-    
-    if (userDescription && userDescription.trim()) {
-      this.isLoading = true;
-      
-      this.productService.createProductWithAI({
-        user_description: userDescription.trim(),
-        auto_enrich: true,
-        use_price_prediction: true
-      }).subscribe({
-        next: (response) => {
-          this.isLoading = false;
-          this.snackBar.open(`✨ Produto criado com IA! Confiança: ${response.confidence_score}%`, 'Fechar', { 
-            duration: 5000
-          });
-        },
-        error: (error) => {
-          this.isLoading = false;
-          console.error('❌ Erro ao criar produto com IA:', error);
-          this.snackBar.open('Erro ao criar produto com IA', 'Fechar', { duration: 3000 });
-        }
-      });
-    }
+    const dialogRef = this.dialog.open(AiCreateDialogComponent, {
+      width: '520px',
+      maxWidth: '92vw'
+    });
+
+    dialogRef.afterClosed().subscribe((description: string | undefined) => {
+      if (description && description.trim()) {
+        this.isLoading = true;
+
+        this.productService.createProductWithAI({
+          user_description: description.trim(),
+          auto_enrich: true,
+          use_price_prediction: true
+        }).subscribe({
+          next: (response) => {
+            this.isLoading = false;
+            this.snackBar.open(`Produto criado com IA! Confiança: ${response.confidence_score}%`, 'Fechar', {
+              duration: 5000
+            });
+            this.loadProducts();
+          },
+          error: () => {
+            this.isLoading = false;
+            this.snackBar.open('Erro ao criar produto com IA', 'Fechar', { duration: 3000 });
+          }
+        });
+      }
+    });
   }
 
   public viewProduct(product: Product): void {
-    console.log('👁️ Visualizando produto:', product.name);
-    this.snackBar.open(`Visualizando ${product.name}`, 'Fechar', { duration: 3000 });
+    this.editingProduct = product;
+    this.isViewMode = true;
+    this.selectedTabIndex = 0;
+    this.populateForm(product);
+    this.showProductForm = true;
+    this.scrollToForm();
   }
 
   public editProduct(product: Product): void {
-    console.log('✏️ Editando produto:', product.name);
-    this.snackBar.open(`Editando ${product.name}`, 'Fechar', { duration: 3000 });
+    this.editingProduct = product;
+    this.isViewMode = false;
+    this.selectedTabIndex = 0;
+    this.populateForm(product);
+    this.showProductForm = true;
+    this.scrollToForm();
   }
 
   public duplicateProduct(product: Product): void {
-    console.log('📄 Duplicando produto:', product.name);
-    this.snackBar.open(`Duplicando ${product.name}`, 'Fechar', { duration: 3000 });
+    this.selectedTabIndex = 0;
+    this.isViewMode = false;
+    this.populateForm(product);
+    // Cria uma cópia: sem produto em edição e com código/nome ajustados
+    this.editingProduct = null;
+    this.productForm.patchValue({
+      product_code: `${product.product_code}_COPIA`,
+      name: `${product.name} (Cópia)`
+    });
+    this.showProductForm = true;
+    this.scrollToForm();
+    this.snackBar.open('Ajuste os dados e salve para criar a cópia', 'Fechar', { duration: 4000 });
   }
 
   public enrichWithAI(product: Product): void {
-    console.log('🧠 Enriquecendo produto com IA:', product.name);
-    
     this.productService.enrichProductWithAI(product.product_id).subscribe({
-      next: (enrichedProduct) => {
-        console.log('✅ Produto enriquecido:', enrichedProduct);
-        this.snackBar.open(`✨ ${product.name} enriquecido com IA!`, 'Fechar', { duration: 3000 });
+      next: () => {
+        this.snackBar.open(`${product.name} enriquecido com IA!`, 'Fechar', { duration: 3000 });
         this.loadProducts();
       },
-      error: (error) => {
-        console.error('❌ Erro ao enriquecer produto:', error);
+      error: () => {
         this.snackBar.open('Erro ao enriquecer produto', 'Fechar', { duration: 3000 });
       }
     });
   }
 
   public validateProduct(product: Product): void {
-    console.log('✅ Validando produto:', product.name);
-    
     this.productService.validateProduct(product).subscribe({
       next: (result) => {
-        if (result.isValid) {
-          this.snackBar.open('✅ Produto válido!', 'Fechar', { duration: 3000 });
-        } else {
-          this.snackBar.open(`⚠️ ${result.errors.length} erros encontrados`, 'Fechar', { duration: 5000 });
-        }
+        const data: ProductValidationDialogData = {
+          productName: product.name,
+          isValid: result.isValid,
+          errors: (result.errors ?? []).map(e => ({
+            field: e.field,
+            message: e.message,
+            severity: e.severity
+          })),
+          warnings: (result.warnings ?? []).map(w => ({
+            field: w.field,
+            message: w.message,
+            suggestion: w.suggestion
+          }))
+        };
+
+        this.dialog.open(ProductValidationDialogComponent, {
+          width: '560px',
+          maxWidth: '92vw',
+          autoFocus: false,
+          panelClass: 'product-validation-dialog-panel',
+          data
+        });
       },
-      error: (error) => {
-        console.error('❌ Erro na validação:', error);
+      error: () => {
         this.snackBar.open('Erro ao validar produto', 'Fechar', { duration: 3000 });
       }
     });
@@ -366,40 +475,50 @@ export class CatalogoComponent implements OnInit {
 
   public toggleActive(product: Product): void {
     const newStatus = !product.active;
-    console.log(`🔄 ${newStatus ? 'Ativando' : 'Desativando'} produto:`, product.name);
     
     this.productService.updateProduct(product.product_id, { active: newStatus }).subscribe({
       next: () => {
         this.snackBar.open(`Produto ${newStatus ? 'ativado' : 'desativado'} com sucesso!`, 'Fechar', { duration: 3000 });
         this.loadProducts();
       },
-      error: (error) => {
-        console.error('❌ Erro ao alterar status:', error);
+      error: () => {
         this.snackBar.open('Erro ao alterar status do produto', 'Fechar', { duration: 3000 });
       }
     });
   }
 
   public deleteProduct(product: Product): void {
-    if (confirm(`Tem certeza que deseja excluir o produto "${product.name}"?`)) {
-      console.log('🗑️ Excluindo produto:', product.name);
-      
-      this.productService.deleteProduct(product.product_id).subscribe({
-        next: () => {
-          this.snackBar.open('Produto excluído com sucesso!', 'Fechar', { duration: 3000 });
-          this.loadProducts();
-        },
-        error: (error) => {
-          console.error('❌ Erro ao excluir produto:', error);
-          this.snackBar.open('Erro ao excluir produto', 'Fechar', { duration: 3000 });
-        }
-      });
-    }
+    const data: ConfirmDialogData = {
+      title: 'Excluir Produto',
+      message: `Tem certeza que deseja excluir o produto "${product.name}"? Esta ação não pode ser desfeita.`,
+      icon: 'delete',
+      iconColor: '#f44336',
+      confirmText: 'Excluir',
+      confirmColor: 'warn'
+    };
+
+    const dialogRef = this.dialog.open(ConfirmarAcaoDialogComponent, {
+      width: '420px',
+      autoFocus: false,
+      data
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
+      if (confirmed === true) {
+        this.productService.deleteProduct(product.product_id).subscribe({
+          next: () => {
+            this.snackBar.open('Produto excluído com sucesso!', 'Fechar', { duration: 3000 });
+            this.loadProducts();
+          },
+          error: () => {
+            this.snackBar.open('Erro ao excluir produto', 'Fechar', { duration: 3000 });
+          }
+        });
+      }
+    });
   }
 
   public importProducts(): void {
-    console.log('📥 Abrindo diálogo de importação CSV');
-    
     const dialogRef = this.dialog.open(ImportCsvDialogComponent, {
       width: '1200px',
       maxWidth: '98vw',
@@ -411,9 +530,8 @@ export class CatalogoComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        console.log('✅ Importação CSV concluída');
-        this.loadProducts(); // Recarrega a lista de produtos
-        this.snackBar.open('✅ Produtos importados com sucesso!', 'Fechar', { duration: 4000 });
+        this.loadProducts();
+        this.snackBar.open('Produtos importados com sucesso!', 'Fechar', { duration: 4000 });
       }
     });
   }
@@ -421,9 +539,13 @@ export class CatalogoComponent implements OnInit {
   public closeProductForm(): void {
     this.showProductForm = false;
     this.editingProduct = null;
+    this.isViewMode = false;
     this.selectedTabIndex = 0;
+    this.productForm.enable();
+    this.productForm.get('density')?.disable();
+    this.productForm.get('current_futures_price')?.disable();
+    this.productForm.get('price_last_update')?.disable();
     this.productForm.reset();
-    console.log('✖️ Formulário de produto fechado');
   }
 
   public saveProduct(): void {
@@ -440,20 +562,16 @@ export class CatalogoComponent implements OnInit {
       formData.density = formData.net_weight / formData.volume;
     }
 
-    console.log('💾 Salvando produto:', formData);
-
     if (this.editingProduct) {
       // Atualizar produto existente
       this.productService.updateProduct(this.editingProduct.product_id, formData).subscribe({
-        next: (product: Product) => {
-          console.log('✅ Produto atualizado:', product);
+        next: () => {
           this.snackBar.open('Produto atualizado com sucesso!', 'Fechar', { duration: 3000 });
           this.loadProducts();
           this.closeProductForm();
           this.isSaving = false;
         },
-        error: (error) => {
-          console.error('❌ Erro ao atualizar produto:', error);
+        error: () => {
           this.snackBar.open('Erro ao atualizar produto', 'Fechar', { duration: 3000 });
           this.isSaving = false;
         }
@@ -461,15 +579,13 @@ export class CatalogoComponent implements OnInit {
     } else {
       // Criar novo produto
       this.productService.createProduct(formData).subscribe({
-        next: (product: Product) => {
-          console.log('✅ Produto criado:', product);
+        next: () => {
           this.snackBar.open('Produto criado com sucesso!', 'Fechar', { duration: 3000 });
           this.loadProducts();
           this.closeProductForm();
           this.isSaving = false;
         },
-        error: (error) => {
-          console.error('❌ Erro ao criar produto:', error);
+        error: () => {
           this.snackBar.open('Erro ao criar produto', 'Fechar', { duration: 3000 });
           this.isSaving = false;
         }
@@ -478,21 +594,17 @@ export class CatalogoComponent implements OnInit {
   }
 
   public saveAsDraft(): void {
-    console.log('📝 Salvando como rascunho...');
-    // Implementação para salvar como rascunho
     this.snackBar.open('Rascunho salvo com sucesso!', 'Fechar', { duration: 2000 });
   }
 
-  // 🤖 MÉTODOS DA INTELIGÊNCIA ARTIFICIAL
+  // MÉTODOS DA INTELIGÊNCIA ARTIFICIAL
   public enrichProductWithAI(): void {
-    console.log('🤖 Enriquecendo produto com IA...');
-    this.snackBar.open('🤖 Enriquecimento com IA iniciado. Aguarde...', 'Fechar', { duration: 3000 });
+    this.snackBar.open('Enriquecimento com IA iniciado. Aguarde...', 'Fechar', { duration: 3000 });
     
     // Simular enriquecimento automático
     setTimeout(() => {
       const currentData = this.productForm.value;
       
-      // Preencher dados automaticamente baseado no tipo de commodity
       if (currentData.commodity_type === 'GRAO' && currentData.name?.toLowerCase().includes('soja')) {
         this.productForm.patchValue({
           scientific_name: 'Glycine max',
@@ -508,16 +620,26 @@ export class CatalogoComponent implements OnInit {
         });
       }
       
-      this.snackBar.open('✅ Produto enriquecido com IA!', 'Fechar', { duration: 3000 });
+      this.snackBar.open('Produto enriquecido com IA!', 'Fechar', { duration: 3000 });
     }, 2000);
   }
 
+  /**
+   * Botão "Validar NCM" do cabeçalho do formulário.
+   * Se estiver editando um produto, valida-o; caso contrário usa a validação por IA.
+   */
+  public validateCurrentProduct(): void {
+    if (this.editingProduct) {
+      this.validateProduct(this.editingProduct);
+    } else {
+      this.validateWithAI();
+    }
+  }
+
   public predictPrices(): void {
-    console.log('📈 Predizendo preços com IA...');
-    this.snackBar.open('📈 Análise de predição de preços iniciada...', 'Fechar', { duration: 3000 });
+    this.snackBar.open('Análise de predição de preços iniciada...', 'Fechar', { duration: 3000 });
     
     setTimeout(() => {
-      // Simular predição de preço
       const predictedPrice = Math.random() * 100 + 400; // Entre 400-500
       this.productForm.patchValue({
         standard_price: predictedPrice.toFixed(2),
@@ -525,24 +647,23 @@ export class CatalogoComponent implements OnInit {
         price_last_update: new Date().toISOString().split('T')[0]
       });
       
-      this.snackBar.open(`💰 Preço predito: $${predictedPrice.toFixed(2)}/MT`, 'Fechar', { duration: 4000 });
+      this.snackBar.open(`Preço predito: $${predictedPrice.toFixed(2)}/MT`, 'Fechar', { duration: 4000 });
     }, 1500);
   }
 
   public validateWithAI(): void {
-    console.log('🔍 Validando produto com IA...');
-    this.snackBar.open('🔍 Validação com IA em andamento...', 'Fechar', { duration: 3000 });
+    this.snackBar.open('Validação com IA em andamento...', 'Fechar', { duration: 3000 });
     
     setTimeout(() => {
-      let validationScore = Math.random() * 30 + 70; // Entre 70-100
+      const validationScore = Math.random() * 30 + 70; // Entre 70-100
       let message = '';
       
       if (validationScore >= 90) {
-        message = `✅ Produto validado! Score: ${validationScore.toFixed(1)}% - Excelente`;
+        message = `Produto validado! Score: ${validationScore.toFixed(1)}% - Excelente`;
       } else if (validationScore >= 80) {
-        message = `⚠️ Produto validado com ressalvas. Score: ${validationScore.toFixed(1)}% - Bom`;
+        message = `Produto validado com ressalvas. Score: ${validationScore.toFixed(1)}% - Bom`;
       } else {
-        message = `❌ Produto precisa de ajustes. Score: ${validationScore.toFixed(1)}% - Regular`;
+        message = `Produto precisa de ajustes. Score: ${validationScore.toFixed(1)}% - Regular`;
       }
       
       this.snackBar.open(message, 'Fechar', { duration: 5000 });
@@ -550,11 +671,9 @@ export class CatalogoComponent implements OnInit {
   }
 
   public optimizeProduct(): void {
-    console.log('⚙️ Otimizando produto...');
-    this.snackBar.open('⚙️ Otimização de produto iniciada...', 'Fechar', { duration: 3000 });
+    this.snackBar.open('Otimização de produto iniciada...', 'Fechar', { duration: 3000 });
     
     setTimeout(() => {
-      // Simular otimizações automáticas
       const currentData = this.productForm.value;
       
       if (currentData.net_weight && currentData.gross_weight && !currentData.tare_percentage) {
@@ -567,7 +686,7 @@ export class CatalogoComponent implements OnInit {
         this.productForm.patchValue({ density: density.toFixed(2) });
       }
       
-      this.snackBar.open('✅ Produto otimizado! Cálculos automáticos aplicados.', 'Fechar', { duration: 4000 });
+      this.snackBar.open('Produto otimizado! Cálculos automáticos aplicados.', 'Fechar', { duration: 4000 });
     }, 1500);
   }
 

@@ -14,10 +14,15 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 
 import { BillOfLadingMockService } from '../../../../services/billOfLadingMockService';
 import { ExportService } from '../../../../services/exportService';
-import { BillOfLading, BLType, BLStatus, BLMetrics } from '../../../../types/bill-of-lading';
+import { BillOfLading, BLType, BLStatus, BLMetrics, BLFilters } from '../../../../types/bill-of-lading';
+import { BlDetailDialogComponent, BlDetailDialogData } from './bl-detail-dialog/bl-detail-dialog.component';
+import { BlFormDialogComponent, BlFormDialogData } from './bl-form-dialog/bl-form-dialog.component';
 
 @Component({
   selector: 'app-bill-of-lading',
@@ -35,7 +40,10 @@ import { BillOfLading, BLType, BLStatus, BLMetrics } from '../../../../types/bil
     MatInputModule,
     MatSelectModule,
     MatTooltipModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatDialogModule
   ],
   templateUrl: './bill-of-lading.component.html',
   styleUrls: ['./bill-of-lading.component.scss']
@@ -46,6 +54,7 @@ export class BillOfLadingComponent implements OnInit, OnDestroy, AfterViewInit {
   private exportService = inject(ExportService);
   private fb = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
   private destroy$ = new Subject<void>();
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
@@ -68,7 +77,9 @@ export class BillOfLadingComponent implements OnInit, OnDestroy, AfterViewInit {
     this.filterForm = this.fb.group({
       searchText: [''],
       type: [''],
-      status: ['']
+      status: [''],
+      dateStart: [null],
+      dateEnd: [null]
     });
     this.types = this.service.getTypes();
     this.statuses = this.service.getStatuses();
@@ -113,18 +124,100 @@ export class BillOfLadingComponent implements OnInit, OnDestroy, AfterViewInit {
 
   viewDetails(bl: BillOfLading): void {
     this.selectedBL = bl;
-  }
+    const dialogRef = this.dialog.open(BlDetailDialogComponent, {
+      width: '760px',
+      maxWidth: '92vw',
+      maxHeight: '90vh',
+      autoFocus: false,
+      panelClass: 'bl-detail-dialog-panel',
+      data: { bl, statuses: this.statuses } as BlDetailDialogData,
+    });
 
-  closeDetail(): void {
-    this.selectedBL = null;
+    dialogRef.afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(result => {
+        this.selectedBL = null;
+        if (result === 'edit') {
+          this.editBL(bl);
+        }
+      });
   }
 
   editBL(bl: BillOfLading): void {
-    this.snackBar.open(`Editando BL: ${bl.blNumber}`, 'OK', { duration: 3000 });
+    const dialogRef = this.dialog.open(BlFormDialogComponent, {
+      width: '880px',
+      maxWidth: '92vw',
+      maxHeight: '90vh',
+      autoFocus: false,
+      panelClass: 'bl-form-dialog-panel',
+      data: { mode: 'edit', bl, types: this.types, statuses: this.statuses } as BlFormDialogData,
+    });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((result: Partial<BillOfLading> | undefined) => {
+        if (!result) {
+          return;
+        }
+        const data = this.dataSource.data.slice();
+        const index = data.findIndex(item => item.id === bl.id);
+        if (index !== -1) {
+          data[index] = { ...data[index], ...result, updatedAt: new Date() } as BillOfLading;
+          this.dataSource.data = data;
+          this.snackBar.open(`BL ${result.blNumber} atualizado com sucesso!`, 'OK', { duration: 3000 });
+        }
+      });
   }
 
   openNewBLDialog(): void {
-    this.snackBar.open('Criando novo Bill of Lading...', 'OK', { duration: 3000 });
+    const dialogRef = this.dialog.open(BlFormDialogComponent, {
+      width: '880px',
+      maxWidth: '92vw',
+      maxHeight: '90vh',
+      autoFocus: false,
+      panelClass: 'bl-form-dialog-panel',
+      data: { mode: 'create', types: this.types, statuses: this.statuses } as BlFormDialogData,
+    });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((result: Partial<BillOfLading> | undefined) => {
+        if (!result) {
+          return;
+        }
+        const now = new Date();
+        const generatedId = `bl-${Date.now()}`;
+        const generatedNumber = `BL-2025-${String(this.dataSource.data.length + 1).padStart(5, '0')}`;
+        const newBL: BillOfLading = {
+          id: generatedId,
+          blNumber: result.blNumber || generatedNumber,
+          type: result.type || 'OBL',
+          shipper: result.shipper || '',
+          consignee: result.consignee || '',
+          notifyParty: result.notifyParty || '',
+          vessel: result.vessel || '',
+          voyage: result.voyage || '',
+          portLoading: result.portLoading || '',
+          portDischarge: result.portDischarge || '',
+          placeDelivery: result.placeDelivery || result.portDischarge || '',
+          containers: result.containers || [],
+          description: result.description || '',
+          grossWeight: result.grossWeight || 0,
+          measurement: result.measurement || 0,
+          freightTerms: result.freightTerms || 'PREPAID',
+          status: result.status || 'DRAFT',
+          issueDate: result.issueDate || now,
+          shippedOnBoard: null,
+          linkedExportId: result.linkedExportId || '',
+          linkedInvoiceId: result.linkedInvoiceId || '',
+          createdAt: now,
+          updatedAt: now,
+          createdBy: 'admin@empresa.com',
+          observations: result.observations || '',
+        };
+        this.dataSource.data = [newBL, ...this.dataSource.data];
+        this.snackBar.open(`BL ${newBL.blNumber} criado com sucesso!`, 'OK', { duration: 3000 });
+      });
   }
 
   exportCSV(): void {

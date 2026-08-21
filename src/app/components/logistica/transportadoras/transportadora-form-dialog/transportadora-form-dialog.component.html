@@ -1,0 +1,112 @@
+<div class="form-dialog">
+
+  <!-- Hero Header -->
+  <div class="dialog-hero">
+    <div class="hero-main">
+      <mat-icon class="hero-icon">add_business</mat-icon>
+      <div class="hero-title">
+        <h2>Nova Transportadora</h2>
+        <p class="hero-subtitle">Cadastre uma nova transportadora na plataforma</p>
+      </div>
+    </div>
+    <button mat-icon-button class="hero-close" (click)="cancel()" matTooltip="Fechar">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Form Content -->
+  <div class="dialog-body" mat-dialog-content>
+    <form [formGroup]="form" class="carrier-form">
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Razão Social</mat-label>
+          <input matInput formControlName="razaoSocial" placeholder="Ex: Transportes Brasil LTDA">
+          <mat-error *ngIf="form.get('razaoSocial')?.hasError('required')">Campo obrigatório</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Nome Fantasia</mat-label>
+          <input matInput formControlName="nomeFantasia" placeholder="Ex: TransBrasil">
+          <mat-error *ngIf="form.get('nomeFantasia')?.hasError('required')">Campo obrigatório</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>CNPJ</mat-label>
+          <input matInput formControlName="cnpj" placeholder="00.000.000/0001-00">
+          <mat-error *ngIf="form.get('cnpj')?.hasError('required')">Campo obrigatório</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Modal Principal</mat-label>
+          <mat-select formControlName="modalPrincipal">
+            <mat-option *ngFor="let m of modals" [value]="m">{{ m }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>País</mat-label>
+          <input matInput formControlName="country" placeholder="Brasil">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Estado</mat-label>
+          <mat-select formControlName="state">
+            <mat-option *ngFor="let st of states" [value]="st">{{ st }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Cidade</mat-label>
+          <input matInput formControlName="city" placeholder="Ex: São Paulo">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Endereço</mat-label>
+          <input matInput formControlName="address" placeholder="Rua, número, bairro">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Contato Comercial</mat-label>
+          <input matInput formControlName="commercialContact" placeholder="Nome do responsável">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Telefone</mat-label>
+          <input matInput formControlName="phone" placeholder="(00) 00000-0000">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>E-mail</mat-label>
+          <input matInput formControlName="email" placeholder="contato@empresa.com">
+          <mat-error *ngIf="form.get('email')?.hasError('email')">E-mail inválido</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Website</mat-label>
+          <input matInput formControlName="website" placeholder="www.empresa.com">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            <mat-option *ngFor="let s of statuses" [value]="s">{{ s }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Custo/Ton (USD)</mat-label>
+          <input matInput type="number" formControlName="costPerTon" placeholder="Ex: 45">
+        </mat-form-field>
+      </div>
+    </form>
+  </div>
+
+  <!-- Actions -->
+  <div class="dialog-actions" mat-dialog-actions>
+    <button mat-button (click)="cancel()">Cancelar</button>
+    <button mat-raised-button color="primary" (click)="save()" [disabled]="form.invalid">
+      <mat-icon>check</mat-icon> Cadastrar
+    </button>
+  </div>
+
+</div>

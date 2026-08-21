@@ -25,6 +25,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 
 // Services and Types
 import { InvoiceMockService } from '../../../../services/invoiceMockService';
@@ -33,12 +34,8 @@ import {
   InvoiceStatus,
   InvoiceFilters,
   InvoiceMetrics,
-  InvoiceProduct,
-  InvoiceRelatedDoc,
-  InvoiceValidation,
-  InvoiceTimelineEvent,
-  InvoiceAIInsights,
 } from '../../../../types/invoice';
+import { InvoiceDetailDialogComponent, InvoiceDetailDialogData } from './invoice-detail-dialog/invoice-detail-dialog.component';
 
 @Component({
   selector: 'app-invoice',
@@ -67,6 +64,7 @@ import {
     MatDividerModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    MatDialogModule,
   ],
   templateUrl: './invoice.component.html',
   styleUrls: ['./invoice.component.scss']
@@ -77,21 +75,16 @@ export class InvoiceComponent implements OnInit, OnDestroy {
   private invoiceService = inject(InvoiceMockService);
   private formBuilder = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
 
   // Data State
   invoices: Invoice[] = [];
   filteredInvoices: Invoice[] = [];
   selectedInvoice: Invoice | null = null;
-  products: InvoiceProduct[] = [];
-  relatedDocs: InvoiceRelatedDoc[] = [];
-  validations: InvoiceValidation[] = [];
-  timeline: InvoiceTimelineEvent[] = [];
-  aiInsights: InvoiceAIInsights | null = null;
   metrics: InvoiceMetrics | null = null;
 
   // UI State
   isLoading = false;
-  isDetailOpen = false;
 
   // Forms
   filterForm!: FormGroup;
@@ -101,8 +94,6 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     'invoiceNumber', 'buyerName', 'buyerCountry', 'totalValue',
     'currency', 'status', 'completionPercentage', 'aiDocScore', 'actions'
   ];
-  productColumns = ['productName', 'commercialDescription', 'ncm', 'quantity', 'netWeight', 'grossWeight', 'unitPrice', 'totalValue', 'linkedLot'];
-  relatedDocsColumns = ['documentType', 'documentNumber', 'status'];
 
   // Filter Options
   statuses: { value: InvoiceStatus; label: string }[] = [];
@@ -221,26 +212,24 @@ export class InvoiceComponent implements OnInit, OnDestroy {
 
   selectInvoice(inv: Invoice): void {
     this.selectedInvoice = inv;
-    this.isDetailOpen = true;
-    this.loadInvoiceDetails(inv.id);
-  }
+    const dialogRef = this.dialog.open(InvoiceDetailDialogComponent, {
+      width: '1100px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      autoFocus: false,
+      panelClass: 'invoice-detail-dialog-panel',
+      data: { invoice: inv, statuses: this.statuses } as InvoiceDetailDialogData,
+    });
 
-  private loadInvoiceDetails(invoiceId: string): void {
-    this.invoiceService.getProducts(invoiceId).pipe(takeUntil(this.destroy$)).subscribe(p => this.products = p);
-    this.invoiceService.getRelatedDocuments(invoiceId).pipe(takeUntil(this.destroy$)).subscribe(d => this.relatedDocs = d);
-    this.invoiceService.getValidations(invoiceId).pipe(takeUntil(this.destroy$)).subscribe(v => this.validations = v);
-    this.invoiceService.getTimeline(invoiceId).pipe(takeUntil(this.destroy$)).subscribe(t => this.timeline = t);
-    this.invoiceService.getAIInsights(invoiceId).pipe(takeUntil(this.destroy$)).subscribe(i => this.aiInsights = i);
-  }
-
-  closeDetail(): void {
-    this.isDetailOpen = false;
-    this.selectedInvoice = null;
-    this.products = [];
-    this.relatedDocs = [];
-    this.validations = [];
-    this.timeline = [];
-    this.aiInsights = null;
+    dialogRef.afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((result) => {
+        this.selectedInvoice = null;
+        if (result === 'refresh') {
+          this.loadInvoices();
+          this.loadMetrics();
+        }
+      });
   }
 
   createInvoice(): void {
@@ -256,33 +245,6 @@ export class InvoiceComponent implements OnInit, OnDestroy {
       });
   }
 
-  approveInvoice(): void {
-    if (!this.selectedInvoice) return;
-    this.invoiceService.approveInvoice(this.selectedInvoice.id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (inv) => {
-          this.showMessage(`Invoice ${inv.invoiceNumber} aprovada com sucesso`, 'success');
-          this.selectedInvoice = inv;
-          this.loadInvoices();
-          this.loadMetrics();
-        },
-        error: () => this.showMessage('Erro ao aprovar invoice', 'error')
-      });
-  }
-
-  generatePDF(): void {
-    if (!this.selectedInvoice) return;
-    this.invoiceService.generatePDF(this.selectedInvoice.id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (result) => {
-          this.showMessage(result.message, result.success ? 'success' : 'error');
-        },
-        error: () => this.showMessage('Erro ao gerar PDF', 'error')
-      });
-  }
-
   exportPDF(): void {
     this.showMessage('Exportando relatório PDF...', 'info');
   }
@@ -294,11 +256,6 @@ export class InvoiceComponent implements OnInit, OnDestroy {
   // ================================
   // UTILITY METHODS
   // ================================
-
-  formatDate(date: Date | string | null | undefined): string {
-    if (!date) return '-';
-    return new Date(date).toLocaleDateString('pt-BR');
-  }
 
   formatCurrency(value: number, currency: string): string {
     return `${currency} ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -337,65 +294,10 @@ export class InvoiceComponent implements OnInit, OnDestroy {
     return found ? found.label : status;
   }
 
-  getDocStatusColor(status: 'valid' | 'pending' | 'missing'): string {
-    switch (status) {
-      case 'valid': return 'green';
-      case 'pending': return 'orange';
-      case 'missing': return 'red';
-      default: return 'grey';
-    }
-  }
-
-  getDocStatusIcon(status: 'valid' | 'pending' | 'missing'): string {
-    switch (status) {
-      case 'valid': return 'check_circle';
-      case 'pending': return 'hourglass_top';
-      case 'missing': return 'cancel';
-      default: return 'help';
-    }
-  }
-
-  getDocStatusLabel(status: 'valid' | 'pending' | 'missing'): string {
-    switch (status) {
-      case 'valid': return 'Válido';
-      case 'pending': return 'Pendente';
-      case 'missing': return 'Ausente';
-      default: return status;
-    }
-  }
-
-  getValidationColor(status: 'pass' | 'fail' | 'warning'): string {
-    switch (status) {
-      case 'pass': return 'green';
-      case 'fail': return 'red';
-      case 'warning': return 'orange';
-      default: return 'grey';
-    }
-  }
-
-  getValidationIcon(status: 'pass' | 'fail' | 'warning'): string {
-    switch (status) {
-      case 'pass': return 'check_circle';
-      case 'fail': return 'cancel';
-      case 'warning': return 'warning';
-      default: return 'help';
-    }
-  }
-
   getScoreColor(score: number): string {
     if (score >= 80) return 'green';
     if (score >= 60) return 'yellow';
     return 'red';
-  }
-
-  getSeverityColor(severity: string): string {
-    switch (severity) {
-      case 'CRITICAL': return 'red';
-      case 'HIGH': return 'orange';
-      case 'MEDIUM': return 'yellow';
-      case 'LOW': return 'green';
-      default: return 'grey';
-    }
   }
 
   private showMessage(message: string, type: 'success' | 'error' | 'info' = 'info'): void {

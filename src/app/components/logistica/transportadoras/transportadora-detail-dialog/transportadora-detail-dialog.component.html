@@ -1,0 +1,433 @@
+<div class="detail-dialog">
+
+  <!-- Hero Header -->
+  <div class="dialog-hero">
+    <div class="hero-main">
+      <mat-icon class="hero-icon">local_shipping</mat-icon>
+      <div class="hero-title">
+        <h2>{{ carrier.nomeFantasia }}</h2>
+        <p class="hero-subtitle">{{ carrier.cnpj }} &mdash; {{ carrier.city }}, {{ carrier.state }}</p>
+        <div class="hero-chips">
+          <span class="modal-chip" [ngClass]="getModalClass(carrier.modalPrincipal)">
+            {{ carrier.modalPrincipal }}
+          </span>
+          <span class="status-chip" [ngClass]="getStatusClass(carrier.status)">
+            {{ carrier.status }}
+          </span>
+        </div>
+      </div>
+    </div>
+    <button mat-icon-button class="hero-close" mat-dialog-close matTooltip="Fechar">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Scrollable Content -->
+  <div class="dialog-body" mat-dialog-content>
+    <mat-tab-group>
+      <!-- Tab 1: Dados Gerais -->
+      <mat-tab label="Dados Gerais">
+        <div class="tab-content">
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Razão Social</span>
+              <span class="info-value">{{ carrier.razaoSocial }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Nome Fantasia</span>
+              <span class="info-value">{{ carrier.nomeFantasia }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">CNPJ</span>
+              <span class="info-value">{{ carrier.cnpj }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Modal Principal</span>
+              <span class="info-value">{{ carrier.modalPrincipal }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Endereço</span>
+              <span class="info-value">{{ carrier.address }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Cidade/Estado</span>
+              <span class="info-value">{{ carrier.city }} - {{ carrier.state }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Contato Comercial</span>
+              <span class="info-value">{{ carrier.commercialContact }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Telefone</span>
+              <span class="info-value">{{ carrier.phone }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">E-mail</span>
+              <span class="info-value">{{ carrier.email }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Website</span>
+              <span class="info-value">{{ carrier.website }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Status</span>
+              <span class="info-value">{{ carrier.status }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Cadastrado em</span>
+              <span class="info-value">{{ carrier.createdAt | date:'dd/MM/yyyy' }}</span>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 2: Serviços -->
+      <mat-tab label="Serviços">
+        <div class="tab-content">
+          <div class="services-list" *ngIf="services.length > 0; else noServices">
+            <div class="service-card" *ngFor="let svc of services">
+              <div class="service-header">
+                <h4>{{ svc.serviceName }}</h4>
+              </div>
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="info-label">Capacidade</span>
+                  <span class="info-value">{{ svc.capacity }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Cobertura</span>
+                  <span class="info-value">{{ svc.coverage }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Restrições</span>
+                  <span class="info-value">{{ svc.restrictions }}</span>
+                </div>
+              </div>
+              <h5>Certificações</h5>
+              <div class="chips-list">
+                <span class="info-chip" *ngFor="let cert of svc.certifications">{{ cert }}</span>
+              </div>
+            </div>
+          </div>
+          <ng-template #noServices>
+            <div class="empty-state">
+              <mat-icon>miscellaneous_services</mat-icon>
+              <p>Nenhum serviço cadastrado</p>
+            </div>
+          </ng-template>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 3: Cobertura -->
+      <mat-tab label="Cobertura">
+        <div class="tab-content" *ngIf="carrierCoverage">
+          <h4>Estados Atendidos</h4>
+          <div class="chips-list">
+            <span class="info-chip" *ngFor="let st of carrierCoverage.states">{{ st }}</span>
+          </div>
+
+          <h4>Portos</h4>
+          <div class="chips-list">
+            <span class="info-chip modal-chip" *ngFor="let port of carrierCoverage.ports">{{ port }}</span>
+          </div>
+
+          <h4 *ngIf="carrierCoverage.railTerminals.length > 0">Terminais Ferroviários</h4>
+          <div class="chips-list" *ngIf="carrierCoverage.railTerminals.length > 0">
+            <span class="info-chip customs-chip" *ngFor="let term of carrierCoverage.railTerminals">{{ term }}</span>
+          </div>
+
+          <h4 *ngIf="carrierCoverage.airports.length > 0">Aeroportos</h4>
+          <div class="chips-list" *ngIf="carrierCoverage.airports.length > 0">
+            <span class="info-chip" *ngFor="let apt of carrierCoverage.airports">{{ apt }}</span>
+          </div>
+
+          <h4>Rotas Frequentes</h4>
+          <table mat-table [dataSource]="carrierCoverage.frequentRoutes" class="routes-table" *ngIf="carrierCoverage.frequentRoutes.length > 0">
+            <ng-container matColumnDef="origin">
+              <th mat-header-cell *matHeaderCellDef>Origem</th>
+              <td mat-cell *matCellDef="let r">{{ r.origin }}</td>
+            </ng-container>
+            <ng-container matColumnDef="destination">
+              <th mat-header-cell *matHeaderCellDef>Destino</th>
+              <td mat-cell *matCellDef="let r">{{ r.destination }}</td>
+            </ng-container>
+            <ng-container matColumnDef="avgTime">
+              <th mat-header-cell *matHeaderCellDef>Tempo Médio (h)</th>
+              <td mat-cell *matCellDef="let r">{{ r.avgTime }}h</td>
+            </ng-container>
+            <ng-container matColumnDef="avgCost">
+              <th mat-header-cell *matHeaderCellDef>Custo/Ton (USD)</th>
+              <td mat-cell *matCellDef="let r">{{ r.avgCost | number:'1.2-2' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="frequency">
+              <th mat-header-cell *matHeaderCellDef>Frequência</th>
+              <td mat-cell *matCellDef="let r">{{ r.frequency }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="routesColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: routesColumns"></tr>
+          </table>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 4: Frota -->
+      <mat-tab label="Frota">
+        <div class="tab-content" *ngIf="fleet">
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Total de Veículos</span>
+              <span class="info-value">{{ fleet.vehicleCount }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Capacidade Total</span>
+              <span class="info-value">{{ fleet.totalCapacity | number }} ton</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Idade Média da Frota</span>
+              <span class="info-value">{{ fleet.avgFleetAge }} anos</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Disponibilidade Atual</span>
+              <span class="info-value">{{ fleet.currentAvailability }}%</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Rastreamento</span>
+              <span class="info-value">{{ fleet.trackingAvailable ? 'Disponível' : 'Indisponível' }}</span>
+            </div>
+          </div>
+
+          <div class="availability-gauge">
+            <span class="gauge-label">Disponibilidade de Frota</span>
+            <mat-progress-bar mode="determinate" [value]="fleet.currentAvailability" class="availability-bar"></mat-progress-bar>
+            <span class="gauge-value">{{ fleet.currentAvailability }}%</span>
+          </div>
+
+          <h4>Tipos de Veículos</h4>
+          <div class="chips-list">
+            <span class="info-chip" *ngFor="let vt of fleet.vehicleTypes">{{ vt }}</span>
+          </div>
+
+          <h4>Equipamentos Especiais</h4>
+          <div class="chips-list">
+            <span class="info-chip modal-chip" *ngFor="let eq of fleet.specialEquipment">{{ eq }}</span>
+          </div>
+
+          <h4>Tecnologias (IoT / Telemetria)</h4>
+          <div class="chips-list">
+            <span class="info-chip customs-chip" *ngFor="let tech of fleet.technologies">{{ tech }}</span>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 5: Tracking -->
+      <mat-tab label="Tracking">
+        <div class="tab-content">
+          <table mat-table [dataSource]="trackingEvents" class="tracking-table" *ngIf="trackingEvents.length > 0; else noTracking">
+            <ng-container matColumnDef="timestamp">
+              <th mat-header-cell *matHeaderCellDef>Data/Hora</th>
+              <td mat-cell *matCellDef="let e">{{ e.timestamp | date:'dd/MM/yyyy HH:mm' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="location">
+              <th mat-header-cell *matHeaderCellDef>Localização</th>
+              <td mat-cell *matCellDef="let e">{{ e.latitude | number:'1.2-2' }}, {{ e.longitude | number:'1.2-2' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="speed">
+              <th mat-header-cell *matHeaderCellDef>Velocidade</th>
+              <td mat-cell *matCellDef="let e">{{ e.speed }} km/h</td>
+            </ng-container>
+            <ng-container matColumnDef="event">
+              <th mat-header-cell *matHeaderCellDef>Evento</th>
+              <td mat-cell *matCellDef="let e">{{ e.event }}</td>
+            </ng-container>
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Status</th>
+              <td mat-cell *matCellDef="let e">
+                <span class="tracking-status" [ngClass]="e.status === 'Em Trânsito' ? 'tracking-transit' : 'tracking-stopped'">
+                  {{ e.status }}
+                </span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="details">
+              <th mat-header-cell *matHeaderCellDef>Detalhes</th>
+              <td mat-cell *matCellDef="let e">{{ e.details }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="trackingColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: trackingColumns"></tr>
+          </table>
+          <ng-template #noTracking>
+            <div class="empty-state">
+              <mat-icon>gps_fixed</mat-icon>
+              <p>Nenhum evento de rastreamento disponível</p>
+            </div>
+          </ng-template>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 6: Performance -->
+      <mat-tab label="Performance">
+        <div class="tab-content" *ngIf="performanceData">
+          <div class="performance-kpis">
+            <div class="perf-card">
+              <div class="perf-icon"><mat-icon>schedule</mat-icon></div>
+              <div class="perf-value">{{ performanceData.punctuality }}%</div>
+              <div class="perf-label">Pontualidade</div>
+              <mat-progress-bar mode="determinate" [value]="performanceData.punctuality"></mat-progress-bar>
+            </div>
+
+            <div class="perf-card">
+              <div class="perf-icon"><mat-icon>verified</mat-icon></div>
+              <div class="perf-value">{{ performanceData.sla }}%</div>
+              <div class="perf-label">SLA</div>
+              <mat-progress-bar mode="determinate" [value]="performanceData.sla"></mat-progress-bar>
+            </div>
+
+            <div class="perf-card">
+              <div class="perf-icon"><mat-icon>timer</mat-icon></div>
+              <div class="perf-value">{{ performanceData.avgDeliveryTime }}h</div>
+              <div class="perf-label">Tempo Médio Entrega</div>
+            </div>
+
+            <div class="perf-card">
+              <div class="perf-icon"><mat-icon>broken_image</mat-icon></div>
+              <div class="perf-value">{{ performanceData.damageRate }}%</div>
+              <div class="perf-label">Taxa de Avarias</div>
+            </div>
+
+            <div class="perf-card">
+              <div class="perf-icon"><mat-icon>report_problem</mat-icon></div>
+              <div class="perf-value">{{ performanceData.incidentRate }}%</div>
+              <div class="perf-label">Taxa de Incidentes</div>
+            </div>
+
+            <div class="perf-card">
+              <div class="perf-icon"><mat-icon>undo</mat-icon></div>
+              <div class="perf-value">{{ performanceData.returnRate }}%</div>
+              <div class="perf-label">Taxa de Devolução</div>
+            </div>
+
+            <div class="perf-card">
+              <div class="perf-icon"><mat-icon>attach_money</mat-icon></div>
+              <div class="perf-value">USD {{ performanceData.costPerTon | number:'1.2-2' }}</div>
+              <div class="perf-label">Custo/Ton</div>
+            </div>
+
+            <div class="perf-card">
+              <div class="perf-icon"><mat-icon>route</mat-icon></div>
+              <div class="perf-value">USD {{ performanceData.costPerKm | number:'1.2-2' }}</div>
+              <div class="perf-label">Custo/Km</div>
+            </div>
+
+            <div class="perf-card">
+              <div class="perf-icon"><mat-icon>thumb_up</mat-icon></div>
+              <div class="perf-value">{{ performanceData.nps !== null ? performanceData.nps : 'N/A' }}</div>
+              <div class="perf-label">NPS</div>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tab 7: IA & Insights -->
+      <mat-tab label="IA & Insights">
+        <div class="tab-content" *ngIf="aiInsights">
+          <!-- Score Gauge -->
+          <div class="ai-score-section">
+            <div class="score-gauge">
+              <div class="score-circle">
+                <span class="score-number">{{ aiInsights.score }}</span>
+                <span class="score-label">Score IA</span>
+              </div>
+              <mat-progress-bar mode="determinate" [value]="aiInsights.score" class="score-bar"></mat-progress-bar>
+            </div>
+            <div class="ai-recommendations">
+              <div class="recommendation-item">
+                <mat-icon>recommend</mat-icon>
+                <span><strong>Melhor Transportadora:</strong> {{ aiInsights.bestCarrier }}</span>
+              </div>
+              <div class="recommendation-item">
+                <mat-icon>swap_horiz</mat-icon>
+                <span><strong>Modal Recomendado:</strong> {{ aiInsights.recommendedModal }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Carrier Ranking -->
+          <h4>Ranking de Transportadoras</h4>
+          <table mat-table [dataSource]="aiInsights.ranking" class="ranking-table">
+            <ng-container matColumnDef="carrierName">
+              <th mat-header-cell *matHeaderCellDef>Transportadora</th>
+              <td mat-cell *matCellDef="let r">{{ r.carrierName }}</td>
+            </ng-container>
+            <ng-container matColumnDef="score">
+              <th mat-header-cell *matHeaderCellDef>Score</th>
+              <td mat-cell *matCellDef="let r">
+                <div class="score-indicator">
+                  <mat-progress-bar mode="determinate" [value]="r.score"></mat-progress-bar>
+                  <span class="score-value">{{ r.score }}</span>
+                </div>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="cost">
+              <th mat-header-cell *matHeaderCellDef>Custo/Ton (USD)</th>
+              <td mat-cell *matCellDef="let r">{{ r.cost | number:'1.2-2' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="sla">
+              <th mat-header-cell *matHeaderCellDef>SLA (%)</th>
+              <td mat-cell *matCellDef="let r">{{ r.sla }}%</td>
+            </ng-container>
+            <ng-container matColumnDef="availability">
+              <th mat-header-cell *matHeaderCellDef>Disponibilidade</th>
+              <td mat-cell *matCellDef="let r">{{ r.availability }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="rankingColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: rankingColumns"></tr>
+          </table>
+
+          <!-- Alerts -->
+          <h4>Alertas</h4>
+          <div class="alerts-list">
+            <div class="alert-item" *ngFor="let alert of aiInsights.alerts" [ngClass]="getAlertClass(alert.severity)">
+              <mat-icon>{{ getAlertIcon(alert.severity) }}</mat-icon>
+              <div class="alert-content">
+                <span class="alert-message">{{ alert.message }}</span>
+                <span class="alert-time">{{ alert.detectedAt | date:'dd/MM HH:mm' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Suggestions -->
+          <h4>Sugestões da IA</h4>
+          <div class="suggestions-list">
+            <div class="suggestion-card" *ngFor="let sug of aiInsights.suggestions">
+              <div class="suggestion-header">
+                <mat-icon>lightbulb</mat-icon>
+                <span class="suggestion-action">{{ sug.action }}</span>
+                <span class="suggestion-confidence">{{ sug.confidence }}% confiança</span>
+              </div>
+              <p class="suggestion-reason">{{ sug.reason }}</p>
+              <div class="suggestion-criteria">
+                <span class="criteria-chip" *ngFor="let c of sug.criteria">{{ c }}</span>
+              </div>
+              <div class="suggestion-impacts">
+                <div class="impact-item">
+                  <mat-icon>trending_up</mat-icon>
+                  <span>{{ sug.financialImpact }}</span>
+                </div>
+                <div class="impact-item">
+                  <mat-icon>settings</mat-icon>
+                  <span>{{ sug.operationalImpact }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Executive Summary -->
+          <h4>Resumo Executivo</h4>
+          <div class="executive-summary">
+            <mat-icon>summarize</mat-icon>
+            <p>{{ aiInsights.executiveSummary }}</p>
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+
+</div>

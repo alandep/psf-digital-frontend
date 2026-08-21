@@ -28,18 +28,14 @@ import { MatNativeDateModule } from '@angular/material/core';
 // Services and Types
 import { PagamentosMockService } from '../../../../services/pagamentosMockService';
 import { PagamentoDialogComponent } from './pagamento-dialog/pagamento-dialog.component';
+import { PagamentoDetailDialogComponent } from './pagamento-detail-dialog/pagamento-detail-dialog.component';
 import {
   Pagamento,
-  PaymentReconciliation,
-  PaymentNotification,
-  PaymentTimelineEvent,
-  PaymentAIInsights,
   PaymentMetrics,
   CashFlowProjection,
   PaymentFilters,
   PaymentStatus,
-  PaymentCategory,
-  PaymentType
+  PaymentCategory
 } from '../../../../types/pagamentos';
 
 @Component({
@@ -91,16 +87,11 @@ export class PagamentosComponent implements OnInit, OnDestroy {
   payments: Pagamento[] = [];
   dataSource = new MatTableDataSource<Pagamento>([]);
   selectedPayment: Pagamento | null = null;
-  reconciliations: PaymentReconciliation[] = [];
-  notifications: PaymentNotification[] = [];
-  timeline: PaymentTimelineEvent[] = [];
-  aiInsights: PaymentAIInsights | null = null;
   metrics: PaymentMetrics | null = null;
   cashFlow: CashFlowProjection | null = null;
 
   // UI State
   isLoading = false;
-  isDetailOpen = false;
 
   // Forms
   filterForm!: FormGroup;
@@ -225,35 +216,23 @@ export class PagamentosComponent implements OnInit, OnDestroy {
 
   selectPayment(payment: Pagamento): void {
     this.selectedPayment = payment;
-    this.isDetailOpen = true;
-    this.loadPaymentDetails(payment.id);
-  }
+    const dialogRef = this.dialog.open(PagamentoDetailDialogComponent, {
+      data: { payment },
+      width: '1080px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      autoFocus: false,
+      panelClass: 'pagamento-detail-dialog-panel'
+    });
 
-  private loadPaymentDetails(paymentId: string): void {
-    this.pagamentosService.getReconciliations(paymentId)
+    dialogRef.afterClosed()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(rec => this.reconciliations = rec);
-
-    this.pagamentosService.getNotifications(paymentId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(notif => this.notifications = notif);
-
-    this.pagamentosService.getTimeline(paymentId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(tl => this.timeline = tl);
-
-    this.pagamentosService.getAIInsights(paymentId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(insights => this.aiInsights = insights);
-  }
-
-  closeDetail(): void {
-    this.isDetailOpen = false;
-    this.selectedPayment = null;
-    this.reconciliations = [];
-    this.notifications = [];
-    this.timeline = [];
-    this.aiInsights = null;
+      .subscribe(result => {
+        if (result === 'refresh') {
+          this.loadPayments();
+          this.loadMetrics();
+        }
+      });
   }
 
   createPayment(): void {
@@ -340,10 +319,6 @@ export class PagamentosComponent implements OnInit, OnDestroy {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(value);
   }
 
-  formatDate(date: Date): string {
-    return new Date(date).toLocaleDateString('pt-BR');
-  }
-
   getStatusColor(status: PaymentStatus): string {
     const map: Record<PaymentStatus, string> = {
       'PENDENTE': 'status-pendente',
@@ -392,34 +367,11 @@ export class PagamentosComponent implements OnInit, OnDestroy {
     return map[category] || category;
   }
 
-  getRiskColor(risk: string): string {
-    const map: Record<string, string> = {
-      'BAIXO': 'risk-low',
-      'MÉDIO': 'risk-medium',
-      'ALTO': 'risk-high'
-    };
-    return map[risk] || '';
-  }
-
   getScoreColor(score: number): string {
     if (score >= 85) return 'score-excellent';
     if (score >= 70) return 'score-good';
     if (score >= 50) return 'score-average';
     return 'score-poor';
-  }
-
-  getAlertIcon(severity: string): string {
-    const map: Record<string, string> = {
-      'LOW': 'info',
-      'MEDIUM': 'warning',
-      'HIGH': 'error',
-      'CRITICAL': 'dangerous'
-    };
-    return map[severity] || 'info';
-  }
-
-  getAlertClass(severity: string): string {
-    return `alert-${severity.toLowerCase()}`;
   }
 
   isOverdue(payment: Pagamento): boolean {
@@ -432,14 +384,5 @@ export class PagamentosComponent implements OnInit, OnDestroy {
     const now = new Date();
     const diff = (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
     return diff >= 0 && diff <= 7;
-  }
-
-  getReconciliationStatusColor(status: string): string {
-    const map: Record<string, string> = {
-      'CONCILIADO': 'rec-conciliado',
-      'DIVERGENTE': 'rec-divergente',
-      'PENDENTE': 'rec-pendente'
-    };
-    return map[status] || '';
   }
 }

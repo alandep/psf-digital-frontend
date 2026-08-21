@@ -30,10 +30,9 @@ import { MatNativeDateModule } from '@angular/material/core';
 // Services and Types
 import { DueMockService } from '../../../../services/dueMockService';
 import {
-  DUE, DueStatus, DueProduct, DueAttribute, DueDocument,
-  DueValidation, DueTimelineEvent, DueAIInsights, DueAuditEntry,
-  DueFilters, DueMetrics
+  DUE, DueStatus, DueFilters, DueMetrics
 } from '../../../../types/due';
+import { DueDetailDialogComponent, DueDetailDialogData } from './due-detail-dialog/due-detail-dialog.component';
 
 @Component({
   selector: 'app-due',
@@ -79,18 +78,10 @@ export class DueComponent implements OnInit, OnDestroy {
   dues: DUE[] = [];
   filteredDues: DUE[] = [];
   selectedDue: DUE | null = null;
-  products: DueProduct[] = [];
-  attributes: DueAttribute[] = [];
-  documents: DueDocument[] = [];
-  validations: DueValidation[] = [];
-  timeline: DueTimelineEvent[] = [];
-  aiInsights: DueAIInsights | null = null;
-  audit: DueAuditEntry[] = [];
   metrics: DueMetrics | null = null;
 
   // UI State
   isLoading = false;
-  isDetailOpen = false;
 
   // Forms
   filterForm!: FormGroup;
@@ -100,10 +91,6 @@ export class DueComponent implements OnInit, OnDestroy {
     'dueNumber', 'exporterName', 'importerName', 'destinationCountry',
     'productName', 'status', 'completionPercentage', 'aiComplianceScore', 'actions'
   ];
-  productColumns = ['productName', 'ncm', 'quantity', 'unit', 'unitPrice', 'totalValue', 'netWeight', 'grossWeight'];
-  attributeColumns = ['attributeName', 'attributeValue', 'required', 'aiSuggested', 'aiConfidence', 'source'];
-  documentColumns = ['documentType', 'documentNumber', 'status', 'issueDate'];
-  auditColumns = ['timestamp', 'action', 'user', 'details', 'ip'];
 
   // Filter Options
   exporters: string[] = [];
@@ -222,30 +209,24 @@ export class DueComponent implements OnInit, OnDestroy {
 
   selectDue(due: DUE): void {
     this.selectedDue = due;
-    this.isDetailOpen = true;
-    this.loadDueDetails(due.id);
-  }
+    const dialogRef = this.dialog.open(DueDetailDialogComponent, {
+      width: '1100px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      autoFocus: false,
+      panelClass: 'due-detail-dialog-panel',
+      data: { due, statuses: this.statuses } as DueDetailDialogData,
+    });
 
-  private loadDueDetails(dueId: string): void {
-    this.dueService.getProducts(dueId).pipe(takeUntil(this.destroy$)).subscribe(p => this.products = p);
-    this.dueService.getAttributes(dueId).pipe(takeUntil(this.destroy$)).subscribe(a => this.attributes = a);
-    this.dueService.getDocuments(dueId).pipe(takeUntil(this.destroy$)).subscribe(d => this.documents = d);
-    this.dueService.getValidations(dueId).pipe(takeUntil(this.destroy$)).subscribe(v => this.validations = v);
-    this.dueService.getTimeline(dueId).pipe(takeUntil(this.destroy$)).subscribe(t => this.timeline = t);
-    this.dueService.getAIInsights(dueId).pipe(takeUntil(this.destroy$)).subscribe(i => this.aiInsights = i);
-    this.dueService.getAudit(dueId).pipe(takeUntil(this.destroy$)).subscribe(a => this.audit = a);
-  }
-
-  closeDetail(): void {
-    this.isDetailOpen = false;
-    this.selectedDue = null;
-    this.products = [];
-    this.attributes = [];
-    this.documents = [];
-    this.validations = [];
-    this.timeline = [];
-    this.aiInsights = null;
-    this.audit = [];
+    dialogRef.afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((result) => {
+        this.selectedDue = null;
+        if (result === 'refresh') {
+          this.loadDues();
+          this.loadMetrics();
+        }
+      });
   }
 
   createDue(): void {
@@ -261,35 +242,6 @@ export class DueComponent implements OnInit, OnDestroy {
       });
   }
 
-  sendToSiscomex(): void {
-    if (!this.selectedDue) return;
-    this.dueService.sendToSiscomex(this.selectedDue.id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (result) => {
-          this.showMessage(result.message, result.success ? 'success' : 'error');
-          if (result.success) {
-            this.loadDues();
-            this.loadMetrics();
-          }
-        },
-        error: () => this.showMessage('Erro ao enviar ao Siscomex', 'error')
-      });
-  }
-
-  syncSiscomex(): void {
-    if (!this.selectedDue) return;
-    this.dueService.syncSiscomex(this.selectedDue.id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (due) => {
-          this.selectedDue = due;
-          this.showMessage('Sincronização com Siscomex realizada', 'success');
-        },
-        error: () => this.showMessage('Erro na sincronização', 'error')
-      });
-  }
-
   exportPDF(): void {
     this.showMessage('Exportando relatório PDF...', 'info');
   }
@@ -299,17 +251,8 @@ export class DueComponent implements OnInit, OnDestroy {
   }
 
   // ================================
-  // UTILITY METHODS
+  // UTILITY METHODS (grid presentation)
   // ================================
-
-  formatDate(date: Date | string | null | undefined): string {
-    if (!date) return '-';
-    return new Date(date).toLocaleDateString('pt-BR');
-  }
-
-  formatCurrency(value: number, currency: string = 'USD'): string {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(value);
-  }
 
   getStatusColor(status: DueStatus): string {
     switch (status) {
@@ -343,48 +286,10 @@ export class DueComponent implements OnInit, OnDestroy {
     return found ? found.label : status;
   }
 
-  getValidationColor(status: 'pass' | 'fail' | 'warning'): string {
-    switch (status) {
-      case 'pass': return 'green';
-      case 'fail': return 'red';
-      case 'warning': return 'orange';
-      default: return 'grey';
-    }
-  }
-
-  getValidationIcon(status: 'pass' | 'fail' | 'warning'): string {
-    switch (status) {
-      case 'pass': return 'check_circle';
-      case 'fail': return 'cancel';
-      case 'warning': return 'warning';
-      default: return 'help';
-    }
-  }
-
   getScoreColor(score: number): string {
     if (score >= 80) return 'green';
     if (score >= 60) return 'yellow';
     return 'red';
-  }
-
-  getSeverityColor(severity: string): string {
-    switch (severity) {
-      case 'CRITICAL': return 'red';
-      case 'HIGH': return 'orange';
-      case 'MEDIUM': return 'yellow';
-      case 'LOW': return 'green';
-      default: return 'grey';
-    }
-  }
-
-  getDocStatusColor(status: string): string {
-    switch (status) {
-      case 'valid': return 'green';
-      case 'expired': return 'red';
-      case 'pending': return 'orange';
-      case 'missing': return 'grey';
-      default: return 'grey';
-    }
   }
 
   private showMessage(message: string, type: 'success' | 'error' | 'info' = 'info'): void {

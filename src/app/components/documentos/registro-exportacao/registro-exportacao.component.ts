@@ -23,16 +23,17 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 
 // Services and Types
 import { RegistroExportacaoMockService } from '../../../../services/registroExportacaoMockService';
 import {
-  RegistroExportacao, REStatus, REProduct, REDocument,
-  REDivergence, RETimelineEvent, REAIInsights,
+  RegistroExportacao, REStatus,
   REFilters, REMetrics
 } from '../../../../types/registro-exportacao';
+import { ReDetailDialogComponent, ReDetailDialogData } from './re-detail-dialog/re-detail-dialog.component';
 
 @Component({
   selector: 'app-registro-exportacao',
@@ -59,6 +60,7 @@ import {
     MatProgressBarModule,
     MatTooltipModule,
     MatDividerModule,
+    MatDialogModule,
     MatDatepickerModule,
     MatNativeDateModule,
   ],
@@ -71,21 +73,16 @@ export class RegistroExportacaoComponent implements OnInit, OnDestroy {
   private reService = inject(RegistroExportacaoMockService);
   private formBuilder = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
 
   // Data State
   registros: RegistroExportacao[] = [];
   filteredRegistros: RegistroExportacao[] = [];
   selectedRE: RegistroExportacao | null = null;
-  products: REProduct[] = [];
-  documents: REDocument[] = [];
-  divergences: REDivergence[] = [];
-  timeline: RETimelineEvent[] = [];
-  aiInsights: REAIInsights | null = null;
   metrics: REMetrics | null = null;
 
   // UI State
   isLoading = false;
-  isDetailOpen = false;
 
   // Forms
   filterForm!: FormGroup;
@@ -95,9 +92,6 @@ export class RegistroExportacaoComponent implements OnInit, OnDestroy {
     'reNumber', 'exporterName', 'clientName', 'destinationCountry',
     'productName', 'status', 'migrationScore', 'linkedDueNumber', 'actions'
   ];
-  productColumns = ['productName', 'ncm', 'quantity', 'unit', 'value', 'netWeight', 'grossWeight', 'linkedLot'];
-  documentColumns = ['documentType', 'documentNumber', 'status', 'issueDate'];
-  divergenceColumns = ['field', 'reValue', 'currentValue', 'severity', 'suggestion'];
 
   // Filter Options
   exporters: string[] = [];
@@ -214,26 +208,24 @@ export class RegistroExportacaoComponent implements OnInit, OnDestroy {
 
   selectRE(re: RegistroExportacao): void {
     this.selectedRE = re;
-    this.isDetailOpen = true;
-    this.loadREDetails(re.id);
-  }
+    const dialogRef = this.dialog.open(ReDetailDialogComponent, {
+      width: '1050px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      autoFocus: false,
+      panelClass: 're-detail-dialog-panel',
+      data: { re, statuses: this.statuses } as ReDetailDialogData,
+    });
 
-  private loadREDetails(reId: string): void {
-    this.reService.getProducts(reId).pipe(takeUntil(this.destroy$)).subscribe(p => this.products = p);
-    this.reService.getDocuments(reId).pipe(takeUntil(this.destroy$)).subscribe(d => this.documents = d);
-    this.reService.getDivergences(reId).pipe(takeUntil(this.destroy$)).subscribe(d => this.divergences = d);
-    this.reService.getTimeline(reId).pipe(takeUntil(this.destroy$)).subscribe(t => this.timeline = t);
-    this.reService.getAIInsights(reId).pipe(takeUntil(this.destroy$)).subscribe(i => this.aiInsights = i);
-  }
-
-  closeDetail(): void {
-    this.isDetailOpen = false;
-    this.selectedRE = null;
-    this.products = [];
-    this.documents = [];
-    this.divergences = [];
-    this.timeline = [];
-    this.aiInsights = null;
+    dialogRef.afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((result) => {
+        this.selectedRE = null;
+        if (result === 'refresh') {
+          this.loadREs();
+          this.loadMetrics();
+        }
+      });
   }
 
   importRE(): void {
@@ -249,56 +241,13 @@ export class RegistroExportacaoComponent implements OnInit, OnDestroy {
       });
   }
 
-  convertToDUE(): void {
-    if (!this.selectedRE) return;
-    this.reService.convertToDUE(this.selectedRE.id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (result) => {
-          this.showMessage(result.message, result.success ? 'success' : 'error');
-          if (result.success) {
-            this.loadREs();
-            this.loadMetrics();
-            this.loadREDetails(this.selectedRE!.id);
-          }
-        },
-        error: () => this.showMessage('Erro ao converter para DU-E', 'error')
-      });
-  }
-
-  validateConsistency(): void {
-    if (!this.selectedRE) return;
-    this.reService.validateConsistency(this.selectedRE.id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (divergences) => {
-          this.divergences = divergences;
-          if (divergences.length === 0) {
-            this.showMessage('Nenhuma divergência encontrada', 'success');
-          } else {
-            this.showMessage(`${divergences.length} divergência(s) identificada(s)`, 'info');
-          }
-        },
-        error: () => this.showMessage('Erro ao validar consistência', 'error')
-      });
-  }
-
   exportPDF(): void {
     this.showMessage('Exportando relatório PDF...', 'info');
   }
 
   // ================================
-  // UTILITY METHODS
+  // UTILITY METHODS (grid presentation)
   // ================================
-
-  formatDate(date: Date | string | null | undefined): string {
-    if (!date) return '-';
-    return new Date(date).toLocaleDateString('pt-BR');
-  }
-
-  formatCurrency(value: number, currency: string = 'USD'): string {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(value);
-  }
 
   getStatusColor(status: REStatus): string {
     switch (status) {
@@ -328,53 +277,6 @@ export class RegistroExportacaoComponent implements OnInit, OnDestroy {
     if (score >= 80) return 'green';
     if (score >= 60) return 'yellow';
     return 'red';
-  }
-
-  getSeverityColor(severity: 'HIGH' | 'MEDIUM' | 'LOW'): string {
-    switch (severity) {
-      case 'HIGH': return 'red';
-      case 'MEDIUM': return 'orange';
-      case 'LOW': return 'green';
-      default: return 'grey';
-    }
-  }
-
-  getDocStatusColor(status: string): string {
-    switch (status) {
-      case 'valid': return 'green';
-      case 'expired': return 'red';
-      case 'pending': return 'orange';
-      case 'converted': return 'blue';
-      default: return 'grey';
-    }
-  }
-
-  getDocStatusLabel(status: string): string {
-    switch (status) {
-      case 'valid': return 'Válido';
-      case 'expired': return 'Vencido';
-      case 'pending': return 'Pendente';
-      case 'converted': return 'Convertido';
-      default: return status;
-    }
-  }
-
-  getReadinessColor(readiness: string): string {
-    switch (readiness) {
-      case 'READY': return 'green';
-      case 'NEEDS_REVIEW': return 'orange';
-      case 'NOT_READY': return 'red';
-      default: return 'grey';
-    }
-  }
-
-  getReadinessLabel(readiness: string): string {
-    switch (readiness) {
-      case 'READY': return 'Pronto para Conversão';
-      case 'NEEDS_REVIEW': return 'Necessita Revisão';
-      case 'NOT_READY': return 'Não Pronto';
-      default: return readiness;
-    }
   }
 
   private showMessage(message: string, type: 'success' | 'error' | 'info' = 'info'): void {

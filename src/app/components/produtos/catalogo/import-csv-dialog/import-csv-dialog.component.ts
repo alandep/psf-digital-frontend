@@ -54,12 +54,12 @@ interface BulkCreateResult {
     <div class="import-dialog-container">
       
       <!-- 📤 HEADER DO DIÁLOGO -->
-      <div mat-dialog-title style="background: linear-gradient(135deg, #2e7d32, #4caf50); color: white; padding: 16px 24px; margin: -24px -24px 16px -24px; position: relative;">
+      <div mat-dialog-title style="background: linear-gradient(135deg, #1976d2, #1565c0); color: white; padding: 16px 24px; margin: -24px -24px 16px -24px; position: relative;">
         <div style="display: flex; align-items: center; gap: 12px;">
           <mat-icon style="font-size: 28px; color: white;">file_upload</mat-icon>
           <div>
-            <h2 style="margin: 0; color: white;">📤 Importar Produtos via CSV</h2>
-            <p style="margin: 4px 0 0 0; opacity: 0.9; font-size: 14px;">Importe produtos em lote using arquivo CSV</p>
+            <h2 style="margin: 0; color: white;">Importar Produtos via CSV</h2>
+            <p style="margin: 4px 0 0 0; opacity: 0.9; font-size: 14px;">Importe produtos em lote usando arquivo CSV</p>
           </div>
         </div>
         <!-- Botão de fechar (X) -->
@@ -80,12 +80,12 @@ interface BulkCreateResult {
           <mat-step [stepControl]="uploadForm" label="Upload do Arquivo">
             <form [formGroup]="uploadForm" style="padding: 16px 0;">
               
-              <div style="text-align: center; padding: 24px; border: 2px dashed #4caf50; border-radius: 12px; background: #f1f8e9;">
-                <mat-icon style="font-size: 48px; color: #4caf50; margin-bottom: 12px;">cloud_upload</mat-icon>
+              <div style="text-align: center; padding: 24px; border: 2px dashed #1976d2; border-radius: 12px; background: #e3f2fd;">
+                <mat-icon style="font-size: 48px; color: #1976d2; margin-bottom: 12px;">cloud_upload</mat-icon>
                 
-                <h3 style="margin: 0 0 8px 0; color: #2e7d32;">Selecione o arquivo CSV</h3>
+                <h3 style="margin: 0 0 8px 0; color: #1565c0;">Selecione o arquivo CSV</h3>
                 <p style="margin: 0 0 16px 0; color: #666;">Selecione o arquivo CSV seguindo o exemplo de linha:</p>
-                <div style="background: #fff; padding: 8px 12px; border-radius: 6px; margin: 0 0 16px 0; font-family: monospace; font-size: 11px; color: #333; border-left: 4px solid #4caf50; text-align: left;">
+                <div style="background: #fff; padding: 8px 12px; border-radius: 6px; margin: 0 0 16px 0; font-family: monospace; font-size: 11px; color: #333; border-left: 4px solid #1976d2; text-align: left;">
                   Soja Grão Premium,SOJA_PREM_001,SOJA,1201.90.00,1201,Brasil,450.50,USD,MT
                 </div>
                 
@@ -105,7 +105,7 @@ interface BulkCreateResult {
                 
                 <div *ngIf="selectedFile" style="background: white; padding: 8px 12px; border-radius: 8px; margin-top: 12px;">
                   <div style="display: flex; align-items: center; gap: 8px;">
-                    <mat-icon style="color: #4caf50;">description</mat-icon>
+                    <mat-icon style="color: #1976d2;">description</mat-icon>
                     <span style="font-weight: bold;">{{selectedFile.name}}</span>
                     <span style="color: #666; font-size: 12px;">{{formatFileSize(selectedFile.size)}}</span>
                     <button mat-icon-button (click)="removeFile()" style="color: #f44336;">
@@ -445,7 +445,6 @@ export class ImportCsvDialogComponent {
     const file = event.target.files[0];
     if (file && file.type === 'text/csv') {
       this.selectedFile = file;
-      console.log('📁 Arquivo selecionado:', file.name);
     } else {
       this.snackBar.open('Por favor, selecione um arquivo CSV válido', 'Fechar', { duration: 3000 });
     }
@@ -472,7 +471,6 @@ export class ImportCsvDialogComponent {
     }
 
     this.isProcessing = true;
-    console.log('⚙️ Processando CSV...');
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -481,7 +479,6 @@ export class ImportCsvDialogComponent {
         this.parseCSV(csvText);
         this.isProcessing = false;
       } catch (error) {
-        console.error('❌ Erro ao processar CSV:', error);
         this.snackBar.open('Erro ao processar arquivo CSV', 'Fechar', { duration: 3000 });
         this.isProcessing = false;
       }
@@ -509,8 +506,6 @@ export class ImportCsvDialogComponent {
       dataLines = lines;
     }
 
-    console.log('📋 Headers detectados:', headers);
-
     this.csvProducts = [];
     dataLines.forEach((line, index) => {
       if (line.trim()) {
@@ -522,7 +517,6 @@ export class ImportCsvDialogComponent {
     });
 
     this.calculateStats();
-    console.log('✅ CSV processado:', this.csvProducts.length, 'produtos');
   }
 
   private mapCSVToProduct(headers: string[], values: string[]): Partial<Product> {
@@ -653,7 +647,6 @@ export class ImportCsvDialogComponent {
     }
 
     this.isImporting = true;
-    console.log('📤 Importando', validProductsData.length, 'produtos em lote...');
 
     try {
       const result = await firstValueFrom(this.productService.bulkCreateProducts(validProductsData));
@@ -676,7 +669,6 @@ export class ImportCsvDialogComponent {
       this.isImporting = false;
 
     } catch (error) {
-      console.error('❌ Erro durante importação em lote:', error);
       this.snackBar.open('Erro durante a importação', 'Fechar', { duration: 3000 });
       this.isImporting = false;
     }

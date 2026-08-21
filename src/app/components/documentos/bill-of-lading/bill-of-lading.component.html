@@ -1,48 +1,60 @@
 <div class="bill-of-lading-container">
-  <!-- Header -->
+  <!-- Header Premium (Portos identity) -->
   <div class="page-header">
-    <h1>
-      <mat-icon>sailing</mat-icon>
-      Bill of Lading
-    </h1>
-    <div class="header-actions">
-      <button mat-raised-button color="primary" (click)="openNewBLDialog()">
-        <mat-icon>add</mat-icon>
-        Novo BL
-      </button>
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">sailing</mat-icon>
+        <div class="title-content">
+          <h1>Bill of Lading</h1>
+          <p class="subtitle">Gestão de conhecimentos de embarque marítimo</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button (click)="openNewBLDialog()">
+          <mat-icon>add</mat-icon> Novo BL
+        </button>
+      </div>
     </div>
   </div>
 
   <!-- KPI Cards -->
-  <div class="metrics-grid" *ngIf="metrics">
-    <div class="metric-card">
-      <div class="metric-header">
-        <mat-icon>receipt_long</mat-icon>
-        <span>Total BLs</span>
-      </div>
-      <div class="metric-value">{{ metrics.totalBLs }}</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-header">
-        <mat-icon>check_circle</mat-icon>
-        <span>Emitidos</span>
-      </div>
-      <div class="metric-value">{{ metrics.emitidos }}</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-header">
-        <mat-icon>pending</mat-icon>
-        <span>Pendentes</span>
-      </div>
-      <div class="metric-value">{{ metrics.pendentes }}</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-header">
-        <mat-icon>swap_horiz</mat-icon>
-        <span>Surrendered</span>
-      </div>
-      <div class="metric-value">{{ metrics.surrendered }}</div>
-    </div>
+  <div class="kpi-dashboard" *ngIf="metrics">
+    <mat-card class="kpi-card kpi-total">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>receipt_long</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.totalBLs }}</div>
+          <div class="kpi-label">Total BLs</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    <mat-card class="kpi-card kpi-issued">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>check_circle</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.emitidos }}</div>
+          <div class="kpi-label">Emitidos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    <mat-card class="kpi-card kpi-pending">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>pending</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.pendentes }}</div>
+          <div class="kpi-label">Pendentes</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    <mat-card class="kpi-card kpi-surrendered">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>swap_horiz</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.surrendered }}</div>
+          <div class="kpi-label">Surrendered</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
   </div>
 
   <!-- Filters -->
@@ -69,6 +81,20 @@
             <mat-option value="">Todos</mat-option>
             <mat-option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</mat-option>
           </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Data Inicial</mat-label>
+          <input matInput [matDatepicker]="dateStartPicker" formControlName="dateStart">
+          <mat-datepicker-toggle matIconSuffix [for]="dateStartPicker"></mat-datepicker-toggle>
+          <mat-datepicker #dateStartPicker></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Data Final</mat-label>
+          <input matInput [matDatepicker]="dateEndPicker" formControlName="dateEnd">
+          <mat-datepicker-toggle matIconSuffix [for]="dateEndPicker"></mat-datepicker-toggle>
+          <mat-datepicker #dateEndPicker></mat-datepicker>
         </mat-form-field>
       </form>
     </mat-card-content>
@@ -152,10 +178,10 @@
           <th mat-header-cell *matHeaderCellDef>Ações</th>
           <td mat-cell *matCellDef="let row">
             <div class="actions-cell">
-              <button mat-icon-button matTooltip="Ver detalhes" (click)="viewDetails(row)">
+              <button mat-icon-button matTooltip="Ver detalhes" (click)="$event.stopPropagation(); viewDetails(row)">
                 <mat-icon>visibility</mat-icon>
               </button>
-              <button mat-icon-button matTooltip="Editar" (click)="editBL(row)">
+              <button mat-icon-button matTooltip="Editar" (click)="$event.stopPropagation(); editBL(row)">
                 <mat-icon>edit</mat-icon>
               </button>
             </div>
@@ -164,109 +190,15 @@
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumns;"
-            (click)="viewDetails(row)"
-            style="cursor: pointer;"></tr>
+            class="bl-row"
+            (click)="viewDetails(row)"></tr>
       </table>
 
-      <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]"
+      <mat-paginator class="bl-paginator"
+                     [pageSizeOptions]="[10, 25, 50, 100]"
                      [pageSize]="10"
                      showFirstLastButtons>
       </mat-paginator>
     </mat-card-content>
   </mat-card>
 </div>
-
-<!-- Detail Panel -->
-<ng-container *ngIf="selectedBL">
-  <div class="overlay" (click)="closeDetail()"></div>
-  <div class="detail-panel">
-    <div class="detail-header">
-      <h2>{{ selectedBL.blNumber }}</h2>
-      <button mat-icon-button (click)="closeDetail()">
-        <mat-icon>close</mat-icon>
-      </button>
-    </div>
-
-    <div class="detail-section">
-      <h4>Informações Gerais</h4>
-      <div class="detail-grid">
-        <div class="detail-item">
-          <label>Tipo</label>
-          <span class="type-chip" [ngClass]="selectedBL.type">{{ selectedBL.type }}</span>
-        </div>
-        <div class="detail-item">
-          <label>Status</label>
-          <span class="status-badge" [ngClass]="selectedBL.status">{{ getStatusLabel(selectedBL.status) }}</span>
-        </div>
-        <div class="detail-item">
-          <label>Data Emissão</label>
-          <span>{{ selectedBL.issueDate | date:'dd/MM/yyyy' }}</span>
-        </div>
-        <div class="detail-item">
-          <label>Frete</label>
-          <span>{{ selectedBL.freightTerms }}</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="detail-section">
-      <h4>Partes</h4>
-      <div class="detail-grid">
-        <div class="detail-item">
-          <label>Shipper</label>
-          <span>{{ selectedBL.shipper }}</span>
-        </div>
-        <div class="detail-item">
-          <label>Consignee</label>
-          <span>{{ selectedBL.consignee }}</span>
-        </div>
-        <div class="detail-item">
-          <label>Notify Party</label>
-          <span>{{ selectedBL.notifyParty }}</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="detail-section">
-      <h4>Transporte</h4>
-      <div class="detail-grid">
-        <div class="detail-item">
-          <label>Vessel</label>
-          <span>{{ selectedBL.vessel }}</span>
-        </div>
-        <div class="detail-item">
-          <label>Voyage</label>
-          <span>{{ selectedBL.voyage }}</span>
-        </div>
-        <div class="detail-item">
-          <label>Porto Embarque</label>
-          <span>{{ selectedBL.portLoading }}</span>
-        </div>
-        <div class="detail-item">
-          <label>Porto Descarga</label>
-          <span>{{ selectedBL.portDischarge }}</span>
-        </div>
-        <div class="detail-item">
-          <label>Peso Bruto</label>
-          <span>{{ selectedBL.grossWeight | number:'1.2-2' }} kg</span>
-        </div>
-        <div class="detail-item">
-          <label>Medição</label>
-          <span>{{ selectedBL.measurement | number:'1.2-2' }} m³</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="detail-section">
-      <h4>Containers</h4>
-      <div class="containers-list">
-        <span *ngFor="let c of selectedBL.containers" class="container-chip">{{ c }}</span>
-      </div>
-    </div>
-
-    <div class="detail-section" *ngIf="selectedBL.observations">
-      <h4>Observações</h4>
-      <p>{{ selectedBL.observations }}</p>
-    </div>
-  </div>
-</ng-container>

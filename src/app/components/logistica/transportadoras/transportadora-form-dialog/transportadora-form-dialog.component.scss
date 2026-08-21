@@ -1,0 +1,90 @@
+.form-dialog {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
+
+// === HERO HEADER (Portos identity) ===
+.dialog-hero {
+  background: linear-gradient(135deg, #1976d2, #1565c0);
+  color: white;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  box-shadow: 0 4px 20px rgba(25, 118, 210, 0.3);
+
+  .hero-main {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .hero-icon {
+    font-size: 2.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+  }
+
+  .hero-title {
+    h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 500;
+    }
+
+    .hero-subtitle {
+      margin: 4px 0 0;
+      opacity: 0.9;
+      font-size: 0.9rem;
+    }
+  }
+
+  .hero-close {
+    color: white;
+  }
+}
+
+.dialog-body {
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+}
+
+.carrier-form {
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  mat-form-field {
+    width: 100%;
+  }
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #e0e0e0;
+}
+
+@media (max-width: 768px) {
+  .carrier-form .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dialog-hero {
+    flex-direction: column;
+    gap: 12px;
+  }
+}

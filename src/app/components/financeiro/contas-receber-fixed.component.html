@@ -1,0 +1,224 @@
+<!-- Main Container -->
+<div class="receber-container">
+
+  <!-- Hero Header -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <div class="header-icon">
+          <mat-icon>trending_up</mat-icon>
+        </div>
+        <div class="title-content">
+          <h1>Contas a Receber</h1>
+          <p class="subtitle">Gestão completa de recebimentos e controle cambial</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button color="primary" (click)="openNewRecebimentoDialog()">
+          <mat-icon>add</mat-icon> Novo Recebimento
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Dashboard -->
+  <div class="kpi-dashboard">
+    <mat-card class="kpi-card kpi-total">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>account_balance</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ formatCurrency(totalAmount, 'BRL') }}</div>
+          <div class="kpi-label">Total Geral</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-pending">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>schedule</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ formatCurrency(pendingAmount, 'BRL') }}</div>
+          <div class="kpi-label">Pendente</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-received">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ formatCurrency(completedAmount, 'BRL') }}</div>
+          <div class="kpi-label">Recebido</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Filtros -->
+  <mat-card class="filters-card" *ngIf="filtroOptions">
+    <mat-card-header>
+      <mat-card-title class="filters-title">
+        <mat-icon>filter_list</mat-icon>
+        Filtros Avançados
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="filtroForm" class="filters-form">
+
+        <mat-form-field appearance="outline">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status" multiple>
+            <mat-option *ngFor="let status of filtroOptions.statuses" [value]="status.value">
+              {{ status.label }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Moeda</mat-label>
+          <mat-select formControlName="currency" multiple>
+            <mat-option *ngFor="let currency of filtroOptions.currencies" [value]="currency">
+              {{ currency }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Método de Pagamento</mat-label>
+          <mat-select formControlName="payment_method" multiple>
+            <mat-option *ngFor="let method of filtroOptions.paymentMethods" [value]="method.value">
+              {{ method.label }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Contrato</mat-label>
+          <mat-select formControlName="contract" multiple>
+            <mat-option *ngFor="let contract of filtroOptions.contracts" [value]="contract.id">
+              {{ contract.number }} - {{ contract.client_name }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Data (De)</mat-label>
+          <input matInput [matDatepicker]="pickerFrom" formControlName="date_from">
+          <mat-datepicker-toggle matIconSuffix [for]="pickerFrom"></mat-datepicker-toggle>
+          <mat-datepicker #pickerFrom></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Data (Até)</mat-label>
+          <input matInput [matDatepicker]="pickerTo" formControlName="date_to">
+          <mat-datepicker-toggle matIconSuffix [for]="pickerTo"></mat-datepicker-toggle>
+          <mat-datepicker #pickerTo></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Valor mínimo</mat-label>
+          <input matInput type="number" formControlName="amount_min" placeholder="0">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Valor máximo</mat-label>
+          <input matInput type="number" formControlName="amount_max" placeholder="0">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" *ngIf="filtroOptions.bankAccounts.length">
+          <mat-label>Conta Bancária</mat-label>
+          <mat-select formControlName="bank_account" multiple>
+            <mat-option *ngFor="let acc of filtroOptions.bankAccounts" [value]="acc.id">
+              {{ acc.bank_name }} - {{ acc.account_number }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="loading-state">
+    <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
+    <p>Carregando recebimentos...</p>
+  </div>
+
+  <!-- Lista de Recebimentos -->
+  <mat-card class="results-card" *ngIf="!isLoading">
+    <mat-card-header>
+      <div class="results-header">
+        <mat-card-title class="results-title">
+          Recebimentos
+          <span class="count-badge">{{ recebimentos.length }} total</span>
+        </mat-card-title>
+      </div>
+    </mat-card-header>
+    <mat-card-content>
+
+      <div class="recebimentos-list">
+        <div class="recebimento-card" *ngFor="let recebimento of recebimentos">
+
+          <div class="recebimento-main">
+            <div class="field">
+              <span class="field-label">Valor</span>
+              <span class="field-value strong">
+                {{ formatCurrency(recebimento.amount, recebimento.currency) }}
+              </span>
+            </div>
+            <div class="field">
+              <span class="field-label">Contrato</span>
+              <span class="field-value">{{ getContractName(recebimento.contract) }}</span>
+            </div>
+            <div class="field">
+              <span class="field-label">Data de Pagamento</span>
+              <span class="field-value">{{ formatDate(recebimento.payment_date) }}</span>
+            </div>
+            <div class="field">
+              <span class="field-label">Status</span>
+              <span class="status-chip" [ngClass]="getStatusClass(recebimento.status)">
+                {{ getStatusLabel(recebimento.status) }}
+              </span>
+            </div>
+          </div>
+
+          <div class="recebimento-extra">
+            <div class="extra-item"><strong>Banco:</strong> {{ recebimento.bank_name || 'N/A' }}</div>
+            <div class="extra-item"><strong>Método:</strong> {{ getMethodLabel(recebimento.payment_method) }}</div>
+            <div class="extra-item">
+              <strong>Taxa de Câmbio:</strong> {{ recebimento.exchange_rate || 1 | number:'1.4-4' }}
+            </div>
+            <div class="recebimento-actions">
+              <button mat-icon-button color="primary"
+                      (click)="editRecebimento(recebimento)"
+                      matTooltip="Editar recebimento">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn"
+                      (click)="deleteRecebimento(recebimento)"
+                      matTooltip="Excluir recebimento">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Estado vazio -->
+      <div *ngIf="recebimentos.length === 0" class="empty-state">
+        <mat-icon>inbox</mat-icon>
+        <h3>Nenhum recebimento encontrado</h3>
+        <p>Não há recebimentos que atendam aos filtros aplicados.</p>
+      </div>
+
+    </mat-card-content>
+  </mat-card>
+
+</div>

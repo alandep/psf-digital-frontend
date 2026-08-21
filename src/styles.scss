@@ -296,3 +296,244 @@ body.dark-mode {
     padding: 0;
   }
 }
+
+/* ====== Dialog de Validação de Produto - identidade Portos ====== */
+.product-validation-dialog-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+  }
+
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+}
+
+/* ====== Dialog de Detalhe da DU-E (7 abas) - identidade Portos ====== */
+.due-detail-dialog-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden; /* keep the gradient header corners clean */
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+  }
+
+  /* zero container padding so the gradient header reaches the edges */
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+}
+
+/* ====== Dialog de Detalhe do RE (6 abas) - identidade Portos ====== */
+.re-detail-dialog-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden; /* keep the gradient header corners clean */
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+  }
+
+  /* zero container padding so the gradient header reaches the edges */
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+}
+
+/* ====== Dialog de Detalhe do Certificado (6 abas) - identidade Portos ====== */
+.certificado-detail-dialog-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden; /* keep the gradient header corners clean */
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+  }
+
+  /* zero container padding so the gradient header reaches the edges */
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+}
+
+/* ====== Dialog de Detalhe da Invoice (6 abas) - identidade Portos ====== */
+.invoice-detail-dialog-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden; /* keep the gradient header corners clean */
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+  }
+
+  /* zero container padding so the gradient header reaches the edges */
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+}
+
+/* ====== Dialog de Detalhe da Packing List - identidade Portos ====== */
+.packing-list-detail-dialog-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden; /* keep the gradient header corners clean */
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+  }
+
+  /* zero container padding so the gradient header reaches the edges */
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+}
+
+/* ====== Dialogs do Bill of Lading (detalhe e formulário) - identidade Portos ====== */
+.bl-detail-dialog-panel,
+.bl-form-dialog-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden; /* keep the gradient header corners clean */
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+  }
+
+  /* zero container padding so the gradient header reaches the edges */
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+}
+
+/* ====== Dialog de Detalhe do Câmbio (6 abas) - identidade Portos ====== */
+.cambio-detail-dialog-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+  }
+
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+}
+
+/* ====== Dialog de Novo Contrato de Câmbio - identidade Portos ====== */
+.cambio-form-dialog-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+  }
+
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+}
+
+/* ====== Dialog de Detalhe do Pagamento (6 abas) - identidade Portos ====== */
+.pagamento-detail-dialog-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden; /* keep the gradient header corners clean */
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+  }
+
+  /* zero container padding so the gradient header reaches the edges */
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+}
+
+/* ====== Dialog de Detalhe do Trade Finance (3 abas) - identidade Portos ====== */
+.trade-finance-detail-dialog-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden; /* keep the gradient header corners clean */
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+  }
+
+  /* zero container padding so the gradient header reaches the edges */
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+}
+
+/* ====== Dialog de Detalhe do Hedge Cambial - identidade Portos ====== */
+.hedge-detail-dialog-panel {
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    border-radius: 16px;
+    overflow: hidden;
+    padding: 0;
+  }
+}
+
+/* ====== Dialog de detalhes de Transportadora - identidade Portos ====== */
+.transportadora-detail-dialog-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+
+  .mat-mdc-dialog-container .mdc-dialog__content,
+  .mat-mdc-dialog-content {
+    padding: 0;
+  }
+}
+
+/* ====== Dialog de cadastro de Transportadora - identidade Portos ====== */
+.transportadora-form-dialog-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+
+  .mat-mdc-dialog-container .mdc-dialog__content,
+  .mat-mdc-dialog-content {
+    padding: 0;
+  }
+}

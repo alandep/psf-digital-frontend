@@ -25,6 +25,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 // Services and Types
 import { TransportadorasMockService } from '../../../../services/transportadorasMockService';
@@ -32,16 +33,14 @@ import {
   Transportadora,
   ModalType,
   CarrierStatus,
-  CarrierService,
-  CarrierCoverage,
-  CarrierFleet,
-  TrackingEvent,
-  PerformanceIndicator,
-  CarrierAIInsights,
   TransportadoraFilters,
   TransportadoraMetrics,
   TransportSimulationResult
 } from '../../../../types/transportadoras';
+
+// Dialogs
+import { TransportadoraDetailDialogComponent } from './transportadora-detail-dialog/transportadora-detail-dialog.component';
+import { TransportadoraFormDialogComponent } from './transportadora-form-dialog/transportadora-form-dialog.component';
 
 @Component({
   selector: 'app-transportadoras',
@@ -69,7 +68,8 @@ import {
     MatDividerModule,
     MatExpansionModule,
     MatDatepickerModule,
-    MatNativeDateModule
+    MatNativeDateModule,
+    MatDialogModule
   ],
   templateUrl: './transportadoras.component.html',
   styleUrls: ['./transportadoras.component.scss']
@@ -80,6 +80,7 @@ export class TransportadorasComponent implements OnInit, OnDestroy {
   private transportadorasService = inject(TransportadorasMockService);
   private formBuilder = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
 
   // Destroy subject
   private destroy$ = new Subject<void>();
@@ -87,19 +88,11 @@ export class TransportadorasComponent implements OnInit, OnDestroy {
   // Data State
   transportadoras: Transportadora[] = [];
   filteredTransportadoras: Transportadora[] = [];
-  selectedTransportadora: Transportadora | null = null;
-  services: CarrierService[] = [];
-  carrierCoverage: CarrierCoverage | null = null;
-  fleet: CarrierFleet | null = null;
-  trackingEvents: TrackingEvent[] = [];
-  performanceData: PerformanceIndicator | null = null;
-  aiInsights: CarrierAIInsights | null = null;
   metrics: TransportadoraMetrics | null = null;
   simulationResult: TransportSimulationResult | null = null;
 
   // UI State
   isLoading = false;
-  isDetailOpen = false;
   isSimulating = false;
   isSimulationExpanded = true;
 
@@ -210,50 +203,49 @@ export class TransportadorasComponent implements OnInit, OnDestroy {
   }
 
   selectTransportadora(carrier: Transportadora): void {
-    this.selectedTransportadora = carrier;
-    this.isDetailOpen = true;
-    this.loadCarrierDetails(carrier.id);
-  }
-
-  private loadCarrierDetails(carrierId: string): void {
-    this.transportadorasService.getServices(carrierId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(svcs => this.services = svcs);
-
-    this.transportadorasService.getCoverage(carrierId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(cov => this.carrierCoverage = cov);
-
-    this.transportadorasService.getFleet(carrierId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(fl => this.fleet = fl);
-
-    this.transportadorasService.getTracking(carrierId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(trk => this.trackingEvents = trk);
-
-    this.transportadorasService.getPerformance(carrierId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(perf => this.performanceData = perf);
-
-    this.transportadorasService.getAIInsights(carrierId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(insights => this.aiInsights = insights);
-  }
-
-  closeDetail(): void {
-    this.isDetailOpen = false;
-    this.selectedTransportadora = null;
-    this.services = [];
-    this.carrierCoverage = null;
-    this.fleet = null;
-    this.trackingEvents = [];
-    this.performanceData = null;
-    this.aiInsights = null;
+    this.dialog.open(TransportadoraDetailDialogComponent, {
+      data: { carrier },
+      width: '1100px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      autoFocus: false,
+      panelClass: 'transportadora-detail-dialog-panel'
+    });
   }
 
   createTransportadora(): void {
-    this.snackBar.open('Funcionalidade de cadastro de transportadora em desenvolvimento', 'OK', { duration: 3000 });
+    const dialogRef = this.dialog.open(TransportadoraFormDialogComponent, {
+      data: {
+        modals: this.modals,
+        states: this.states,
+        statuses: this.statuses
+      },
+      width: '760px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      autoFocus: false,
+      panelClass: 'transportadora-form-dialog-panel'
+    });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((result: Partial<Transportadora> | undefined) => {
+        if (!result) {
+          return;
+        }
+        this.transportadorasService.createTransportadora(result)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.snackBar.open('Transportadora cadastrada com sucesso!', 'OK', { duration: 3000 });
+              this.loadTransportadoras();
+              this.loadMetrics();
+            },
+            error: () => {
+              this.snackBar.open('Erro ao cadastrar transportadora', 'Fechar', { duration: 3000 });
+            }
+          });
+      });
   }
 
   simulate(): void {
@@ -307,26 +299,5 @@ export class TransportadorasComponent implements OnInit, OnDestroy {
       'HOMOLOGAÇÃO': 'status-homologacao'
     };
     return map[status] || '';
-  }
-
-  getAlertIcon(severity: string): string {
-    const map: Record<string, string> = {
-      'LOW': 'info',
-      'MEDIUM': 'warning',
-      'HIGH': 'error',
-      'CRITICAL': 'dangerous'
-    };
-    return map[severity] || 'info';
-  }
-
-  getAlertClass(severity: string): string {
-    return `alert-${severity.toLowerCase()}`;
-  }
-
-  getScoreClass(score: number): string {
-    if (score >= 90) return 'score-excellent';
-    if (score >= 80) return 'score-good';
-    if (score >= 70) return 'score-average';
-    return 'score-poor';
   }
 }

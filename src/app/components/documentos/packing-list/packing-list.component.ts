@@ -17,10 +17,14 @@ import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 
 import { PackingListMockService } from '../../../../services/packingListMockService';
 import { ExportService } from '../../../../services/exportService';
 import { PackingList, PackingListStatus, PackingListMetrics, PackingListFilters } from '../../../../types/packing-list';
+import { PackingListDetailDialogComponent, PackingListDetailDialogData } from './packing-list-detail-dialog/packing-list-detail-dialog.component';
 
 @Component({
   selector: 'app-packing-list',
@@ -41,7 +45,10 @@ import { PackingList, PackingListStatus, PackingListMetrics, PackingListFilters 
     MatSnackBarModule,
     MatProgressBarModule,
     MatTooltipModule,
-    MatDividerModule
+    MatDividerModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatDialogModule
   ],
   templateUrl: './packing-list.component.html',
   styleUrls: ['./packing-list.component.scss']
@@ -52,6 +59,7 @@ export class PackingListComponent implements OnInit, OnDestroy, AfterViewInit {
   private exportService = inject(ExportService);
   private fb = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
   private destroy$ = new Subject<void>();
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
@@ -61,7 +69,6 @@ export class PackingListComponent implements OnInit, OnDestroy, AfterViewInit {
   selectedItem: PackingList | null = null;
   metrics: PackingListMetrics | null = null;
   isLoading = false;
-  isDetailOpen = false;
 
   filterForm!: FormGroup;
 
@@ -77,7 +84,9 @@ export class PackingListComponent implements OnInit, OnDestroy, AfterViewInit {
     this.filterForm = this.fb.group({
       searchText: [''],
       status: [''],
-      buyer: ['']
+      buyer: [''],
+      dateStart: [null],
+      dateEnd: [null]
     });
     this.statuses = this.service.getStatuses();
     this.buyers = this.service.getBuyers();
@@ -129,8 +138,8 @@ export class PackingListComponent implements OnInit, OnDestroy, AfterViewInit {
       searchText: this.filterForm.value.searchText || '',
       status: this.filterForm.value.status || '',
       buyer: this.filterForm.value.buyer || '',
-      dateStart: null,
-      dateEnd: null
+      dateStart: this.filterForm.value.dateStart,
+      dateEnd: this.filterForm.value.dateEnd
     };
     this.service.getPackingLists(filters)
       .pipe(takeUntil(this.destroy$))
@@ -138,17 +147,25 @@ export class PackingListComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   clearFilters(): void {
-    this.filterForm.reset({ searchText: '', status: '', buyer: '' });
+    this.filterForm.reset({ searchText: '', status: '', buyer: '', dateStart: null, dateEnd: null });
   }
 
   selectItem(item: PackingList): void {
     this.selectedItem = item;
-    this.isDetailOpen = true;
-  }
+    const dialogRef = this.dialog.open(PackingListDetailDialogComponent, {
+      width: '720px',
+      maxWidth: '92vw',
+      maxHeight: '90vh',
+      autoFocus: false,
+      panelClass: 'packing-list-detail-dialog-panel',
+      data: { item, statuses: this.statuses } as PackingListDetailDialogData,
+    });
 
-  closeDetail(): void {
-    this.isDetailOpen = false;
-    this.selectedItem = null;
+    dialogRef.afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.selectedItem = null;
+      });
   }
 
   exportCSV(): void {
@@ -200,12 +217,6 @@ export class PackingListComponent implements OnInit, OnDestroy, AfterViewInit {
       'FINALIZADO': 'status-finished'
     };
     return map[status] || '';
-  }
-
-  getScoreColor(score: number): string {
-    if (score >= 90) return '#4caf50';
-    if (score >= 70) return '#ff9800';
-    return '#f44336';
   }
 
   formatWeight(value: number): string {

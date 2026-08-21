@@ -1,0 +1,216 @@
+@use 'sass:color';
+
+$primary: #1976d2;
+$primary-dark: #1565c0;
+
+:host {
+  display: block;
+}
+
+.bl-detail-dialog {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+// === HERO HEADER (Portos identity) ===
+.dialog-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 28px;
+  background: linear-gradient(135deg, #1976d2, #1565c0);
+  color: white;
+  flex-shrink: 0;
+
+  .hero-title {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+
+    .hero-icon {
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      padding: 8px;
+      box-sizing: content-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(10px);
+    }
+
+    .hero-text {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+
+      h2 {
+        margin: 0;
+        font-size: 1.4rem;
+        font-weight: 500;
+        color: white;
+        line-height: 1.2;
+      }
+
+      .hero-badges {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+    }
+  }
+
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+
+    .hero-raised-btn {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(10px);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+    }
+
+    .hero-btn {
+      color: white;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+    }
+  }
+}
+
+// === BODY ===
+.dialog-body {
+  padding: 24px 28px;
+  margin: 0;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  max-height: none;
+}
+
+// === DETAIL SECTIONS ===
+.detail-section {
+  margin-bottom: 24px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  h4 {
+    margin: 0 0 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: $primary;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+
+  .label {
+    font-size: 0.75rem;
+    color: #666;
+    font-weight: 500;
+  }
+
+  .value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #333;
+  }
+}
+
+.observations {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #444;
+  line-height: 1.6;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 3px solid $primary;
+}
+
+// === TYPE CHIP ===
+.type-chip {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  width: fit-content;
+
+  &.OBL { background: #e3f2fd; color: #1565c0; }
+  &.SWB { background: #f3e5f5; color: #7b1fa2; }
+  &.TBL { background: #fff3e0; color: #e65100; }
+}
+
+// === STATUS BADGE ===
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  width: fit-content;
+
+  &.DRAFT { background: #f5f5f5; color: #616161; }
+  &.ISSUED { background: #e8f5e9; color: #2e7d32; }
+  &.SURRENDERED { background: #fff3e0; color: #e65100; }
+  &.RELEASED { background: #e3f2fd; color: #1565c0; }
+}
+
+// === CONTAINERS ===
+.containers-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  .container-chip {
+    padding: 4px 10px;
+    background: #e3f2fd;
+    color: $primary-dark;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+}
+
+// === RESPONSIVE ===
+@media (max-width: 900px) {
+  .detail-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .dialog-hero { padding: 16px 20px; }
+  .dialog-body { padding: 16px 20px; }
+  .detail-grid { grid-template-columns: 1fr; }
+}

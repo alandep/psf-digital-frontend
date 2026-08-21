@@ -21,6 +21,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { HedgeMockService } from '../../../../services/hedgeMockService';
 import { ExportService } from '../../../../services/exportService';
+import { HedgeDetailDialogComponent } from './hedge-detail-dialog/hedge-detail-dialog.component';
 import {
   HedgeContract,
   HedgeType,
@@ -189,6 +190,17 @@ export class HedgeComponent implements OnInit, OnDestroy, AfterViewInit {
           this.loadExposure();
         }
       });
+    });
+  }
+
+  selectContract(contract: HedgeContract): void {
+    this.dialog.open(HedgeDetailDialogComponent, {
+      width: '860px',
+      maxWidth: '92vw',
+      maxHeight: '90vh',
+      autoFocus: false,
+      panelClass: 'hedge-detail-dialog-panel',
+      data: { contract }
     });
   }
 

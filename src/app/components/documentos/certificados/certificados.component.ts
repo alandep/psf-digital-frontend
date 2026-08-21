@@ -18,6 +18,7 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -34,13 +35,8 @@ import {
   CertificadoStatus,
   CertificadoFilters,
   CertificadoMetrics,
-  CertificadoValidation,
-  CertificadoTimelineEvent,
-  CertificadoRelatedDoc,
-  CertificadoAIInsights,
-  CountryRequirement,
-  RequirementLevel,
 } from '../../../../types/certificados-exportacao';
+import { CertificadoDetailDialogComponent, CertificadoDetailDialogData } from './certificado-detail-dialog/certificado-detail-dialog.component';
 
 @Component({
   selector: 'app-certificados-exportacao',
@@ -62,6 +58,7 @@ import {
     MatTabsModule,
     MatListModule,
     MatMenuModule,
+    MatDialogModule,
     MatSnackBarModule,
     MatProgressSpinnerModule,
     MatProgressBarModule,
@@ -79,21 +76,16 @@ export class CertificadosExportacaoComponent implements OnInit, OnDestroy {
   private certificadosService = inject(CertificadosExportacaoMockService);
   private formBuilder = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
 
   // Data State
   certificados: CertificadoExportacao[] = [];
   filteredCertificados: CertificadoExportacao[] = [];
   selectedCertificado: CertificadoExportacao | null = null;
-  validations: CertificadoValidation[] = [];
-  timeline: CertificadoTimelineEvent[] = [];
-  relatedDocs: CertificadoRelatedDoc[] = [];
-  aiInsights: CertificadoAIInsights | null = null;
-  countryRequirements: CountryRequirement[] = [];
   metrics: CertificadoMetrics | null = null;
 
   // UI State
   isLoading = false;
-  isDetailOpen = false;
 
   // Forms
   filterForm!: FormGroup;
@@ -103,8 +95,6 @@ export class CertificadosExportacaoComponent implements OnInit, OnDestroy {
     'certificateNumber', 'tipo', 'productName', 'destinationCountry',
     'status', 'issueDate', 'expiryDate', 'aiComplianceScore', 'actions'
   ];
-  requirementColumns = ['certificateType', 'level', 'issuingAuthority', 'estimatedProcessingDays', 'validityMonths', 'notes'];
-  relatedDocsColumns = ['documentType', 'documentNumber', 'entity'];
 
   // Filter Options
   tipos: { value: CertificadoTipo; label: string }[] = [];
@@ -223,26 +213,28 @@ export class CertificadosExportacaoComponent implements OnInit, OnDestroy {
 
   selectCertificado(cert: CertificadoExportacao): void {
     this.selectedCertificado = cert;
-    this.isDetailOpen = true;
-    this.loadCertificadoDetails(cert.id);
-    this.checkCountryRequirements(cert.destinationCountry, cert.productName);
-  }
+    const dialogRef = this.dialog.open(CertificadoDetailDialogComponent, {
+      width: '1050px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      autoFocus: false,
+      panelClass: 'certificado-detail-dialog-panel',
+      data: {
+        certificado: cert,
+        statuses: this.statuses,
+        tipos: this.tipos,
+      } as CertificadoDetailDialogData,
+    });
 
-  private loadCertificadoDetails(certId: string): void {
-    this.certificadosService.getValidations(certId).pipe(takeUntil(this.destroy$)).subscribe(v => this.validations = v);
-    this.certificadosService.getTimeline(certId).pipe(takeUntil(this.destroy$)).subscribe(t => this.timeline = t);
-    this.certificadosService.getRelatedDocuments(certId).pipe(takeUntil(this.destroy$)).subscribe(d => this.relatedDocs = d);
-    this.certificadosService.getAIInsights(certId).pipe(takeUntil(this.destroy$)).subscribe(i => this.aiInsights = i);
-  }
-
-  closeDetail(): void {
-    this.isDetailOpen = false;
-    this.selectedCertificado = null;
-    this.validations = [];
-    this.timeline = [];
-    this.relatedDocs = [];
-    this.aiInsights = null;
-    this.countryRequirements = [];
+    dialogRef.afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((result) => {
+        this.selectedCertificado = null;
+        if (result === 'refresh') {
+          this.loadCertificados();
+          this.loadMetrics();
+        }
+      });
   }
 
   createCertificado(): void {
@@ -255,47 +247,6 @@ export class CertificadosExportacaoComponent implements OnInit, OnDestroy {
           this.loadMetrics();
         },
         error: () => this.showMessage('Erro ao criar certificado', 'error')
-      });
-  }
-
-  renewCertificate(): void {
-    if (!this.selectedCertificado) return;
-    this.certificadosService.renewCertificate(this.selectedCertificado.id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (result) => {
-          this.showMessage(result.message, result.success ? 'success' : 'error');
-          if (result.success) {
-            this.loadCertificados();
-            this.loadMetrics();
-          }
-        },
-        error: () => this.showMessage('Erro ao renovar certificado', 'error')
-      });
-  }
-
-  validateCertificate(): void {
-    if (!this.selectedCertificado) return;
-    this.certificadosService.validateCertificate(this.selectedCertificado.id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (validations) => {
-          this.validations = validations;
-          this.showMessage('Validação realizada com sucesso', 'success');
-        },
-        error: () => this.showMessage('Erro ao validar certificado', 'error')
-      });
-  }
-
-  checkCountryRequirements(country?: string, product?: string): void {
-    const c = country || this.selectedCertificado?.destinationCountry || '';
-    const p = product || this.selectedCertificado?.productName || '';
-    if (!c || !p) return;
-    this.certificadosService.getCountryRequirements(c, p)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (reqs) => { this.countryRequirements = reqs; },
-        error: () => {}
       });
   }
 
@@ -361,76 +312,10 @@ export class CertificadosExportacaoComponent implements OnInit, OnDestroy {
     }
   }
 
-  getRequirementLevelColor(level: RequirementLevel): string {
-    switch (level) {
-      case 'OBRIGATÓRIO': return 'red';
-      case 'RECOMENDADO': return 'orange';
-      case 'OPCIONAL': return 'blue';
-      case 'NÃO_APLICÁVEL': return 'grey';
-      default: return 'grey';
-    }
-  }
-
-  getRequirementLevelLabel(level: RequirementLevel): string {
-    switch (level) {
-      case 'OBRIGATÓRIO': return 'Obrigatório';
-      case 'RECOMENDADO': return 'Recomendado';
-      case 'OPCIONAL': return 'Opcional';
-      case 'NÃO_APLICÁVEL': return 'N/A';
-      default: return level;
-    }
-  }
-
-  getValidationColor(status: 'pass' | 'fail' | 'warning'): string {
-    switch (status) {
-      case 'pass': return 'green';
-      case 'fail': return 'red';
-      case 'warning': return 'orange';
-      default: return 'grey';
-    }
-  }
-
-  getValidationIcon(status: 'pass' | 'fail' | 'warning'): string {
-    switch (status) {
-      case 'pass': return 'check_circle';
-      case 'fail': return 'cancel';
-      case 'warning': return 'warning';
-      default: return 'help';
-    }
-  }
-
   getScoreColor(score: number): string {
     if (score >= 80) return 'green';
     if (score >= 60) return 'yellow';
     return 'red';
-  }
-
-  getSeverityColor(severity: string): string {
-    switch (severity) {
-      case 'CRITICAL': return 'red';
-      case 'HIGH': return 'orange';
-      case 'MEDIUM': return 'yellow';
-      case 'LOW': return 'green';
-      default: return 'grey';
-    }
-  }
-
-  getRiskColor(risk: 'LOW' | 'MEDIUM' | 'HIGH'): string {
-    switch (risk) {
-      case 'LOW': return 'green';
-      case 'MEDIUM': return 'orange';
-      case 'HIGH': return 'red';
-      default: return 'grey';
-    }
-  }
-
-  getRiskLabel(risk: 'LOW' | 'MEDIUM' | 'HIGH'): string {
-    switch (risk) {
-      case 'LOW': return 'Baixo';
-      case 'MEDIUM': return 'Médio';
-      case 'HIGH': return 'Alto';
-      default: return risk;
-    }
   }
 
   isExpiringSoon(date: Date | string): boolean {

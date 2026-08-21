@@ -1,0 +1,92 @@
+<div class="hedge-detail-dialog">
+  <div class="detail-header" mat-dialog-title>
+    <div class="detail-title-section">
+      <div class="detail-icon-badge">
+        <mat-icon>shield</mat-icon>
+      </div>
+      <div class="detail-title-content">
+        <h2>{{ contract.contractNumber }}</h2>
+        <p>{{ getTypeLabel(contract.type) }}</p>
+      </div>
+    </div>
+    <div class="detail-header-actions">
+      <span class="status-chip" [ngClass]="getStatusColor(contract.status)">
+        {{ contract.status }}
+      </span>
+      <button mat-icon-button mat-dialog-close matTooltip="Fechar">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <mat-dialog-content>
+    <div class="info-grid">
+      <div class="info-item">
+        <span class="info-label">Banco</span>
+        <span class="info-value">{{ contract.bank }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Tipo</span>
+        <span class="info-value">{{ getTypeLabel(contract.type) }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Status</span>
+        <span class="info-value">
+          <span class="status-chip" [ngClass]="getStatusColor(contract.status)">{{ contract.status }}</span>
+        </span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Direção</span>
+        <span class="info-value">{{ getDirectionLabel(contract.direction) }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Contraparte</span>
+        <span class="info-value">{{ contract.counterparty }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Valor Nocional</span>
+        <span class="info-value">{{ formatCurrency(contract.notionalValue) }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Par de Moedas</span>
+        <span class="info-value">{{ contract.currencyPair }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Taxa Strike</span>
+        <span class="info-value">{{ contract.strikeRate.toFixed(4) }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Spot no Fechamento</span>
+        <span class="info-value">{{ contract.spotRateAtClose.toFixed(4) }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Mark-to-Market</span>
+        <span class="info-value" [ngClass]="getMtmClass(contract.markToMarket)">{{ formatBRL(contract.markToMarket) }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Prêmio</span>
+        <span class="info-value">{{ formatBRL(contract.premium) }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Exposição Vinculada</span>
+        <span class="info-value">{{ contract.linkedExposure }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Data da Operação</span>
+        <span class="info-value">{{ formatDate(contract.tradeDate) }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Vencimento</span>
+        <span class="info-value">{{ formatDate(contract.maturityDate) }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Liquidação</span>
+        <span class="info-value">{{ formatDate(contract.settlementDate) }}</span>
+      </div>
+      <div class="info-item notes-block">
+        <span class="info-label">Observações</span>
+        <span class="info-value">{{ contract.notes }}</span>
+      </div>
+    </div>
+  </mat-dialog-content>
+</div>

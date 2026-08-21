@@ -1,8 +1,8 @@
 @use 'sass:color';
 
-// === VARIABLES (Financial Green/Teal Theme) ===
-$financial-primary: #00796b;
-$financial-dark: #004d40;
+// === VARIABLES (Portos Blue Theme) ===
+$financial-primary: #1976d2;
+$financial-dark: #1565c0;
 $success: #4caf50;
 $warning: #ff9800;
 $danger: #f44336;
@@ -35,7 +35,7 @@ $grey: #9e9e9e;
   padding: 2rem;
   margin-bottom: 24px;
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 121, 107, 0.3);
+  box-shadow: 0 8px 32px rgba(25, 118, 210, 0.3);
 
   .header-main {
     display: flex;

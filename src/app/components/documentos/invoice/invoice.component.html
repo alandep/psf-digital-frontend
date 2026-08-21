@@ -122,6 +122,20 @@
             </mat-select>
           </mat-form-field>
 
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Data Inicial</mat-label>
+            <input matInput [matDatepicker]="dateStartPicker" formControlName="dateStart">
+            <mat-datepicker-toggle matIconSuffix [for]="dateStartPicker"></mat-datepicker-toggle>
+            <mat-datepicker #dateStartPicker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Data Final</mat-label>
+            <input matInput [matDatepicker]="dateEndPicker" formControlName="dateEnd">
+            <mat-datepicker-toggle matIconSuffix [for]="dateEndPicker"></mat-datepicker-toggle>
+            <mat-datepicker #dateEndPicker></mat-datepicker>
+          </mat-form-field>
+
           <div class="clear-filter-wrapper">
             <button mat-raised-button color="warn" class="clear-filters-btn" (click)="clearFilters()">
               <mat-icon>filter_alt_off</mat-icon> Limpar Filtros
@@ -227,10 +241,10 @@
               <button mat-menu-item (click)="selectInvoice(inv)">
                 <mat-icon>visibility</mat-icon> Visualizar
               </button>
-              <button mat-menu-item (click)="selectInvoice(inv); approveInvoice()">
+              <button mat-menu-item (click)="selectInvoice(inv)">
                 <mat-icon>check_circle</mat-icon> Aprovar
               </button>
-              <button mat-menu-item (click)="selectInvoice(inv); generatePDF()">
+              <button mat-menu-item (click)="selectInvoice(inv)">
                 <mat-icon>picture_as_pdf</mat-icon> Gerar PDF
               </button>
               <button mat-menu-item (click)="createInvoice()">
@@ -247,346 +261,6 @@
             (click)="selectInvoice(row)"></tr>
       </table>
     </div>
-  </mat-card>
-
-  <!-- Detail Panel -->
-  <mat-card class="detail-panel" *ngIf="isDetailOpen && selectedInvoice">
-    <div class="detail-header">
-      <div class="detail-title">
-        <mat-icon>receipt</mat-icon>
-        <h2>{{ selectedInvoice.invoiceNumber }}</h2>
-        <span class="status-chip" [ngClass]="'status-' + getStatusColor(selectedInvoice.status)">
-          <mat-icon class="chip-icon">{{ getStatusIcon(selectedInvoice.status) }}</mat-icon>
-          {{ getStatusLabel(selectedInvoice.status) }}
-        </span>
-        <span class="currency-badge currency-large" [ngClass]="'currency-' + selectedInvoice.currency.toLowerCase()">
-          {{ formatCurrency(selectedInvoice.totalValue, selectedInvoice.currency) }}
-        </span>
-      </div>
-      <div class="detail-actions">
-        <button mat-raised-button color="primary" (click)="approveInvoice()" matTooltip="Aprovar Invoice"
-                *ngIf="selectedInvoice.status !== 'APROVADA' && selectedInvoice.status !== 'ENVIADA' && selectedInvoice.status !== 'UTILIZADA' && selectedInvoice.status !== 'ARQUIVADA'">
-          <mat-icon>check_circle</mat-icon> Aprovar
-        </button>
-        <button mat-raised-button (click)="generatePDF()" matTooltip="Gerar PDF">
-          <mat-icon>picture_as_pdf</mat-icon> PDF
-        </button>
-        <button mat-icon-button (click)="closeDetail()">
-          <mat-icon>close</mat-icon>
-        </button>
-      </div>
-    </div>
-
-    <mat-tab-group>
-      <!-- Tab 1: Dados Gerais -->
-      <mat-tab label="Dados Gerais">
-        <div class="tab-content">
-          <div class="detail-grid">
-            <div class="detail-item">
-              <span class="detail-label">Exportador</span>
-              <span class="detail-value">{{ selectedInvoice.exporterName }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">CNPJ</span>
-              <span class="detail-value">{{ selectedInvoice.exporterCnpj }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Comprador</span>
-              <span class="detail-value">{{ selectedInvoice.buyerName }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Endereço Comprador</span>
-              <span class="detail-value">{{ selectedInvoice.buyerAddress }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">País Destino</span>
-              <span class="detail-value">{{ selectedInvoice.buyerCountry }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Porto Origem</span>
-              <span class="detail-value">{{ selectedInvoice.portOrigin }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Porto Destino</span>
-              <span class="detail-value">{{ selectedInvoice.portDestination }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Incoterm</span>
-              <span class="detail-value">{{ selectedInvoice.incoterm }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Forma de Pagamento</span>
-              <span class="detail-value">{{ selectedInvoice.paymentMethod }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Moeda</span>
-              <span class="detail-value">{{ selectedInvoice.currency }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Taxa de Câmbio</span>
-              <span class="detail-value">{{ selectedInvoice.exchangeRate || '-' }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Data Emissão</span>
-              <span class="detail-value">{{ formatDate(selectedInvoice.issueDate) }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Contrato Vinculado</span>
-              <span class="detail-value">{{ selectedInvoice.linkedContractNumber }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Exportação Vinculada</span>
-              <span class="detail-value">{{ selectedInvoice.linkedExportId }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">DU-E Vinculada</span>
-              <span class="detail-value">{{ selectedInvoice.linkedDueNumber }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Packing List</span>
-              <span class="detail-value">{{ selectedInvoice.linkedPackingList }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Versão</span>
-              <span class="detail-value">v{{ selectedInvoice.version }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Criado por</span>
-              <span class="detail-value">{{ selectedInvoice.createdBy }}</span>
-            </div>
-          </div>
-        </div>
-      </mat-tab>
-
-      <!-- Tab 2: Produtos -->
-      <mat-tab label="Produtos">
-        <div class="tab-content">
-          <div class="table-container">
-            <table mat-table [dataSource]="products" class="products-table" *ngIf="products.length > 0">
-              <ng-container matColumnDef="productName">
-                <th mat-header-cell *matHeaderCellDef>Produto</th>
-                <td mat-cell *matCellDef="let p">
-                  <div class="product-cell">
-                    <strong>{{ p.productName }}</strong>
-                    <span class="product-description">{{ p.commercialDescription }}</span>
-                  </div>
-                </td>
-              </ng-container>
-              <ng-container matColumnDef="commercialDescription">
-                <th mat-header-cell *matHeaderCellDef>Descrição Técnica</th>
-                <td mat-cell *matCellDef="let p">{{ p.technicalDescription }}</td>
-              </ng-container>
-              <ng-container matColumnDef="ncm">
-                <th mat-header-cell *matHeaderCellDef>NCM</th>
-                <td mat-cell *matCellDef="let p">{{ p.ncm }}</td>
-              </ng-container>
-              <ng-container matColumnDef="quantity">
-                <th mat-header-cell *matHeaderCellDef>Qtd</th>
-                <td mat-cell *matCellDef="let p">{{ p.quantity }} {{ p.unit }}</td>
-              </ng-container>
-              <ng-container matColumnDef="netWeight">
-                <th mat-header-cell *matHeaderCellDef>Peso Líq. (kg)</th>
-                <td mat-cell *matCellDef="let p">{{ p.netWeight | number:'1.0-0' }}</td>
-              </ng-container>
-              <ng-container matColumnDef="grossWeight">
-                <th mat-header-cell *matHeaderCellDef>Peso Bruto (kg)</th>
-                <td mat-cell *matCellDef="let p">{{ p.grossWeight | number:'1.0-0' }}</td>
-              </ng-container>
-              <ng-container matColumnDef="unitPrice">
-                <th mat-header-cell *matHeaderCellDef>Preço Unit.</th>
-                <td mat-cell *matCellDef="let p">{{ selectedInvoice.currency }} {{ p.unitPrice | number:'1.2-2' }}</td>
-              </ng-container>
-              <ng-container matColumnDef="totalValue">
-                <th mat-header-cell *matHeaderCellDef>Total</th>
-                <td mat-cell *matCellDef="let p">
-                  <strong>{{ selectedInvoice.currency }} {{ p.totalValue | number:'1.2-2' }}</strong>
-                </td>
-              </ng-container>
-              <ng-container matColumnDef="linkedLot">
-                <th mat-header-cell *matHeaderCellDef>Lote</th>
-                <td mat-cell *matCellDef="let p">{{ p.linkedLot }}</td>
-              </ng-container>
-              <tr mat-header-row *matHeaderRowDef="productColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: productColumns;"></tr>
-            </table>
-          </div>
-        </div>
-      </mat-tab>
-
-      <!-- Tab 3: Totais -->
-      <mat-tab label="Totais">
-        <div class="tab-content">
-          <div class="totals-card">
-            <div class="totals-grid">
-              <div class="total-item">
-                <span class="total-label">Subtotal (Produtos)</span>
-                <span class="total-value">{{ formatCurrency(selectedInvoice.subtotal, selectedInvoice.currency) }}</span>
-              </div>
-              <div class="total-item">
-                <span class="total-label">Frete</span>
-                <span class="total-value positive">+ {{ formatCurrency(selectedInvoice.freight, selectedInvoice.currency) }}</span>
-              </div>
-              <div class="total-item">
-                <span class="total-label">Seguro</span>
-                <span class="total-value positive">+ {{ formatCurrency(selectedInvoice.insurance, selectedInvoice.currency) }}</span>
-              </div>
-              <div class="total-item">
-                <span class="total-label">Desconto</span>
-                <span class="total-value negative">- {{ formatCurrency(selectedInvoice.discount, selectedInvoice.currency) }}</span>
-              </div>
-              <div class="total-item">
-                <span class="total-label">Outras Despesas</span>
-                <span class="total-value positive">+ {{ formatCurrency(selectedInvoice.otherExpenses, selectedInvoice.currency) }}</span>
-              </div>
-              <mat-divider></mat-divider>
-              <div class="total-item total-final">
-                <span class="total-label">VALOR TOTAL ({{ selectedInvoice.incoterm }})</span>
-                <span class="total-value final">{{ formatCurrency(selectedInvoice.totalValue, selectedInvoice.currency) }}</span>
-              </div>
-            </div>
-            <div class="totals-meta">
-              <div class="meta-card">
-                <mat-icon>scale</mat-icon>
-                <div class="meta-info">
-                  <span class="meta-value">{{ selectedInvoice.totalWeight | number:'1.0-0' }} kg</span>
-                  <span class="meta-label">Peso Total</span>
-                </div>
-              </div>
-              <div class="meta-card">
-                <mat-icon>inventory_2</mat-icon>
-                <div class="meta-info">
-                  <span class="meta-value">{{ selectedInvoice.totalQuantity | number:'1.0-0' }}</span>
-                  <span class="meta-label">Quantidade Total</span>
-                </div>
-              </div>
-              <div class="meta-card">
-                <mat-icon>currency_exchange</mat-icon>
-                <div class="meta-info">
-                  <span class="meta-value">{{ selectedInvoice.exchangeRate || '-' }}</span>
-                  <span class="meta-label">Taxa Câmbio (BRL)</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </mat-tab>
-
-      <!-- Tab 4: Documentos Relacionados -->
-      <mat-tab label="Documentos Relacionados">
-        <div class="tab-content">
-          <div class="related-docs-list">
-            <div class="doc-item" *ngFor="let doc of relatedDocs"
-                 [ngClass]="'doc-' + getDocStatusColor(doc.status)">
-              <mat-icon [ngClass]="'text-' + getDocStatusColor(doc.status)">
-                {{ getDocStatusIcon(doc.status) }}
-              </mat-icon>
-              <div class="doc-info">
-                <strong>{{ doc.documentType }}</strong>
-                <span class="doc-number">{{ doc.documentNumber }}</span>
-              </div>
-              <span class="status-chip" [ngClass]="'status-' + getDocStatusColor(doc.status)">
-                {{ getDocStatusLabel(doc.status) }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </mat-tab>
-
-      <!-- Tab 5: Validação -->
-      <mat-tab label="Validação">
-        <div class="tab-content">
-          <div class="validations-list">
-            <div class="validation-item" *ngFor="let v of validations"
-                 [ngClass]="'validation-' + getValidationColor(v.status)">
-              <mat-icon [ngClass]="'text-' + getValidationColor(v.status)">
-                {{ getValidationIcon(v.status) }}
-              </mat-icon>
-              <div class="validation-info">
-                <div class="validation-header">
-                  <strong>{{ v.checkName }}</strong>
-                  <span class="severity-badge" [ngClass]="'severity-' + getSeverityColor(v.severity)">
-                    {{ v.severity }}
-                  </span>
-                </div>
-                <span class="validation-message">{{ v.message }}</span>
-                <span class="validation-suggestion" *ngIf="v.suggestion">
-                  <mat-icon>lightbulb</mat-icon> {{ v.suggestion }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </mat-tab>
-
-      <!-- Tab 6: IA & Insights -->
-      <mat-tab label="IA & Insights">
-        <div class="tab-content" *ngIf="aiInsights">
-          <div class="insights-section">
-
-            <!-- Scores -->
-            <div class="insights-scores">
-              <div class="score-card">
-                <h4>Doc Score</h4>
-                <div class="score-gauge">
-                  <div class="gauge-fill" [ngClass]="'gauge-' + getScoreColor(aiInsights.docScore)"
-                       [style.width.%]="aiInsights.docScore"></div>
-                </div>
-                <span class="gauge-value">{{ aiInsights.docScore }}%</span>
-              </div>
-              <div class="score-card">
-                <h4>Probabilidade de Rejeição</h4>
-                <div class="score-gauge">
-                  <div class="gauge-fill gauge-rejection"
-                       [ngClass]="aiInsights.rejectionProbability > 15 ? 'gauge-red' : aiInsights.rejectionProbability > 8 ? 'gauge-yellow' : 'gauge-green'"
-                       [style.width.%]="aiInsights.rejectionProbability"></div>
-                </div>
-                <span class="gauge-value">{{ aiInsights.rejectionProbability }}%</span>
-              </div>
-            </div>
-
-            <!-- Alerts -->
-            <div class="alerts-section" *ngIf="aiInsights.alerts.length > 0">
-              <h4><mat-icon>warning</mat-icon> Alertas</h4>
-              <div class="alert-item" *ngFor="let alert of aiInsights.alerts"
-                   [ngClass]="'alert-' + getSeverityColor(alert.severity)">
-                <mat-icon>report_problem</mat-icon>
-                <div class="alert-content">
-                  <span class="alert-message">{{ alert.message }}</span>
-                  <span class="severity-badge" [ngClass]="'severity-' + getSeverityColor(alert.severity)">
-                    {{ alert.severity }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Suggestions -->
-            <div class="suggestions-section">
-              <h4><mat-icon>lightbulb</mat-icon> Sugestões IA (com Explainability)</h4>
-              <div class="suggestion-item" *ngFor="let s of aiInsights.suggestions">
-                <div class="suggestion-header">
-                  <strong>{{ s.suggestion }}</strong>
-                  <span class="impact-badge" [ngClass]="'impact-' + s.impact.toLowerCase()">{{ s.impact }}</span>
-                </div>
-                <p class="suggestion-text">{{ s.reason }}</p>
-                <div class="suggestion-meta">
-                  <span><mat-icon>source</mat-icon> Fonte: {{ s.source }}</span>
-                  <span><mat-icon>tune</mat-icon> Campo: {{ s.field }}</span>
-                  <span class="confidence-badge" [ngClass]="'score-' + getScoreColor(s.confidence)">
-                    {{ s.confidence }}% confiança
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Executive Summary -->
-            <div class="executive-summary">
-              <h4><mat-icon>summarize</mat-icon> Resumo Executivo</h4>
-              <p>{{ aiInsights.executiveSummary }}</p>
-            </div>
-          </div>
-        </div>
-      </mat-tab>
-    </mat-tab-group>
   </mat-card>
 
 </div>

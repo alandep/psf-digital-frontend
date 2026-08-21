@@ -23,17 +23,18 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 // Services and Types
 import { CambioContratsMockService } from '../../../../services/cambioContratsMockService';
+import { CambioDetailDialogComponent } from './cambio-detail-dialog/cambio-detail-dialog.component';
+import { CambioFormDialogComponent } from './cambio-form-dialog/cambio-form-dialog.component';
 import {
   ContratoCambio,
   ContractStatus,
   QuotationData,
   SimulationResult,
   BankComparison,
-  FinancialTimelineEvent,
-  CambioAIInsights,
   CambioFilters,
   CambioMetrics,
   FinancialKPIs
@@ -63,7 +64,8 @@ import {
     MatTooltipModule,
     MatDividerModule,
     MatDatepickerModule,
-    MatNativeDateModule
+    MatNativeDateModule,
+    MatDialogModule
   ],
   templateUrl: './cambio.component.html',
   styleUrls: ['./cambio.component.scss']
@@ -74,6 +76,7 @@ export class CambioComponent implements OnInit, OnDestroy {
   private cambioService = inject(CambioContratsMockService);
   private formBuilder = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
 
   // Destroy subject
   private destroy$ = new Subject<void>();
@@ -85,18 +88,14 @@ export class CambioComponent implements OnInit, OnDestroy {
   // Data State
   contracts: ContratoCambio[] = [];
   dataSource = new MatTableDataSource<ContratoCambio>([]);
-  selectedContract: ContratoCambio | null = null;
   quotations: QuotationData[] = [];
   simulationResult: SimulationResult | null = null;
   bankComparisons: BankComparison[] = [];
-  timeline: FinancialTimelineEvent[] = [];
-  aiInsights: CambioAIInsights | null = null;
   metrics: CambioMetrics | null = null;
   financialKPIs: FinancialKPIs | null = null;
 
   // UI State
   isLoading = false;
-  isDetailOpen = false;
   isSimulating = false;
   isSimulationExpanded = false;
 
@@ -230,37 +229,48 @@ export class CambioComponent implements OnInit, OnDestroy {
   }
 
   selectContract(contract: ContratoCambio): void {
-    this.selectedContract = contract;
-    this.isDetailOpen = true;
-    this.loadContractDetails(contract.id);
-  }
-
-  private loadContractDetails(contractId: string): void {
-    this.cambioService.getTimeline(contractId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(tl => this.timeline = tl);
-
-    this.cambioService.getAIInsights(contractId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(insights => this.aiInsights = insights);
-
-    this.cambioService.compareBanks(
-      this.selectedContract?.currency || 'USD',
-      this.selectedContract?.foreignValue || 100000
-    ).pipe(takeUntil(this.destroy$))
-      .subscribe(comparisons => this.bankComparisons = comparisons);
-  }
-
-  closeDetail(): void {
-    this.isDetailOpen = false;
-    this.selectedContract = null;
-    this.timeline = [];
-    this.aiInsights = null;
-    this.bankComparisons = [];
+    this.dialog.open(CambioDetailDialogComponent, {
+      data: { contract, quotations: this.quotations },
+      panelClass: 'cambio-detail-dialog-panel',
+      width: '1100px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      autoFocus: false
+    });
   }
 
   createContract(): void {
-    this.snackBar.open('Funcionalidade de novo contrato de câmbio em desenvolvimento', 'OK', { duration: 3000 });
+    const dialogRef = this.dialog.open(CambioFormDialogComponent, {
+      data: {
+        banks: this.banks,
+        currencies: this.currencies,
+        statuses: this.statuses
+      },
+      panelClass: 'cambio-form-dialog-panel',
+      width: '720px',
+      maxWidth: '92vw',
+      autoFocus: false
+    });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((value: Partial<ContratoCambio> | undefined) => {
+        if (!value) {
+          return;
+        }
+        this.cambioService.createContract(value)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.snackBar.open('Contrato de câmbio criado com sucesso!', 'OK', { duration: 3000 });
+              this.loadContracts();
+              this.loadMetrics();
+            },
+            error: () => {
+              this.snackBar.open('Erro ao criar contrato de câmbio', 'Fechar', { duration: 3000 });
+            }
+          });
+      });
   }
 
   simulate(): void {
@@ -314,10 +324,6 @@ export class CambioComponent implements OnInit, OnDestroy {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(value);
   }
 
-  formatDate(date: Date): string {
-    return new Date(date).toLocaleDateString('pt-BR');
-  }
-
   getStatusColor(status: ContractStatus): string {
     const map: Record<ContractStatus, string> = {
       'ABERTO': 'status-aberto',
@@ -328,15 +334,6 @@ export class CambioComponent implements OnInit, OnDestroy {
       'RENEGOCIADO': 'status-renegociado'
     };
     return map[status] || '';
-  }
-
-  getRiskColor(risk: string): string {
-    const map: Record<string, string> = {
-      'BAIXO': 'risk-low',
-      'MÉDIO': 'risk-medium',
-      'ALTO': 'risk-high'
-    };
-    return map[risk] || '';
   }
 
   getScoreColor(score: number): string {
@@ -362,20 +359,6 @@ export class CambioComponent implements OnInit, OnDestroy {
       'STABLE': 'trend-stable'
     };
     return map[trend] || '';
-  }
-
-  getAlertIcon(severity: string): string {
-    const map: Record<string, string> = {
-      'LOW': 'info',
-      'MEDIUM': 'warning',
-      'HIGH': 'error',
-      'CRITICAL': 'dangerous'
-    };
-    return map[severity] || 'info';
-  }
-
-  getAlertClass(severity: string): string {
-    return `alert-${severity.toLowerCase()}`;
   }
 
   getScenarioClass(type: string): string {

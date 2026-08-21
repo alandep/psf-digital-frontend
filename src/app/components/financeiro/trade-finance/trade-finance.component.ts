@@ -28,9 +28,9 @@ import {
   InstrumentType,
   InstrumentStatus,
   TradeFinanceKPIs,
-  TradeFinanceFilters,
-  TradeFinanceTimelineEvent
+  TradeFinanceFilters
 } from '../../../../types/trade-finance';
+import { TradeFinanceDetailDialogComponent } from './trade-finance-detail-dialog/trade-finance-detail-dialog.component';
 
 @Component({
   selector: 'app-trade-finance',
@@ -74,12 +74,9 @@ export class TradeFinanceComponent implements OnInit, OnDestroy, AfterViewInit {
 
   instruments: TradeFinanceInstrument[] = [];
   dataSource = new MatTableDataSource<TradeFinanceInstrument>([]);
-  selectedInstrument: TradeFinanceInstrument | null = null;
   kpis: TradeFinanceKPIs | null = null;
-  timeline: TradeFinanceTimelineEvent[] = [];
 
   isLoading = false;
-  isDetailOpen = false;
 
   filterForm!: FormGroup;
 
@@ -175,15 +172,14 @@ export class TradeFinanceComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   selectInstrument(instrument: TradeFinanceInstrument): void {
-    this.selectedInstrument = instrument;
-    this.isDetailOpen = true;
-    this.timeline = instrument.timelineEvents;
-  }
-
-  closeDetail(): void {
-    this.isDetailOpen = false;
-    this.selectedInstrument = null;
-    this.timeline = [];
+    this.dialog.open(TradeFinanceDetailDialogComponent, {
+      data: { instrument },
+      width: '900px',
+      maxWidth: '92vw',
+      maxHeight: '90vh',
+      autoFocus: false,
+      panelClass: 'trade-finance-detail-dialog-panel'
+    });
   }
 
   openNovaLCDialog(): void {

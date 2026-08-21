@@ -1,0 +1,97 @@
+<div class="cambio-form-dialog">
+  <div class="form-header" mat-dialog-title>
+    <div class="form-title-section">
+      <mat-icon class="form-icon">currency_exchange</mat-icon>
+      <div>
+        <h2>Novo Contrato de Câmbio</h2>
+        <p>Preencha os dados para registrar o contrato</p>
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close aria-label="Fechar">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content>
+    <form [formGroup]="form" class="cambio-form">
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Nº Contrato</mat-label>
+          <input matInput formControlName="contractNumber" placeholder="CC-2024-000">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Banco</mat-label>
+          <mat-select formControlName="bank">
+            <mat-option *ngFor="let b of banks" [value]="b">{{ b }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="span-2">
+          <mat-label>Exportador</mat-label>
+          <input matInput formControlName="exporterName" placeholder="Nome do exportador">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Moeda</mat-label>
+          <mat-select formControlName="currency">
+            <mat-option *ngFor="let c of currencies" [value]="c">{{ c }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            <mat-option *ngFor="let s of statuses" [value]="s">{{ s }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Valor ME</mat-label>
+          <input matInput type="number" formControlName="foreignValue" placeholder="100000">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Taxa de Câmbio</mat-label>
+          <input matInput type="number" step="0.0001" formControlName="exchangeRate" placeholder="5.1800">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Data Fechamento</mat-label>
+          <input matInput [matDatepicker]="closingPicker" formControlName="closingDate">
+          <mat-datepicker-toggle matIconSuffix [for]="closingPicker"></mat-datepicker-toggle>
+          <mat-datepicker #closingPicker></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Data Liquidação</mat-label>
+          <input matInput [matDatepicker]="liquidationPicker" formControlName="liquidationDate">
+          <mat-datepicker-toggle matIconSuffix [for]="liquidationPicker"></mat-datepicker-toggle>
+          <mat-datepicker #liquidationPicker></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Exportação Vinculada</mat-label>
+          <input matInput formControlName="linkedExportNumber" placeholder="EXP-2024-000">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Invoice</mat-label>
+          <input matInput formControlName="linkedInvoiceNumber" placeholder="INV-2024-000">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>DU-E</mat-label>
+          <input matInput formControlName="linkedDueNumber" placeholder="DUE-2024-000">
+        </mat-form-field>
+      </div>
+    </form>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="cancel()">Cancelar</button>
+    <button mat-raised-button color="primary" (click)="submit()" [disabled]="form.invalid">
+      <mat-icon>save</mat-icon> Salvar Contrato
+    </button>
+  </mat-dialog-actions>
+</div>

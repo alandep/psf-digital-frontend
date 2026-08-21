@@ -1,49 +1,62 @@
 <div class="packing-list-container">
-  <!-- Header -->
+  <!-- Header Premium (Portos identity) -->
   <div class="page-header">
-    <div class="header-left">
-      <h1>Packing Lists</h1>
-      <p class="subtitle">Gerenciamento de listas de embalagem para exportação</p>
-    </div>
-    <div class="header-actions">
-      <button mat-stroked-button (click)="exportCSV()">
-        <mat-icon>download</mat-icon> CSV
-      </button>
-      <button mat-stroked-button (click)="exportPDF()">
-        <mat-icon>picture_as_pdf</mat-icon> PDF
-      </button>
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">inventory_2</mat-icon>
+        <div class="title-content">
+          <h1>Packing Lists</h1>
+          <p class="subtitle">Gerenciamento de listas de embalagem para exportação</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button (click)="exportCSV()">
+          <mat-icon>download</mat-icon> CSV
+        </button>
+        <button mat-raised-button (click)="exportPDF()">
+          <mat-icon>picture_as_pdf</mat-icon> PDF
+        </button>
+      </div>
     </div>
   </div>
 
   <!-- KPI Cards -->
-  <div class="kpi-grid" *ngIf="metrics">
-    <mat-card class="kpi-card">
-      <mat-icon>list_alt</mat-icon>
-      <div class="kpi-content">
-        <span class="kpi-value">{{ metrics.totalPackingLists }}</span>
-        <span class="kpi-label">Total</span>
-      </div>
+  <div class="kpi-dashboard" *ngIf="metrics">
+    <mat-card class="kpi-card kpi-total">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>list_alt</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.totalPackingLists }}</div>
+          <div class="kpi-label">Total</div>
+        </div>
+      </mat-card-content>
     </mat-card>
-    <mat-card class="kpi-card">
-      <mat-icon>pending</mat-icon>
-      <div class="kpi-content">
-        <span class="kpi-value">{{ metrics.pendentesValidacao }}</span>
-        <span class="kpi-label">Pendentes</span>
-      </div>
+    <mat-card class="kpi-card kpi-pending">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>pending</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.pendentesValidacao }}</div>
+          <div class="kpi-label">Pendentes</div>
+        </div>
+      </mat-card-content>
     </mat-card>
-    <mat-card class="kpi-card">
-      <mat-icon>score</mat-icon>
-      <div class="kpi-content">
-        <span class="kpi-value">{{ metrics.scoreCompletudeMedia }}%</span>
-        <span class="kpi-label">Score Médio</span>
-      </div>
+    <mat-card class="kpi-card kpi-score">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>score</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.scoreCompletudeMedia }}%</div>
+          <div class="kpi-label">Score Médio</div>
+        </div>
+      </mat-card-content>
     </mat-card>
-    <mat-card class="kpi-card">
-      <mat-icon>link</mat-icon>
-      <div class="kpi-content">
-        <span class="kpi-value">{{ metrics.vinculadosEmbarques }}</span>
-        <span class="kpi-label">Vinculados Embarques</span>
-      </div>
+    <mat-card class="kpi-card kpi-linked">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>link</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics.vinculadosEmbarques }}</div>
+          <div class="kpi-label">Vinculados Embarques</div>
+        </div>
+      </mat-card-content>
     </mat-card>
   </div>
 
@@ -68,6 +81,18 @@
           <mat-option value="">Todos</mat-option>
           <mat-option *ngFor="let b of buyers" [value]="b">{{ b }}</mat-option>
         </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Data Inicial</mat-label>
+        <input matInput [matDatepicker]="dateStartPicker" formControlName="dateStart">
+        <mat-datepicker-toggle matIconSuffix [for]="dateStartPicker"></mat-datepicker-toggle>
+        <mat-datepicker #dateStartPicker></mat-datepicker>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Data Final</mat-label>
+        <input matInput [matDatepicker]="dateEndPicker" formControlName="dateEnd">
+        <mat-datepicker-toggle matIconSuffix [for]="dateEndPicker"></mat-datepicker-toggle>
+        <mat-datepicker #dateEndPicker></mat-datepicker>
       </mat-form-field>
       <button mat-icon-button matTooltip="Limpar filtros" (click)="clearFilters()">
         <mat-icon>clear</mat-icon>
@@ -119,104 +144,16 @@
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef>Ações</th>
           <td mat-cell *matCellDef="let row">
-            <button mat-icon-button matTooltip="Detalhes" (click)="selectItem(row)">
+            <button mat-icon-button matTooltip="Detalhes" (click)="$event.stopPropagation(); selectItem(row)">
               <mat-icon>visibility</mat-icon>
             </button>
           </td>
         </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="selectItem(row)"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="pl-row" (click)="selectItem(row)"></tr>
       </table>
     </div>
     <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" showFirstLastButtons></mat-paginator>
   </mat-card>
-
-  <!-- Detail Panel -->
-  <div class="detail-panel" *ngIf="isDetailOpen && selectedItem">
-    <mat-card class="detail-card">
-      <div class="detail-header">
-        <h2>{{ selectedItem.packingListNumber }}</h2>
-        <button mat-icon-button (click)="closeDetail()">
-          <mat-icon>close</mat-icon>
-        </button>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="detail-body">
-        <div class="detail-section">
-          <h4>Informações Gerais</h4>
-          <div class="detail-grid">
-            <div class="detail-item">
-              <span class="label">Invoice Vinculada</span>
-              <span class="value">{{ selectedItem.linkedInvoice }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="label">Exportador</span>
-              <span class="value">{{ selectedItem.exporter }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="label">Comprador</span>
-              <span class="value">{{ selectedItem.buyer }} ({{ selectedItem.buyerCountry }})</span>
-            </div>
-            <div class="detail-item">
-              <span class="label">Porto Origem</span>
-              <span class="value">{{ selectedItem.portOrigin }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="label">Porto Destino</span>
-              <span class="value">{{ selectedItem.portDestination }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="label">Status</span>
-              <span class="status-chip" [ngClass]="getStatusColor(selectedItem.status)">
-                {{ getStatusLabel(selectedItem.status) }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="detail-section">
-          <h4>Resumo de Pesos</h4>
-          <div class="weight-summary">
-            <div class="weight-item">
-              <span class="label">Peso Bruto Total</span>
-              <span class="value">{{ formatWeight(selectedItem.totalGrossWeight) }}</span>
-            </div>
-            <div class="weight-item">
-              <span class="label">Peso Líquido Total</span>
-              <span class="value">{{ formatWeight(selectedItem.totalNetWeight) }}</span>
-            </div>
-            <div class="weight-item">
-              <span class="label">Total Volumes</span>
-              <span class="value">{{ selectedItem.totalPackages }}</span>
-            </div>
-            <div class="weight-item">
-              <span class="label">Discrepância Peso</span>
-              <span class="value" [style.color]="selectedItem.weightDiscrepancyPercent > 2 ? '#f44336' : '#4caf50'">
-                {{ selectedItem.weightDiscrepancyPercent | number:'1.2-2' }}%
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="detail-section">
-          <h4>Score de Completude</h4>
-          <div class="score-section">
-            <mat-progress-bar mode="determinate"
-              [value]="selectedItem.completenessScore"
-              [color]="selectedItem.completenessScore >= 80 ? 'primary' : 'warn'">
-            </mat-progress-bar>
-            <span class="score-value" [style.color]="getScoreColor(selectedItem.completenessScore)">
-              {{ selectedItem.completenessScore }}%
-            </span>
-          </div>
-        </div>
-
-        <div class="detail-section" *ngIf="selectedItem.linkedEmbarqueNumber">
-          <h4>Embarque Vinculado</h4>
-          <p>{{ selectedItem.linkedEmbarqueNumber }}</p>
-        </div>
-      </div>
-    </mat-card>
-  </div>
 </div>
