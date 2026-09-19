@@ -6,9 +6,8 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.eip.modules.organization.adapter.out.persistence.MembershipEntity;
-import com.eip.modules.organization.adapter.out.persistence.MembershipJpaRepository;
-import com.eip.modules.organization.adapter.out.persistence.OrganizationJpaRepository;
+import com.eip.modules.organization.domain.model.Membership;
+import com.eip.modules.organization.domain.port.out.OrganizationMembershipRepositoryPort;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,13 +19,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class OrganizationQueryService {
 
-    private static final String ACTIVE = "ACTIVE";
-
     // TODO: derive from legal_entity once linked; fixed masked placeholder for now.
     private static final String CNPJ_MASKED_PLACEHOLDER = "\u2022\u2022.\u2022\u2022\u2022.\u2022\u2022\u2022/0001-\u2022\u2022";
 
-    private final MembershipJpaRepository membershipRepository;
-    private final OrganizationJpaRepository organizationRepository;
+    private final OrganizationMembershipRepositoryPort membershipRepository;
 
     /**
      * Selectable organization option for the auth flow.
@@ -45,8 +41,7 @@ public class OrganizationQueryService {
      */
     @Transactional(readOnly = true)
     public List<OrganizationOption> membershipsOf(UUID userId) {
-        List<MembershipEntity> memberships = membershipRepository.findByUserIdAndStatus(userId, ACTIVE);
-        return memberships.stream()
+        return membershipRepository.findActiveMemberships(userId).stream()
                 .map(this::toOption)
                 .toList();
     }
@@ -54,18 +49,17 @@ public class OrganizationQueryService {
     /** @return {@code true} if the user has an active membership in the organization. */
     @Transactional(readOnly = true)
     public boolean isMember(UUID userId, UUID organizationId) {
-        return membershipRepository
-                .existsByUserIdAndOrganizationIdAndStatus(userId, organizationId, ACTIVE);
+        return membershipRepository.isActiveMember(userId, organizationId);
     }
 
-    private OrganizationOption toOption(MembershipEntity membership) {
-        String razaoSocial = organizationRepository.findById(membership.getOrganizationId())
-                .map(org -> org.getName())
+    private OrganizationOption toOption(Membership membership) {
+        String razaoSocial = membershipRepository.findOrganization(membership.organizationId())
+                .map(org -> org.name())
                 .orElse("Organizacao");
         return new OrganizationOption(
-                membership.getOrganizationId(),
+                membership.organizationId(),
                 razaoSocial,
                 CNPJ_MASKED_PLACEHOLDER,
-                membership.getRole());
+                membership.role());
     }
 }

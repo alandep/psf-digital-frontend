@@ -10,7 +10,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-import { CambioContratsMockService } from '../../../../../services/cambioContratsMockService';
+import { CAMBIO_SERVICE } from '../../../../services/finance/cambio-service.token';
 import {
   ContratoCambio,
   ContractStatus,
@@ -44,7 +44,7 @@ interface CambioDetailDialogData {
 })
 export class CambioDetailDialogComponent implements OnInit {
 
-  private cambioService = inject(CambioContratsMockService);
+  private cambioService = inject(CAMBIO_SERVICE);
   readonly data = inject<CambioDetailDialogData>(MAT_DIALOG_DATA);
 
   contract: ContratoCambio = this.data.contract;

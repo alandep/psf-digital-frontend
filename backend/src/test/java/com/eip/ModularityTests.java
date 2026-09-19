@@ -4,23 +4,27 @@ import org.junit.jupiter.api.Test;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.docs.Documenter;
 
-import com.eip.bootstrap.EipBackendApplication;
-
 /**
  * Verifies the Spring Modulith structure of the application: module boundaries,
  * allowed dependencies and named-interface access rules.
  *
- * <p>The declared dependencies are:
+ * <p>The structure is analyzed with an explicit base package of
+ * {@code com.eip.modules} so that each domain (export, identity, organization,
+ * subscription, document, ai, finance, logistics) is a first-class module.
+ * {@code com.eip.platform} lives outside this base package, so references to it
+ * are treated as references to a non-module (external) package and are always
+ * allowed — there is no Modulith module named {@code platform}.
+ *
+ * <p>The declared inter-module dependencies are:
  * <ul>
- *   <li>{@code platform} — shared module, usable by everyone.</li>
  *   <li>{@code identity} &rarr; {@code organization::query-api} — the login flow
  *       resolves memberships via the Organization read API.</li>
- *   <li>{@code organization}, {@code export} — depend only on {@code platform}.</li>
+ *   <li>all other modules depend only on {@code com.eip.platform} (external).</li>
  * </ul>
  */
 class ModularityTests {
 
-    private final ApplicationModules modules = ApplicationModules.of(EipBackendApplication.class);
+    private final ApplicationModules modules = ApplicationModules.of("com.eip.modules");
 
     @Test
     void verifiesModuleStructure() {

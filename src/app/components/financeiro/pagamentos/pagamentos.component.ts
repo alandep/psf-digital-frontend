@@ -26,7 +26,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 
 // Services and Types
-import { PagamentosMockService } from '../../../../services/pagamentosMockService';
+import { PAGAMENTOS_SERVICE } from '../../../services/finance/pagamentos-service.token';
 import { PagamentoDialogComponent } from './pagamento-dialog/pagamento-dialog.component';
 import { PagamentoDetailDialogComponent } from './pagamento-detail-dialog/pagamento-detail-dialog.component';
 import {
@@ -73,7 +73,7 @@ import { HasPermissionDirective } from '../../../directives/has-permission.direc
 export class PagamentosComponent implements OnInit, OnDestroy {
 
   // Services
-  private pagamentosService = inject(PagamentosMockService);
+  private pagamentosService = inject(PAGAMENTOS_SERVICE);
   private formBuilder = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);

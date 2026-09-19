@@ -1,13 +1,14 @@
 # syntax=docker/dockerfile:1
 
 # --- Build stage ---
-FROM eclipse-temurin:21-jdk AS build
+# Uses the official Maven image (Maven + JDK 21 preinstalled), so no Maven
+# wrapper (mvnw) is required in the repository. Dependencies are cached via a
+# BuildKit mount so repeated builds are fast without a fragile go-offline step.
+FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /workspace
-COPY .mvn/ .mvn/
-COPY mvnw pom.xml ./
-RUN chmod +x mvnw && ./mvnw -q -B dependency:go-offline
+COPY pom.xml ./
 COPY src/ src/
-RUN ./mvnw -q -B -DskipTests package
+RUN --mount=type=cache,target=/root/.m2 mvn -q -B -DskipTests package
 
 # --- Runtime stage ---
 FROM eclipse-temurin:21-jre AS runtime

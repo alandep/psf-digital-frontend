@@ -9,7 +9,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
-import { SaasBillingMockService } from '../../../../services/saasBillingMockService';
+import { SUBSCRIPTION_SERVICE } from '../../../services/subscription/subscription-service.token';
 import { DataExportJob } from '../../../../types/saas-billing';
 import { MfaDialogComponent } from './mfa-dialog/mfa-dialog.component';
 
@@ -30,7 +30,7 @@ interface ExportStep {
   styleUrls: ['./exportar-dados.component.scss']
 })
 export class ExportarDadosComponent {
-  private saasBilling = inject(SaasBillingMockService);
+  private saasBilling = inject(SUBSCRIPTION_SERVICE);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
 

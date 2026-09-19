@@ -94,6 +94,23 @@ public abstract class PostgresIT {
                     + "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO eip_app");
             st.execute("ALTER DEFAULT PRIVILEGES IN SCHEMA public "
                     + "GRANT USAGE, SELECT ON SEQUENCES TO eip_app");
+
+            // Cross-tenant reporting role (see V17). Read-only + BYPASSRLS so
+            // Super Admin analytics can aggregate across tenants. Provisioned
+            // here so the schema/role exists for any future reporting test; the
+            // Spring reporting datasource keeps its defaults and is not wired
+            // into tests unless a Super Admin bean is triggered.
+            st.execute("""
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'eip_report') THEN
+                            CREATE ROLE eip_report LOGIN PASSWORD 'eip_report' NOSUPERUSER BYPASSRLS;
+                        END IF;
+                    END $$;
+                    """);
+            st.execute("GRANT USAGE ON SCHEMA public TO eip_report");
+            st.execute("GRANT SELECT ON subscription, organization, ai_usage_event, "
+                    + "product_event, lead TO eip_report");
         }
     }
 

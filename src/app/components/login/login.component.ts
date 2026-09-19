@@ -10,7 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthProfileService } from '../../../services/authProfileService';
-import { AuthFlowMockService } from '../../../services/authFlowMockService';
+import { AUTH_FLOW_SERVICE } from '../../services/auth-flow/auth-flow.token';
 
 @Component({
   selector: 'app-login',
@@ -33,7 +33,7 @@ import { AuthFlowMockService } from '../../../services/authFlowMockService';
 export class LoginComponent {
   private router = inject(Router);
   private authProfileService = inject(AuthProfileService);
-  private authFlow = inject(AuthFlowMockService);
+  private authFlow = inject(AUTH_FLOW_SERVICE);
 
   // Sub-step within the identity flow managed by this component.
   step: 'cpf' | 'password' = 'cpf';

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { interval, Subscription } from 'rxjs';
@@ -6,7 +6,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { EmbarqueMockService } from '../../../../../services/embarqueMockService';
+import { LOGISTICS_SERVICE } from '../../../../services/logistics/logistics-service.token';
+import { ILogisticsService } from '../../../../services/logistics/logistics-service.interface';
 import { Embarque } from '../../../../../types/embarque';
 
 @Component({
@@ -29,7 +30,7 @@ export class EmbarqueDetalhesComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private embarqueService: EmbarqueMockService,
+    @Inject(LOGISTICS_SERVICE) private embarqueService: ILogisticsService,
     private snackBar: MatSnackBar
   ) {}
 

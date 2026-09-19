@@ -11,7 +11,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 // Services and Types
-import { PagamentosMockService } from '../../../../../services/pagamentosMockService';
+import { PAGAMENTOS_SERVICE } from '../../../../services/finance/pagamentos-service.token';
 import {
   Pagamento,
   PaymentReconciliation,
@@ -44,7 +44,7 @@ export interface PagamentoDetailDialogData {
 })
 export class PagamentoDetailDialogComponent implements OnInit {
 
-  private pagamentosService = inject(PagamentosMockService);
+  private pagamentosService = inject(PAGAMENTOS_SERVICE);
   public data: PagamentoDetailDialogData = inject(MAT_DIALOG_DATA);
 
   payment!: Pagamento;

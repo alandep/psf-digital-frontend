@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router, RouterModule } from '@angular/router';
-import { AuthFlowMockService } from '../../../../services/authFlowMockService';
+import { AUTH_FLOW_SERVICE } from '../../../services/auth-flow/auth-flow.token';
 import { AuthProfileService } from '../../../../services/authProfileService';
 import { AuthOrganization } from '../../../../types/auth-flow';
 
@@ -25,7 +25,7 @@ import { AuthOrganization } from '../../../../types/auth-flow';
 })
 export class SelectCompanyComponent {
   private router = inject(Router);
-  private authFlow = inject(AuthFlowMockService);
+  private authFlow = inject(AUTH_FLOW_SERVICE);
   private authProfileService = inject(AuthProfileService);
 
   // Stable list bound in the template (never a getter) to avoid *ngFor churn.

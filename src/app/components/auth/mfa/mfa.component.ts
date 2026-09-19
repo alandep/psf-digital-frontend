@@ -8,7 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { AuthFlowMockService } from '../../../../services/authFlowMockService';
+import { AUTH_FLOW_SERVICE } from '../../../services/auth-flow/auth-flow.token';
 
 @Component({
   selector: 'app-mfa',
@@ -29,7 +29,7 @@ import { AuthFlowMockService } from '../../../../services/authFlowMockService';
 })
 export class MfaComponent {
   private router = inject(Router);
-  private authFlow = inject(AuthFlowMockService);
+  private authFlow = inject(AUTH_FLOW_SERVICE);
 
   isLoading = false;
   errorMessage = '';

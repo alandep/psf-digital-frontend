@@ -19,7 +19,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
-import { HedgeMockService } from '../../../../services/hedgeMockService';
+import { HEDGE_SERVICE } from '../../../services/finance/hedge-service.token';
 import { ExportService } from '../../../../services/exportService';
 import { HedgeDetailDialogComponent } from './hedge-detail-dialog/hedge-detail-dialog.component';
 import { HasPermissionDirective } from '../../../directives/has-permission.directive';
@@ -60,7 +60,7 @@ import {
 })
 export class HedgeComponent implements OnInit, OnDestroy, AfterViewInit {
 
-  private hedgeService = inject(HedgeMockService);
+  private hedgeService = inject(HEDGE_SERVICE);
   private exportService = inject(ExportService);
   private formBuilder = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);

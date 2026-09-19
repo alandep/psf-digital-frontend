@@ -10,7 +10,7 @@ import {
   AbstractControl, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators
 } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { AuthFlowMockService } from '../../../../services/authFlowMockService';
+import { AUTH_FLOW_SERVICE } from '../../../services/auth-flow/auth-flow.token';
 
 // Group validator: the two password fields must match.
 function passwordsMatch(group: AbstractControl): ValidationErrors | null {
@@ -37,7 +37,7 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
   styleUrls: ['./reset-password.component.scss']
 })
 export class ResetPasswordComponent {
-  private authFlow = inject(AuthFlowMockService);
+  private authFlow = inject(AUTH_FLOW_SERVICE);
 
   isLoading = false;
   success = false;

@@ -47,6 +47,22 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+eip:
+  ai:
+    worker:
+      poll-ms: 5000
+  document:
+    worker:
+      poll-ms: 7000
+  # Read-only reporting datasource for Super Admin cross-tenant analytics.
+  # Uses the eip_report role (BYPASSRLS, SELECT-only) provisioned by V17.
+  # Defaults point at the same database as the main datasource.
+  reporting:
+    datasource:
+      url: ${REPORTING_DATASOURCE_URL:${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/eip}}
+      username: ${REPORTING_DB_USER:eip_report}
+      password: ${REPORTING_DB_PASSWORD:eip_report}
+
 ---
 spring:
   config:

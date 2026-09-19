@@ -8,11 +8,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.eip.modules.identity.adapter.out.persistence.AppUserEntity;
-import com.eip.modules.identity.adapter.out.persistence.AppUserJpaRepository;
-import com.eip.modules.identity.adapter.out.persistence.UserCredentialEntity;
-import com.eip.modules.identity.adapter.out.persistence.UserCredentialJpaRepository;
+import com.eip.modules.identity.domain.model.AppUser;
 import com.eip.modules.identity.domain.model.AuthState;
+import com.eip.modules.identity.domain.model.UserCredential;
+import com.eip.modules.identity.domain.port.out.CredentialRepositoryPort;
+import com.eip.modules.identity.domain.port.out.UserRepositoryPort;
 import com.eip.modules.organization.application.OrganizationQueryService;
 import com.eip.modules.organization.application.OrganizationQueryService.OrganizationOption;
 
@@ -36,8 +36,8 @@ public class AuthService {
     // DEV: fallback seeded user so the front's CPF-first flow keeps working.
     private static final String SEEDED_EMAIL = "alan@eip.exemplo";
 
-    private final AppUserJpaRepository userRepository;
-    private final UserCredentialJpaRepository credentialRepository;
+    private final UserRepositoryPort userRepository;
+    private final CredentialRepositoryPort credentialRepository;
     private final PasswordEncoder passwordEncoder;
     private final OrganizationQueryService organizationQueryService;
 
@@ -70,7 +70,7 @@ public class AuthService {
      * matching record is found. TODO: hash+lookup the CPF and drop the fallback.
      */
     public AuthChallenge identify(String identifier) {
-        AppUserEntity user = resolveUser(identifier).orElse(null);
+        AppUser user = resolveUser(identifier).orElse(null);
         if (user == null) {
             // Anti-enumeration: still hand back a challenge with a generic message.
             String challengeId = UUID.randomUUID().toString();
@@ -81,9 +81,9 @@ public class AuthService {
                     "Informe sua senha para continuar");
         }
         String challengeId = UUID.randomUUID().toString();
-        challenges.put(challengeId, new PendingAuth(user.getId(), AuthState.PASSWORD_REQUIRED));
+        challenges.put(challengeId, new PendingAuth(user.id(), AuthState.PASSWORD_REQUIRED));
         return new AuthChallenge(AuthState.PASSWORD_REQUIRED, challengeId,
-                user.getName(), maskIdentifier(identifier), List.of(),
+                user.name(), maskIdentifier(identifier), List.of(),
                 "Informe sua senha para continuar");
     }
 
@@ -96,9 +96,9 @@ public class AuthService {
         if (pending == null || pending.userId() == null) {
             return invalidCredentials(challengeId);
         }
-        Optional<UserCredentialEntity> credential = credentialRepository.findById(pending.userId());
+        Optional<UserCredential> credential = credentialRepository.findByUserId(pending.userId());
         boolean matches = credential
-                .map(c -> passwordEncoder.matches(password, c.getPasswordHash()))
+                .map(c -> passwordEncoder.matches(password, c.passwordHash()))
                 .orElse(false);
         if (!matches) {
             return invalidCredentials(challengeId);
@@ -178,9 +178,9 @@ public class AuthService {
                 List.of(), "Credenciais invalidas");
     }
 
-    private Optional<AppUserEntity> resolveUser(String identifier) {
+    private Optional<AppUser> resolveUser(String identifier) {
         if (identifier != null && identifier.contains("@")) {
-            Optional<AppUserEntity> byEmail = userRepository.findByEmail(identifier);
+            Optional<AppUser> byEmail = userRepository.findByEmail(identifier);
             if (byEmail.isPresent()) {
                 return byEmail;
             }

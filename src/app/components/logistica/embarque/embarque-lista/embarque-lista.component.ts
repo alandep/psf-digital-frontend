@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -26,7 +26,8 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
-import { EmbarqueMockService } from '../../../../../services/embarqueMockService';
+import { LOGISTICS_SERVICE } from '../../../../services/logistics/logistics-service.token';
+import { ILogisticsService } from '../../../../services/logistics/logistics-service.interface';
 import { Embarque, EmbarqueFilters } from '../../../../../types/embarque';
 import { ConfirmarAcaoDialogComponent, ConfirmDialogData } from '../../../admin/usuarios/confirmar-acao-dialog/confirmar-acao-dialog.component';
 import { HasPermissionDirective } from '../../../../directives/has-permission.directive';
@@ -153,7 +154,7 @@ export class EmbarqueListaComponent implements OnInit {
   sortDirection: 'asc' | 'desc' = 'desc';
 
   constructor(
-    private embarqueService: EmbarqueMockService,
+    @Inject(LOGISTICS_SERVICE) private embarqueService: ILogisticsService,
     private fb: FormBuilder,
     private router: Router,
     private dialog: MatDialog,

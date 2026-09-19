@@ -12,7 +12,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
-import { SaasBillingMockService } from '../../../../services/saasBillingMockService';
+import { SUBSCRIPTION_SERVICE } from '../../../services/subscription/subscription-service.token';
 import { AuthProfileService } from '../../../../services/authProfileService';
 import {
   Subscription, UsageMetric, Invoice, SubscriptionStatus
@@ -40,7 +40,7 @@ interface StatusView {
   styleUrls: ['./assinatura.component.scss']
 })
 export class AssinaturaComponent implements OnInit {
-  private saasBilling = inject(SaasBillingMockService);
+  private saasBilling = inject(SUBSCRIPTION_SERVICE);
   private auth = inject(AuthProfileService);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);

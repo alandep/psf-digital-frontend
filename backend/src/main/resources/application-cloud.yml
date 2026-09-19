@@ -8,6 +8,17 @@ spring:
       # so per-instance connections must respect the database connection budget.
       maximum-pool-size: ${DB_POOL_SIZE:5}
 
+# Reporting datasource (Super Admin cross-tenant analytics). In production the
+# eip_report role/credentials come from Secret Manager and are injected via the
+# REPORTING_DATASOURCE_URL / REPORTING_DB_USER / REPORTING_DB_PASSWORD env vars;
+# the role + BYPASSRLS grant are provisioned by a database admin, not by Flyway.
+eip:
+  reporting:
+    datasource:
+      url: ${REPORTING_DATASOURCE_URL:${SPRING_DATASOURCE_URL}}
+      username: ${REPORTING_DB_USER}
+      password: ${REPORTING_DB_PASSWORD}
+
 logging:
   level:
     com.eip: INFO

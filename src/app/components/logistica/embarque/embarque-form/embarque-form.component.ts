@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -25,7 +25,8 @@ import { MatGridListModule } from '@angular/material/grid-list';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 
-import { EmbarqueMockService } from '../../../../../services/embarqueMockService';
+import { LOGISTICS_SERVICE } from '../../../../services/logistics/logistics-service.token';
+import { ILogisticsService } from '../../../../services/logistics/logistics-service.interface';
 import { Embarque, Container, Rota, PortoInfo } from '../../../../../types/embarque';
 
 // Interface para logs de auditoria
@@ -118,7 +119,7 @@ export class EmbarqueFormComponent implements OnInit {
     private fb: FormBuilder,
     private router: Router,
     private route: ActivatedRoute,
-    private embarqueService: EmbarqueMockService
+    @Inject(LOGISTICS_SERVICE) private embarqueService: ILogisticsService
   ) {
     this.createForm();
   }

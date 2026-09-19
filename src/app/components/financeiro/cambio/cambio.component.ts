@@ -26,7 +26,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 // Services and Types
-import { CambioContratsMockService } from '../../../../services/cambioContratsMockService';
+import { CAMBIO_SERVICE } from '../../../services/finance/cambio-service.token';
 import { CambioDetailDialogComponent } from './cambio-detail-dialog/cambio-detail-dialog.component';
 import { CambioFormDialogComponent } from './cambio-form-dialog/cambio-form-dialog.component';
 import {
@@ -75,7 +75,7 @@ import { HasPermissionDirective } from '../../../directives/has-permission.direc
 export class CambioComponent implements OnInit, OnDestroy {
 
   // Services
-  private cambioService = inject(CambioContratsMockService);
+  private cambioService = inject(CAMBIO_SERVICE);
   private formBuilder = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
