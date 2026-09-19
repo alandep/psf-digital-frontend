@@ -1,0 +1,127 @@
+<div class="seguranca-container">
+
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Hero header -->
+  <div class="page-header">
+    <div class="title-section">
+      <mat-icon class="header-icon">security</mat-icon>
+      <div class="title-content">
+        <h1>Segurança</h1>
+        <p class="subtitle">Gerencie senha, autenticação em dois fatores, sessões e histórico</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="cards-grid">
+
+    <!-- Senha -->
+    <mat-card class="info-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar class="card-avatar">password</mat-icon>
+        <mat-card-title>Senha</mat-card-title>
+        <mat-card-subtitle *ngIf="overview">
+          Última alteração em {{ overview.passwordChangedAt | date:'dd/MM/yyyy' }}
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-actions>
+        <button mat-raised-button color="primary" (click)="changePassword()">
+          <mat-icon>lock_reset</mat-icon> Alterar senha
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+    <!-- MFA -->
+    <mat-card class="info-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar class="card-avatar">verified_user</mat-icon>
+        <mat-card-title>Autenticação em dois fatores</mat-card-title>
+      </mat-card-header>
+      <mat-card-content *ngIf="overview">
+        <div class="row">
+          <span class="row-label">Status</span>
+          <mat-chip-set>
+            <mat-chip [class.chip-on]="overview.mfaStatus === 'ENABLED'"
+                      [class.chip-off]="overview.mfaStatus === 'DISABLED'" disableRipple>
+              {{ overview.mfaStatus === 'ENABLED' ? 'Ativada' : 'Desativada' }}
+            </mat-chip>
+          </mat-chip-set>
+        </div>
+        <div class="row">
+          <span class="row-label">Aplicativo autenticador</span>
+          <span class="row-value">{{ overview.authenticatorConfigured ? 'Configurado' : 'Não configurado' }}</span>
+        </div>
+        <div class="row">
+          <span class="row-label">Códigos de recuperação</span>
+          <span class="row-value">{{ overview.recoveryCodesRemaining }} restantes</span>
+        </div>
+
+        <div class="recovery-panel" *ngIf="showRecoveryCodes">
+          <div class="recovery-warning">
+            <mat-icon>warning</mat-icon>
+            <span>Guarde estes códigos. Eles serão exibidos apenas uma vez.</span>
+          </div>
+          <div class="codes-grid">
+            <code *ngFor="let c of recoveryCodes">{{ c }}</code>
+          </div>
+          <button mat-stroked-button (click)="copyRecoveryCodes()">
+            <mat-icon>content_copy</mat-icon> Copiar
+          </button>
+        </div>
+      </mat-card-content>
+      <mat-card-actions class="actions-wrap">
+        <button mat-raised-button color="primary" routerLink="/home-logged/admin/mfa-setup">
+          <mat-icon>qr_code_2</mat-icon> Configurar autenticador
+        </button>
+        <button mat-stroked-button (click)="generateRecoveryCodes()">
+          <mat-icon>autorenew</mat-icon> Gerar novos
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+    <!-- Sessões -->
+    <mat-card class="info-card wide">
+      <mat-card-header>
+        <mat-icon mat-card-avatar class="card-avatar">devices</mat-icon>
+        <mat-card-title>Sessões</mat-card-title>
+        <mat-card-subtitle>Dispositivos com acesso à sua conta</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="session-row" *ngFor="let s of sessions; trackBy: trackById">
+          <mat-icon class="session-icon">{{ s.current ? 'laptop' : 'smartphone' }}</mat-icon>
+          <div class="session-info">
+            <span class="session-device">{{ s.device }} • {{ s.os }}</span>
+            <span class="session-meta">{{ s.location }} · {{ s.lastSeen }}</span>
+          </div>
+          <mat-chip *ngIf="s.current" class="chip-on" disableRipple>Este dispositivo</mat-chip>
+          <button *ngIf="!s.current" mat-stroked-button color="warn" (click)="revokeSession(s)">
+            <mat-icon>logout</mat-icon> Encerrar sessão
+          </button>
+        </div>
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-stroked-button color="warn" (click)="revokeOtherSessions()">
+          <mat-icon>gpp_bad</mat-icon> Encerrar todas as outras sessões
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+    <!-- Histórico -->
+    <mat-card class="info-card wide">
+      <mat-card-header>
+        <mat-icon mat-card-avatar class="card-avatar">history</mat-icon>
+        <mat-card-title>Histórico de segurança</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="event-row" *ngFor="let e of events; trackBy: trackById">
+          <mat-icon class="event-icon">shield</mat-icon>
+          <div class="event-info">
+            <span class="event-label">{{ e.label }}</span>
+            <span class="event-meta">IP {{ e.ip }} · {{ e.occurredAt | date:'dd/MM HH:mm' }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+  </div>
+</div>

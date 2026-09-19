@@ -22,11 +22,13 @@ import { EsgMockService } from '../../../../services/esgMockService';
 import { ExportService } from '../../../../services/exportService';
 import { EsgOperation, EsgMetrics } from '../../../../types/esg';
 import { RegistrarCertificacaoDialogComponent } from '../dialogs/registrar-certificacao-dialog.component';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-sustentabilidade',
   standalone: true,
   imports: [
+    HasPermissionDirective,
     CommonModule,
     ReactiveFormsModule,
     MatCardModule,

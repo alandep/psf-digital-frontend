@@ -1,0 +1,72 @@
+:host {
+  display: contents;
+}
+
+.cc-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1200;
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  pointer-events: none;
+}
+
+.cc-inner {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 1080px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 20px;
+  background: #ffffff;
+  border-radius: 14px;
+  border-top: 3px solid #1976d2;
+  box-shadow: 0 8px 28px rgba(21, 101, 192, 0.18);
+}
+
+.cc-text {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: #37474f;
+  flex: 1 1 auto;
+}
+
+.cc-link {
+  color: #1565c0;
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 4px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.cc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.cc-accept {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+}
+
+@media (max-width: 768px) {
+  .cc-inner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cc-actions {
+    justify-content: flex-end;
+  }
+}

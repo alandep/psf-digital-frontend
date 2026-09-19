@@ -23,6 +23,7 @@ import { ExportService } from '../../../../services/exportService';
 import { BillOfLading, BLType, BLStatus, BLMetrics, BLFilters } from '../../../../types/bill-of-lading';
 import { BlDetailDialogComponent, BlDetailDialogData } from './bl-detail-dialog/bl-detail-dialog.component';
 import { BlFormDialogComponent, BlFormDialogData } from './bl-form-dialog/bl-form-dialog.component';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-bill-of-lading',
@@ -43,7 +44,8 @@ import { BlFormDialogComponent, BlFormDialogData } from './bl-form-dialog/bl-for
     MatSnackBarModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatDialogModule
+    MatDialogModule,
+    HasPermissionDirective
   ],
   templateUrl: './bill-of-lading.component.html',
   styleUrls: ['./bill-of-lading.component.scss']

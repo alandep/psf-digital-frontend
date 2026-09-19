@@ -36,15 +36,12 @@ import {
   NCMClassificationStats,
   AIClassificationRequest,
   AIClassificationResponse,
-  NCMValidation,
   CommodityType,
   ComplianceStatus,
   ClassificationSource,
   ClassificationStatus,
   ExportLicenseType,
   InspectionAgency,
-  AIClassificationStatus,
-  ApprovalStatus,
   COMMODITY_TYPE_LABELS_NCM,
   COMPLIANCE_STATUS_LABELS,
   CLASSIFICATION_SOURCE_LABELS,
@@ -52,6 +49,15 @@ import {
   EXPORT_LICENSE_LABELS,
   INSPECTION_AGENCY_LABELS
 } from '../../../../types/ncm-classification';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
+import {
+  ClassificacaoFormDialogComponent,
+  ClassificacaoFormDialogData
+} from './classificacao-form-dialog/classificacao-form-dialog.component';
+import {
+  ConfirmarAcaoDialogComponent,
+  ConfirmDialogData
+} from '../../admin/usuarios/confirmar-acao-dialog/confirmar-acao-dialog.component';
 
 @Component({
   selector: 'app-ncm-classificacao',
@@ -81,7 +87,8 @@ import {
     MatDividerModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatStepperModule
+    MatStepperModule,
+    HasPermissionDirective
   ],
   templateUrl: './ncm-classificacao.component.html',
   styleUrls: ['./ncm-classificacao.component.scss']
@@ -96,13 +103,7 @@ export class NCMClassificacaoComponent implements OnInit {
   // === STATE MANAGEMENT ===
   public isLoading = false;
   public isLoadingStats = false;
-  public isSaving = false;
   public isClassifyingWithAI = false;
-  public isValidatingNCM = false;
-  
-  public showClassificationForm = false;
-  public editingClassification: NCMClassification | null = null;
-  public selectedTabIndex = 0;
 
   // === DATA ===
   public classifications: NCMClassification[] = [];
@@ -123,7 +124,6 @@ export class NCMClassificacaoComponent implements OnInit {
 
   // === FORMS ===
   public filtroForm: FormGroup;
-  public classificacaoForm: FormGroup;
   public quickClassifyForm: FormGroup;
 
   // === CONSTANTES PARA TEMPLATE ===
@@ -135,8 +135,6 @@ export class NCMClassificacaoComponent implements OnInit {
   public readonly INSPECTION_AGENCY_LABELS = INSPECTION_AGENCY_LABELS;
 
   constructor() {
-    console.log('🏷️ NCMClassificacaoComponent inicializado!');
-    
     // Formulário de filtros
     this.filtroForm = this.fb.group({
       search: [''],
@@ -157,58 +155,9 @@ export class NCMClassificacaoComponent implements OnInit {
       scientific_name: [''],
       commodity_type: ['']
     });
-
-    // Formulário completo das 5 abas
-    this.classificacaoForm = this.fb.group({
-      // ABA 1: Produto
-      product_id: ['', Validators.required],
-      product_name: ['', [Validators.required, Validators.minLength(3)]],
-      product_description: ['', [Validators.required, Validators.minLength(10)]],
-      scientific_name: [''],
-      commodity_type: ['GRAO', Validators.required],
-      origin_country: ['Brasil', Validators.required],
-
-      // ABA 2: Classificação Fiscal
-      ncm_code: ['', [Validators.required, Validators.pattern(/^\d{4}\.\d{2}\.\d{2}$/)]],
-      ncm_description: ['', Validators.required],
-      hs_code: ['', [Validators.required, Validators.minLength(4)]],
-      hs_description: [''],
-      ncm_chapter: [''],
-      ncm_heading: [''],
-      ncm_subheading: [''],
-      ncm_item: [''],
-      ncm_full_code: [''],
-      common_ncm_examples: [''],
-
-      // ABA 3: Compliance Exportação
-      export_tax: [0, [Validators.min(0), Validators.max(100)]],
-      export_license_required: [false],
-      export_license_type: ['NONE'],
-      lpco_required: [false],
-      lpco_type: [''],
-      requires_inspection: [false],
-      inspection_agency: [''],
-      export_restriction: [false],
-      restriction_description: [''],
-
-      // ABA 4: IA e Automação
-      ai_suggested_ncm: [''],
-      ai_alternative_ncm_codes: [[]],
-      ai_confidence_score: [0],
-      ai_classification_reason: [''],
-      ai_data_sources: [[]],
-      ai_auto_classification_enabled: [true],
-      ai_requires_human_review: [false],
-      ai_classification_status: ['PENDING'],
-
-      // ABA 5: Histórico e Auditoria
-      created_by: [''],
-      approval_status: ['PENDING']
-    });
   }
 
   ngOnInit(): void {
-    console.log('📊 Carregando dados da Classificação NCM...');
     this.loadData();
     this.setupFormSubscriptions();
   }
@@ -226,12 +175,10 @@ export class NCMClassificacaoComponent implements OnInit {
     
     this.clasificacaoService.getClassifications(filters).subscribe({
       next: (classifications: NCMClassification[]) => {
-        console.log('✅ Classificações carregadas:', classifications.length);
         this.classifications = classifications;
         this.isLoading = false;
       },
-      error: (error: any) => {
-        console.error('❌ Erro ao carregar classificações:', error);
+      error: () => {
         this.snackBar.open('Erro ao carregar classificações', 'Fechar', { duration: 3000 });
         this.isLoading = false;
       }
@@ -243,12 +190,10 @@ export class NCMClassificacaoComponent implements OnInit {
     
     this.clasificacaoService.getStatistics().subscribe({
       next: (stats: NCMClassificationStats) => {
-        console.log('📈 Estatísticas carregadas:', stats);
         this.stats = stats;
         this.isLoadingStats = false;
       },
-      error: (error: any) => {
-        console.error('❌ Erro ao carregar estatísticas:', error);
+      error: () => {
         this.isLoadingStats = false;
       }
     });
@@ -303,130 +248,101 @@ export class NCMClassificacaoComponent implements OnInit {
     this.filtroForm.valueChanges.subscribe(() => {
       this.loadClassifications();
     });
-
-    // Observar mudanças no NCM para validação automática
-    this.classificacaoForm.get('ncm_code')?.valueChanges.subscribe(ncmCode => {
-      if (ncmCode && ncmCode.match(/^\d{4}\.\d{2}\.\d{2}$/)) {
-        this.validateNCMWithReceita(ncmCode);
-      }
-    });
   }
 
   // === MÉTODOS DE CLASSIFICAÇÃO ===
 
   public createClassification(): void {
-    console.log('➕ Criando nova classificação NCM');
-    this.editingClassification = null;
-    this.selectedTabIndex = 0;
-    this.classificacaoForm.reset({
-      commodity_type: 'GRAO',
-      origin_country: 'Brasil',
-      export_tax: 0,
-      export_license_required: false,
-      export_license_type: 'NONE',
-      lpco_required: false,
-      requires_inspection: false,
-      export_restriction: false,
-      ai_auto_classification_enabled: true,
-      ai_requires_human_review: false,
-      ai_classification_status: 'PENDING',
-      ai_confidence_score: 0,
-      approval_status: 'PENDING'
-    });
-    this.showClassificationForm = true;
-    
-    setTimeout(() => {
-      document.getElementById('classification-form-container')?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+    this.openClassificationDialog(null, null);
   }
 
   public editClassification(classification: NCMClassification): void {
-    console.log('📝 Editando classificação:', classification.classification_id);
-    this.editingClassification = classification;
-    this.selectedTabIndex = 0;
-    this.classificacaoForm.patchValue(classification);
-    this.showClassificationForm = true;
-    
-    setTimeout(() => {
-      document.getElementById('classification-form-container')?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+    this.openClassificationDialog(classification, classification);
   }
 
-  public closeClassificationForm(): void {
-    this.showClassificationForm = false;
-    this.editingClassification = null;
-    this.selectedTabIndex = 0;
-    this.classificacaoForm.reset();
-    console.log('✖️ Formulário de classificação fechado');
+  /**
+   * Abre o dialog centralizado (ESC) do formulário de classificação.
+   * `seed` popula o formulário; `editing` (quando existente) determina update x create.
+   * Ao fechar com um valor, o pai persiste (create/update) e recarrega a lista.
+   */
+  private openClassificationDialog(
+    seed: NCMClassification | null,
+    editing: NCMClassification | null
+  ): void {
+    const data: ClassificacaoFormDialogData = { classification: seed };
+
+    const dialogRef = this.dialog.open(ClassificacaoFormDialogComponent, {
+      width: '1000px',
+      maxWidth: '96vw',
+      maxHeight: '92vh',
+      autoFocus: false,
+      panelClass: 'classificacao-form-dialog-panel',
+      data
+    });
+
+    dialogRef.afterClosed().subscribe((formData: any) => {
+      if (!formData) {
+        return;
+      }
+      this.persistClassification(formData, editing);
+    });
   }
 
-  public saveClassification(): void {
-    if (this.classificacaoForm.invalid) {
-      this.snackBar.open('Por favor, preencha todos os campos obrigatórios', 'Fechar', { duration: 3000 });
-      return;
-    }
-
-    this.isSaving = true;
-    const formData = this.classificacaoForm.value;
-    
-    // Preencher campos automáticos
-    formData.created_by = formData.created_by || 'user_current';
-    formData.classification_source = formData.ai_confidence_score > 0 ? 'IA' : 'MANUAL';
-    formData.compliance_status = this.calculateComplianceStatus(formData);
-    formData.status = formData.approval_status === 'APPROVED' ? 'ACTIVE' : 'PENDING';
-
-    console.log('💾 Salvando classificação:', formData);
-
-    if (this.editingClassification) {
-      // Atualizar classificação existente
-      this.clasificacaoService.updateClassification(this.editingClassification.classification_id, formData).subscribe({
-        next: (classification: NCMClassification) => {
-          console.log('✅ Classificação atualizada:', classification);
+  private persistClassification(formData: any, editing: NCMClassification | null): void {
+    if (editing) {
+      this.clasificacaoService.updateClassification(editing.classification_id, formData).subscribe({
+        next: () => {
           this.snackBar.open('Classificação atualizada com sucesso!', 'Fechar', { duration: 3000 });
           this.loadData();
-          this.closeClassificationForm();
-          this.isSaving = false;
         },
-        error: (error: any) => {
-          console.error('❌ Erro ao atualizar classificação:', error);
+        error: () => {
           this.snackBar.open('Erro ao atualizar classificação', 'Fechar', { duration: 3000 });
-          this.isSaving = false;
         }
       });
     } else {
-      // Criar nova classificação
       this.clasificacaoService.createClassification(formData).subscribe({
-        next: (classification: NCMClassification) => {
-          console.log('✅ Classificação criada:', classification);
+        next: () => {
           this.snackBar.open('Classificação criada com sucesso!', 'Fechar', { duration: 3000 });
           this.loadData();
-          this.closeClassificationForm();
-          this.isSaving = false;
         },
-        error: (error: any) => {
-          console.error('❌ Erro ao criar classificação:', error);
+        error: () => {
           this.snackBar.open('Erro ao criar classificação', 'Fechar', { duration: 3000 });
-          this.isSaving = false;
         }
       });
     }
   }
 
   public deleteClassification(classification: NCMClassification): void {
-    if (confirm(`Tem certeza que deseja excluir a classificação "${classification.product_name}"?`)) {
-      console.log('🗑️ Excluindo classificação:', classification.classification_id);
-      
+    const data: ConfirmDialogData = {
+      title: 'Excluir Classificação',
+      message: `Tem certeza que deseja excluir a classificação "${classification.product_name}"? Esta ação não pode ser desfeita.`,
+      icon: 'delete',
+      iconColor: '#f44336',
+      confirmText: 'Excluir',
+      confirmColor: 'warn'
+    };
+
+    const dialogRef = this.dialog.open(ConfirmarAcaoDialogComponent, {
+      width: '420px',
+      autoFocus: false,
+      data
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
+      if (confirmed !== true) {
+        return;
+      }
+
       this.clasificacaoService.deleteClassification(classification.classification_id).subscribe({
         next: () => {
           this.snackBar.open('Classificação excluída com sucesso!', 'Fechar', { duration: 3000 });
           this.loadData();
         },
-        error: (error: any) => {
-          console.error('❌ Erro ao excluir classificação:', error);
+        error: () => {
           this.snackBar.open('Erro ao excluir classificação', 'Fechar', { duration: 3000 });
         }
       });
-    }
+    });
   }
 
   // === MÉTODOS DE IA ===
@@ -444,55 +360,25 @@ export class NCMClassificacaoComponent implements OnInit {
     
     this.clasificacaoService.classifyWithAI(request).subscribe({
       next: (response: AIClassificationResponse) => {
-        console.log('✅ Resposta da IA:', response);
         this.handleAIResponse(response);
         this.isClassifyingWithAI = false;
       },
-      error: (error: any) => {
-        console.error('❌ Erro na classificação IA:', error);
+      error: () => {
         this.snackBar.open('Erro na classificação com IA', 'Fechar', { duration: 3000 });
         this.isClassifyingWithAI = false;
       }
     });
   }
 
-  public classifyCurrentFormWithAI(): void {
-    const productDescription = this.classificacaoForm.get('product_description')?.value;
-    
-    if (!productDescription?.trim()) {
-      this.snackBar.open('Preencha a descrição do produto primeiro', 'Fechar', { duration: 3000 });
-      return;
-    }
-
-    this.isClassifyingWithAI = true;
-    const request: AIClassificationRequest = {
-      product_description: productDescription,
-      product_name: this.classificacaoForm.get('product_name')?.value,
-      scientific_name: this.classificacaoForm.get('scientific_name')?.value,
-      commodity_type: this.classificacaoForm.get('commodity_type')?.value,
-      origin_country: this.classificacaoForm.get('origin_country')?.value
-    };
-    
-    this.clasificacaoService.classifyWithAI(request).subscribe({
-      next: (response: AIClassificationResponse) => {
-        this.applyAIResponseToForm(response);
-        this.isClassifyingWithAI = false;
-      },
-      error: (error: any) => {
-        console.error('❌ Erro na classificação IA:', error);
-        this.snackBar.open('Erro na classificação com IA', 'Fechar', { duration: 3000 });
-        this.isClassifyingWithAI = false;
-      }
-    });
-  }
-
+  /**
+   * Recebe a sugestão da IA e abre o dialog pré-populado com a semente derivada.
+   * O painel de classificação rápida permanece na página.
+   */
   private handleAIResponse(response: AIClassificationResponse): void {
     const suggestion = response.primary_suggestion;
-    
-    // Criar nova classificação automaticamente
-    this.editingClassification = null;
-    this.classificacaoForm.reset();
-    this.classificacaoForm.patchValue({
+
+    // Semente derivada da IA (tratada como "classification" de criação pelo dialog).
+    const seed = {
       product_description: this.quickClassifyForm.get('product_description')?.value,
       product_name: this.quickClassifyForm.get('product_name')?.value || suggestion.ncm_description,
       scientific_name: this.quickClassifyForm.get('scientific_name')?.value,
@@ -509,96 +395,20 @@ export class NCMClassificacaoComponent implements OnInit {
       ai_auto_classification_enabled: true,
       ai_requires_human_review: response.confidence_score < 90,
       ai_classification_status: response.confidence_score >= 90 ? 'APPROVED' : 'PENDING'
-    });
+    } as unknown as NCMClassification;
 
-    // Mostrar formulário
-    this.showClassificationForm = true;
-    this.selectedTabIndex = 1; // Ir para aba de classificação fiscal
-    
-    // Limpar formulário rápido
-    this.quickClassifyForm.reset();
-    
     this.snackBar.open(
       `🤖 Classificação IA: ${suggestion.ncm_code} (${response.confidence_score.toFixed(1)}% confiança)`,
       'Fechar',
       { duration: 5000 }
     );
 
-    setTimeout(() => {
-      document.getElementById('classification-form-container')?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-  }
-
-  private applyAIResponseToForm(response: AIClassificationResponse): void {
-    const suggestion = response.primary_suggestion;
-    
-    this.classificacaoForm.patchValue({
-      ncm_code: suggestion.ncm_code,
-      ncm_description: suggestion.ncm_description,
-      hs_code: suggestion.hs_code,
-      ai_suggested_ncm: suggestion.ncm_code,
-      ai_alternative_ncm_codes: response.alternative_suggestions.map((alt: any) => alt.ncm_code),
-      ai_confidence_score: response.confidence_score,
-      ai_classification_reason: response.classification_reason,
-      ai_data_sources: response.data_sources,
-      ai_requires_human_review: response.confidence_score < 90,
-      ai_classification_status: response.confidence_score >= 90 ? 'APPROVED' : 'PENDING'
-    });
-
-    this.snackBar.open(
-      `🤖 Classificação IA aplicada: ${suggestion.ncm_code} (${response.confidence_score.toFixed(1)}% confiança)`,
-      'Fechar',
-      { duration: 4000 }
-    );
-  }
-
-  // === MÉTODOS DE VALIDAÇÃO ===
-
-  public validateNCMWithReceita(ncmCode: string): void {
-    if (!ncmCode?.match(/^\d{4}\.\d{2}\.\d{2}$/)) {
-      return;
-    }
-
-    this.isValidatingNCM = true;
-    console.log('🏛️ Validando NCM com Receita Federal:', ncmCode);
-    
-    this.clasificacaoService.validateNCMWithReceita(ncmCode).subscribe({
-      next: (validation: NCMValidation) => {
-        console.log('✅ Validação Receita:', validation);
-        
-        if (validation.is_valid) {
-          this.classificacaoForm.patchValue({
-            ncm_description: validation.official_description,
-            export_tax: validation.export_tax,
-            export_license_required: validation.requires_license
-          });
-          
-          this.snackBar.open(`✅ NCM validado: ${validation.official_description}`, 'Fechar', { duration: 3000 });
-        } else {
-          this.snackBar.open(`❌ NCM inválido: ${validation.official_description}`, 'Fechar', { duration: 4000 });
-        }
-        
-        this.isValidatingNCM = false;
-      },
-      error: (error: any) => {
-        console.error('❌ Erro na validação NCM:', error);
-        this.snackBar.open('Erro ao validar NCM com Receita Federal', 'Fechar', { duration: 3000 });
-        this.isValidatingNCM = false;
-      }
-    });
+    // Limpar formulário rápido e abrir o dialog (modo criação) com a sugestão.
+    this.quickClassifyForm.reset();
+    this.openClassificationDialog(seed, null);
   }
 
   // === MÉTODOS AUXILIARES ===
-
-  private calculateComplianceStatus(formData: any): ComplianceStatus {
-    if (formData.ai_confidence_score >= 90 && !formData.export_restriction) {
-      return 'VALID';
-    } else if (formData.ai_confidence_score >= 70 || formData.export_restriction) {
-      return 'WARNING';
-    } else {
-      return 'INVALID';
-    }
-  }
 
   public getComplianceStatusColor(status: ComplianceStatus): string {
     switch (status) {

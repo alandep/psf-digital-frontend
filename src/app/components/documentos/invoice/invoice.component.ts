@@ -36,6 +36,7 @@ import {
   InvoiceMetrics,
 } from '../../../../types/invoice';
 import { InvoiceDetailDialogComponent, InvoiceDetailDialogData } from './invoice-detail-dialog/invoice-detail-dialog.component';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-invoice',
@@ -65,6 +66,7 @@ import { InvoiceDetailDialogComponent, InvoiceDetailDialogData } from './invoice
     MatDatepickerModule,
     MatNativeDateModule,
     MatDialogModule,
+    HasPermissionDirective,
   ],
   templateUrl: './invoice.component.html',
   styleUrls: ['./invoice.component.scss']

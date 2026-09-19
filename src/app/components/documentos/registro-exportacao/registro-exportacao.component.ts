@@ -34,6 +34,7 @@ import {
   REFilters, REMetrics
 } from '../../../../types/registro-exportacao';
 import { ReDetailDialogComponent, ReDetailDialogData } from './re-detail-dialog/re-detail-dialog.component';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-registro-exportacao',
@@ -63,6 +64,7 @@ import { ReDetailDialogComponent, ReDetailDialogData } from './re-detail-dialog/
     MatDialogModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    HasPermissionDirective,
   ],
   templateUrl: './registro-exportacao.component.html',
   styleUrls: ['./registro-exportacao.component.scss']

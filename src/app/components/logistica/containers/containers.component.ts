@@ -32,6 +32,7 @@ import {
   ContainerFilters,
   CONTAINER_NUMBER_REGEX
 } from '../../../../types/containers';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-containers',
@@ -55,7 +56,8 @@ import {
     MatTooltipModule,
     MatDividerModule,
     MatBadgeModule,
-    MatDialogModule
+    MatDialogModule,
+    HasPermissionDirective
   ],
   templateUrl: './containers.component.html',
   styleUrls: ['./containers.component.scss']
@@ -75,11 +77,9 @@ export class ContainersComponent implements OnInit, OnDestroy, AfterViewInit {
 
   containers: Container[] = [];
   dataSource = new MatTableDataSource<Container>([]);
-  selectedContainer: Container | null = null;
   kpis: ContainerKPIs | null = null;
 
   isLoading = false;
-  isDetailOpen = false;
   activeStatusFilter: ContainerStatus | '' = '';
 
   filterForm!: FormGroup;
@@ -184,13 +184,14 @@ export class ContainersComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   selectContainer(container: Container): void {
-    this.selectedContainer = container;
-    this.isDetailOpen = true;
-  }
-
-  closeDetail(): void {
-    this.isDetailOpen = false;
-    this.selectedContainer = null;
+    import('./container-detail-dialog/container-detail-dialog.component').then(m => {
+      this.dialog.open(m.ContainerDetailDialogComponent, {
+        width: '820px',
+        maxWidth: '95vw',
+        panelClass: 'container-detail-panel',
+        data: { container }
+      });
+    });
   }
 
   openNovoContainerDialog(): void {

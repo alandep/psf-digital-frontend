@@ -15,10 +15,10 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button class="export-btn" (click)="exportPDF()">
+        <button mat-raised-button class="export-btn" *appHasPermission="'relatorios/logistica:export'" (click)="exportPDF()">
           <mat-icon>picture_as_pdf</mat-icon> PDF
         </button>
-        <button mat-raised-button class="export-btn" (click)="exportExcel()">
+        <button mat-raised-button class="export-btn" *appHasPermission="'relatorios/logistica:export'" (click)="exportExcel()">
           <mat-icon>table_chart</mat-icon> Excel
         </button>
       </div>

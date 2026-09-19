@@ -1,19 +1,24 @@
 <div class="sancoes-container">
-  <!-- Header -->
+  <!-- Header (Portos hero identity) -->
   <div class="page-header">
-    <h1>
-      <mat-icon>shield</mat-icon>
-      Sanções - Screening
-    </h1>
-    <div class="header-actions">
-      <div class="auto-refresh-indicator">
-        <div class="pulse-dot"></div>
-        <span>Auto-refresh ativo</span>
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">shield</mat-icon>
+        <div class="title-content">
+          <h1>Sanções &mdash; Screening</h1>
+          <p class="subtitle">Monitoramento e screening de listas de sanções</p>
+        </div>
       </div>
-      <button mat-raised-button color="primary" (click)="runNewScreening()">
-        <mat-icon>search</mat-icon>
-        Nova Verificação
-      </button>
+      <div class="header-actions">
+        <div class="auto-refresh-indicator">
+          <div class="pulse-dot"></div>
+          <span>Auto-refresh ativo</span>
+        </div>
+        <button mat-raised-button color="primary" *appHasPermission="'compliance/sancoes:create'" (click)="runNewScreening()">
+          <mat-icon>search</mat-icon>
+          Nova Verificação
+        </button>
+      </div>
     </div>
   </div>
 
@@ -45,7 +50,7 @@
         <mat-icon>schedule</mat-icon>
         <span>Última Verificação</span>
       </div>
-      <div class="metric-value" style="font-size: 1.1rem;">{{ metrics.ultimaVerificacao | date:'dd/MM HH:mm' }}</div>
+      <div class="metric-value metric-value-sm">{{ metrics.ultimaVerificacao | date:'dd/MM HH:mm' }}</div>
     </div>
   </div>
 
@@ -91,10 +96,10 @@
     <div class="table-header">
       <h3>Resultados de Screening</h3>
       <div class="export-actions">
-        <button mat-icon-button (click)="exportCSV()" matTooltip="Exportar CSV">
+        <button mat-icon-button *appHasPermission="'compliance/sancoes:export'" (click)="exportCSV()" matTooltip="Exportar CSV">
           <mat-icon>download</mat-icon>
         </button>
-        <button mat-icon-button (click)="exportPDF()" matTooltip="Exportar PDF">
+        <button mat-icon-button *appHasPermission="'compliance/sancoes:export'" (click)="exportPDF()" matTooltip="Exportar PDF">
           <mat-icon>picture_as_pdf</mat-icon>
         </button>
       </div>

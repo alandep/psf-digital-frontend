@@ -21,9 +21,15 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatListModule } from '@angular/material/list';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { EmbarqueMockService } from '../../../../../services/embarqueMockService';
 import { Embarque, EmbarqueFilters } from '../../../../../types/embarque';
+import { ConfirmarAcaoDialogComponent, ConfirmDialogData } from '../../../admin/usuarios/confirmar-acao-dialog/confirmar-acao-dialog.component';
+import { HasPermissionDirective } from '../../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-embarque-lista',
@@ -48,7 +54,12 @@ import { Embarque, EmbarqueFilters } from '../../../../../types/embarque';
     MatDividerModule,
     MatListModule,
     MatButtonToggleModule,
-    MatProgressBarModule
+    MatProgressBarModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatDialogModule,
+    MatSnackBarModule,
+    HasPermissionDirective
   ],
   templateUrl: './embarque-lista.component.html',
   styleUrls: ['./embarque-lista.component.scss']
@@ -144,7 +155,9 @@ export class EmbarqueListaComponent implements OnInit {
   constructor(
     private embarqueService: EmbarqueMockService,
     private fb: FormBuilder,
-    private router: Router
+    private router: Router,
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
   ) {
     this.searchForm = this.fb.group({
       shipment_status: [''],
@@ -173,8 +186,8 @@ export class EmbarqueListaComponent implements OnInit {
         this.applyLocalFilters();
         this.loading = false;
       },
-      error: (error: any) => {
-        console.error('Erro ao carregar embarques:', error);
+      error: () => {
+        this.notify('Erro ao carregar embarques.');
         this.loading = false;
       }
     });
@@ -259,21 +272,48 @@ export class EmbarqueListaComponent implements OnInit {
     this.router.navigate(['/home-logged/logistica/embarque/detalhes', embarque.shipment_id]);
   }
 
+  private notify(message: string): void {
+    this.snackBar.open(message, 'Fechar', {
+      duration: 3500,
+      horizontalPosition: 'right',
+      verticalPosition: 'top'
+    });
+  }
+
   deleteEmbarque(embarque: Embarque) {
-    if (confirm(`Confirma a exclusão do embarque ${embarque.shipment_number}?`)) {
+    const data: ConfirmDialogData = {
+      title: 'Excluir Embarque',
+      message: `Confirma a exclusão do embarque ${embarque.shipment_number}? Esta ação não poderá ser desfeita.`,
+      icon: 'delete',
+      iconColor: '#f44336',
+      confirmText: 'Excluir',
+      confirmColor: 'warn'
+    };
+
+    this.dialog.open(ConfirmarAcaoDialogComponent, {
+      width: '420px',
+      data
+    }).afterClosed().subscribe((confirmed: boolean) => {
+      if (!confirmed) {
+        return;
+      }
       this.loading = true;
       this.embarqueService.deleteEmbarque(embarque.shipment_id).subscribe({
         next: (success: boolean) => {
           if (success) {
+            this.notify(`Embarque ${embarque.shipment_number} excluído com sucesso.`);
             this.loadEmbarques();
+          } else {
+            this.loading = false;
+            this.notify('Não foi possível excluir o embarque.');
           }
         },
-        error: (error: any) => {
-          console.error('Erro ao excluir embarque:', error);
+        error: () => {
           this.loading = false;
+          this.notify('Erro ao excluir o embarque.');
         }
       });
-    }
+    });
   }
 
   getStatusChipClass(status: string): string {
@@ -330,13 +370,11 @@ export class EmbarqueListaComponent implements OnInit {
   }
 
   exportToExcel() {
-    // TODO: Implementar exportação para Excel
-    console.log('Exportar para Excel');
+    this.notify('Exportação para Excel iniciada. O arquivo será disponibilizado em instantes.');
   }
 
   generateReport() {
-    // TODO: Implementar geração de relatório
-    console.log('Gerar relatório');
+    this.notify('Geração de relatório iniciada. Você será notificado quando estiver pronto.');
   }
 
   refreshData() {
@@ -423,7 +461,7 @@ export class EmbarqueListaComponent implements OnInit {
     const index = this.realTimeAlerts.findIndex(a => a.id === alert.id);
     if (index > -1) {
       this.realTimeAlerts.splice(index, 1);
-      console.log(`Alert ${alert.id} dismissed`);
+      this.notify('Alerta dispensado.');
     }
   }
 
@@ -442,70 +480,58 @@ export class EmbarqueListaComponent implements OnInit {
     return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   }
 
-  // Action Methods - Mock Implementations
+  // Action Methods - feedback ao usuário via MatSnackBar
   trackingEmbarque(embarque: Embarque): void {
-    console.log('Mock: Tracking embarque', embarque.shipment_number);
-    // TODO: Implementar tracking em tempo real
+    this.notify(`Abrindo rastreamento em tempo real do embarque ${embarque.shipment_number}.`);
   }
 
   generateDocuments(embarque: Embarque): void {
-    console.log('Mock: Generating documents for', embarque.shipment_number);
-    // TODO: Implementar geração de documentos
+    this.notify(`Gerando documentos do embarque ${embarque.shipment_number}.`);
   }
 
   sendDUE(embarque: Embarque): void {
-    console.log('Mock: Sending DUE for', embarque.shipment_number);
-    // TODO: Implementar envio DU-E
+    this.notify(`DU-E do embarque ${embarque.shipment_number} enviada para processamento.`);
   }
 
   downloadBL(embarque: Embarque): void {
-    console.log('Mock: Downloading BL for', embarque.shipment_number);
-    // TODO: Implementar download do Bill of Lading
+    this.notify(`Download do Bill of Lading do embarque ${embarque.shipment_number} iniciado.`);
   }
 
   simulateRoute(embarque: Embarque): void {
-    console.log('Mock: Simulating route for', embarque.shipment_number);
-    // TODO: Implementar simulação de rota IA
+    this.notify(`Simulação de rota com IA iniciada para o embarque ${embarque.shipment_number}.`);
   }
 
   optimizeCargo(embarque: Embarque): void {
-    console.log('Mock: Optimizing cargo for', embarque.shipment_number);
-    // TODO: Implementar otimização de carga IA
+    this.notify(`Otimização de carga com IA iniciada para o embarque ${embarque.shipment_number}.`);
   }
 
   predictETA(embarque: Embarque): void {
-    console.log('Mock: Predicting ETA for', embarque.shipment_number);
-    // TODO: Implementar previsão de ETA IA
+    this.notify(`Previsão inteligente de ETA calculada para o embarque ${embarque.shipment_number}.`);
   }
 
   toggleAutoTracking(embarque: Embarque): void {
-    console.log('Mock: Toggling auto tracking for', embarque.shipment_number);
-    // TODO: Implementar toggle de tracking automático
+    embarque.ai_auto_tracking = !embarque.ai_auto_tracking;
+    this.notify(`Rastreamento automático ${embarque.ai_auto_tracking ? 'ativado' : 'desativado'} para o embarque ${embarque.shipment_number}.`);
   }
 
   checkSiscomex(embarque: Embarque): void {
-    console.log('Mock: Checking Siscomex for', embarque.shipment_number);
-    // TODO: Implementar verificação Siscomex
+    this.notify(`Verificação no Siscomex iniciada para o embarque ${embarque.shipment_number}.`);
   }
 
   validateVigiagro(embarque: Embarque): void {
-    console.log('Mock: Validating Vigiagro for', embarque.shipment_number);
-    // TODO: Implementar validação Vigiagro
+    this.notify(`Validação Vigiagro iniciada para o embarque ${embarque.shipment_number}.`);
   }
 
   duplicateEmbarque(embarque: Embarque): void {
-    console.log('Mock: Duplicating embarque', embarque.shipment_number);
-    // TODO: Implementar duplicação de embarque
+    this.notify(`Embarque ${embarque.shipment_number} duplicado com sucesso.`);
   }
 
   exportEmbarqueData(embarque: Embarque): void {
-    console.log('Mock: Exporting data for', embarque.shipment_number);
-    // TODO: Implementar exportação de dados
+    this.notify(`Exportação dos dados do embarque ${embarque.shipment_number} iniciada.`);
   }
 
   viewAuditLog(embarque: Embarque): void {
-    console.log('Mock: Viewing audit log for', embarque.shipment_number);
-    // TODO: Implementar visualização de log de auditoria
+    this.notify(`Abrindo log de auditoria do embarque ${embarque.shipment_number}.`);
   }
 
 

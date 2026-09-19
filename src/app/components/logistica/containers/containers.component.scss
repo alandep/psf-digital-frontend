@@ -16,9 +16,9 @@ $purple: #9c27b0;
 .loading-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; }
 
 .page-header {
-  background: linear-gradient(135deg, $primary 0%, $dark 100%);
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
   color: white; padding: 2rem; margin-bottom: 24px; border-radius: 12px;
-  box-shadow: 0 8px 32px rgba($primary, 0.3);
+  box-shadow: 0 8px 32px rgba(25, 118, 210, 0.3);
 
   .header-main {
     display: flex; justify-content: space-between; align-items: center;
@@ -29,7 +29,7 @@ $purple: #9c27b0;
     }
     .header-actions {
       display: flex; align-items: center; gap: 1rem;
-      button { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(10px); &:hover { background: rgba(255,255,255,0.3); transform: translateY(-2px); } }
+      button { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(10px); &:hover { background: rgba(255,255,255,0.3); transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); } }
     }
   }
 }

@@ -10,10 +10,10 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button (click)="exportCSV()">
+        <button mat-raised-button *appHasPermission="'documentos/packing-list:export'" (click)="exportCSV()">
           <mat-icon>download</mat-icon> CSV
         </button>
-        <button mat-raised-button (click)="exportPDF()">
+        <button mat-raised-button *appHasPermission="'documentos/packing-list:export'" (click)="exportPDF()">
           <mat-icon>picture_as_pdf</mat-icon> PDF
         </button>
       </div>

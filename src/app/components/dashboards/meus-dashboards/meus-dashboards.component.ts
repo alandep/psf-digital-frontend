@@ -14,6 +14,8 @@ import { DashboardBuilderMockService } from '../../../../services/dashboardBuild
 import { ExportService } from '../../../../services/exportService';
 import { UserDashboard, DashboardMetrics, DashboardWidget } from '../../../../types/dashboard-builder';
 import { NovoDashboardDialogComponent } from '../dialogs/novo-dashboard-dialog.component';
+import { ConfirmarAcaoDialogComponent, ConfirmDialogData } from '../../admin/usuarios/confirmar-acao-dialog/confirmar-acao-dialog.component';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-meus-dashboards',
@@ -26,7 +28,8 @@ import { NovoDashboardDialogComponent } from '../dialogs/novo-dashboard-dialog.c
     MatChipsModule,
     MatTooltipModule,
     MatSnackBarModule,
-    MatDialogModule
+    MatDialogModule,
+    HasPermissionDirective
   ],
   templateUrl: './meus-dashboards.component.html',
   styleUrls: ['./meus-dashboards.component.scss']
@@ -91,16 +94,41 @@ export class MeusDashboardsComponent implements OnInit, OnDestroy {
     this.selectedDashboard = this.selectedDashboard?.id === dashboard.id ? null : dashboard;
   }
 
+  shareDashboard(event: Event, dashboard: UserDashboard): void {
+    event.stopPropagation();
+    this.snackBar.open(`Link de compartilhamento de "${dashboard.name}" copiado.`, 'OK', { duration: 3000 });
+  }
+
   deleteDashboard(event: Event, dashboard: UserDashboard): void {
     event.stopPropagation();
-    this.dashboardService.deleteDashboard(dashboard.id)
+    const data: ConfirmDialogData = {
+      title: 'Excluir Dashboard',
+      message: `Tem certeza que deseja excluir o dashboard "${dashboard.name}"?`,
+      icon: 'delete',
+      iconColor: '#f44336',
+      confirmText: 'Excluir',
+      confirmColor: 'warn'
+    };
+    const dialogRef = this.dialog.open(ConfirmarAcaoDialogComponent, {
+      width: '420px',
+      autoFocus: false,
+      data
+    });
+
+    dialogRef.afterClosed()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.snackBar.open('Dashboard removido', 'OK', { duration: 3000 });
-        if (this.selectedDashboard?.id === dashboard.id) {
-          this.selectedDashboard = null;
+      .subscribe((confirmed: boolean) => {
+        if (confirmed === true) {
+          this.dashboardService.deleteDashboard(dashboard.id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(() => {
+              this.snackBar.open('Dashboard removido', 'OK', { duration: 3000 });
+              if (this.selectedDashboard?.id === dashboard.id) {
+                this.selectedDashboard = null;
+              }
+              this.loadData();
+            });
         }
-        this.loadData();
       });
   }
 

@@ -21,6 +21,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { RelatorioRentabilidadeMockService } from '../../../../services/relatorioRentabilidadeMockService';
 import { ExportService } from '../../../../services/exportService';
 import { RentabilidadeReport, RentabilidadeMetrics, MarginByProduct, MarginByClient } from '../../../../types/relatorio-rentabilidade';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-relatorios-rentabilidade',
@@ -39,7 +40,8 @@ import { RentabilidadeReport, RentabilidadeMetrics, MarginByProduct, MarginByCli
     MatSelectModule,
     MatSnackBarModule,
     MatProgressBarModule,
-    MatTooltipModule
+    MatTooltipModule,
+    HasPermissionDirective
   ],
   templateUrl: './relatorios-rentabilidade.component.html',
   styleUrls: ['./relatorios-rentabilidade.component.scss']

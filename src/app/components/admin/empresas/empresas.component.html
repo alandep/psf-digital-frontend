@@ -20,7 +20,7 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button class="btn-new" (click)="novaEmpresa()">
+        <button mat-raised-button class="btn-new" *appHasPermission="'admin/empresas:create'" (click)="novaEmpresa()">
           <mat-icon>add</mat-icon>
           Nova Empresa
         </button>

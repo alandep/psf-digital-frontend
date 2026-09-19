@@ -1,0 +1,35 @@
+<app-public-header></app-public-header>
+
+<main class="product">
+  <section class="hero">
+    <div class="hero-inner">
+      <h1>Conheça o EIP</h1>
+      <p>Operações, documentos, logística, financeiro, compliance e IA em uma única plataforma.</p>
+    </div>
+  </section>
+
+  <section class="caps">
+    <div class="caps-inner">
+      <div class="cap-card" *ngFor="let cap of capabilities; trackBy: trackById">
+        <div class="cap-icon"><mat-icon>{{ cap.icon }}</mat-icon></div>
+        <div class="cap-body">
+          <h3>{{ cap.title }}</h3>
+          <p>{{ cap.description }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="cta-inner">
+      <h2>Pronto para simplificar suas exportações?</h2>
+      <p>Teste o EIP e explore todas as funcionalidades da plataforma.</p>
+      <div class="cta-actions">
+        <a mat-flat-button color="primary" routerLink="/signup">Experimentar grátis</a>
+        <a mat-stroked-button routerLink="/precos">Ver planos</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<app-public-footer></app-public-footer>

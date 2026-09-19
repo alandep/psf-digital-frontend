@@ -15,7 +15,7 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button class="nova-btn" (click)="novaRegra()">
+        <button mat-raised-button class="nova-btn" *appHasPermission="'automacao/regras-ativas:create'" (click)="novaRegra()">
           <mat-icon>add</mat-icon> Nova Regra
         </button>
       </div>

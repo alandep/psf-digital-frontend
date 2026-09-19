@@ -1,0 +1,65 @@
+<div class="alertas-container">
+
+  <!-- Hero header (identidade Portos) -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">campaign</mat-icon>
+        <div class="title-content">
+          <h1>Alertas do Intelligence</h1>
+          <p class="subtitle">Da notícia à sua operação</p>
+        </div>
+      </div>
+      <div class="unread-kpi">
+        <span class="kpi-value">{{ unreadCount }}</span>
+        <span class="kpi-label">não lidos</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert-list">
+    <mat-card class="info-card alert-card"
+              *ngFor="let alert of alerts; trackBy: trackById"
+              [class.unread]="!alert.read">
+      <span class="unread-dot" *ngIf="!alert.read"></span>
+
+      <mat-card-content>
+        <div class="alert-head">
+          <h3 class="alert-title">{{ alert.title }}</h3>
+          <span class="impact-chip"
+                [style.color]="impactStyle(alert.impactLevel).color"
+                [style.background]="impactStyle(alert.impactLevel).bg">
+            {{ impactStyle(alert.impactLevel).label }}
+          </span>
+        </div>
+
+        <div class="alert-related">
+          <mat-icon>link</mat-icon>
+          <span>{{ alert.relatedTo }}</span>
+        </div>
+
+        <p class="alert-summary">{{ alert.summary }}</p>
+
+        <div class="alert-impact-line" *ngIf="alert.affectedOperations > 0">
+          <mat-icon>warning_amber</mat-icon>
+          <span>{{ alert.affectedOperations }} operações podem exigir atenção.</span>
+        </div>
+
+        <div class="alert-actions">
+          <a mat-raised-button color="primary"
+             routerLink="/home-logged/exportacoes/gerenciar">
+            <mat-icon>analytics</mat-icon> Analisar operações
+          </a>
+          <button mat-button *ngIf="!alert.read" (click)="markRead(alert)">
+            <mat-icon>done</mat-icon> Marcar como lida
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div *ngIf="alerts.length === 0" class="empty-state">
+    <mat-icon>notifications_off</mat-icon>
+    <p>Nenhum alerta no momento.</p>
+  </div>
+</div>

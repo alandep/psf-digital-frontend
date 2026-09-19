@@ -25,6 +25,7 @@ import { AdminUser, UserMetrics, UserRole, UserStatus } from '../../../../types/
 import { NovoUsuarioDialogComponent } from './novo-usuario-dialog/novo-usuario-dialog.component';
 import { EditarUsuarioDialogComponent } from './editar-usuario-dialog/editar-usuario-dialog.component';
 import { ConfirmarAcaoDialogComponent, ConfirmDialogData } from './confirmar-acao-dialog/confirmar-acao-dialog.component';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-admin-usuarios',
@@ -45,7 +46,8 @@ import { ConfirmarAcaoDialogComponent, ConfirmDialogData } from './confirmar-aca
     MatProgressBarModule,
     MatTooltipModule,
     MatMenuModule,
-    MatDialogModule
+    MatDialogModule,
+    HasPermissionDirective
   ],
   templateUrl: './admin-usuarios.component.html',
   styleUrls: ['./admin-usuarios.component.scss']

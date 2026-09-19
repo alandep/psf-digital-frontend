@@ -1,0 +1,151 @@
+<div class="sa-container">
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- HERO HEADER -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">article</mat-icon>
+        <div class="title-content">
+          <h1>CMS Intelligence</h1>
+          <p class="subtitle">Curadoria e publicação de conteúdo EIP Intelligence</p>
+        </div>
+      </div>
+      <span class="env-chip">Ambiente administrativo</span>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid" *ngIf="stats as s">
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#e3f2fd;color:#1565c0"><mat-icon>inbox</mat-icon></div>
+      <div class="kpi-body"><div class="kpi-value">{{ s.collected }}</div><div class="kpi-label">Coletados</div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#ede7f6;color:#5e35b1"><mat-icon>hub</mat-icon></div>
+      <div class="kpi-body"><div class="kpi-value">{{ s.grouped }}</div><div class="kpi-label">Agrupados</div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#e0f2f1;color:#00796b"><mat-icon>psychology</mat-icon></div>
+      <div class="kpi-body"><div class="kpi-value">{{ s.analyzed }}</div><div class="kpi-label">Analisados</div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#e8f5e9;color:#2e7d32"><mat-icon>public</mat-icon></div>
+      <div class="kpi-body"><div class="kpi-value">{{ s.published }}</div><div class="kpi-label">Publicados</div></div>
+    </div>
+    <div class="kpi-card warn">
+      <div class="kpi-icon" style="background:#fff3e0;color:#ef6c00"><mat-icon>rate_review</mat-icon></div>
+      <div class="kpi-body"><div class="kpi-value">{{ s.pendingReview }}</div><div class="kpi-label">Aguardando revisão</div></div>
+    </div>
+  </div>
+
+  <mat-card class="info-card">
+    <mat-card-header>
+      <mat-card-title><mat-icon>fact_check</mat-icon> Revisar conteúdo</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="filter-row">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Buscar por título, fonte ou tipo</mat-label>
+          <input matInput [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()" placeholder="Digite para filtrar" />
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="status-field">
+          <mat-label>Status de revisão</mat-label>
+          <mat-select [(ngModel)]="reviewFilter" (ngModelChange)="applyFilter()">
+            <mat-option *ngFor="let o of reviewOptions" [value]="o.value">{{ o.label }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="dataSource" matSort multiTemplateDataRows class="sa-table">
+          <ng-container matColumnDef="title">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Título</th>
+            <td mat-cell *matCellDef="let i">{{ i.title }}</td>
+          </ng-container>
+          <ng-container matColumnDef="type">
+            <th mat-header-cell *matHeaderCellDef>Tipo</th>
+            <td mat-cell *matCellDef="let i">{{ i.type }}</td>
+          </ng-container>
+          <ng-container matColumnDef="source">
+            <th mat-header-cell *matHeaderCellDef>Fonte</th>
+            <td mat-cell *matCellDef="let i">{{ i.source }}</td>
+          </ng-container>
+          <ng-container matColumnDef="impactLevel">
+            <th mat-header-cell *matHeaderCellDef>Impacto</th>
+            <td mat-cell *matCellDef="let i">
+              <span class="chip" [style.color]="impactView(i.impactLevel).color" [style.background]="impactView(i.impactLevel).bg">
+                {{ impactView(i.impactLevel).label }}
+              </span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="reviewStatus">
+            <th mat-header-cell *matHeaderCellDef>Revisão</th>
+            <td mat-cell *matCellDef="let i">
+              <span class="chip" [style.color]="reviewView(i.reviewStatus).color" [style.background]="reviewView(i.reviewStatus).bg">
+                {{ reviewView(i.reviewStatus).label }}
+              </span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="publicationStatus">
+            <th mat-header-cell *matHeaderCellDef>Publicação</th>
+            <td mat-cell *matCellDef="let i">
+              <span class="chip" [style.color]="publicationView(i.publicationStatus).color" [style.background]="publicationView(i.publicationStatus).bg">
+                {{ publicationView(i.publicationStatus).label }}
+              </span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="updatedAt">
+            <th mat-header-cell *matHeaderCellDef>Atualizado</th>
+            <td mat-cell *matCellDef="let i">{{ i.updatedAt | date:'dd/MM/yyyy HH:mm' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Ações</th>
+            <td mat-cell *matCellDef="let i">
+              <button mat-icon-button (click)="toggleExpand(i)" matTooltip="Ver detalhes">
+                <mat-icon>{{ expandedId === i.id ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </button>
+              <button mat-icon-button [matMenuTriggerFor]="rowMenu" matTooltip="Ações">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #rowMenu="matMenu">
+                <button mat-menu-item (click)="aprovar(i)"><mat-icon>check_circle</mat-icon><span>Aprovar</span></button>
+                <button mat-menu-item (click)="rejeitar(i)"><mat-icon>cancel</mat-icon><span>Rejeitar</span></button>
+                <button mat-menu-item (click)="publicar(i)"><mat-icon>public</mat-icon><span>Publicar</span></button>
+                <button mat-menu-item (click)="agendar(i)"><mat-icon>schedule</mat-icon><span>Agendar</span></button>
+                <button mat-menu-item (click)="arquivar(i)"><mat-icon>archive</mat-icon><span>Arquivar</span></button>
+              </mat-menu>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="expandedDetail">
+            <td mat-cell *matCellDef="let i" [attr.colspan]="displayedColumns.length">
+              <div class="detail-panel" *ngIf="expandedId === i.id">
+                <div class="detail-block">
+                  <strong>Resumo</strong>
+                  <p>{{ i.summary }}</p>
+                  <div class="detail-meta">Setores: {{ i.sectors }} · Países: {{ i.countries }}</div>
+                </div>
+                <div class="detail-block ai">
+                  <strong><mat-icon>auto_awesome</mat-icon> Análise EIP AI</strong>
+                  <p>{{ i.aiAnalysis }}</p>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"></tr>
+          <tr class="no-data-row" *matNoDataRow>
+            <td class="no-data-cell" [attr.colspan]="displayedColumns.length">
+              Nenhum conteúdo encontrado com os filtros atuais.
+            </td>
+          </tr>
+        </table>
+      </div>
+      <mat-paginator [pageSizeOptions]="[5, 10, 20]" [pageSize]="10" showFirstLastButtons></mat-paginator>
+    </mat-card-content>
+  </mat-card>
+</div>

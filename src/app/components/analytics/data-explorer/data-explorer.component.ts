@@ -18,11 +18,13 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { DataExplorerMockService } from '../../../../services/dataExplorerMockService';
 import { ExportService } from '../../../../services/exportService';
 import { DatasetInfo, QueryResult, SavedQuery, ViewMode } from '../../../../types/data-explorer';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-data-explorer',
   standalone: true,
   imports: [
+    HasPermissionDirective,
     CommonModule,
     ReactiveFormsModule,
     MatCardModule,

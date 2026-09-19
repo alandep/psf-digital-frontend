@@ -1,0 +1,7 @@
+@use '../auth-shared' as *;
+
+.auth-code-field ::ng-deep input {
+  letter-spacing: 6px;
+  font-size: 1.3rem;
+  font-weight: 600;
+}

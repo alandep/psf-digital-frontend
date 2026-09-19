@@ -13,10 +13,10 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button color="primary" (click)="openCertificacaoDialog()">
+        <button *appHasPermission="'esg/sustentabilidade:create'" mat-raised-button color="primary" (click)="openCertificacaoDialog()">
           <mat-icon>add</mat-icon> Registrar Certificação
         </button>
-        <button mat-raised-button color="primary" (click)="exportCSV()">
+        <button *appHasPermission="'esg/sustentabilidade:export'" mat-raised-button color="primary" (click)="exportCSV()">
           <mat-icon>download</mat-icon> Exportar CSV
         </button>
       </div>

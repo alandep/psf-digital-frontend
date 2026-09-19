@@ -15,10 +15,10 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button (click)="openNewOpportunityDialog()">
+        <button mat-raised-button *appHasPermission="'clientes/oportunidades:create'" (click)="openNewOpportunityDialog()">
           <mat-icon>add_circle</mat-icon> Nova Oportunidade
         </button>
-        <button mat-icon-button [matMenuTriggerFor]="exportMenu" matTooltip="Exportar">
+        <button mat-icon-button *appHasPermission="'clientes/oportunidades:export'" [matMenuTriggerFor]="exportMenu" matTooltip="Exportar">
           <mat-icon>download</mat-icon>
         </button>
         <mat-menu #exportMenu="matMenu">

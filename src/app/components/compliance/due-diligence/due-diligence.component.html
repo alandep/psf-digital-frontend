@@ -13,10 +13,10 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button color="primary" (click)="createScreening()">
+        <button mat-raised-button color="primary" *appHasPermission="'compliance/due-diligence:create'" (click)="createScreening()">
           <mat-icon>add</mat-icon> Nova Screening
         </button>
-        <button mat-raised-button color="primary" (click)="exportCSV()">
+        <button mat-raised-button color="primary" *appHasPermission="'compliance/due-diligence:export'" (click)="exportCSV()">
           <mat-icon>download</mat-icon> Exportar CSV
         </button>
       </div>

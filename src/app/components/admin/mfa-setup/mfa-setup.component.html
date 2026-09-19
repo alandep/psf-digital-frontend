@@ -1,0 +1,95 @@
+<div class="mfa-container">
+
+  <!-- Hero header -->
+  <div class="page-header">
+    <div class="title-section">
+      <mat-icon class="header-icon">qr_code_2</mat-icon>
+      <div class="title-content">
+        <h1>Configurar autenticador</h1>
+        <p class="subtitle">Ative a autenticação em dois fatores para proteger sua conta</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stepper indicator -->
+  <div class="steps">
+    <span class="step-dot" [class.active]="step >= 1">1</span>
+    <span class="step-line" [class.active]="step >= 2"></span>
+    <span class="step-dot" [class.active]="step >= 2">2</span>
+    <span class="step-line" [class.active]="step >= 3"></span>
+    <span class="step-dot" [class.active]="step >= 3">3</span>
+  </div>
+
+  <!-- Step 1: QR / secret -->
+  <mat-card class="info-card" *ngIf="step === 1">
+    <mat-card-header>
+      <mat-card-title>Escaneie o QR Code</mat-card-title>
+      <mat-card-subtitle>Escaneie o QR Code no seu aplicativo autenticador (Google Authenticator, Authy, etc.)</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="qr-placeholder" [attr.data-uri]="otpauthUri">
+        <mat-icon>qr_code_2</mat-icon>
+      </div>
+      <div class="manual-secret">
+        <span class="manual-label">Ou informe manualmente:</span>
+        <code>{{ secret }}</code>
+        <button mat-icon-button (click)="copySecret()" aria-label="Copiar chave">
+          <mat-icon>content_copy</mat-icon>
+        </button>
+      </div>
+    </mat-card-content>
+    <mat-card-actions>
+      <button mat-raised-button color="primary" (click)="goToVerify()">
+        Continuar <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+  <!-- Step 2: verify code -->
+  <mat-card class="info-card" *ngIf="step === 2">
+    <mat-card-header>
+      <mat-card-title>Confirme o código</mat-card-title>
+      <mat-card-subtitle>Digite o código de 6 dígitos gerado pelo aplicativo</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="code-field">
+        <mat-label>Código de verificação</mat-label>
+        <input matInput [(ngModel)]="code" maxlength="6" inputmode="numeric" placeholder="000000">
+      </mat-form-field>
+      <p class="error-text" *ngIf="errorMessage">
+        <mat-icon>error_outline</mat-icon> {{ errorMessage }}
+      </p>
+    </mat-card-content>
+    <mat-card-actions>
+      <button mat-raised-button color="primary" [disabled]="submitting" (click)="confirm()">
+        <mat-icon>check</mat-icon> Confirmar
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+  <!-- Step 3: recovery codes -->
+  <mat-card class="info-card" *ngIf="step === 3">
+    <mat-card-header>
+      <mat-card-title>Autenticação ativada</mat-card-title>
+      <mat-card-subtitle>Salve seus códigos de recuperação</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="recovery-warning">
+        <mat-icon>warning</mat-icon>
+        <span>Guarde estes códigos. Eles serão exibidos apenas uma vez.</span>
+      </div>
+      <div class="codes-grid">
+        <code *ngFor="let c of recoveryCodes">{{ c }}</code>
+      </div>
+      <button mat-stroked-button (click)="copyRecoveryCodes()">
+        <mat-icon>content_copy</mat-icon> Copiar códigos
+      </button>
+    </mat-card-content>
+    <mat-card-actions>
+      <button mat-raised-button color="primary" routerLink="/home-logged/admin/seguranca">
+        Concluir <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+</div>

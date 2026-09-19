@@ -25,6 +25,7 @@ import { PackingListMockService } from '../../../../services/packingListMockServ
 import { ExportService } from '../../../../services/exportService';
 import { PackingList, PackingListStatus, PackingListMetrics, PackingListFilters } from '../../../../types/packing-list';
 import { PackingListDetailDialogComponent, PackingListDetailDialogData } from './packing-list-detail-dialog/packing-list-detail-dialog.component';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-packing-list',
@@ -48,7 +49,8 @@ import { PackingListDetailDialogComponent, PackingListDetailDialogData } from '.
     MatDividerModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatDialogModule
+    MatDialogModule,
+    HasPermissionDirective
   ],
   templateUrl: './packing-list.component.html',
   styleUrls: ['./packing-list.component.scss']

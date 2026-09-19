@@ -1,0 +1,66 @@
+:host {
+  display: block;
+}
+
+.cp-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1565c0;
+  font-weight: 600;
+
+  mat-icon {
+    color: #1976d2;
+  }
+}
+
+.cp-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 320px;
+  max-width: 460px;
+}
+
+.cp-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 4px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+
+  &:last-of-type {
+    border-bottom: none;
+  }
+}
+
+.cp-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cp-name {
+  font-weight: 600;
+  color: #263238;
+}
+
+.cp-desc {
+  font-size: 12.5px;
+  color: #607d8b;
+  line-height: 1.35;
+}
+
+.cp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.cp-accept {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+}

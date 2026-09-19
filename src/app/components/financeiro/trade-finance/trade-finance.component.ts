@@ -31,6 +31,7 @@ import {
   TradeFinanceFilters
 } from '../../../../types/trade-finance';
 import { TradeFinanceDetailDialogComponent } from './trade-finance-detail-dialog/trade-finance-detail-dialog.component';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-trade-finance',
@@ -54,7 +55,8 @@ import { TradeFinanceDetailDialogComponent } from './trade-finance-detail-dialog
     MatTooltipModule,
     MatDividerModule,
     MatBadgeModule,
-    MatDialogModule
+    MatDialogModule,
+    HasPermissionDirective
   ],
   templateUrl: './trade-finance.component.html',
   styleUrls: ['./trade-finance.component.scss']

@@ -14,7 +14,7 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button color="primary" (click)="openNewRecebimentoDialog()">
+        <button mat-raised-button color="primary" *appHasPermission="'financeiro/contas-receber:create'" (click)="openNewRecebimentoDialog()">
           <mat-icon>add</mat-icon> Novo Recebimento
         </button>
       </div>

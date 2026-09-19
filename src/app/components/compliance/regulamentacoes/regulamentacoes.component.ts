@@ -1,7 +1,8 @@
 import { Component, OnInit, OnDestroy, inject, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, forkJoin, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 
 // Angular Material Components
 import { MatCardModule } from '@angular/material/card';
@@ -27,12 +28,14 @@ import { MatMenuModule } from '@angular/material/menu';
 
 // Services and Types
 import { RegulamentacoesMockService } from '../../../../services/regulamentacoesMockService';
+import { RegulamentacaoDetailDialogComponent } from './regulamentacao-detail-dialog/regulamentacao-detail-dialog.component';
 import {
   Regulamentacao, RegulationRequirement, CountryProductMatrix,
   ImpactAnalysis, NonConformity, RegulationTimelineEvent,
   RegulationAIInsights, RegulamentacaoMetrics, RegulamentacaoFilters,
   RegulationType, RegulationStatus, RegulationCategory, Criticality
 } from '../../../../types/regulamentacoes';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-regulamentacoes',
@@ -59,7 +62,9 @@ import {
     MatDividerModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatMenuModule
+    MatMenuModule,
+    MatDialogModule,
+    HasPermissionDirective
   ],
   templateUrl: './regulamentacoes.component.html',
   styleUrls: ['./regulamentacoes.component.scss']
@@ -70,6 +75,7 @@ export class RegulamentacoesComponent implements OnInit, OnDestroy {
   private service = inject(RegulamentacoesMockService);
   private formBuilder = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
 
   // Destroy subject
   private destroy$ = new Subject<void>();
@@ -81,18 +87,11 @@ export class RegulamentacoesComponent implements OnInit, OnDestroy {
   // Data State
   regulations: Regulamentacao[] = [];
   dataSource = new MatTableDataSource<Regulamentacao>([]);
-  selectedRegulation: Regulamentacao | null = null;
-  requirements: RegulationRequirement[] = [];
   matrix: CountryProductMatrix[] = [];
-  impactAnalysis: ImpactAnalysis | null = null;
-  nonConformities: NonConformity[] = [];
-  timeline: RegulationTimelineEvent[] = [];
-  aiInsights: RegulationAIInsights | null = null;
   metrics: RegulamentacaoMetrics | null = null;
 
   // UI State
   isLoading = false;
-  isDetailOpen = false;
 
   // Forms
   filterForm!: FormGroup;
@@ -218,45 +217,35 @@ export class RegulamentacoesComponent implements OnInit, OnDestroy {
   }
 
   selectRegulation(regulation: Regulamentacao): void {
-    this.selectedRegulation = regulation;
-    this.isDetailOpen = true;
-    this.loadRegulationDetails(regulation.id);
-  }
-
-  private loadRegulationDetails(regulationId: string): void {
-    this.service.getRequirements(regulationId)
+    forkJoin({
+      requirements: this.service.getRequirements(regulation.id),
+      impactAnalysis: this.service.getImpactAnalysis(regulation.id),
+      nonConformities: this.service.getNonConformities(regulation.id),
+      timeline: this.service.getTimeline(regulation.id),
+      aiInsights: this.service.getAIInsights(regulation.id)
+    })
       .pipe(takeUntil(this.destroy$))
-      .subscribe(req => this.requirements = req);
-
-    this.service.getImpactAnalysis(regulationId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(impact => this.impactAnalysis = impact);
-
-    this.service.getNonConformities(regulationId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(nc => this.nonConformities = nc);
-
-    this.service.getTimeline(regulationId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(tl => this.timeline = tl);
-
-    this.service.getAIInsights(regulationId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(insights => this.aiInsights = insights);
-  }
-
-  closeDetail(): void {
-    this.isDetailOpen = false;
-    this.selectedRegulation = null;
-    this.requirements = [];
-    this.impactAnalysis = null;
-    this.nonConformities = [];
-    this.timeline = [];
-    this.aiInsights = null;
+      .subscribe(details => {
+        this.dialog.open(RegulamentacaoDetailDialogComponent, {
+          width: '1000px',
+          maxWidth: '95vw',
+          maxHeight: '92vh',
+          panelClass: 'regulamentacao-detail-panel',
+          data: {
+            regulation,
+            requirements: details.requirements,
+            matrix: this.matrix,
+            impactAnalysis: details.impactAnalysis,
+            nonConformities: details.nonConformities,
+            timeline: details.timeline,
+            aiInsights: details.aiInsights
+          }
+        });
+      });
   }
 
   createRegulation(): void {
-    this.snackBar.open('Funcionalidade de criação será implementada na Fase 2', 'OK', { duration: 3000 });
+    this.snackBar.open('Cadastro de nova regulamentação disponível em breve (dados simulados no momento).', 'OK', { duration: 3000 });
   }
 
   analyzeImpact(): void {

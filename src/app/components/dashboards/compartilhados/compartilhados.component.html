@@ -7,10 +7,10 @@
         <p>Dashboards compartilhados com você por outros usuários</p>
       </div>
       <div class="header-actions">
-        <button mat-icon-button matTooltip="Exportar CSV" (click)="exportToCSV()">
+        <button mat-icon-button *appHasPermission="'dashboards/compartilhados:export'" matTooltip="Exportar CSV" (click)="exportToCSV()">
           <mat-icon>download</mat-icon>
         </button>
-        <button mat-icon-button matTooltip="Exportar PDF" (click)="exportToPDF()">
+        <button mat-icon-button *appHasPermission="'dashboards/compartilhados:export'" matTooltip="Exportar PDF" (click)="exportToPDF()">
           <mat-icon>picture_as_pdf</mat-icon>
         </button>
       </div>
@@ -59,13 +59,13 @@
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef>Ações</th>
           <td mat-cell *matCellDef="let row">
-            <button mat-icon-button matTooltip="Abrir">
+            <button mat-icon-button matTooltip="Abrir" (click)="openDashboard(row)">
               <mat-icon>open_in_new</mat-icon>
             </button>
-            <button mat-icon-button matTooltip="Editar" [disabled]="isEditDisabled(row.permission)">
+            <button mat-icon-button matTooltip="Editar" [disabled]="isEditDisabled(row.permission)" (click)="editDashboard(row)">
               <mat-icon>edit</mat-icon>
             </button>
-            <button mat-icon-button matTooltip="Remover Widget" [disabled]="isEditDisabled(row.permission)">
+            <button mat-icon-button matTooltip="Remover Widget" [disabled]="isEditDisabled(row.permission)" (click)="removeWidget(row)">
               <mat-icon>remove_circle_outline</mat-icon>
             </button>
           </td>

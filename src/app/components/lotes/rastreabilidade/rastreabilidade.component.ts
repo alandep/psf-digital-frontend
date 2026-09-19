@@ -1,7 +1,8 @@
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, takeUntil, debounceTime, distinctUntilChanged, forkJoin } from 'rxjs';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 // Angular Material Components
 import { MatCardModule } from '@angular/material/card';
@@ -26,17 +27,13 @@ import { MatExpansionModule } from '@angular/material/expansion';
 
 // Services and Types
 import { RastreabilidadeMockService } from '../../../../services/rastreabilidadeMockService';
+import { RastreabilidadeDetailDialogComponent } from './rastreabilidade-detail-dialog/rastreabilidade-detail-dialog.component';
 import {
   RastreabilidadeLote,
-  TimelineEvent,
-  TimelineEventType,
-  TraceDocument,
-  AITraceInsights,
-  RiskLevel,
-  SupplyChainNode,
   RastreabilidadeFilters,
   RastreabilidadeMetrics
 } from '../../../../types/rastreabilidade';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-rastreabilidade',
@@ -62,7 +59,9 @@ import {
     MatProgressBarModule,
     MatTooltipModule,
     MatDividerModule,
-    MatExpansionModule
+    MatExpansionModule,
+    MatDialogModule,
+    HasPermissionDirective
   ],
   templateUrl: './rastreabilidade.component.html',
   styleUrls: ['./rastreabilidade.component.scss']
@@ -73,20 +72,15 @@ export class RastreabilidadeComponent implements OnInit, OnDestroy {
   private rastreabilidadeService = inject(RastreabilidadeMockService);
   private formBuilder = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
 
   // Data State
   lotes: RastreabilidadeLote[] = [];
   filteredLotes: RastreabilidadeLote[] = [];
-  selectedLote: RastreabilidadeLote | null = null;
-  timeline: TimelineEvent[] = [];
-  documents: TraceDocument[] = [];
-  aiInsights: AITraceInsights | null = null;
   metrics: RastreabilidadeMetrics | null = null;
-  supplyChainNodes: SupplyChainNode[] = [];
 
   // UI State
   isLoading = false;
-  isDetailOpen = false;
 
   // Forms
   filterForm!: FormGroup;
@@ -104,8 +98,6 @@ export class RastreabilidadeComponent implements OnInit, OnDestroy {
     'clientName',
     'actions'
   ];
-
-  docDisplayedColumns = ['documentType', 'documentNumber', 'issueDate', 'status', 'actions'];
 
   // Filter Options
   harvests: string[] = [];
@@ -182,8 +174,7 @@ export class RastreabilidadeComponent implements OnInit, OnDestroy {
           this.filteredLotes = lotes;
           this.isLoading = false;
         },
-        error: (error) => {
-          console.error('Erro ao carregar lotes:', error);
+        error: () => {
           this.showMessage('Erro ao carregar lotes rastreados', 'error');
           this.isLoading = false;
         }
@@ -197,8 +188,7 @@ export class RastreabilidadeComponent implements OnInit, OnDestroy {
         next: (metrics) => {
           this.metrics = metrics;
         },
-        error: (error) => {
-          console.error('Erro ao carregar métricas:', error);
+        error: () => {
         }
       });
   }
@@ -214,8 +204,7 @@ export class RastreabilidadeComponent implements OnInit, OnDestroy {
           this.filteredLotes = lotes;
           this.isLoading = false;
         },
-        error: (error) => {
-          console.error('Erro ao aplicar filtros:', error);
+        error: () => {
           this.showMessage('Erro ao aplicar filtros', 'error');
           this.isLoading = false;
         }
@@ -246,8 +235,7 @@ export class RastreabilidadeComponent implements OnInit, OnDestroy {
           this.isLoading = false;
           this.showMessage(`${lotes.length} lotes encontrados`, 'info');
         },
-        error: (error) => {
-          console.error('Erro na busca IA:', error);
+        error: () => {
           this.showMessage('Erro na busca inteligente', 'error');
           this.isLoading = false;
         }
@@ -274,71 +262,29 @@ export class RastreabilidadeComponent implements OnInit, OnDestroy {
   // ================================
 
   selectLote(lote: RastreabilidadeLote): void {
-    this.selectedLote = lote;
-    this.isDetailOpen = true;
-    this.loadTimeline(lote.id);
-    this.loadDocuments(lote.id);
-    this.loadAIInsights(lote.id);
-    this.loadSupplyChainNodes(lote.id);
-  }
-
-  closeDetail(): void {
-    this.isDetailOpen = false;
-    this.selectedLote = null;
-    this.timeline = [];
-    this.documents = [];
-    this.aiInsights = null;
-    this.supplyChainNodes = [];
-  }
-
-  private loadTimeline(loteId: string): void {
-    this.rastreabilidadeService.getTimeline(loteId)
+    this.isLoading = true;
+    forkJoin({
+      timeline: this.rastreabilidadeService.getTimeline(lote.id),
+      documents: this.rastreabilidadeService.getDocuments(lote.id),
+      aiInsights: this.rastreabilidadeService.getAIInsights(lote.id),
+      supplyChainNodes: this.rastreabilidadeService.getSupplyChainNodes(lote.id)
+    })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (timeline) => {
-          this.timeline = timeline;
+        next: ({ timeline, documents, aiInsights, supplyChainNodes }) => {
+          this.isLoading = false;
+          this.dialog.open(RastreabilidadeDetailDialogComponent, {
+            width: '1100px',
+            maxWidth: '96vw',
+            maxHeight: '92vh',
+            autoFocus: false,
+            panelClass: 'rastreabilidade-detail-panel',
+            data: { lote, timeline, documents, aiInsights, supplyChainNodes }
+          });
         },
-        error: (error) => {
-          console.error('Erro ao carregar timeline:', error);
-        }
-      });
-  }
-
-  private loadDocuments(loteId: string): void {
-    this.rastreabilidadeService.getDocuments(loteId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (docs) => {
-          this.documents = docs;
-        },
-        error: (error) => {
-          console.error('Erro ao carregar documentos:', error);
-        }
-      });
-  }
-
-  private loadAIInsights(loteId: string): void {
-    this.rastreabilidadeService.getAIInsights(loteId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (insights) => {
-          this.aiInsights = insights;
-        },
-        error: (error) => {
-          console.error('Erro ao carregar insights IA:', error);
-        }
-      });
-  }
-
-  private loadSupplyChainNodes(loteId: string): void {
-    this.rastreabilidadeService.getSupplyChainNodes(loteId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (nodes) => {
-          this.supplyChainNodes = nodes;
-        },
-        error: (error) => {
-          console.error('Erro ao carregar cadeia logística:', error);
+        error: () => {
+          this.isLoading = false;
+          this.showMessage('Erro ao carregar rastreabilidade do lote', 'error');
         }
       });
   }
@@ -364,51 +310,6 @@ export class RastreabilidadeComponent implements OnInit, OnDestroy {
     return new Date(date).toLocaleDateString('pt-BR');
   }
 
-  getEventIcon(eventType: TimelineEventType): string {
-    switch (eventType) {
-      case 'SAFRA': return 'eco';
-      case 'FAZENDA': return 'agriculture';
-      case 'COLHEITA': return 'grass';
-      case 'RECEBIMENTO': return 'move_to_inbox';
-      case 'ARMAZEM': return 'warehouse';
-      case 'QUALIDADE': return 'science';
-      case 'CONTAINER': return 'inventory_2';
-      case 'PORTO': return 'anchor';
-      case 'NAVIO': return 'directions_boat';
-      case 'EXPORTACAO': return 'description';
-      case 'CLIENTE': return 'handshake';
-      default: return 'circle';
-    }
-  }
-
-  getEventColor(status: 'completed' | 'current' | 'pending'): string {
-    switch (status) {
-      case 'completed': return 'green';
-      case 'current': return 'blue';
-      case 'pending': return 'grey';
-      default: return 'grey';
-    }
-  }
-
-  getRiskColor(risk: RiskLevel): string {
-    switch (risk) {
-      case 'LOW': return 'green';
-      case 'MEDIUM': return 'orange';
-      case 'HIGH': return 'red';
-      case 'CRITICAL': return 'red';
-      default: return 'grey';
-    }
-  }
-
-  getDocStatusColor(status: 'valid' | 'expired' | 'pending'): string {
-    switch (status) {
-      case 'valid': return 'green';
-      case 'expired': return 'red';
-      case 'pending': return 'orange';
-      default: return 'grey';
-    }
-  }
-
   getStatusColor(status: string): string {
     switch (status) {
       case 'Entregue': return 'green';
@@ -421,40 +322,8 @@ export class RastreabilidadeComponent implements OnInit, OnDestroy {
     }
   }
 
-  getComplianceStatusColor(status: 'pass' | 'fail' | 'warning'): string {
-    switch (status) {
-      case 'pass': return 'green';
-      case 'fail': return 'red';
-      case 'warning': return 'orange';
-      default: return 'grey';
-    }
-  }
-
-  getComplianceIcon(status: 'pass' | 'fail' | 'warning'): string {
-    switch (status) {
-      case 'pass': return 'check_circle';
-      case 'fail': return 'cancel';
-      case 'warning': return 'warning';
-      default: return 'help';
-    }
-  }
-
-  getScoreColor(score: number): string {
-    if (score >= 80) return 'green';
-    if (score >= 60) return 'yellow';
-    return 'red';
-  }
-
   trackByLoteId(index: number, lote: RastreabilidadeLote): string {
     return lote.id;
-  }
-
-  trackByEventId(index: number, event: TimelineEvent): string {
-    return event.id;
-  }
-
-  trackByNodeId(index: number, node: SupplyChainNode): string {
-    return node.id;
   }
 
   private showMessage(message: string, type: 'success' | 'error' | 'info' = 'info'): void {

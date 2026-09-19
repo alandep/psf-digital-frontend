@@ -1,0 +1,96 @@
+<div class="novo-cenario-dialog">
+  <div class="dialog-hero">
+    <div class="hero-left">
+      <mat-icon class="hero-icon">add_chart</mat-icon>
+      <div>
+        <h2>Novo Cenário</h2>
+        <p class="hero-subtitle">Preencha os dados para simular um novo cenário de rentabilidade</p>
+      </div>
+    </div>
+    <button mat-icon-button (click)="cancel()" class="close-btn">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="dialog-body">
+    <form [formGroup]="form" class="form-grid">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Nome do Cenário</mat-label>
+        <input matInput formControlName="name" placeholder="Ex: Expansão Ásia 2025">
+        <mat-icon matPrefix>label</mat-icon>
+        <mat-error>Nome é obrigatório</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Tipo</mat-label>
+        <mat-select formControlName="tipo">
+          @for (t of tipos; track t) {
+            <mat-option [value]="t">{{ t }}</mat-option>
+          }
+        </mat-select>
+        <mat-icon matPrefix>category</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Nível de Risco</mat-label>
+        <mat-select formControlName="riskLevel">
+          @for (r of riscos; track r) {
+            <mat-option [value]="r">{{ r }}</mat-option>
+          }
+        </mat-select>
+        <mat-icon matPrefix>warning</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Produto</mat-label>
+        <input matInput formControlName="product" placeholder="Ex: Soja em grãos">
+        <mat-icon matPrefix>inventory_2</mat-icon>
+        <mat-error>Produto é obrigatório</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>País de Destino</mat-label>
+        <input matInput formControlName="country" placeholder="Ex: China">
+        <mat-icon matPrefix>public</mat-icon>
+        <mat-error>País é obrigatório</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Volume (ton)</mat-label>
+        <input matInput type="number" formControlName="volume" placeholder="0">
+        <mat-icon matPrefix>scale</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Taxa de Câmbio (BRL)</mat-label>
+        <input matInput type="number" step="0.01" formControlName="exchangeRate" placeholder="5.00">
+        <mat-icon matPrefix>currency_exchange</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Receita (USD)</mat-label>
+        <input matInput type="number" formControlName="revenue" placeholder="0">
+        <mat-icon matPrefix>payments</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Margem (USD)</mat-label>
+        <input matInput type="number" formControlName="margin" placeholder="0">
+        <mat-icon matPrefix>attach_money</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Margem (%)</mat-label>
+        <input matInput type="number" step="0.1" formControlName="marginPercent" placeholder="0">
+        <mat-icon matPrefix>percent</mat-icon>
+      </mat-form-field>
+    </form>
+  </div>
+
+  <div class="dialog-footer">
+    <button mat-button (click)="cancel()" class="cancel-btn">Cancelar</button>
+    <button mat-raised-button color="primary" [disabled]="form.invalid" (click)="save()" class="save-btn">
+      <mat-icon>save</mat-icon> Salvar
+    </button>
+  </div>
+</div>

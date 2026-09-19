@@ -1,0 +1,35 @@
+.pgto-dialog {
+  display: flex;
+  flex-direction: column;
+
+  .pgto-header {
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+    color: #fff;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    mat-icon { font-size: 28px; width: 28px; height: 28px; }
+    h2 { margin: 0; font-size: 1.25rem; font-weight: 500; }
+  }
+
+  .pgto-body {
+    padding: 24px 24px 0;
+
+    .lead { margin: 0 0 16px; color: #666; font-size: 0.9rem; }
+    .full { width: 100%; }
+    .row {
+      display: flex;
+      gap: 16px;
+      mat-form-field { flex: 1; }
+    }
+  }
+
+  .pgto-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 0 24px 20px;
+  }
+}

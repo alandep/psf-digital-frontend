@@ -16,10 +16,10 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button (click)="openNewCustomerDialog()">
+        <button mat-raised-button *appHasPermission="'clientes/visao-360:create'" (click)="openNewCustomerDialog()">
           <mat-icon>person_add</mat-icon> Novo Cliente
         </button>
-        <button mat-icon-button [matMenuTriggerFor]="exportMenu" matTooltip="Exportar">
+        <button mat-icon-button *appHasPermission="'clientes/visao-360:export'" [matMenuTriggerFor]="exportMenu" matTooltip="Exportar">
           <mat-icon>download</mat-icon>
         </button>
         <mat-menu #exportMenu="matMenu">
@@ -225,104 +225,5 @@
       </mat-paginator>
     </mat-card-content>
   </mat-card>
-
-  <!-- Detail Panel -->
-  @if (isDetailOpen && selectedCustomer) {
-    <mat-card class="detail-card">
-      <mat-card-content>
-        <div class="detail-header">
-          <div class="detail-title-section">
-            <mat-icon class="detail-icon">business</mat-icon>
-            <div>
-              <h2>{{ selectedCustomer.companyName }}</h2>
-              <p>{{ selectedCustomer.tradeName }} | {{ selectedCustomer.country }}</p>
-            </div>
-          </div>
-          <div class="detail-header-actions">
-            <button mat-icon-button (click)="closeDetail()" matTooltip="Fechar">
-              <mat-icon>close</mat-icon>
-            </button>
-          </div>
-        </div>
-
-        <mat-tab-group>
-          <mat-tab label="Resumo">
-            <div class="tab-content">
-              <div class="info-grid">
-                <div class="info-item">
-                  <span class="info-label">Razão Social</span>
-                  <span class="info-value">{{ selectedCustomer.companyName }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">CNPJ/Tax ID</span>
-                  <span class="info-value">{{ selectedCustomer.taxId }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Segmento</span>
-                  <span class="info-value">{{ getSegmentLabel(selectedCustomer.segment) }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">País</span>
-                  <span class="info-value">{{ selectedCustomer.country }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Contato Principal</span>
-                  <span class="info-value">{{ selectedCustomer.primaryContact }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Score de Risco</span>
-                  <span class="info-value">{{ selectedCustomer.riskScore }}/100</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Receita Total</span>
-                  <span class="info-value">{{ formatCurrency(selectedCustomer.totalRevenue) }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Contratos Ativos</span>
-                  <span class="info-value">{{ selectedCustomer.activeContracts }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Cliente Desde</span>
-                  <span class="info-value">{{ formatDate(selectedCustomer.createdAt) }}</span>
-                </div>
-              </div>
-            </div>
-          </mat-tab>
-          <mat-tab label="Contratos">
-            <div class="tab-content">
-              <div class="empty-state">
-                <mat-icon>description</mat-icon>
-                <p>{{ selectedCustomer.activeContracts }} contratos ativos vinculados a este cliente</p>
-              </div>
-            </div>
-          </mat-tab>
-          <mat-tab label="Embarques">
-            <div class="tab-content">
-              <div class="empty-state">
-                <mat-icon>local_shipping</mat-icon>
-                <p>Histórico de embarques será carregado sob demanda</p>
-              </div>
-            </div>
-          </mat-tab>
-          <mat-tab label="Financeiro">
-            <div class="tab-content">
-              <div class="empty-state">
-                <mat-icon>account_balance</mat-icon>
-                <p>Dados financeiros consolidados do cliente</p>
-              </div>
-            </div>
-          </mat-tab>
-          <mat-tab label="Interações">
-            <div class="tab-content">
-              <div class="empty-state">
-                <mat-icon>chat</mat-icon>
-                <p>Última interação: {{ formatDate(selectedCustomer.lastInteractionDate) }}</p>
-              </div>
-            </div>
-          </mat-tab>
-        </mat-tab-group>
-      </mat-card-content>
-    </mat-card>
-  }
 
 </div>

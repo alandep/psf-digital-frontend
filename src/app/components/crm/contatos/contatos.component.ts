@@ -21,6 +21,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { CrmMockService } from '../../../../services/crmMockService';
 import { ExportService } from '../../../../services/exportService';
 import { Contact } from '../../../../types/crm';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-contatos',
@@ -41,7 +42,8 @@ import { Contact } from '../../../../types/crm';
     MatSnackBarModule,
     MatProgressBarModule,
     MatTooltipModule,
-    MatMenuModule
+    MatMenuModule,
+    HasPermissionDirective
   ],
   templateUrl: './contatos.component.html',
   styleUrls: ['./contatos.component.scss']

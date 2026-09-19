@@ -15,7 +15,7 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button color="primary" (click)="createLot()">
+        <button mat-raised-button color="primary" *appHasPermission="'lotes/controle:create'" (click)="createLot()">
           <mat-icon>add</mat-icon> Novo Lote
         </button>
       </div>

@@ -1,177 +1,73 @@
-// === VARIABLES (Portos visual identity) ===
+@use '../auth/auth-shared' as *;
+
+// === Login-specific extras ===
 $primary: #1976d2;
 $primary-dark: #1565c0;
-$success: #4caf50;
-$warning: #ff9800;
-$danger: #f44336;
-$purple: #9c27b0;
 
-// === FULL-PAGE BACKGROUND ===
-.login-container {
+.auth-divider {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  box-sizing: border-box;
-  padding: 24px;
-  background: #f4f6f9;
-}
-
-// === LOGIN CARD ===
-.login-card {
-  max-width: 420px;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 32px 28px;
-  border-radius: 16px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
-  overflow: hidden;
-}
-
-// === BRAND HEADER ===
-.brand-header {
-  display: flex;
-  flex-direction: column;
   align-items: center;
   text-align: center;
-  margin-bottom: 28px;
+  margin: 20px 0;
+  color: #9aa0a6;
+  font-size: 0.82rem;
 
-  .brand-badge {
-    width: 72px;
-    height: 72px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, $primary, $primary-dark);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 8px 24px rgba(25, 118, 210, 0.35);
-    margin-bottom: 16px;
-
-    mat-icon {
-      color: white;
-      font-size: 38px;
-      width: 38px;
-      height: 38px;
-    }
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e0e0e0;
   }
+  span { padding: 0 12px; }
+}
 
-  .brand-title {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 600;
-    letter-spacing: -0.5px;
-    color: #1a237e;
-    line-height: 1.25;
+.auth-signup {
+  text-align: center;
+
+  span {
+    display: block;
+    color: #555;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
   }
-
-  .brand-subtitle {
-    margin: 6px 0 0;
-    font-size: 0.95rem;
-    font-weight: 400;
-    color: #666;
-  }
-}
-
-// === CONTENT ===
-.login-content {
-  padding: 0;
-}
-
-.full-width {
-  width: 100%;
-  box-sizing: border-box;
-}
-
-mat-form-field.full-width {
-  margin-bottom: 8px;
-
-  mat-icon[matPrefix] {
-    margin-right: 8px;
-    color: $primary;
-  }
-}
-
-// Keep error text wrapping inside the field, never overflowing the card.
-::ng-deep .login-card .mat-mdc-form-field-error {
-  white-space: normal;
-  word-break: break-word;
-  line-height: 1.3;
-}
-
-// === ACTIONS ===
-.login-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 8px;
-
-  button {
-    height: 46px;
+  a.full-width {
+    height: 44px;
+    line-height: 44px;
     border-radius: 12px;
     font-weight: 600;
-    font-size: 0.95rem;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-  }
-
-  .btn-primary {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    box-shadow: 0 4px 16px rgba(25, 118, 210, 0.3);
-
-    &:hover:not([disabled]) {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(25, 118, 210, 0.4);
-    }
-
-    .btn-spinner {
-      // Force the spinner to render on the primary (blue) button.
-      ::ng-deep circle {
-        stroke: white;
-      }
-    }
-  }
-
-  .btn-demo {
-    &:hover:not([disabled]) {
-      background: rgba(25, 118, 210, 0.06);
-    }
   }
 }
 
-// === RESPONSIVE ===
-@media (max-width: 480px) {
-  .login-container {
-    padding: 16px;
+.auth-demo {
+  text-align: center;
+  margin-top: 14px;
+
+  button {
+    color: #6b7280;
+    font-size: 0.82rem;
   }
+}
 
-  .login-card {
-    padding: 24px 18px;
-    border-radius: 14px;
+.auth-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f4f8fd;
+  border: 1px solid #e3edfb;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+
+  .auth-avatar mat-icon {
+    color: $primary;
+    font-size: 40px;
+    width: 40px;
+    height: 40px;
   }
-
-  .brand-header {
-    margin-bottom: 22px;
-
-    .brand-badge {
-      width: 60px;
-      height: 60px;
-      margin-bottom: 12px;
-
-      mat-icon {
-        font-size: 32px;
-        width: 32px;
-        height: 32px;
-      }
-    }
-
-    .brand-title {
-      font-size: 1.25rem;
-    }
-
-    .brand-subtitle {
-      font-size: 0.88rem;
-    }
+  .auth-identity-info {
+    display: flex;
+    flex-direction: column;
+    strong { color: #1a237e; font-size: 0.98rem; }
+    span { color: #6b7280; font-size: 0.85rem; }
   }
 }

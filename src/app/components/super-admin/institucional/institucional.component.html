@@ -1,0 +1,119 @@
+<div class="sa-container">
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- HERO HEADER -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">corporate_fare</mat-icon>
+        <div class="title-content">
+          <h1>Conteúdo Institucional</h1>
+          <p class="subtitle">Dados institucionais, Missão/Visão/Valores e links oficiais</p>
+        </div>
+      </div>
+      <span class="env-chip">Ambiente administrativo</span>
+    </div>
+  </div>
+
+  <!-- Dados institucionais -->
+  <mat-card class="info-card">
+    <mat-card-header>
+      <mat-card-title><mat-icon>business</mat-icon> Dados institucionais & Missão/Visão/Valores</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="salvar()">
+        <div class="form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Razão social</mat-label>
+            <input matInput formControlName="companyLegalName" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>CNPJ</mat-label>
+            <input matInput formControlName="companyCnpj" placeholder="A cadastrar" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="span-2">
+            <mat-label>Endereço</mat-label>
+            <input matInput formControlName="companyAddress" placeholder="A cadastrar" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="span-2">
+            <mat-label>Missão</mat-label>
+            <textarea matInput rows="2" formControlName="mission"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="span-2">
+            <mat-label>Visão</mat-label>
+            <textarea matInput rows="2" formControlName="vision"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="span-2">
+            <mat-label>Valores</mat-label>
+            <textarea matInput rows="2" formControlName="values"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>E-mail de suporte</mat-label>
+            <input matInput formControlName="supportEmail" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>E-mail comercial</mat-label>
+            <input matInput formControlName="commercialEmail" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Telefone</mat-label>
+            <input matInput formControlName="phone" />
+          </mat-form-field>
+        </div>
+
+        <div class="form-note">
+          <mat-icon>info</mat-icon>
+          <span>CNPJ e endereço são publicados apenas quando os dados reais forem cadastrados.</span>
+        </div>
+
+        <div class="form-actions">
+          <button mat-flat-button color="primary" type="submit">
+            <mat-icon>save</mat-icon> Salvar
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Links oficiais -->
+  <mat-card class="info-card">
+    <mat-card-header>
+      <mat-card-title><mat-icon>link</mat-icon> Links oficiais</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="links" class="sa-table">
+          <ng-container matColumnDef="category">
+            <th mat-header-cell *matHeaderCellDef>Categoria</th>
+            <td mat-cell *matCellDef="let l">{{ l.category }}</td>
+          </ng-container>
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Nome</th>
+            <td mat-cell *matCellDef="let l">{{ l.name }}</td>
+          </ng-container>
+          <ng-container matColumnDef="url">
+            <th mat-header-cell *matHeaderCellDef>URL</th>
+            <td mat-cell *matCellDef="let l"><a [href]="l.url" target="_blank" rel="noopener">{{ l.url }}</a></td>
+          </ng-container>
+          <ng-container matColumnDef="country">
+            <th mat-header-cell *matHeaderCellDef>País</th>
+            <td mat-cell *matCellDef="let l">{{ l.country }}</td>
+          </ng-container>
+          <ng-container matColumnDef="displayOrder">
+            <th mat-header-cell *matHeaderCellDef>Ordem</th>
+            <td mat-cell *matCellDef="let l">{{ l.displayOrder }}</td>
+          </ng-container>
+          <ng-container matColumnDef="active">
+            <th mat-header-cell *matHeaderCellDef>Ativo</th>
+            <td mat-cell *matCellDef="let l">
+              <mat-slide-toggle [checked]="l.active" (change)="toggleLink(l)"></mat-slide-toggle>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

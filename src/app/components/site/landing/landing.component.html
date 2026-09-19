@@ -1,0 +1,99 @@
+<div class="site">
+  <!-- Top nav -->
+  <header class="site-nav">
+    <div class="nav-inner">
+      <div class="brand">
+        <mat-icon>public</mat-icon>
+        <span>EIP</span>
+      </div>
+      <nav class="nav-links">
+        <a href="#produto">Produto</a>
+        <a routerLink="/precos">Preços</a>
+        <a routerLink="/trust">Segurança</a>
+        <a mat-stroked-button color="primary" routerLink="/login">Entrar</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-content">
+      <h1>SUA EXPORTAÇÃO.<br>UMA ÚNICA PLATAFORMA.</h1>
+      <p>Contratos, exportações, documentos, logística, financeiro, compliance, IA e BI
+        integrados em um só lugar. Feito para o exportador brasileiro.</p>
+      <div class="hero-cta">
+        <button mat-flat-button class="cta-white" routerLink="/checkout">Começar agora</button>
+        <button mat-stroked-button class="cta-ghost" (click)="openDemo()">Agendar demonstração</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Módulos -->
+  <section id="produto" class="modules">
+    <h2>Tudo o que sua operação de comércio exterior precisa</h2>
+    <div class="chips">
+      <span class="chip" *ngFor="let m of modules">
+        <mat-icon>check_circle</mat-icon>{{ m }}
+      </span>
+    </div>
+  </section>
+
+  <!-- Banner usuários ilimitados -->
+  <section class="banner">
+    <mat-icon>groups</mat-icon>
+    <h2>USUÁRIOS ILIMITADOS</h2>
+    <p>Sem cobrança por usuário. O EIP cresce junto com a sua equipe — você não paga
+      mais porque contratou mais pessoas.</p>
+  </section>
+
+  <!-- Seus dados são seus -->
+  <section class="data-own">
+    <div class="data-own-inner">
+      <div class="data-own-text">
+        <h2>SEUS DADOS SÃO SEUS. SEMPRE.</h2>
+        <p>Os dados e documentos que você insere no EIP permanecem sob o domínio da sua
+          empresa. No cancelamento, você solicita o Pacote de Exportação EIP com tudo em
+          formato estruturado (CSV/JSON) e os documentos originais.</p>
+        <ul>
+          <li><mat-icon>lock</mat-icon> Isolamento multi-tenant por CNPJ</li>
+          <li><mat-icon>download</mat-icon> Portabilidade e exportação de dados</li>
+          <li><mat-icon>verified_user</mat-icon> Conformidade com a LGPD</li>
+        </ul>
+        <a mat-stroked-button color="primary" routerLink="/trust">Central de Confiança</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Preview de preços -->
+  <section class="pricing-preview">
+    <h2>Planos por empresa, usuários ilimitados</h2>
+    <div class="preview-cards">
+      <mat-card class="preview-card" [class.highlight]="p.highlighted" *ngFor="let p of plans">
+        <span class="badge" *ngIf="p.highlighted">MAIS ESCOLHIDO</span>
+        <h3>{{ p.name }}</h3>
+        <div class="price"><span class="cur">R$</span>{{ p.monthlyPrice | number:'1.0-0' }}<span class="per">/mês</span></div>
+        <p class="desc">{{ p.description }}</p>
+        <a mat-flat-button color="primary" [routerLink]="['/precos']">Ver detalhes</a>
+      </mat-card>
+    </div>
+    <a class="see-all" routerLink="/precos">Ver todos os planos e comparação de recursos →</a>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <mat-icon>public</mat-icon>
+        <span>EIP — Export Integration Platform</span>
+      </div>
+      <nav class="footer-links">
+        <a routerLink="/precos">Preços</a>
+        <a routerLink="/trust">Central de Confiança</a>
+        <a routerLink="/legal/termos">Termos de Uso</a>
+        <a routerLink="/legal/privacidade">Política de Privacidade</a>
+        <a routerLink="/login">Entrar</a>
+      </nav>
+    </div>
+    <p class="copyright">© {{ (nowYear) }} EIP. Todos os direitos reservados.</p>
+  </footer>
+</div>

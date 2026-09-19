@@ -1,0 +1,72 @@
+.plano-dialog {
+  display: flex;
+  flex-direction: column;
+
+  .plano-header {
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+    color: #fff;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    mat-icon { font-size: 28px; width: 28px; height: 28px; }
+    h2 { margin: 0; font-size: 1.25rem; font-weight: 500; }
+  }
+
+  .plano-body {
+    padding: 24px;
+
+    .plan-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+    }
+
+    .plan-card {
+      position: relative;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 18px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover { border-color: #90caf9; transform: translateY(-2px); }
+      &.selected { border-color: #1976d2; box-shadow: 0 4px 16px rgba(25, 118, 210, 0.2); }
+
+      .plan-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .plan-name { font-weight: 600; color: #1565c0; }
+        .check { color: #1976d2; }
+      }
+
+      .plan-price {
+        margin: 10px 0;
+        strong { font-size: 1.5rem; color: #333; }
+        span { color: #888; font-size: 0.85rem; }
+      }
+
+      .plan-desc { margin: 0; font-size: 0.82rem; color: #666; line-height: 1.4; }
+
+      .current-tag {
+        display: inline-block;
+        margin-top: 12px;
+        font-size: 0.72rem;
+        background: #e3f2fd;
+        color: #1565c0;
+        padding: 3px 10px;
+        border-radius: 12px;
+      }
+    }
+  }
+
+  .plano-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 0 24px 20px;
+  }
+}

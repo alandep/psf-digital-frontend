@@ -1,5 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { UserAvatarService } from '../../../services/userAvatarService';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -25,14 +28,19 @@ import { MatDividerModule } from '@angular/material/divider';
     MatSelectModule,
     MatSlideToggleModule,
     MatSnackBarModule,
-    MatDividerModule
+    MatDividerModule,
+    MatTooltipModule
   ],
   templateUrl: './perfil.component.html',
   styleUrls: ['./perfil.component.scss']
 })
-export class PerfilComponent implements OnInit {
+export class PerfilComponent implements OnInit, OnDestroy {
   profileForm!: FormGroup;
   darkMode = false;
+  avatarUrl: string | null = null;
+
+  private avatarService = inject(UserAvatarService);
+  private avatarSub?: Subscription;
   selectedLanguage = 'pt';
   selectedTimezone = 'America/Sao_Paulo';
 
@@ -84,6 +92,59 @@ export class PerfilComponent implements OnInit {
     if (this.darkMode) {
       document.body.classList.add('dark-mode');
     }
+
+    this.avatarSub = this.avatarService.avatar$.subscribe(url => {
+      this.avatarUrl = url;
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.avatarSub?.unsubscribe();
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      this.snackBar.open('Arquivo inválido. Envie uma imagem.', 'OK', {
+        duration: 3000,
+        panelClass: ['error-snackbar']
+      });
+      input.value = '';
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      this.snackBar.open('Selecione uma imagem de até 2 MB.', 'OK', {
+        duration: 3000,
+        panelClass: ['error-snackbar']
+      });
+      input.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.avatarService.setAvatar(reader.result as string);
+      this.snackBar.open('Foto atualizada com sucesso!', 'OK', {
+        duration: 3000,
+        panelClass: ['success-snackbar']
+      });
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+  }
+
+  removeAvatar(): void {
+    this.avatarService.clearAvatar();
+    this.snackBar.open('Foto removida.', 'OK', {
+      duration: 3000,
+      panelClass: ['info-snackbar']
+    });
   }
 
   toggleDarkMode(): void {

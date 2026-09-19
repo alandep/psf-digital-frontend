@@ -37,6 +37,7 @@ import {
   PaymentStatus,
   PaymentCategory
 } from '../../../../types/pagamentos';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-pagamentos',
@@ -63,7 +64,8 @@ import {
     MatDividerModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatDialogModule
+    MatDialogModule,
+    HasPermissionDirective
   ],
   templateUrl: './pagamentos.component.html',
   styleUrls: ['./pagamentos.component.scss']

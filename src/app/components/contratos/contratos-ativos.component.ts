@@ -35,11 +35,13 @@ import {
   INCOTERM_LABELS,
   CURRENCY_LABELS
 } from '../../../types/contracts';
+import { HasPermissionDirective } from '../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-contratos-ativos',
   standalone: true,
   imports: [
+    HasPermissionDirective,
     CommonModule,
     ReactiveFormsModule,
     MatCardModule,

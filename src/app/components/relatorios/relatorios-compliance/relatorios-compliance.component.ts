@@ -21,6 +21,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { RelatorioComplianceMockService } from '../../../../services/relatorioComplianceMockService';
 import { ExportService } from '../../../../services/exportService';
 import { ComplianceReport, ComplianceMetrics, ComplianceByArea, ComplianceLevel } from '../../../../types/relatorio-compliance';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-relatorios-compliance',
@@ -39,7 +40,8 @@ import { ComplianceReport, ComplianceMetrics, ComplianceByArea, ComplianceLevel 
     MatSelectModule,
     MatSnackBarModule,
     MatProgressBarModule,
-    MatTooltipModule
+    MatTooltipModule,
+    HasPermissionDirective
   ],
   templateUrl: './relatorios-compliance.component.html',
   styleUrls: ['./relatorios-compliance.component.scss']

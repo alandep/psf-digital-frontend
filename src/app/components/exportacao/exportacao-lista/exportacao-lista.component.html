@@ -59,6 +59,7 @@
       <mat-card-content>
         <div class="quick-actions">
           <button 
+            *appHasPermission="'exportacoes/gerenciar:create'"
             mat-raised-button
             color="primary"
             (click)="createExportacao()"
@@ -634,7 +635,7 @@
             <h3>Nenhuma exportação encontrada</h3>
             <p>Não há exportações que correspondem aos filtros aplicados.</p>
             <div class="empty-actions">
-              <button mat-raised-button color="primary" (click)="createExportacao()">
+              <button *appHasPermission="'exportacoes/gerenciar:create'" mat-raised-button color="primary" (click)="createExportacao()">
                 <mat-icon>add</mat-icon>
                 Criar Nova Exportação
               </button>

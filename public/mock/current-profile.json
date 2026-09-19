@@ -1,0 +1,13 @@
+{
+  "_note": "MOCK do perfil do usuario logado. Um array 'permissions' vazio combinado com 'system': true (ou 'fullAccess': true) e interpretado como ACESSO TOTAL pelo AuthProfileService, que preenche as permissoes com o catalogo completo. Isso mantem o JSON pequeno e garante que nada seja bloqueado para o admin.",
+  "id": "PERFIL-ADMIN",
+  "name": "Administrador",
+  "description": "Acesso total a todas as telas e funcionalidades do sistema.",
+  "color": "#1976d2",
+  "system": true,
+  "fullAccess": true,
+  "usersCount": 4,
+  "permissions": [],
+  "createdAt": "2023-01-10T00:00:00.000Z",
+  "updatedAt": "2024-01-01T00:00:00.000Z"
+}

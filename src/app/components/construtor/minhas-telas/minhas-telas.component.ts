@@ -15,11 +15,13 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ConstrutorTelasMockService } from '../../../../services/construtorTelasMockService';
 import { ExportService } from '../../../../services/exportService';
 import { CustomScreen, LayoutType, ScreenStatus } from '../../../../types/construtor-telas';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-minhas-telas',
   standalone: true,
   imports: [
+    HasPermissionDirective,
     CommonModule,
     RouterModule,
     MatCardModule,

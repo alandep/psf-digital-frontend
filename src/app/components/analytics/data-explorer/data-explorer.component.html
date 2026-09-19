@@ -6,7 +6,7 @@
       Data Explorer
     </h1>
     <div class="header-actions">
-      <button mat-stroked-button (click)="exportResults()">
+      <button *appHasPermission="'analytics/data-explorer:export'" mat-stroked-button (click)="exportResults()">
         <mat-icon>download</mat-icon>
         Exportar
       </button>

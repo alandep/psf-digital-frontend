@@ -3,8 +3,28 @@
   <div class="page-header">
     <div class="header-content">
       <div class="avatar-section">
-        <div class="avatar-circle">
-          <mat-icon class="avatar-icon">person</mat-icon>
+        <div class="avatar-circle" (click)="fileInput.click()" matTooltip="Alterar foto">
+          <img *ngIf="avatarUrl; else avatarFallback" [src]="avatarUrl" alt="Foto do perfil">
+          <ng-template #avatarFallback>
+            <mat-icon class="avatar-icon">person</mat-icon>
+          </ng-template>
+          <button mat-icon-button type="button" class="avatar-camera-btn"
+                  aria-label="Alterar foto" (click)="$event.stopPropagation(); fileInput.click()">
+            <mat-icon>photo_camera</mat-icon>
+          </button>
+        </div>
+        <input #fileInput type="file" hidden
+               accept="image/png,image/jpeg,image/webp,image/gif"
+               (change)="onFileSelected($event)">
+        <div class="avatar-upload-actions">
+          <button mat-button type="button" class="avatar-action-btn" (click)="fileInput.click()">
+            <mat-icon>upload</mat-icon>
+            Alterar foto
+          </button>
+          <button *ngIf="avatarUrl" mat-button type="button" class="avatar-action-btn" (click)="removeAvatar()">
+            <mat-icon>delete</mat-icon>
+            Remover foto
+          </button>
         </div>
       </div>
       <div class="header-text">

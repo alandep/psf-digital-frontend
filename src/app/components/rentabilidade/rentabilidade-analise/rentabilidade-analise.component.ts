@@ -464,23 +464,27 @@ export interface ScenarioSimulation {
     }
 
     .page-header {
-      text-align: center;
+      background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+      color: #fff;
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(25, 118, 210, 0.3);
+      text-align: left;
       margin-bottom: 32px;
     }
 
     .page-header h1 {
       display: flex;
       align-items: center;
-      justify-content: center;
       gap: 12px;
-      color: #4caf50;
+      color: #fff;
       font-size: 2.5rem;
       font-weight: 600;
       margin-bottom: 8px;
     }
 
     .page-header p {
-      color: #666;
+      color: rgba(255, 255, 255, 0.9);
       font-size: 1.2rem;
       font-weight: 400;
     }

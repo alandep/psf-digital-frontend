@@ -15,7 +15,7 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button color="primary" (click)="createContract()">
+        <button mat-raised-button color="primary" (click)="createContract()" *appHasPermission="'financeiro/cambio:create'">
           <mat-icon>add</mat-icon> Novo Contrato
         </button>
         <button mat-raised-button color="primary" (click)="isSimulationExpanded = !isSimulationExpanded">
@@ -24,7 +24,7 @@
         <button mat-raised-button color="primary" (click)="refreshQuotations()">
           <mat-icon>refresh</mat-icon> Atualizar Cotações
         </button>
-        <button mat-raised-button color="primary" (click)="exportPDF()">
+        <button mat-raised-button color="primary" (click)="exportPDF()" *appHasPermission="'financeiro/cambio:export'">
           <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
         </button>
       </div>

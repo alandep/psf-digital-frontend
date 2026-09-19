@@ -40,6 +40,7 @@ import { DragDropModule } from '@angular/cdk/drag-drop';
 // Services e Types
 import { CertificationsMockService } from '../../../../services/certificationsMockService';
 import { CertificationDialogComponent } from './certification-dialog/certification-dialog.component';
+import { ConfirmarAcaoDialogComponent, ConfirmDialogData } from '../../admin/usuarios/confirmar-acao-dialog/confirmar-acao-dialog.component';
 import { 
   CertificationData,
   CertificationFilters,
@@ -56,6 +57,7 @@ import {
   AIRiskLevel,
   CountryCompliance
 } from '../../../../types/certifications';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-certificacoes',
@@ -93,7 +95,8 @@ import {
     MatProgressBarModule,
     MatListModule,
     MatButtonToggleModule,
-    DragDropModule
+    DragDropModule,
+    HasPermissionDirective
   ],
   templateUrl: './certificacoes.component.html',
   styleUrls: ['./certificacoes.component.premium.scss']
@@ -413,8 +416,7 @@ export class CertificacoesComponent implements OnInit, OnDestroy {
         }
       ];
       
-    } catch (error) {
-      console.error('Erro ao carregar dados iniciais:', error);
+    } catch {
       this.showMessage('Erro ao carregar dados iniciais', 'error');
     } finally {
       this.isLoading = false;
@@ -487,8 +489,7 @@ export class CertificacoesComponent implements OnInit, OnDestroy {
           this.filteredCertifications = result.certifications;
           this.isLoading = false;
         },
-        error: (error) => {
-          console.error('Erro ao aplicar filtros:', error);
+        error: () => {
           this.showMessage('Erro ao aplicar filtros', 'error');
           this.isLoading = false;
         }
@@ -571,8 +572,7 @@ export class CertificacoesComponent implements OnInit, OnDestroy {
       this.countryCompliances = [];
       this.aiSuggestions = [];
       this.showMessage('Detalhes carregados', 'success');
-    } catch (error) {
-      console.error('Erro ao carregar detalhes:', error);
+    } catch {
       this.showMessage('Erro ao carregar detalhes da certificação', 'error');
     } finally {
       this.isLoading = false;
@@ -596,8 +596,7 @@ export class CertificacoesComponent implements OnInit, OnDestroy {
             this.closeDetailPanel();
             this.loadInitialData();
           },
-          error: (error) => {
-            console.error('Erro ao criar certificação:', error);
+          error: () => {
             this.showMessage('Erro ao criar certificação', 'error');
           }
         });
@@ -610,8 +609,7 @@ export class CertificacoesComponent implements OnInit, OnDestroy {
             this.closeDetailPanel();
             this.loadInitialData();
           },
-          error: (error) => {
-            console.error('Erro ao atualizar certificação:', error);
+          error: () => {
             this.showMessage('Erro ao atualizar certificação', 'error');
           }
         });
@@ -619,20 +617,38 @@ export class CertificacoesComponent implements OnInit, OnDestroy {
   }
 
   deleteCertification(certification: CertificationData): void {
-    if (confirm(`Deseja remover a certificação ${certification.certification_number}?`)) {
-      this.certificationsService.deleteCertification(certification.certification_id)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: () => {
-            this.showMessage('Certificação removida com sucesso', 'success');
-            this.loadInitialData();
-          },
-          error: (error) => {
-            console.error('Erro ao remover certificação:', error);
-            this.showMessage('Erro ao remover certificação', 'error');
-          }
-        });
-    }
+    const data: ConfirmDialogData = {
+      title: 'Excluir Certificação',
+      message: 'Tem certeza que deseja remover a certificação ' + certification.certification_number + '? Esta ação não pode ser desfeita.',
+      icon: 'delete',
+      iconColor: '#f44336',
+      confirmText: 'Excluir',
+      confirmColor: 'warn'
+    };
+
+    const dialogRef = this.dialog.open(ConfirmarAcaoDialogComponent, {
+      width: '420px',
+      autoFocus: false,
+      data
+    });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(confirmed => {
+        if (confirmed === true) {
+          this.certificationsService.deleteCertification(certification.certification_id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: () => {
+                this.showMessage('Certificação removida com sucesso', 'success');
+                this.loadInitialData();
+              },
+              error: () => {
+                this.showMessage('Erro ao remover certificação', 'error');
+              }
+            });
+        }
+      });
   }
 
   closeDetailPanel(): void {
@@ -740,8 +756,7 @@ export class CertificacoesComponent implements OnInit, OnDestroy {
           this.showMessage('Certificação criada com sucesso!', 'success');
           this.loadCertifications();
         },
-        error: (error) => {
-          console.error('Erro ao criar certificação:', error);
+        error: () => {
           this.showMessage('Erro ao criar certificação', 'error');
         }
       });
@@ -760,8 +775,7 @@ export class CertificacoesComponent implements OnInit, OnDestroy {
             this.showMessage('Certificação atualizada com sucesso!', 'success');
             this.loadCertifications();
           },
-          error: (error) => {
-            console.error('Erro ao atualizar certificação:', error);
+          error: () => {
             this.showMessage('Erro ao atualizar certificação', 'error');
           }
         });
@@ -781,8 +795,7 @@ export class CertificacoesComponent implements OnInit, OnDestroy {
           this.updateFilteredCertifications();
           this.isLoading = false;
         },
-        error: (error) => {
-          console.error('Erro ao carregar certificações:', error);
+        error: () => {
           this.showMessage('Erro ao carregar certificações', 'error');
           this.isLoading = false;
         }

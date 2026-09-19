@@ -1,0 +1,38 @@
+<div class="trust">
+  <header class="trust-hero">
+    <div class="hero-inner">
+      <a class="back" routerLink="/site"><mat-icon>arrow_back</mat-icon> Início</a>
+      <h1>Central de Confiança</h1>
+      <p>Segurança, privacidade e transparência no centro do EIP.</p>
+    </div>
+  </header>
+
+  <section class="trust-grid">
+    <mat-card class="trust-card" *ngFor="let c of cards">
+      <div class="card-icon"><mat-icon>{{ c.icon }}</mat-icon></div>
+      <h2>{{ c.title }}</h2>
+      <ul>
+        <li *ngFor="let item of c.items"><mat-icon>check</mat-icon>{{ item }}</li>
+      </ul>
+    </mat-card>
+
+    <mat-card class="trust-card docs">
+      <div class="card-icon"><mat-icon>gavel</mat-icon></div>
+      <h2>Documentos legais</h2>
+      <ul>
+        <li><mat-icon>description</mat-icon> Termos de Uso e Contrato SaaS</li>
+        <li><mat-icon>description</mat-icon> Política de Privacidade</li>
+      </ul>
+      <div class="doc-links">
+        <a mat-stroked-button color="primary" routerLink="/legal/termos">Termos de Uso</a>
+        <a mat-stroked-button color="primary" routerLink="/legal/privacidade">Privacidade</a>
+      </div>
+    </mat-card>
+  </section>
+
+  <footer class="trust-footer">
+    <a routerLink="/site">Início</a>
+    <a routerLink="/precos">Preços</a>
+    <a routerLink="/login">Entrar</a>
+  </footer>
+</div>

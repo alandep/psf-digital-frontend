@@ -1,0 +1,49 @@
+<app-public-header></app-public-header>
+
+<!-- HERO -->
+<section class="sec-hero">
+  <div class="hero-inner">
+    <span class="eyebrow">SEGURANÇA</span>
+    <h1>Segurança faz parte da arquitetura do EIP.</h1>
+    <p>Proteção de dados, controle de acesso e privacidade pensados desde o desenho da plataforma.</p>
+  </div>
+</section>
+
+<!-- BLOCKS -->
+<section class="sec-blocks">
+  <div class="block-grid">
+    <mat-card class="block-card" *ngFor="let b of blocks; trackBy: trackByBlock">
+      <mat-icon>{{ b.icon }}</mat-icon>
+      <h3>{{ b.title }}</h3>
+      <p>{{ b.desc }}</p>
+    </mat-card>
+  </div>
+</section>
+
+<!-- TRUST CENTER TEASER -->
+<section class="sec-trust">
+  <div class="trust-inner">
+    <div class="section-head">
+      <h2>Trust Center</h2>
+      <p>Documentos detalhados serão publicados no Trust Center do EIP.</p>
+    </div>
+    <div class="chip-row">
+      <span class="chip" *ngFor="let t of trustTopics; trackBy: trackByTopic">{{ t.label }}</span>
+    </div>
+    <div class="trust-links">
+      <a mat-stroked-button color="primary" routerLink="/trust">Central de confiança</a>
+      <a mat-button color="primary" routerLink="/legal/privacidade">Privacidade</a>
+      <a mat-button color="primary" routerLink="/legal/termos">Termos de Uso</a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="sec-cta">
+  <div class="cta-inner">
+    <h2>Precisa de mais detalhes de segurança?</h2>
+    <a mat-flat-button class="cta-btn" routerLink="/contact">Falar com o time comercial</a>
+  </div>
+</section>
+
+<app-public-footer></app-public-footer>

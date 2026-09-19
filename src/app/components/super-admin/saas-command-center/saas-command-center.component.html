@@ -1,0 +1,366 @@
+<div class="saas-cc-container">
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- HERO HEADER (identidade Portos) -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">insights</mat-icon>
+        <div class="title-content">
+          <h1>EIP Business Command Center</h1>
+          <p class="subtitle">Gestão comercial do seu SaaS</p>
+        </div>
+      </div>
+      <span class="env-chip">Ambiente administrativo</span>
+    </div>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid" *ngIf="metrics as m">
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#e3f2fd;color:#1565c0"><mat-icon>trending_up</mat-icon></div>
+      <div class="kpi-body">
+        <div class="kpi-value">{{ formatCurrency(m.mrr) }}</div>
+        <div class="kpi-label">MRR</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#e8f5e9;color:#2e7d32"><mat-icon>calendar_month</mat-icon></div>
+      <div class="kpi-body">
+        <div class="kpi-value">{{ formatCurrency(m.arr) }}</div>
+        <div class="kpi-label">ARR</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#ede7f6;color:#5e35b1"><mat-icon>groups</mat-icon></div>
+      <div class="kpi-body">
+        <div class="kpi-value">{{ formatCurrency(m.arpa) }}</div>
+        <div class="kpi-label">ARPA</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#e0f2f1;color:#00796b"><mat-icon>business</mat-icon></div>
+      <div class="kpi-body">
+        <div class="kpi-value">{{ m.activeCompanies }}</div>
+        <div class="kpi-label">Empresas ativas</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#e3f2fd;color:#1565c0"><mat-icon>hourglass_top</mat-icon></div>
+      <div class="kpi-body">
+        <div class="kpi-value">{{ m.trials }}</div>
+        <div class="kpi-label">Trials</div>
+      </div>
+    </div>
+    <div class="kpi-card warn">
+      <div class="kpi-icon" style="background:#fff3e0;color:#ef6c00"><mat-icon>report_problem</mat-icon></div>
+      <div class="kpi-body">
+        <div class="kpi-value">{{ m.pastDue }}</div>
+        <div class="kpi-label">Inadimplentes</div>
+      </div>
+    </div>
+    <div class="kpi-card danger">
+      <div class="kpi-icon" style="background:#ffebee;color:#c62828"><mat-icon>trending_down</mat-icon></div>
+      <div class="kpi-body">
+        <div class="kpi-value">{{ m.churnRate }}%</div>
+        <div class="kpi-label">Churn</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MRR por plano + Alertas -->
+  <div class="cards-grid">
+    <mat-card class="info-card">
+      <mat-card-header>
+        <mat-card-title><mat-icon>bar_chart</mat-icon> MRR por plano</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="mrr-bar-row" *ngFor="let b of mrrBars">
+          <div class="mrr-bar-head">
+            <span class="mrr-plan">{{ b.plan }}</span>
+            <span class="mrr-value">{{ formatCurrency(b.mrr) }}</span>
+          </div>
+          <div class="mrr-track">
+            <div class="mrr-fill" [style.width.%]="b.percent"></div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="info-card">
+      <mat-card-header>
+        <mat-card-title><mat-icon>notifications_active</mat-icon> Alertas</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="alert-item" *ngFor="let a of alerts">
+          <mat-icon [style.color]="a.color">{{ a.icon }}</mat-icon>
+          <span>{{ a.text }}</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- IA analisa seu SaaS -->
+  <mat-card class="ai-card">
+    <div class="ai-icon"><mat-icon>auto_awesome</mat-icon></div>
+    <div class="ai-text">
+      <strong>IA analisa seu SaaS</strong>
+      <p>O MRR cresceu 12,4% neste mês. Três clientes Business ultrapassaram 80% da franquia de IA e são potenciais candidatos ao Pro.</p>
+    </div>
+  </mat-card>
+
+  <!-- North Star + Funil comercial -->
+  <div class="cards-grid">
+    <mat-card class="info-card northstar-card" *ngIf="northStar as n">
+      <mat-card-header>
+        <mat-card-title><mat-icon>explore</mat-icon> North Star</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="ns-value">{{ formatNumber(n.value) }}</div>
+        <span class="ns-trend">▲ {{ n.trendPercent }}%</span>
+        <div class="ns-label">{{ n.label }}</div>
+        <div class="ns-desc">{{ n.description }}</div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="info-card funnel-card">
+      <mat-card-header>
+        <mat-card-title><mat-icon>filter_alt</mat-icon> Funil comercial</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="funnel-row" *ngFor="let s of funnelBars; trackBy: trackByStage">
+          <div class="funnel-head">
+            <span class="funnel-stage">{{ s.label }}</span>
+            <span class="funnel-count">{{ formatNumber(s.count) }}</span>
+          </div>
+          <div class="funnel-track">
+            <div class="funnel-fill" [style.width.%]="s.percent"></div>
+          </div>
+          <div class="funnel-conv" *ngIf="s.conversion !== null">↓ {{ s.conversion }}%</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Saúde financeira -->
+  <mat-card class="info-card financial-card">
+    <mat-card-header>
+      <mat-card-title><mat-icon>account_balance</mat-icon> Saúde financeira</mat-card-title>
+    </mat-card-header>
+    <mat-card-content *ngIf="financial as f">
+      <div class="ledger-row">
+        <span class="ledger-label">MRR</span>
+        <span class="ledger-value">{{ formatCurrency(f.mrr) }}</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-label">ARR</span>
+        <span class="ledger-value">{{ formatCurrency(f.arr) }}</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-label">ARPA</span>
+        <span class="ledger-value">{{ formatCurrency(f.arpa) }}</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-label">Receita bruta</span>
+        <span class="ledger-value">{{ formatCurrency(f.grossRevenue) }}</span>
+      </div>
+
+      <div class="ledger-row deduction">
+        <span class="ledger-label">Taxas de pagamento</span>
+        <span class="ledger-value">- {{ formatCurrency(f.paymentFees) }}</span>
+      </div>
+      <div class="ledger-row deduction">
+        <span class="ledger-label">Impostos</span>
+        <span class="ledger-value">- {{ formatCurrency(f.taxes) }}</span>
+      </div>
+      <div class="ledger-row deduction">
+        <span class="ledger-label">IA/OCR/Cloud</span>
+        <span class="ledger-value">- {{ formatCurrency(f.aiOcrCloud) }}</span>
+      </div>
+
+      <div class="ledger-row subtotal">
+        <span class="ledger-label">Margem de contribuição</span>
+        <span class="ledger-value">{{ formatCurrency(f.contributionMargin) }}</span>
+      </div>
+
+      <div class="ledger-row deduction">
+        <span class="ledger-label">Custos fixos</span>
+        <span class="ledger-value">- {{ formatCurrency(f.fixedCosts) }}</span>
+      </div>
+
+      <div class="ledger-row subtotal">
+        <span class="ledger-label">Contribuição operacional</span>
+        <span class="ledger-value">{{ formatCurrency(f.operatingContribution) }}</span>
+      </div>
+
+      <div class="ledger-chips">
+        <span class="ledger-chip">Clientes: {{ f.customers }}</span>
+        <span class="ledger-chip">Break-even: {{ f.breakEvenCustomers }}</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Custo por empresa (unit economics) -->
+  <mat-card class="info-card economics-card">
+    <mat-card-header>
+      <mat-card-title><mat-icon>monitoring</mat-icon> Custo por empresa (unit economics)</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="unitEconomics" class="economics-table">
+          <ng-container matColumnDef="company">
+            <th mat-header-cell *matHeaderCellDef>Empresa</th>
+            <td mat-cell *matCellDef="let row">{{ row.company }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="subscription">
+            <th mat-header-cell *matHeaderCellDef>Assinatura</th>
+            <td mat-cell *matCellDef="let row">{{ formatCurrency(row.subscription) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="aiCost">
+            <th mat-header-cell *matHeaderCellDef>IA</th>
+            <td mat-cell *matCellDef="let row">{{ formatCurrency(row.aiCost) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="ocrCost">
+            <th mat-header-cell *matHeaderCellDef>OCR</th>
+            <td mat-cell *matCellDef="let row">{{ formatCurrency(row.ocrCost) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="storageCost">
+            <th mat-header-cell *matHeaderCellDef>Storage</th>
+            <td mat-cell *matCellDef="let row">{{ formatCurrency(row.storageCost) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="cloudCost">
+            <th mat-header-cell *matHeaderCellDef>Cloud</th>
+            <td mat-cell *matCellDef="let row">{{ formatCurrency(row.cloudCost) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="contribution">
+            <th mat-header-cell *matHeaderCellDef>Contribuição</th>
+            <td mat-cell *matCellDef="let row">{{ formatCurrency(row.contribution) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="marginPercent">
+            <th mat-header-cell *matHeaderCellDef>Margem %</th>
+            <td mat-cell *matCellDef="let row">{{ row.marginPercent }}%</td>
+          </ng-container>
+
+          <ng-container matColumnDef="score">
+            <th mat-header-cell *matHeaderCellDef>Score</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="score-chip"
+                    [style.color]="scoreView(row.score).color"
+                    [style.background]="scoreView(row.score).bg">
+                {{ scoreView(row.score).label }}
+              </span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="economicsColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: economicsColumns;"></tr>
+        </table>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Empresas (tenants) -->
+  <mat-card class="info-card tenants-card">
+    <mat-card-header>
+      <mat-card-title><mat-icon>corporate_fare</mat-icon> Empresas (tenants)</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="filter-row">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Buscar por empresa ou CNPJ</mat-label>
+          <input matInput [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()" placeholder="Digite para filtrar" />
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="status-field">
+          <mat-label>Status</mat-label>
+          <mat-select [(ngModel)]="statusFilter" (ngModelChange)="applyFilter()">
+            <mat-option *ngFor="let o of statusOptions" [value]="o.value">{{ o.label }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="dataSource" matSort class="tenants-table">
+          <ng-container matColumnDef="company">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Empresa</th>
+            <td mat-cell *matCellDef="let t">{{ t.company }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="cnpj">
+            <th mat-header-cell *matHeaderCellDef>CNPJ</th>
+            <td mat-cell *matCellDef="let t">{{ t.cnpj }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="planName">
+            <th mat-header-cell *matHeaderCellDef>Plano</th>
+            <td mat-cell *matCellDef="let t">{{ t.planName }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let t">
+              <span class="status-chip"
+                    [style.color]="statusView(t.status).color"
+                    [style.background]="statusView(t.status).bg">
+                {{ statusView(t.status).label }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="mrr">
+            <th mat-header-cell *matHeaderCellDef>MRR</th>
+            <td mat-cell *matCellDef="let t">{{ formatCurrency(t.mrr) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="nextBilling">
+            <th mat-header-cell *matHeaderCellDef>Próxima cobrança</th>
+            <td mat-cell *matCellDef="let t">{{ t.nextBilling | date:'dd/MM/yyyy' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="usersCount">
+            <th mat-header-cell *matHeaderCellDef>Usuários</th>
+            <td mat-cell *matCellDef="let t">{{ t.usersCount }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Ações</th>
+            <td mat-cell *matCellDef="let t">
+              <button mat-icon-button [matMenuTriggerFor]="rowMenu" matTooltip="Ações">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #rowMenu="matMenu">
+                <button mat-menu-item (click)="verAssinatura(t)">
+                  <mat-icon>receipt_long</mat-icon><span>Ver assinatura</span>
+                </button>
+                <button mat-menu-item (click)="alterarPlano(t)">
+                  <mat-icon>swap_horiz</mat-icon><span>Alterar plano</span>
+                </button>
+                <button mat-menu-item (click)="toggleSuspensao(t)">
+                  <mat-icon>{{ isSuspended(t) ? 'play_circle' : 'block' }}</mat-icon>
+                  <span>{{ isSuspended(t) ? 'Reativar' : 'Suspender' }}</span>
+                </button>
+              </mat-menu>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          <tr class="no-data-row" *matNoDataRow>
+            <td class="no-data-cell" [attr.colspan]="displayedColumns.length">
+              Nenhuma empresa encontrada com os filtros atuais.
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <mat-paginator [pageSizeOptions]="[5, 10, 20]" [pageSize]="5" showFirstLastButtons></mat-paginator>
+    </mat-card-content>
+  </mat-card>
+</div>

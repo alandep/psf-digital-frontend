@@ -27,7 +27,7 @@ Sistema Inteligente de Compliance Internacional
           <mat-icon [class.spinning]="isLoading">refresh</mat-icon>
         </button>
         
-        <button mat-stroked-button (click)="exportCertifications()" class="export-btn">
+        <button mat-stroked-button *appHasPermission="'produtos/certificacoes:export'" (click)="exportCertifications()" class="export-btn">
           <mat-icon>download</mat-icon>
           Exportar
         </button>
@@ -223,11 +223,11 @@ Sistema Inteligente de Compliance Internacional
       </mat-card-content>
     </mat-card>
 
-    <!-- LAYOUT PRINCIPAL COM SIDENAV -->
-    <mat-sidenav-container class="content-container">
+    <!-- LAYOUT PRINCIPAL -->
+    <div class="content-container">
       
       <!-- CONTEÚDO PRINCIPAL -->
-      <mat-sidenav-content class="main-content">
+      <div class="main-content">
         
         <!-- ====== CONTROLES DE VISUALIZAÇÃO PREMIUM ====== -->
         <div class="view-controls">
@@ -261,11 +261,11 @@ Sistema Inteligente de Compliance Internacional
           </mat-button-toggle-group>
           
           <div class="action-controls">
-            <button mat-stroked-button (click)="exportFiltered()" [disabled]="filteredCertifications.length === 0">
+            <button mat-stroked-button *appHasPermission="'produtos/certificacoes:export'" (click)="exportFiltered()" [disabled]="filteredCertifications.length === 0">
               <mat-icon>download</mat-icon>
               Exportar
             </button>
-            <button mat-raised-button color="primary" (click)="createCertification()">
+            <button mat-raised-button color="primary" *appHasPermission="'produtos/certificacoes:create'" (click)="createCertification()">
               <mat-icon>add</mat-icon>
               Nova Certificação
             </button>
@@ -588,15 +588,15 @@ Sistema Inteligente de Compliance Internacional
           <mat-icon>description</mat-icon>
           <h3>Nenhuma certificação encontrada</h3>
           <p>Tente ajustar os filtros ou criar uma nova certificação</p>
-          <button mat-raised-button color="primary" (click)="createCertification()">
+          <button mat-raised-button color="primary" *appHasPermission="'produtos/certificacoes:create'" (click)="createCertification()">
             <mat-icon>add</mat-icon>
             Nova Certificação
           </button>
         </div>
 
-      </mat-sidenav-content>
+      </div>
 
-    </mat-sidenav-container>
+    </div>
   </div>
 </div>
 

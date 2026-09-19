@@ -1,0 +1,44 @@
+<h2 mat-dialog-title class="cp-title">
+  <mat-icon>cookie</mat-icon>
+  Preferências de cookies
+</h2>
+
+<mat-dialog-content class="cp-content">
+  <div class="cp-row">
+    <div class="cp-info">
+      <span class="cp-name">Essenciais</span>
+      <span class="cp-desc">Necessários para o funcionamento do EIP. Sempre ativos.</span>
+    </div>
+    <mat-slide-toggle [checked]="true" [disabled]="true" aria-label="Cookies essenciais"></mat-slide-toggle>
+  </div>
+
+  <div class="cp-row">
+    <div class="cp-info">
+      <span class="cp-name">Analytics</span>
+      <span class="cp-desc">Ajudam a entender o uso da plataforma para melhorarmos a experiência.</span>
+    </div>
+    <mat-slide-toggle [(ngModel)]="analytics" [ngModelOptions]="{ standalone: true }" aria-label="Cookies de analytics"></mat-slide-toggle>
+  </div>
+
+  <div class="cp-row">
+    <div class="cp-info">
+      <span class="cp-name">Preferências</span>
+      <span class="cp-desc">Lembram suas escolhas e personalizam a interface.</span>
+    </div>
+    <mat-slide-toggle [(ngModel)]="preferences" [ngModelOptions]="{ standalone: true }" aria-label="Cookies de preferências"></mat-slide-toggle>
+  </div>
+
+  <div class="cp-row">
+    <div class="cp-info">
+      <span class="cp-name">Marketing</span>
+      <span class="cp-desc">Permitem conteúdo e comunicações mais relevantes.</span>
+    </div>
+    <mat-slide-toggle [(ngModel)]="marketing" [ngModelOptions]="{ standalone: true }" aria-label="Cookies de marketing"></mat-slide-toggle>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions class="cp-actions">
+  <button mat-stroked-button type="button" (click)="rejectNonEssential()">Rejeitar não essenciais</button>
+  <button mat-stroked-button type="button" (click)="savePreferences()">Salvar preferências</button>
+  <button mat-flat-button color="primary" type="button" class="cp-accept" (click)="acceptAll()">Aceitar todos</button>
+</mat-dialog-actions>

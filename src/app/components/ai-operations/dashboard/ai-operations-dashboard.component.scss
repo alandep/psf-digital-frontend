@@ -23,12 +23,12 @@ $teal: #009688;
 
 // === PAGE HEADER ===
 .page-header {
-  background: linear-gradient(135deg, $primary 0%, $dark 100%);
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
   color: white;
   padding: 2rem;
   margin-bottom: 24px;
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba($primary, 0.3);
+  box-shadow: 0 8px 32px rgba(25, 118, 210, 0.3);
 
   .header-main {
     display: flex;
@@ -349,108 +349,7 @@ $teal: #009688;
   .accuracy-bar-ok .mdc-linear-progress__bar-inner { border-color: $success; }
 }
 
-// === DETAIL PANEL ===
-.detail-panel {
-  border-radius: 12px;
-  margin-top: 24px;
-  border-left: 4px solid $primary;
-
-  .detail-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-
-    .detail-title {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-
-      mat-icon { color: $primary; font-size: 1.5rem; }
-      h3 { margin: 0; font-size: 1.2rem; font-weight: 600; }
-    }
-  }
-
-  .detail-stats {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 16px;
-    margin-bottom: 24px;
-    padding: 16px;
-    background: #f8f9fa;
-    border-radius: 8px;
-
-    .stat-item {
-      display: flex;
-      flex-direction: column;
-
-      .stat-label {
-        font-size: 0.75rem;
-        color: #777;
-        text-transform: uppercase;
-        margin-bottom: 4px;
-      }
-
-      .stat-value {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #333;
-      }
-    }
-  }
-
-  .errors-title {
-    margin: 0 0 12px;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #333;
-  }
-
-  .errors-list {
-    max-height: 300px;
-    overflow-y: auto;
-  }
-
-  .error-entry {
-    display: grid;
-    grid-template-columns: 160px 140px 1fr;
-    gap: 12px;
-    padding: 10px 12px;
-    border-bottom: 1px solid #f0f0f0;
-    align-items: center;
-
-    &:last-child { border-bottom: none; }
-
-    .error-time {
-      font-size: 0.8rem;
-      color: #777;
-    }
-
-    .error-type-badge {
-      padding: 3px 8px;
-      border-radius: 6px;
-      font-size: 0.7rem;
-      font-weight: 600;
-      background: rgba($danger, 0.1);
-      color: $danger;
-      text-transform: uppercase;
-    }
-
-    .error-message {
-      font-size: 0.85rem;
-      color: #555;
-    }
-  }
-
-  .no-errors {
-    padding: 20px;
-    text-align: center;
-    color: #999;
-    font-style: italic;
-  }
-}
-
-// Also used in warning card and detail panel
+// Also used in warning card
 .status-badge {
   padding: 4px 10px;
   border-radius: 12px;
@@ -468,10 +367,6 @@ $teal: #009688;
   .kpi-dashboard {
     grid-template-columns: repeat(3, 1fr);
   }
-
-  .detail-panel .detail-stats {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 
 @media (max-width: 768px) {
@@ -486,13 +381,5 @@ $teal: #009688;
     .header-actions {
       flex-wrap: wrap;
     }
-  }
-
-  .detail-panel .detail-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .error-entry {
-    grid-template-columns: 1fr;
   }
 }

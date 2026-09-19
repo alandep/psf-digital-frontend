@@ -1,0 +1,141 @@
+<div class="sa-container">
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- HERO HEADER -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">ads_click</mat-icon>
+        <div class="title-content">
+          <h1>Publicidade & Monetização</h1>
+          <p class="subtitle">Anunciantes e campanhas no EIP Intelligence</p>
+        </div>
+      </div>
+      <span class="env-chip">Ambiente administrativo</span>
+    </div>
+  </div>
+
+  <!-- Regra §17 / §179 -->
+  <div class="policy-note">
+    <mat-icon>info</mat-icon>
+    <span>Todo anúncio é exibido como <strong>PATROCINADO</strong>. Publicidade permitida apenas em
+      EIP Intelligence — nunca dentro de Exportações, Financeiro, Compliance ou Documentos.</span>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid" *ngIf="kpis as k">
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#e8f5e9;color:#2e7d32"><mat-icon>campaign</mat-icon></div>
+      <div class="kpi-body"><div class="kpi-value">{{ k.activeCampaigns }}</div><div class="kpi-label">Campanhas ativas</div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#e3f2fd;color:#1565c0"><mat-icon>visibility</mat-icon></div>
+      <div class="kpi-body"><div class="kpi-value">{{ formatNumber(k.totalImpressions) }}</div><div class="kpi-label">Impressões totais</div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#ede7f6;color:#5e35b1"><mat-icon>touch_app</mat-icon></div>
+      <div class="kpi-body"><div class="kpi-value">{{ formatNumber(k.totalClicks) }}</div><div class="kpi-label">Cliques totais</div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#e0f2f1;color:#00796b"><mat-icon>payments</mat-icon></div>
+      <div class="kpi-body"><div class="kpi-value">{{ formatCurrency(k.totalRevenue) }}</div><div class="kpi-label">Receita total</div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#fff3e0;color:#ef6c00"><mat-icon>percent</mat-icon></div>
+      <div class="kpi-body"><div class="kpi-value">{{ k.avgCtr }}%</div><div class="kpi-label">CTR médio</div></div>
+    </div>
+  </div>
+
+  <!-- Anunciantes -->
+  <mat-card class="info-card">
+    <mat-card-header>
+      <mat-card-title><mat-icon>storefront</mat-icon> Anunciantes</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="advertiser-list">
+        <div class="advertiser-item" *ngFor="let a of advertisers; trackBy: trackByAdvertiserId">
+          <div class="adv-main">
+            <span class="adv-name">{{ a.tradeName }}</span>
+            <span class="adv-cnpj">{{ a.cnpj }}</span>
+          </div>
+          <span class="chip" [style.color]="advertiserStatusView(a.status).color" [style.background]="advertiserStatusView(a.status).bg">
+            {{ advertiserStatusView(a.status).label }}
+          </span>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Campanhas -->
+  <mat-card class="info-card">
+    <mat-card-header>
+      <mat-card-title><mat-icon>campaign</mat-icon> Campanhas</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="dataSource" matSort class="sa-table">
+          <ng-container matColumnDef="advertiser">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Anunciante</th>
+            <td mat-cell *matCellDef="let c">{{ c.advertiser }}</td>
+          </ng-container>
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Campanha</th>
+            <td mat-cell *matCellDef="let c">{{ c.name }}</td>
+          </ng-container>
+          <ng-container matColumnDef="placement">
+            <th mat-header-cell *matHeaderCellDef>Posicionamento</th>
+            <td mat-cell *matCellDef="let c">{{ c.placement }}</td>
+          </ng-container>
+          <ng-container matColumnDef="period">
+            <th mat-header-cell *matHeaderCellDef>Período</th>
+            <td mat-cell *matCellDef="let c">{{ c.startAt | date:'dd/MM/yy' }} – {{ c.endAt | date:'dd/MM/yy' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let c">
+              <span class="chip" [style.color]="statusView(c.status).color" [style.background]="statusView(c.status).bg">
+                {{ statusView(c.status).label }}
+              </span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="impressions">
+            <th mat-header-cell *matHeaderCellDef>Impressões</th>
+            <td mat-cell *matCellDef="let c">{{ formatNumber(c.impressions) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="clicks">
+            <th mat-header-cell *matHeaderCellDef>Cliques</th>
+            <td mat-cell *matCellDef="let c">{{ formatNumber(c.clicks) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="ctr">
+            <th mat-header-cell *matHeaderCellDef>CTR</th>
+            <td mat-cell *matCellDef="let c">{{ c.ctr }}%</td>
+          </ng-container>
+          <ng-container matColumnDef="revenue">
+            <th mat-header-cell *matHeaderCellDef>Receita</th>
+            <td mat-cell *matCellDef="let c">{{ formatCurrency(c.revenue) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Ações</th>
+            <td mat-cell *matCellDef="let c">
+              <button mat-icon-button [matMenuTriggerFor]="rowMenu" matTooltip="Ações">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #rowMenu="matMenu">
+                <button mat-menu-item (click)="ativar(c)"><mat-icon>play_circle</mat-icon><span>Ativar</span></button>
+                <button mat-menu-item (click)="pausar(c)"><mat-icon>pause_circle</mat-icon><span>Pausar</span></button>
+                <button mat-menu-item (click)="encerrar(c)"><mat-icon>stop_circle</mat-icon><span>Encerrar</span></button>
+              </mat-menu>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          <tr class="no-data-row" *matNoDataRow>
+            <td class="no-data-cell" [attr.colspan]="displayedColumns.length">Nenhuma campanha cadastrada.</td>
+          </tr>
+        </table>
+      </div>
+      <mat-paginator [pageSizeOptions]="[5, 10, 20]" [pageSize]="10" showFirstLastButtons></mat-paginator>
+    </mat-card-content>
+  </mat-card>
+</div>

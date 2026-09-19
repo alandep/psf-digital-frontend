@@ -37,6 +37,7 @@ import {
   TransportadoraMetrics,
   TransportSimulationResult
 } from '../../../../types/transportadoras';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 // Dialogs
 import { TransportadoraDetailDialogComponent } from './transportadora-detail-dialog/transportadora-detail-dialog.component';
@@ -69,7 +70,8 @@ import { TransportadoraFormDialogComponent } from './transportadora-form-dialog/
     MatExpansionModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatDialogModule
+    MatDialogModule,
+    HasPermissionDirective
   ],
   templateUrl: './transportadoras.component.html',
   styleUrls: ['./transportadoras.component.scss']

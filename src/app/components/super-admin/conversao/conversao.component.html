@@ -1,0 +1,93 @@
+<div class="sa-container">
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- HERO HEADER -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">conversion_path</mat-icon>
+        <div class="title-content">
+          <h1>Conversão por Canal</h1>
+          <p class="subtitle">Aquisição e conversão de leads por canal de origem</p>
+        </div>
+      </div>
+      <span class="env-chip">Ambiente administrativo</span>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid" *ngIf="kpis as k">
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#e3f2fd;color:#1565c0"><mat-icon>groups</mat-icon></div>
+      <div class="kpi-body"><div class="kpi-value">{{ k.totalLeads }}</div><div class="kpi-label">Total leads</div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#fff3e0;color:#ef6c00"><mat-icon>hourglass_top</mat-icon></div>
+      <div class="kpi-body"><div class="kpi-value">{{ k.totalTrials }}</div><div class="kpi-label">Total trials</div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#e8f5e9;color:#2e7d32"><mat-icon>verified</mat-icon></div>
+      <div class="kpi-body"><div class="kpi-value">{{ k.totalCustomers }}</div><div class="kpi-label">Total clientes</div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#ede7f6;color:#5e35b1"><mat-icon>percent</mat-icon></div>
+      <div class="kpi-body"><div class="kpi-value">{{ k.avgConversion }}%</div><div class="kpi-label">Conversão média</div></div>
+    </div>
+  </div>
+
+  <div class="cards-grid">
+    <!-- Tabela Aquisição -->
+    <mat-card class="info-card">
+      <mat-card-header>
+        <mat-card-title><mat-icon>table_chart</mat-icon> Aquisição</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="table-wrapper">
+          <table mat-table [dataSource]="channels" class="sa-table">
+            <ng-container matColumnDef="channel">
+              <th mat-header-cell *matHeaderCellDef>Canal</th>
+              <td mat-cell *matCellDef="let c">{{ c.channel }}</td>
+            </ng-container>
+            <ng-container matColumnDef="leads">
+              <th mat-header-cell *matHeaderCellDef>Leads</th>
+              <td mat-cell *matCellDef="let c">{{ c.leads }}</td>
+            </ng-container>
+            <ng-container matColumnDef="trials">
+              <th mat-header-cell *matHeaderCellDef>Trials</th>
+              <td mat-cell *matCellDef="let c">{{ c.trials }}</td>
+            </ng-container>
+            <ng-container matColumnDef="customers">
+              <th mat-header-cell *matHeaderCellDef>Clientes</th>
+              <td mat-cell *matCellDef="let c">{{ c.customers }}</td>
+            </ng-container>
+            <ng-container matColumnDef="conversionPercent">
+              <th mat-header-cell *matHeaderCellDef>Conversão %</th>
+              <td mat-cell *matCellDef="let c">{{ c.conversionPercent }}%</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Barras de conversão -->
+    <mat-card class="info-card">
+      <mat-card-header>
+        <mat-card-title><mat-icon>bar_chart</mat-icon> Conversão por canal</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="bar-row" *ngFor="let b of bars; trackBy: trackByBar">
+          <div class="bar-head">
+            <span class="bar-channel">{{ b.channel }}</span>
+            <span class="bar-value">{{ b.conversionPercent }}%</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill" [style.width.%]="b.percentWidth"></div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

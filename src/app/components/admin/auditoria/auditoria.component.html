@@ -15,7 +15,7 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button class="export-btn" (click)="exportAudit()">
+        <button mat-raised-button class="export-btn" *appHasPermission="'admin/auditoria:export'" (click)="exportAudit()">
           <mat-icon>file_download</mat-icon> Exportar
         </button>
       </div>

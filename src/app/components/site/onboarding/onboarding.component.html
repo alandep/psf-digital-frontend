@@ -1,0 +1,248 @@
+<div class="onboarding">
+  <!-- Hero Portos -->
+  <header class="ob-hero">
+    <h1>Bem-vindo ao EIP</h1>
+    <p>Vamos configurar sua plataforma e preparar a sua primeira operação de exportação.</p>
+  </header>
+
+  <!-- Copilot IA -->
+  <div class="ob-copilot">
+    <div class="copilot-avatar">
+      <mat-icon>smart_toy</mat-icon>
+    </div>
+    <div class="copilot-msg">
+      <strong>Assistente EIP</strong>
+      <span>
+        Olá! Eu sou o assistente EIP. Posso ajudar sua empresa a configurar a plataforma
+        e preparar a primeira operação de exportação.
+      </span>
+    </div>
+  </div>
+
+  <!-- Barra de progresso -->
+  <div class="ob-progress">
+    <div class="progress-head">
+      <span>{{ progressPercent }}% concluído</span>
+      <span class="progress-count">{{ completedCount }} de {{ steps.length }} etapas</span>
+    </div>
+    <mat-progress-bar mode="determinate" [value]="progressPercent"></mat-progress-bar>
+  </div>
+
+  <!-- Layout duas colunas -->
+  <div class="ob-layout">
+    <!-- ESQUERDA: stepper vertical -->
+    <aside class="ob-steps">
+      <mat-card class="steps-card">
+        <h3 class="steps-title">Etapas de configuração</h3>
+        <ul class="steps-list">
+          <li
+            *ngFor="let step of steps; let i = index"
+            class="step-item"
+            [class.done]="stepState(i) === 'done'"
+            [class.current]="stepState(i) === 'current'"
+            (click)="goToStep(i)"
+          >
+            <span class="step-marker">
+              <mat-icon *ngIf="stepState(i) === 'done'">check_circle</mat-icon>
+              <mat-icon *ngIf="stepState(i) === 'current'">radio_button_checked</mat-icon>
+              <mat-icon *ngIf="stepState(i) === 'pending'">radio_button_unchecked</mat-icon>
+            </span>
+            <span class="step-text">
+              <span class="step-index">Etapa {{ step.id }}</span>
+              <span class="step-label">{{ step.label }}</span>
+            </span>
+          </li>
+        </ul>
+      </mat-card>
+
+      <a class="skip-all" [routerLink]="dashboardRoute">
+        <mat-icon>fast_forward</mat-icon>
+        Pular configuração e ir para o sistema
+      </a>
+    </aside>
+
+    <!-- DIREITA: painel de conteúdo -->
+    <section class="ob-content">
+      <mat-card class="content-card">
+        <div class="content-head">
+          <mat-icon class="content-icon">{{ currentStep.icon }}</mat-icon>
+          <h2>Etapa {{ currentStep.id }} — {{ currentStep.label }}</h2>
+        </div>
+
+        <!-- Etapa 1: Empresa -->
+        <div class="step-panel" *ngIf="currentStep.id === 1">
+          <p class="panel-lead">Confirme os dados da sua empresa.</p>
+          <div class="summary-card">
+            <div class="summary-row">
+              <span class="summary-key">CNPJ</span>
+              <span class="summary-val">{{ empresa.cnpj }}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-key">Razão social</span>
+              <span class="summary-val">{{ empresa.razaoSocial }}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-key">Nome fantasia</span>
+              <span class="summary-val">{{ empresa.nomeFantasia }}</span>
+            </div>
+          </div>
+          <div class="step-actions">
+            <button mat-stroked-button (click)="pularEtapa()">Pular</button>
+            <button mat-flat-button color="primary" (click)="concluirEtapa()">
+              Confirmar e concluir etapa
+            </button>
+          </div>
+        </div>
+
+        <!-- Etapa 2: Dados fiscais -->
+        <div class="step-panel" *ngIf="currentStep.id === 2">
+          <p class="panel-lead">Informe os dados fiscais para habilitar suas operações.</p>
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Regime tributário</mat-label>
+              <mat-select [(ngModel)]="fiscal.regime">
+                <mat-option *ngFor="let r of regimeOptions" [value]="r">{{ r }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Inscrição Estadual</mat-label>
+              <input matInput [(ngModel)]="fiscal.inscricaoEstadual" placeholder="000.000.000.000" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Habilitação Radar</mat-label>
+              <mat-select [(ngModel)]="fiscal.radar">
+                <mat-option *ngFor="let h of radarOptions" [value]="h">{{ h }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+          <div class="step-actions">
+            <button mat-stroked-button (click)="pularEtapa()">Pular</button>
+            <button mat-flat-button color="primary" (click)="concluirEtapa()">Concluir etapa</button>
+          </div>
+        </div>
+
+        <!-- Etapa 3: Produtos -->
+        <div class="step-panel" *ngIf="currentStep.id === 3">
+          <p class="panel-lead">Adicione alguns produtos. Você poderá importar via CSV depois.</p>
+          <div class="mini-form">
+            <mat-form-field appearance="outline">
+              <mat-label>Nome do produto</mat-label>
+              <input matInput [(ngModel)]="novoProduto.nome" (keyup.enter)="adicionarProduto()" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>NCM</mat-label>
+              <input matInput [(ngModel)]="novoProduto.ncm" (keyup.enter)="adicionarProduto()" />
+            </mat-form-field>
+            <button mat-flat-button color="primary" class="add-btn" (click)="adicionarProduto()">
+              <mat-icon>add</mat-icon> Adicionar produto
+            </button>
+          </div>
+          <mat-chip-set class="chips" *ngIf="produtos.length">
+            <mat-chip *ngFor="let p of produtos; let i = index" (removed)="removerProduto(i)">
+              {{ p.nome }}<span *ngIf="p.ncm"> · NCM {{ p.ncm }}</span>
+              <button matChipRemove aria-label="Remover produto"><mat-icon>cancel</mat-icon></button>
+            </mat-chip>
+          </mat-chip-set>
+          <p class="empty-hint" *ngIf="!produtos.length">Nenhum produto adicionado ainda.</p>
+          <div class="step-actions">
+            <button mat-stroked-button (click)="pularEtapa()">Pular</button>
+            <button mat-flat-button color="primary" (click)="concluirEtapa()">Concluir etapa</button>
+          </div>
+        </div>
+
+        <!-- Etapa 4: Clientes -->
+        <div class="step-panel" *ngIf="currentStep.id === 4">
+          <p class="panel-lead">Cadastre seus primeiros clientes internacionais.</p>
+          <div class="mini-form">
+            <mat-form-field appearance="outline">
+              <mat-label>Nome do cliente</mat-label>
+              <input matInput [(ngModel)]="novoCliente.nome" (keyup.enter)="adicionarCliente()" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>País</mat-label>
+              <input matInput [(ngModel)]="novoCliente.pais" (keyup.enter)="adicionarCliente()" />
+            </mat-form-field>
+            <button mat-flat-button color="primary" class="add-btn" (click)="adicionarCliente()">
+              <mat-icon>add</mat-icon> Adicionar cliente
+            </button>
+          </div>
+          <mat-chip-set class="chips" *ngIf="clientes.length">
+            <mat-chip *ngFor="let c of clientes; let i = index" (removed)="removerCliente(i)">
+              {{ c.nome }}<span *ngIf="c.pais"> · {{ c.pais }}</span>
+              <button matChipRemove aria-label="Remover cliente"><mat-icon>cancel</mat-icon></button>
+            </mat-chip>
+          </mat-chip-set>
+          <p class="empty-hint" *ngIf="!clientes.length">Nenhum cliente adicionado ainda.</p>
+          <div class="step-actions">
+            <button mat-stroked-button (click)="pularEtapa()">Pular</button>
+            <button mat-flat-button color="primary" (click)="concluirEtapa()">Concluir etapa</button>
+          </div>
+        </div>
+
+        <!-- Etapa 5: Usuários -->
+        <div class="step-panel" *ngIf="currentStep.id === 5">
+          <p class="panel-lead">Convide sua equipe para colaborar na plataforma.</p>
+          <div class="free-note">
+            <mat-icon>savings</mat-icon>
+            <span><strong>R$ 0,00 por usuário adicional</strong> — o EIP não cobra por usuário.</span>
+          </div>
+          <div class="mini-form">
+            <mat-form-field appearance="outline">
+              <mat-label>E-mail</mat-label>
+              <input matInput type="email" [(ngModel)]="novoUsuario.email" (keyup.enter)="adicionarUsuario()" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Perfil</mat-label>
+              <mat-select [(ngModel)]="novoUsuario.perfil">
+                <mat-option *ngFor="let perfil of perfilOptions" [value]="perfil">{{ perfil }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <button mat-flat-button color="primary" class="add-btn" (click)="adicionarUsuario()">
+              <mat-icon>person_add</mat-icon> Convidar
+            </button>
+          </div>
+          <mat-chip-set class="chips" *ngIf="usuarios.length">
+            <mat-chip *ngFor="let u of usuarios; let i = index" (removed)="removerUsuario(i)">
+              {{ u.email }} · {{ u.perfil }}
+              <button matChipRemove aria-label="Remover usuário"><mat-icon>cancel</mat-icon></button>
+            </mat-chip>
+          </mat-chip-set>
+          <p class="empty-hint" *ngIf="!usuarios.length">Nenhum convite enviado ainda.</p>
+          <div class="step-actions">
+            <button mat-stroked-button (click)="pularEtapa()">Pular</button>
+            <button mat-flat-button color="primary" (click)="concluirEtapa()">Concluir etapa</button>
+          </div>
+        </div>
+
+        <!-- Etapa 6: Primeira exportação -->
+        <div class="step-panel" *ngIf="currentStep.id === 6">
+          <div class="cta-card">
+            <mat-icon class="cta-icon">rocket_launch</mat-icon>
+            <h3>Crie sua primeira operação de exportação</h3>
+            <p>Tudo pronto! Vamos montar seu primeiro pedido de exportação no EIP.</p>
+            <a mat-flat-button color="primary" [routerLink]="primeiraExportacaoRoute">
+              <mat-icon>local_shipping</mat-icon> Criar operação de exportação
+            </a>
+          </div>
+          <div class="step-actions">
+            <button mat-stroked-button (click)="pularEtapa()">Pular</button>
+            <button mat-flat-button color="primary" (click)="concluirEtapa()">Concluir etapa</button>
+          </div>
+        </div>
+      </mat-card>
+
+      <!-- Finalização -->
+      <mat-card class="finish-card" [class.ready]="allDone">
+        <div class="finish-text">
+          <mat-icon>{{ allDone ? 'celebration' : 'flag' }}</mat-icon>
+          <span *ngIf="allDone">Configuração concluída! Sua empresa está pronta para operar.</span>
+          <span *ngIf="!allDone">Conclua as etapas ou vá direto para o sistema quando quiser.</span>
+        </div>
+        <a mat-flat-button color="primary" class="go-btn" [routerLink]="dashboardRoute">
+          IR PARA O EIP
+          <mat-icon>arrow_forward</mat-icon>
+        </a>
+      </mat-card>
+    </section>
+  </div>
+</div>

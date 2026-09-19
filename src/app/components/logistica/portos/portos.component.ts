@@ -42,6 +42,7 @@ import {
   PortMetrics,
   SimulationResult
 } from '../../../../types/portos';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-portos',
@@ -69,7 +70,8 @@ import {
     MatDividerModule,
     MatExpansionModule,
     MatDatepickerModule,
-    MatNativeDateModule
+    MatNativeDateModule,
+    HasPermissionDirective
   ],
   templateUrl: './portos.component.html',
   styleUrls: ['./portos.component.scss']

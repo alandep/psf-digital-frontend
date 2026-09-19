@@ -1,0 +1,132 @@
+<div class="permissoes-dialog">
+
+  <!-- Header gradiente (identidade Portos) -->
+  <div class="dialog-hero">
+    <div class="hero-left">
+      <mat-icon class="hero-icon">admin_panel_settings</mat-icon>
+      <div class="hero-text">
+        <h2>{{ dialogTitle }}</h2>
+        <p>Selecione as telas e ações que este perfil poderá acessar</p>
+      </div>
+    </div>
+    <button mat-icon-button class="hero-close" (click)="cancel()" matTooltip="Fechar">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content class="dialog-body">
+
+    <!-- Dados do perfil -->
+    <form [formGroup]="form" class="perfil-form">
+      <mat-form-field appearance="outline" class="field-name">
+        <mat-label>Nome do perfil</mat-label>
+        <input matInput formControlName="name" placeholder="Ex.: Exportador" maxlength="60" />
+        <mat-error *ngIf="form.get('name')?.hasError('required')">Nome é obrigatório</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="field-desc">
+        <mat-label>Descrição</mat-label>
+        <input matInput formControlName="description"
+               placeholder="Breve descrição do perfil" maxlength="200" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="field-color">
+        <mat-label>Cor</mat-label>
+        <mat-select formControlName="color">
+          <mat-select-trigger>
+            <span class="color-dot" [style.background]="form.value.color"></span>
+          </mat-select-trigger>
+          <mat-option *ngFor="let c of colorOptions" [value]="c.value">
+            <span class="color-dot" [style.background]="c.value"></span> {{ c.name }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </form>
+
+    <!-- Toolbar global -->
+    <div class="matrix-toolbar">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Buscar tela...</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput [(ngModel)]="searchTerm" [ngModelOptions]="{ standalone: true }"
+               placeholder="Nome, rota ou módulo" />
+        <button mat-icon-button matSuffix *ngIf="searchTerm" (click)="searchTerm = ''"
+                matTooltip="Limpar">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
+
+      <div class="toolbar-right">
+        <mat-checkbox class="master-check"
+                      [checked]="isGlobalAllChecked()"
+                      [indeterminate]="isGlobalIndeterminate()"
+                      (change)="toggleGlobalAll($event.checked)">
+          Marcar tudo / Desmarcar tudo
+        </mat-checkbox>
+        <span class="counter">
+          <strong>{{ selectedCount() }}</strong> de {{ totalCount() }} permissões selecionadas
+        </span>
+      </div>
+    </div>
+
+    <!-- Matriz de permissões -->
+    <mat-accordion class="matrix" multi>
+      <mat-expansion-panel *ngFor="let mod of visibleModules()" class="module-panel">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-checkbox class="module-master"
+                          (click)="$event.stopPropagation()"
+                          [checked]="isModuleAllChecked(mod)"
+                          [indeterminate]="isModuleIndeterminate(mod)"
+                          (change)="toggleModuleAll(mod, $event.checked)">
+            </mat-checkbox>
+            <mat-icon class="module-icon">{{ mod.icon }}</mat-icon>
+            <span class="module-name">{{ mod.moduleName }}</span>
+          </mat-panel-title>
+          <mat-panel-description>
+            {{ moduleCheckedActions(mod) }}/{{ moduleTotalActions(mod) }}
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <div class="screen-row" *ngFor="let screen of visibleScreens(mod)">
+          <div class="screen-info">
+            <mat-checkbox class="screen-master"
+                          [checked]="isScreenAllChecked(screen)"
+                          [indeterminate]="isScreenIndeterminate(screen)"
+                          (change)="toggleScreenAll(screen, $event.checked)"
+                          matTooltip="Todas as ações desta tela">
+            </mat-checkbox>
+            <mat-icon class="screen-icon">{{ screen.icon }}</mat-icon>
+            <div class="screen-labels">
+              <span class="screen-name">{{ screen.screenName }}</span>
+              <span class="screen-route">{{ screen.route }}</span>
+            </div>
+          </div>
+          <div class="screen-actions">
+            <mat-checkbox *ngFor="let action of screen.actions"
+                          class="action-check"
+                          [checked]="isActionChecked(screen.screenId, action)"
+                          (change)="toggleAction(screen, action)">
+              {{ actionLabels[action] }}
+            </mat-checkbox>
+          </div>
+        </div>
+
+      </mat-expansion-panel>
+    </mat-accordion>
+
+    <div class="no-results" *ngIf="visibleModules().length === 0">
+      <mat-icon>search_off</mat-icon>
+      <p>Nenhuma tela encontrada para "{{ searchTerm }}".</p>
+    </div>
+
+  </mat-dialog-content>
+
+  <mat-dialog-actions class="dialog-footer" align="end">
+    <button mat-button (click)="cancel()">Cancelar</button>
+    <button mat-raised-button color="primary" (click)="save()" [disabled]="form.invalid">
+      <mat-icon>save</mat-icon> Salvar
+    </button>
+  </mat-dialog-actions>
+
+</div>

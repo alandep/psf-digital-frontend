@@ -1,0 +1,103 @@
+<div class="precos">
+  <!-- Header / hero -->
+  <header class="precos-hero">
+    <a class="back" routerLink="/site"><mat-icon>arrow_back</mat-icon> Início</a>
+    <h1>Planos e preços</h1>
+    <p>Cobrança por empresa (CNPJ). Usuários ilimitados em todos os planos.</p>
+
+    <mat-button-toggle-group [value]="interval" (change)="setInterval($event.value)" class="interval-toggle">
+      <mat-button-toggle value="MONTHLY">Mensal</mat-button-toggle>
+      <mat-button-toggle value="ANNUAL">Anual <span class="save">2 meses grátis</span></mat-button-toggle>
+    </mat-button-toggle-group>
+  </header>
+
+  <!-- Founder note -->
+  <div class="founder-note">
+    <mat-icon>star</mat-icon>
+    <span><strong>Programa Cliente Fundador EIP:</strong> Business por R$ 1.790/mês nos primeiros 12 meses,
+      para um grupo limitado de clientes fundadores.</span>
+  </div>
+
+  <!-- Plan cards -->
+  <section class="plan-cards">
+    <mat-card class="plan-card" [class.highlight]="p.highlighted" *ngFor="let p of mainPlans">
+      <span class="badge" *ngIf="p.highlighted">MAIS ESCOLHIDO</span>
+      <h2>{{ p.name }}</h2>
+      <p class="desc">{{ p.description }}</p>
+      <div class="price">
+        <span class="cur">R$</span>{{ price(p) | number:'1.0-0' }}
+        <span class="per">/{{ interval === 'ANNUAL' ? 'ano' : 'mês' }}</span>
+      </div>
+      <p class="users"><mat-icon>groups</mat-icon> Usuários ilimitados</p>
+      <ul>
+        <li *ngFor="let b of p.bullets"><mat-icon>check</mat-icon>{{ b }}</li>
+      </ul>
+      <a mat-flat-button color="primary" class="plan-cta"
+         [routerLink]="['/checkout']"
+         [queryParams]="{ plan: p.code, interval: interval }">{{ p.ctaLabel }}</a>
+    </mat-card>
+
+    <!-- Enterprise -->
+    <mat-card class="plan-card enterprise">
+      <h2>{{ enterprise.name }}</h2>
+      <p class="desc">{{ enterprise.description }}</p>
+      <div class="price sob">Sob consulta</div>
+      <p class="users"><mat-icon>groups</mat-icon> Usuários ilimitados</p>
+      <ul>
+        <li *ngFor="let b of enterprise.bullets"><mat-icon>check</mat-icon>{{ b }}</li>
+      </ul>
+      <a mat-stroked-button color="primary" class="plan-cta"
+         [routerLink]="['/checkout']"
+         [queryParams]="{ plan: 'ENTERPRISE', interval: interval }">{{ enterprise.ctaLabel }}</a>
+    </mat-card>
+  </section>
+
+  <!-- Feature comparison matrix -->
+  <section class="matrix">
+    <h2>Comparação de recursos</h2>
+    <div class="matrix-scroll">
+      <table class="matrix-table">
+        <thead>
+          <tr>
+            <th class="feat-col">Recurso</th>
+            <th>Start</th>
+            <th class="col-hl">Business</th>
+            <th>Pro</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let f of features">
+            <td class="feat-col">{{ f.label }}</td>
+            <td>
+              <ng-container *ngIf="isBool(f.startValue); else sTxt">
+                <mat-icon class="yes" *ngIf="f.startValue">check</mat-icon>
+                <span class="no" *ngIf="!f.startValue">—</span>
+              </ng-container>
+              <ng-template #sTxt>{{ f.startValue }}</ng-template>
+            </td>
+            <td class="col-hl">
+              <ng-container *ngIf="isBool(f.businessValue); else bTxt">
+                <mat-icon class="yes" *ngIf="f.businessValue">check</mat-icon>
+                <span class="no" *ngIf="!f.businessValue">—</span>
+              </ng-container>
+              <ng-template #bTxt>{{ f.businessValue }}</ng-template>
+            </td>
+            <td>
+              <ng-container *ngIf="isBool(f.proValue); else pTxt">
+                <mat-icon class="yes" *ngIf="f.proValue">check</mat-icon>
+                <span class="no" *ngIf="!f.proValue">—</span>
+              </ng-container>
+              <ng-template #pTxt>{{ f.proValue }}</ng-template>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="precos-footer">
+    <a routerLink="/legal/termos">Termos de Uso</a>
+    <a routerLink="/legal/privacidade">Política de Privacidade</a>
+    <a routerLink="/trust">Central de Confiança</a>
+  </footer>
+</div>

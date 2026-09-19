@@ -1,0 +1,52 @@
+<app-public-header></app-public-header>
+
+<section class="detail">
+  <div class="detail-inner">
+    <a class="back" routerLink="/intelligence"><mat-icon>arrow_back</mat-icon> Voltar para o Intelligence</a>
+
+    <div class="loading" *ngIf="isLoading">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <div class="empty" *ngIf="!isLoading && !item">
+      <mat-icon>search_off</mat-icon>
+      <h2>Conteúdo não encontrado</h2>
+      <p>O item que você procura não está disponível.</p>
+      <a mat-flat-button color="primary" routerLink="/intelligence">Ir para o EIP Intelligence</a>
+    </div>
+
+    <article class="content" *ngIf="!isLoading && item">
+      <div class="badges">
+        <span class="type-badge">{{ typeLabel }}</span>
+        <span class="impact-chip" *ngIf="impact" [style.color]="impact.color" [style.background]="impact.bg">
+          {{ impact.icon }} {{ impact.label }}
+        </span>
+      </div>
+
+      <h1>{{ item.title }}</h1>
+      <div class="meta">{{ item.publishedAt | date:'dd/MM/yyyy HH:mm' }}</div>
+
+      <div class="source-fact">
+        <div class="source-label">Fonte (fato externo): {{ item.sourceName }}</div>
+        <p>{{ item.summary }}</p>
+      </div>
+
+      <div class="ai-block" *ngIf="item.aiAnalysis">
+        <div class="ai-title"><mat-icon>smart_toy</mat-icon> Análise EIP AI</div>
+        <p>{{ item.aiAnalysis }}</p>
+        <small>Análise gerada por IA do EIP. Não substitui a fonte oficial.</small>
+      </div>
+
+      <div class="gated">
+        <mat-icon>lock</mat-icon>
+        <div>
+          <strong>Análise completa disponível no EIP</strong>
+          <p>Acesse o painel completo de inteligência, com histórico, filtros e impacto por operação.</p>
+        </div>
+        <a mat-flat-button color="primary" routerLink="/signup">Experimentar grátis</a>
+      </div>
+    </article>
+  </div>
+</section>
+
+<app-public-footer></app-public-footer>

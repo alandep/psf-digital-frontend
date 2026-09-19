@@ -40,6 +40,7 @@ import {
   QualityInspection,
   StockMovement
 } from '../../../../types/lotes';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-lotes-controle',
@@ -67,7 +68,8 @@ import {
     MatExpansionModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatDialogModule
+    MatDialogModule,
+    HasPermissionDirective
   ],
   templateUrl: './lotes-controle.component.html',
   styleUrls: ['./lotes-controle.component.scss']
@@ -184,8 +186,7 @@ export class LotesControleComponent implements OnInit, OnDestroy {
           this.kpiMetrics = this.lotesService.getKPIMetrics(lots);
           this.isLoading = false;
         },
-        error: (error) => {
-          console.error('Erro ao carregar lotes:', error);
+        error: () => {
           this.showMessage('Erro ao carregar lotes', 'error');
           this.isLoading = false;
         }
@@ -204,8 +205,7 @@ export class LotesControleComponent implements OnInit, OnDestroy {
           this.kpiMetrics = this.lotesService.getKPIMetrics(lots);
           this.isLoading = false;
         },
-        error: (error) => {
-          console.error('Erro ao aplicar filtros:', error);
+        error: () => {
           this.showMessage('Erro ao aplicar filtros', 'error');
           this.isLoading = false;
         }
@@ -283,8 +283,7 @@ export class LotesControleComponent implements OnInit, OnDestroy {
               this.showMessage('Lote criado com sucesso!', 'success');
               this.loadLots();
             },
-            error: (error) => {
-              console.error('Erro ao criar lote:', error);
+            error: () => {
               this.showMessage('Erro ao criar lote', 'error');
               this.isLoading = false;
             }
@@ -301,8 +300,7 @@ export class LotesControleComponent implements OnInit, OnDestroy {
                 this.showMessage('Lote atualizado com sucesso!', 'success');
                 this.loadLots();
               },
-              error: (error) => {
-                console.error('Erro ao atualizar lote:', error);
+              error: () => {
                 this.showMessage('Erro ao atualizar lote', 'error');
                 this.isLoading = false;
               }
@@ -319,8 +317,7 @@ export class LotesControleComponent implements OnInit, OnDestroy {
               this.showMessage('Inspeção de qualidade salva com sucesso!', 'success');
               this.isLoading = false;
             },
-            error: (error) => {
-              console.error('Erro ao salvar inspeção:', error);
+            error: () => {
               this.showMessage('Erro ao salvar inspeção de qualidade', 'error');
               this.isLoading = false;
             }
@@ -336,8 +333,7 @@ export class LotesControleComponent implements OnInit, OnDestroy {
         next: (insights) => {
           this.aiInsights = insights;
         },
-        error: (error) => {
-          console.error('Erro ao carregar insights IA:', error);
+        error: () => {
         }
       });
   }
@@ -349,8 +345,7 @@ export class LotesControleComponent implements OnInit, OnDestroy {
         next: (history) => {
           this.movementHistory = history;
         },
-        error: (error) => {
-          console.error('Erro ao carregar histórico:', error);
+        error: () => {
         }
       });
   }
@@ -362,8 +357,7 @@ export class LotesControleComponent implements OnInit, OnDestroy {
         next: (inspections) => {
           this.qualityInspections = inspections;
         },
-        error: (error) => {
-          console.error('Erro ao carregar inspeções:', error);
+        error: () => {
         }
       });
   }

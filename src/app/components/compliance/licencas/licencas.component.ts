@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, inject, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, forkJoin, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 
 // Angular Material Components
@@ -28,6 +28,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 // Services and Types
 import { LicencasMockService } from '../../../../services/licencasMockService';
 import { LicencaDialogComponent } from './licenca-dialog/licenca-dialog.component';
+import { LicencaDetailDialogComponent } from './licenca-detail-dialog/licenca-detail-dialog.component';
 import {
   Licenca,
   LicenseType,
@@ -42,6 +43,7 @@ import {
   LicenseMetrics,
   LicenseFilters
 } from '../../../../types/licencas';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-licencas',
@@ -68,7 +70,8 @@ import {
     MatDividerModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatDialogModule
+    MatDialogModule,
+    HasPermissionDirective
   ],
   templateUrl: './licencas.component.html',
   styleUrls: ['./licencas.component.scss']
@@ -102,7 +105,6 @@ export class LicencasComponent implements OnInit, OnDestroy {
 
   // UI State
   isLoading = false;
-  isDetailOpen = false;
   showRestrictions = true;
 
   // Forms
@@ -226,40 +228,37 @@ export class LicencasComponent implements OnInit, OnDestroy {
 
   selectLicense(license: Licenca): void {
     this.selectedLicense = license;
-    this.isDetailOpen = true;
-    this.loadLicenseDetails(license.id, license.destinationCountry);
-  }
-
-  private loadLicenseDetails(licenseId: string, country: string): void {
-    this.licencasService.getValidations(licenseId)
+    forkJoin({
+      validations: this.licencasService.getValidations(license.id),
+      countryRequirements: this.licencasService.getCountryRequirements(license.destinationCountry),
+      actionPlans: this.licencasService.getActionPlans(license.id),
+      timeline: this.licencasService.getTimeline(license.id),
+      aiInsights: this.licencasService.getAIInsights(license.id)
+    })
       .pipe(takeUntil(this.destroy$))
-      .subscribe(val => this.validations = val);
+      .subscribe(details => {
+        this.validations = details.validations;
+        this.countryRequirements = details.countryRequirements;
+        this.actionPlans = details.actionPlans;
+        this.timeline = details.timeline;
+        this.aiInsights = details.aiInsights;
 
-    this.licencasService.getCountryRequirements(country)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(req => this.countryRequirements = req);
-
-    this.licencasService.getActionPlans(licenseId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(plans => this.actionPlans = plans);
-
-    this.licencasService.getTimeline(licenseId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(tl => this.timeline = tl);
-
-    this.licencasService.getAIInsights(licenseId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(insights => this.aiInsights = insights);
-  }
-
-  closeDetail(): void {
-    this.isDetailOpen = false;
-    this.selectedLicense = null;
-    this.validations = [];
-    this.countryRequirements = [];
-    this.actionPlans = [];
-    this.timeline = [];
-    this.aiInsights = null;
+        this.dialog.open(LicencaDetailDialogComponent, {
+          width: '1000px',
+          maxWidth: '95vw',
+          maxHeight: '92vh',
+          panelClass: 'licenca-detail-panel',
+          data: {
+            license,
+            validations: details.validations,
+            countryRequirements: details.countryRequirements,
+            restrictions: this.restrictions,
+            actionPlans: details.actionPlans,
+            timeline: details.timeline,
+            aiInsights: details.aiInsights
+          }
+        });
+      });
   }
 
   createLicense(): void {

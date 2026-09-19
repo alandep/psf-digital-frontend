@@ -1,0 +1,93 @@
+<div class="detail-dialog">
+  <div class="dialog-hero">
+    <div class="hero-main">
+      <mat-icon class="hero-icon">business</mat-icon>
+      <div class="hero-title">
+        <h2 mat-dialog-title>{{ data.customer.companyName }}</h2>
+        <p class="hero-subtitle">{{ data.customer.tradeName }} &mdash; {{ data.customer.country }}</p>
+      </div>
+    </div>
+    <button mat-icon-button class="hero-close" mat-dialog-close matTooltip="Fechar">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="dialog-body" mat-dialog-content>
+    <mat-tab-group>
+      <mat-tab label="Resumo">
+        <div class="tab-content">
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Razão Social</span>
+              <span class="info-value">{{ data.customer.companyName }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">CNPJ/Tax ID</span>
+              <span class="info-value">{{ data.customer.taxId }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Segmento</span>
+              <span class="info-value">{{ getSegmentLabel(data.customer.segment) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">País</span>
+              <span class="info-value">{{ data.customer.country }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Contato Principal</span>
+              <span class="info-value">{{ data.customer.primaryContact }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Score de Risco</span>
+              <span class="info-value">{{ data.customer.riskScore }}/100</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Receita Total</span>
+              <span class="info-value">{{ formatCurrency(data.customer.totalRevenue) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Contratos Ativos</span>
+              <span class="info-value">{{ data.customer.activeContracts }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Cliente Desde</span>
+              <span class="info-value">{{ formatDate(data.customer.createdAt) }}</span>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+      <mat-tab label="Contratos">
+        <div class="tab-content">
+          <div class="empty-state">
+            <mat-icon>description</mat-icon>
+            <p>{{ data.customer.activeContracts }} contratos ativos vinculados a este cliente</p>
+          </div>
+        </div>
+      </mat-tab>
+      <mat-tab label="Embarques">
+        <div class="tab-content">
+          <div class="empty-state">
+            <mat-icon>local_shipping</mat-icon>
+            <p>Histórico de embarques será carregado sob demanda</p>
+          </div>
+        </div>
+      </mat-tab>
+      <mat-tab label="Financeiro">
+        <div class="tab-content">
+          <div class="empty-state">
+            <mat-icon>account_balance</mat-icon>
+            <p>Dados financeiros consolidados do cliente</p>
+          </div>
+        </div>
+      </mat-tab>
+      <mat-tab label="Interações">
+        <div class="tab-content">
+          <div class="empty-state">
+            <mat-icon>chat</mat-icon>
+            <p>Última interação: {{ formatDate(data.customer.lastInteractionDate) }}</p>
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+</div>

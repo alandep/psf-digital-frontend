@@ -46,6 +46,7 @@ import {
   AISuggestion
 } from '../../../../types/exportacao';
 import { StatusDetalheDialogComponent, StatusDetalheDialogData } from './status-detalhe-dialog/status-detalhe-dialog.component';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 interface StatusTrackingData {
   exportacao: Exportacao;
@@ -127,7 +128,8 @@ interface SiscomexSyncStatus {
     MatCheckboxModule,
     MatStepperModule,
     MatDatepickerModule,
-    MatNativeDateModule
+    MatNativeDateModule,
+    HasPermissionDirective
   ],
   templateUrl: './acompanhar-status.component.html',
   styleUrls: ['./acompanhar-status.component.scss']

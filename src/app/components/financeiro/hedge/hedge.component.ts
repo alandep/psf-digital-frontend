@@ -22,6 +22,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { HedgeMockService } from '../../../../services/hedgeMockService';
 import { ExportService } from '../../../../services/exportService';
 import { HedgeDetailDialogComponent } from './hedge-detail-dialog/hedge-detail-dialog.component';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 import {
   HedgeContract,
   HedgeType,
@@ -51,7 +52,8 @@ import {
     MatProgressBarModule,
     MatTooltipModule,
     MatDividerModule,
-    MatDialogModule
+    MatDialogModule,
+    HasPermissionDirective
   ],
   templateUrl: './hedge.component.html',
   styleUrls: ['./hedge.component.scss']

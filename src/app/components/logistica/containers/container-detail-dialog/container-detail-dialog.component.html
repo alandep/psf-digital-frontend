@@ -1,0 +1,63 @@
+<div class="detail-dialog">
+  <div class="dialog-hero">
+    <div class="hero-main">
+      <mat-icon class="hero-icon">inventory_2</mat-icon>
+      <div class="hero-title">
+        <h2 mat-dialog-title>{{ container.containerNumber }}</h2>
+        <p class="hero-subtitle">{{ container.size }} {{ getTypeLabel(container.type) }} &mdash; {{ container.vessel }}</p>
+        <div class="hero-chips">
+          <span class="status-badge" [ngClass]="getStatusColor(container.status)">{{ getStatusLabel(container.status) }}</span>
+        </div>
+      </div>
+    </div>
+    <button mat-icon-button class="hero-close" mat-dialog-close matTooltip="Fechar">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="dialog-body" mat-dialog-content>
+    <mat-tab-group>
+      <mat-tab label="Informações">
+        <div class="tab-content">
+          <div class="info-grid">
+            <div class="info-item"><span class="info-label">Shipper</span><span class="info-value">{{ container.shipper }}</span></div>
+            <div class="info-item"><span class="info-label">Consignee</span><span class="info-value">{{ container.consignee }}</span></div>
+            <div class="info-item"><span class="info-label">Commodity</span><span class="info-value">{{ container.commodity }}</span></div>
+            <div class="info-item"><span class="info-label">Peso</span><span class="info-value">{{ container.weight > 0 ? container.weight + ' kg' : '—' }}</span></div>
+            <div class="info-item"><span class="info-label">Selo</span><span class="info-value">{{ container.sealNumber || '—' }}</span></div>
+            <div class="info-item"><span class="info-label">BL</span><span class="info-value">{{ container.blNumber || '—' }}</span></div>
+            <div class="info-item"><span class="info-label">Origem</span><span class="info-value">{{ container.origin }}</span></div>
+            <div class="info-item"><span class="info-label">Destino</span><span class="info-value">{{ container.destination }}</span></div>
+            <div class="info-item"><span class="info-label">Exportação</span><span class="info-value">{{ container.linkedExport }}</span></div>
+          </div>
+        </div>
+      </mat-tab>
+      <mat-tab label="Datas">
+        <div class="tab-content">
+          <div class="info-grid">
+            <div class="info-item"><span class="info-label">Gate-In</span><span class="info-value">{{ formatDate(container.gateInDate) }}</span></div>
+            <div class="info-item"><span class="info-label">Embarque</span><span class="info-value">{{ formatDate(container.loadDate) }}</span></div>
+            <div class="info-item"><span class="info-label">Descarga</span><span class="info-value">{{ formatDate(container.dischargeDate) }}</span></div>
+            <div class="info-item"><span class="info-label">Gate-Out</span><span class="info-value">{{ formatDate(container.gateOutDate) }}</span></div>
+            <div class="info-item"><span class="info-label">Devolução</span><span class="info-value">{{ formatDate(container.returnDate) }}</span></div>
+            <div class="info-item"><span class="info-label">Última Atualização</span><span class="info-value">{{ formatDate(container.lastUpdate) }}</span></div>
+          </div>
+        </div>
+      </mat-tab>
+      <mat-tab label="Demurrage">
+        <div class="tab-content">
+          <div class="demurrage-panel">
+            <div class="info-grid">
+              <div class="info-item"><span class="info-label">Free Days Contratados</span><span class="info-value">{{ container.freeDays }}</span></div>
+              <div class="info-item"><span class="info-label">Free Days Restantes</span><span class="info-value" [class.critical-value]="container.freeDaysRemaining <= 0">{{ container.freeDaysRemaining }}</span></div>
+              <div class="info-item"><span class="info-label">Taxa Demurrage/dia</span><span class="info-value">{{ formatCurrency(container.demurrageRate) }}</span></div>
+              <div class="info-item"><span class="info-label">Taxa Detention/dia</span><span class="info-value">{{ formatCurrency(container.detentionRate) }}</span></div>
+              <div class="info-item"><span class="info-label">Custo Demurrage Acumulado</span><span class="info-value critical-value">{{ formatCurrency(container.totalDemurrageCost) }}</span></div>
+              <div class="info-item"><span class="info-label">Projeção Demurrage</span><span class="info-value critical-value">{{ formatCurrency(calculateDemurrageProjection(container)) }}</span></div>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+</div>

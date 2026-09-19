@@ -17,10 +17,13 @@ import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 // Services and Types
 import { CenariosMockService } from '../../../../services/cenariosMockService';
 import { Cenario, CenarioComparison, CenariosMetrics, CenarioTipo } from '../../../../types/rentabilidade-cenarios';
+import { NovoCenarioDialogComponent } from './novo-cenario-dialog/novo-cenario-dialog.component';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-cenarios',
@@ -40,7 +43,9 @@ import { Cenario, CenarioComparison, CenariosMetrics, CenarioTipo } from '../../
     MatSnackBarModule,
     MatProgressBarModule,
     MatTooltipModule,
-    MatChipsModule
+    MatChipsModule,
+    MatDialogModule,
+    HasPermissionDirective
   ],
   templateUrl: './cenarios.component.html',
   styleUrls: ['./cenarios.component.scss']
@@ -50,6 +55,7 @@ export class CenariosComponent implements OnInit, OnDestroy {
   private cenariosService = inject(CenariosMockService);
   private fb = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
   private destroy$ = new Subject<void>();
 
   @ViewChild('cenariosPaginator') cenariosPaginator!: MatPaginator;
@@ -155,7 +161,48 @@ export class CenariosComponent implements OnInit, OnDestroy {
   }
 
   novoCenario(): void {
-    this.snackBar.open('Funcionalidade de novo cenário em desenvolvimento...', 'OK', { duration: 3000 });
+    const dialogRef = this.dialog.open(NovoCenarioDialogComponent, {
+      width: '720px',
+      maxWidth: '95vw',
+      maxHeight: '92vh',
+      autoFocus: false,
+      panelClass: 'novo-cenario-dialog-panel'
+    });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((result: Partial<Cenario> | null) => {
+        if (!result) {
+          return;
+        }
+
+        const novo: Cenario = {
+          id: 'CEN-' + Date.now(),
+          name: result.name ?? 'Novo Cenário',
+          tipo: (result.tipo as CenarioTipo) ?? 'BASE',
+          description: result.description ?? '',
+          product: result.product ?? '',
+          country: result.country ?? '',
+          volume: result.volume ?? 0,
+          exchangeRate: result.exchangeRate ?? 0,
+          freightCost: result.freightCost ?? 0,
+          productPrice: result.productPrice ?? 0,
+          margin: result.margin ?? 0,
+          marginPercent: result.marginPercent ?? 0,
+          revenue: result.revenue ?? 0,
+          totalCost: result.totalCost ?? 0,
+          riskLevel: result.riskLevel ?? 'Baixo',
+          createdAt: new Date(),
+          createdBy: 'Você'
+        };
+
+        this.dataSource.data = [novo, ...this.dataSource.data];
+        setTimeout(() => {
+          this.dataSource.paginator = this.cenariosPaginator;
+          this.dataSource.sort = this.cenariosSort;
+        });
+        this.snackBar.open('Cenário criado com sucesso!', 'OK', { duration: 3000 });
+      });
   }
 
   getTipoClass(tipo: CenarioTipo): string {

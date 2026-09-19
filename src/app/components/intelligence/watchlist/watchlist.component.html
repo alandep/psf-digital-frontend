@@ -1,0 +1,94 @@
+<div class="watchlist-container">
+
+  <!-- Hero header (identidade Portos) -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">notifications_active</mat-icon>
+        <div class="title-content">
+          <h1>Watchlist do Intelligence</h1>
+          <p class="subtitle">Acompanhe o que importa para a sua operação</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="intro-line">
+    Siga países, produtos, portos, commodities e temas regulatórios. O EIP avisa
+    quando algo relevante acontece.
+  </p>
+
+  <div class="cards-grid">
+
+    <!-- Adicionar acompanhamento -->
+    <mat-card class="info-card add-card">
+      <mat-card-header>
+        <mat-card-title><mat-icon>add_circle</mat-icon> Adicionar acompanhamento</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="add-form">
+          <mat-form-field appearance="outline" class="type-field">
+            <mat-label>Tipo</mat-label>
+            <mat-select [(ngModel)]="newType">
+              <mat-option *ngFor="let opt of typeOptions" [value]="opt.value">
+                {{ opt.label }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="label-field">
+            <mat-label>O que deseja acompanhar</mat-label>
+            <input matInput [(ngModel)]="newLabel"
+                   placeholder="Ex.: China, Carne bovina, Porto de Santos"
+                   (keydown.enter)="add()">
+          </mat-form-field>
+
+          <button mat-raised-button color="primary" (click)="add()"
+                  [disabled]="!newLabel.trim()">
+            <mat-icon>add</mat-icon> Adicionar
+          </button>
+        </div>
+
+        <div class="suggestions">
+          <span class="suggestions-label">Sugestões:</span>
+          <mat-chip-set>
+            <mat-chip *ngFor="let s of suggestions; trackBy: trackSuggestion"
+                      (click)="addSuggestion(s)" class="suggestion-chip">
+              <mat-icon matChipAvatar>add</mat-icon>
+              {{ typeLabels[s.type] }}: {{ s.label }}
+            </mat-chip>
+          </mat-chip-set>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Meus acompanhamentos -->
+    <mat-card class="info-card list-card">
+      <mat-card-header>
+        <mat-card-title><mat-icon>bookmarks</mat-icon> Meus acompanhamentos</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div *ngIf="items.length === 0" class="empty-state">
+          <mat-icon>inbox</mat-icon>
+          <p>Você ainda não acompanha nada. Adicione um item acima para começar.</p>
+        </div>
+
+        <div class="wl-list" *ngIf="items.length > 0">
+          <div class="wl-row" *ngFor="let item of items; trackBy: trackById"
+               [class.inactive]="!item.active">
+            <span class="type-chip">{{ typeLabels[item.type] }}</span>
+            <span class="wl-label">{{ item.label }}</span>
+            <mat-slide-toggle color="primary" [checked]="item.active"
+                              (change)="toggle(item)"
+                              [matTooltip]="item.active ? 'Ativo' : 'Pausado'"></mat-slide-toggle>
+            <button mat-icon-button color="warn" (click)="remove(item)"
+                    aria-label="Remover acompanhamento">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+  </div>
+</div>

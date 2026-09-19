@@ -1,0 +1,166 @@
+:host { display: block; }
+
+.precos {
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  color: #1f2937;
+  background: #f8fafc;
+  min-height: 100vh;
+  padding-bottom: 48px;
+}
+
+/* Hero */
+.precos-hero {
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  box-shadow: 0 8px 32px rgba(25, 118, 210, 0.3);
+  color: #fff;
+  padding: 56px 24px 40px;
+  text-align: center;
+}
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #fff;
+  text-decoration: none;
+  opacity: 0.9;
+  margin-bottom: 12px;
+}
+.precos-hero h1 { font-size: 2.4rem; margin: 8px 0; }
+.precos-hero p { opacity: 0.95; margin-bottom: 24px; }
+.interval-toggle {
+  background: #fff;
+  border-radius: 8px;
+}
+.save {
+  font-size: 0.72rem;
+  color: #1976d2;
+  font-weight: 700;
+  margin-left: 6px;
+}
+
+/* Founder note */
+.founder-note {
+  max-width: 900px;
+  margin: -18px auto 0;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 12px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #7a5900;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+.founder-note mat-icon { color: #f6a821; }
+
+/* Plan cards */
+.plan-cards {
+  max-width: 1180px;
+  margin: 40px auto 0;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 22px;
+  align-items: start;
+}
+.plan-card {
+  position: relative;
+  padding: 30px 22px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+}
+.plan-card.highlight {
+  border: 2px solid #1976d2;
+  box-shadow: 0 8px 32px rgba(25, 118, 210, 0.3);
+}
+.plan-card h2 { color: #1565c0; margin: 6px 0; }
+.plan-card .desc { color: #6b7280; font-size: 0.9rem; min-height: 54px; }
+.plan-card .price { font-size: 2.3rem; font-weight: 800; color: #111827; margin: 8px 0; }
+.plan-card .price.sob { font-size: 1.5rem; color: #1565c0; }
+.plan-card .cur { font-size: 1.1rem; vertical-align: super; margin-right: 3px; }
+.plan-card .per { font-size: 0.95rem; font-weight: 500; color: #6b7280; }
+.plan-card .users {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: #1976d2;
+  margin: 4px 0 12px;
+}
+.plan-card .users mat-icon { font-size: 20px; width: 20px; height: 20px; }
+.plan-card ul { list-style: none; padding: 0; margin: 0 0 20px; flex: 1; }
+.plan-card li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  color: #374151;
+  font-size: 0.92rem;
+}
+.plan-card li mat-icon { color: #1976d2; font-size: 18px; width: 18px; height: 18px; }
+.plan-cta { width: 100%; }
+.badge {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1976d2;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 5px 14px;
+  border-radius: 999px;
+}
+.plan-card.enterprise { background: #0f172a; color: #e2e8f0; }
+.plan-card.enterprise h2 { color: #93c5fd; }
+.plan-card.enterprise .desc,
+.plan-card.enterprise li { color: #cbd5e1; }
+
+/* Matrix */
+.matrix {
+  max-width: 1000px;
+  margin: 56px auto 0;
+  padding: 0 24px;
+}
+.matrix h2 { text-align: center; margin-bottom: 24px; color: #111827; }
+.matrix-scroll { overflow-x: auto; border-radius: 12px; }
+.matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  min-width: 560px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.matrix-table th,
+.matrix-table td {
+  padding: 14px 16px;
+  text-align: center;
+  border-bottom: 1px solid #eef2f7;
+}
+.matrix-table thead th {
+  background: #1565c0;
+  color: #fff;
+  font-weight: 600;
+}
+.matrix-table .feat-col { text-align: left; font-weight: 500; color: #374151; }
+.matrix-table .col-hl { background: rgba(25, 118, 210, 0.06); }
+.matrix-table thead .col-hl { background: #1976d2; }
+.matrix-table .yes { color: #16a34a; }
+.matrix-table .no { color: #cbd5e1; font-weight: 700; }
+
+/* Footer */
+.precos-footer {
+  max-width: 1000px;
+  margin: 48px auto 0;
+  padding: 0 24px;
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.precos-footer a { color: #1565c0; text-decoration: none; font-weight: 500; }
+.precos-footer a:hover { text-decoration: underline; }

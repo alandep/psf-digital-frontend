@@ -11,7 +11,7 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button (click)="goToNewContracts()">
+        <button *appHasPermission="'contratos/ativos:create'" mat-raised-button (click)="goToNewContracts()">
           <mat-icon>add</mat-icon> Novo Contrato
         </button>
       </div>
@@ -183,7 +183,7 @@
           <span>Contratos Ativos</span>
           <span class="count-chip">{{ activeContracts }} ativos</span>
         </div>
-        <button mat-raised-button color="primary" (click)="goToNewContracts()">
+        <button *appHasPermission="'contratos/ativos:create'" mat-raised-button color="primary" (click)="goToNewContracts()">
           <mat-icon>add</mat-icon>
           Novo Contrato
         </button>

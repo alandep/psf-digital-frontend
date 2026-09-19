@@ -15,7 +15,7 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button class="export-btn" (click)="exportData()">
+        <button mat-raised-button class="export-btn" *appHasPermission="'automacao/historico:export'" (click)="exportData()">
           <mat-icon>download</mat-icon> Exportar
         </button>
       </div>

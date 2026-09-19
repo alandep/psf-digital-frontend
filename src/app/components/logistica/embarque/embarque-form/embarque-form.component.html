@@ -1,33 +1,27 @@
 <div class="embarque-form-container">
-  <!-- Header da página -->
+  <!-- Header Premium (identidade Portos) -->
   <div class="page-header">
-    <div class="header-content">
-      <div class="header-info">
-        <h1>
-          <mat-icon>local_shipping</mat-icon>
-          {{ isEditing ? 'Editar Embarque' : 'Novo Embarque' }}
-        </h1>
-        <p *ngIf="embarque">
-          {{ embarque.shipment_number }} - {{ embarque.commodity }}
-        </p>
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">local_shipping</mat-icon>
+        <div class="title-content">
+          <h1>{{ isEditing ? 'Editar Embarque' : 'Novo Embarque' }}</h1>
+          <p class="subtitle" *ngIf="embarque">
+            {{ embarque.shipment_number }} - {{ embarque.commodity }}
+          </p>
+          <p class="subtitle" *ngIf="!embarque">Preencha os dados do embarque de exportação</p>
+        </div>
       </div>
       <div class="header-actions">
-        <button 
-          mat-button
-          color="accent"
-          (click)="showFormValidationErrors()"
-          style="margin-right: 8px;">
-          <mat-icon>bug_report</mat-icon>
-          Debug Validação
-        </button>
-        <button 
-          mat-button
+        <button
+          mat-raised-button
+          color="primary"
           (click)="onCancel()"
           [disabled]="saving">
           <mat-icon>close</mat-icon>
           Cancelar
         </button>
-        <button 
+        <button
           mat-raised-button
           color="primary"
           (click)="onSubmit()"

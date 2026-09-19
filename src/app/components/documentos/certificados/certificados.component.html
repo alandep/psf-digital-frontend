@@ -15,10 +15,10 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button (click)="createCertificado()">
+        <button mat-raised-button *appHasPermission="'documentos/certificados:create'" (click)="createCertificado()">
           <mat-icon>add</mat-icon> Novo Certificado
         </button>
-        <button mat-raised-button (click)="exportPDF()">
+        <button mat-raised-button *appHasPermission="'documentos/certificados:export'" (click)="exportPDF()">
           <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
         </button>
       </div>
@@ -244,7 +244,7 @@
                       [disabled]="cert.status !== 'VENCIDO' && cert.status !== 'VÁLIDO'">
                 <mat-icon>refresh</mat-icon> Renovar
               </button>
-              <button mat-menu-item (click)="exportPDF()">
+              <button mat-menu-item *appHasPermission="'documentos/certificados:export'" (click)="exportPDF()">
                 <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
               </button>
             </mat-menu>

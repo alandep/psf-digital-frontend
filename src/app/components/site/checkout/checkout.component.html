@@ -1,0 +1,280 @@
+<div class="checkout">
+  <!-- Hero -->
+  <header class="checkout-hero">
+    <a class="back" routerLink="/precos"><mat-icon>arrow_back</mat-icon> Voltar aos planos</a>
+    <h1>Contratar EIP</h1>
+    <p>Ative sua plataforma de comércio exterior em poucos passos.</p>
+  </header>
+
+  <!-- Estado de sucesso -->
+  <section class="success" *ngIf="done">
+    <mat-card class="success-card" appearance="outlined">
+      <div class="success-emoji">🎉</div>
+      <h2>Sua empresa agora está no EIP</h2>
+      <p class="success-sub">Sua assinatura <strong>{{ activatedPlanName }}</strong> está ativa.</p>
+      <p class="success-cta-text">Vamos configurar sua primeira operação?</p>
+      <div class="success-actions">
+        <button mat-flat-button color="primary" class="btn-primary" routerLink="/onboarding">
+          COMEÇAR CONFIGURAÇÃO
+        </button>
+        <button mat-stroked-button routerLink="/home-logged">Ir para o sistema</button>
+      </div>
+    </mat-card>
+  </section>
+
+  <!-- Stepper -->
+  <section class="stepper-wrap" *ngIf="!done">
+    <mat-stepper linear #stepper class="checkout-stepper">
+
+      <!-- STEP 1: Empresa -->
+      <mat-step [stepControl]="empresa" label="Empresa">
+        <form [formGroup]="empresa" class="step-form">
+          <h3 class="step-title">Dados da empresa</h3>
+          <div class="grid-2">
+            <mat-form-field appearance="outline">
+              <mat-label>CNPJ</mat-label>
+              <input matInput formControlName="cnpj" placeholder="00.000.000/0000-00" maxlength="18" />
+              <mat-error *ngIf="empresa.get('cnpj')?.hasError('required')">Informe o CNPJ.</mat-error>
+              <mat-error *ngIf="empresa.get('cnpj')?.hasError('cnpjInvalid')">CNPJ inválido.</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Razão Social</mat-label>
+              <input matInput formControlName="razaoSocial" />
+              <mat-error *ngIf="empresa.get('razaoSocial')?.hasError('required')">Informe a razão social.</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Nome Fantasia</mat-label>
+              <input matInput formControlName="nomeFantasia" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Telefone</mat-label>
+              <input matInput formControlName="telefone" placeholder="(00) 00000-0000" />
+              <mat-error *ngIf="empresa.get('telefone')?.hasError('required')">Informe o telefone.</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>E-mail corporativo</mat-label>
+              <input matInput formControlName="email" type="email" />
+              <mat-error *ngIf="empresa.get('email')?.hasError('required')">Informe o e-mail.</mat-error>
+              <mat-error *ngIf="empresa.get('email')?.hasError('email')">E-mail inválido.</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Site</mat-label>
+              <input matInput formControlName="site" placeholder="https://" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Segmento</mat-label>
+              <mat-select formControlName="segmento">
+                <mat-option *ngFor="let s of segmentos" [value]="s">{{ s }}</mat-option>
+              </mat-select>
+              <mat-error *ngIf="empresa.get('segmento')?.hasError('required')">Selecione um segmento.</mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="inline-error" *ngIf="cnpjDuplicate">
+            <mat-icon>error_outline</mat-icon>
+            Esta empresa já possui uma conta no EIP
+          </div>
+
+          <div class="step-actions">
+            <button mat-flat-button color="primary" matStepperNext
+                    [disabled]="empresa.invalid || cnpjDuplicate">Continuar</button>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- STEP 2: Administrador -->
+      <mat-step [stepControl]="admin" label="Administrador">
+        <form [formGroup]="admin" class="step-form">
+          <h3 class="step-title">Administrador da conta</h3>
+          <div class="grid-2">
+            <mat-form-field appearance="outline">
+              <mat-label>Nome</mat-label>
+              <input matInput formControlName="nome" />
+              <mat-error *ngIf="admin.get('nome')?.hasError('required')">Informe o nome.</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>E-mail</mat-label>
+              <input matInput formControlName="email" type="email" />
+              <mat-error *ngIf="admin.get('email')?.hasError('required')">Informe o e-mail.</mat-error>
+              <mat-error *ngIf="admin.get('email')?.hasError('email')">E-mail inválido.</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Telefone</mat-label>
+              <input matInput formControlName="telefone" placeholder="(00) 00000-0000" />
+              <mat-error *ngIf="admin.get('telefone')?.hasError('required')">Informe o telefone.</mat-error>
+            </mat-form-field>
+
+            <div class="spacer-cell"></div>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Senha</mat-label>
+              <input matInput formControlName="senha" type="password" />
+              <mat-error *ngIf="admin.get('senha')?.hasError('required')">Informe a senha.</mat-error>
+              <mat-error *ngIf="admin.get('senha')?.hasError('minlength')">Mínimo de 8 caracteres.</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Confirmar senha</mat-label>
+              <input matInput formControlName="confirmarSenha" type="password" />
+              <mat-error *ngIf="admin.get('confirmarSenha')?.hasError('required')">Confirme a senha.</mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="inline-error" *ngIf="admin.hasError('passwordMismatch') && admin.get('confirmarSenha')?.touched">
+            <mat-icon>error_outline</mat-icon>
+            As senhas não coincidem.
+          </div>
+
+          <mat-slide-toggle formControlName="mfa" color="primary" class="mfa-toggle">
+            Ativar MFA (autenticação em dois fatores)
+          </mat-slide-toggle>
+
+          <div class="step-actions">
+            <button mat-stroked-button matStepperPrevious>Voltar</button>
+            <button mat-flat-button color="primary" matStepperNext [disabled]="admin.invalid">Continuar</button>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- STEP 3: Plano -->
+      <mat-step [stepControl]="plano" label="Plano">
+        <form [formGroup]="plano" class="step-form">
+          <h3 class="step-title">Escolha seu plano</h3>
+
+          <div class="interval-row">
+            <mat-button-toggle-group [value]="interval" (change)="setInterval($event.value)" class="interval-toggle">
+              <mat-button-toggle value="MONTHLY">Mensal</mat-button-toggle>
+              <mat-button-toggle value="ANNUAL">Anual <span class="save">2 meses grátis</span></mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+
+          <p class="unlimited-note"><mat-icon>groups</mat-icon> Usuários ilimitados em todos os planos.</p>
+
+          <div class="plan-cards">
+            <div class="plan-card" *ngFor="let p of plans"
+                 [class.selected]="selectedPlan.code === p.code"
+                 (click)="selectPlan(p.code)">
+              <div class="badge" *ngIf="p.highlighted">Mais popular</div>
+              <h4>{{ p.name }}</h4>
+              <p class="desc">{{ p.description }}</p>
+              <div class="price">
+                <span class="cur">R$</span>{{ (interval === 'ANNUAL' ? p.annualPrice : p.monthlyPrice) | number:'1.0-0' }}
+                <span class="per">{{ interval === 'ANNUAL' ? '/ano' : '/mês' }}</span>
+              </div>
+              <mat-icon class="check" *ngIf="selectedPlan.code === p.code">check_circle</mat-icon>
+            </div>
+          </div>
+
+          <mat-form-field appearance="outline" class="coupon-field">
+            <mat-label>Cupom (opcional)</mat-label>
+            <input matInput formControlName="coupon" placeholder="Ex.: FOUNDERS2026" />
+          </mat-form-field>
+
+          <div class="founder-note" *ngIf="founderApplies">
+            <mat-icon>emoji_events</mat-icon>
+            Cliente Fundador: R$1.790/mês nos primeiros 12 meses
+          </div>
+
+          <div class="step-actions">
+            <button mat-stroked-button matStepperPrevious>Voltar</button>
+            <button mat-flat-button color="primary" matStepperNext [disabled]="plano.invalid">Continuar</button>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- STEP 4: Pagamento e Aceite -->
+      <mat-step [stepControl]="pagamento" label="Pagamento e Aceite">
+        <form [formGroup]="pagamento" class="step-form">
+          <div class="pay-layout">
+            <!-- Resumo do pedido -->
+            <mat-card class="summary-card" appearance="outlined">
+              <h3 class="step-title">Resumo do pedido</h3>
+              <div class="summary-row"><span>Plano</span><strong>{{ selectedPlan.name }}</strong></div>
+              <div class="summary-row price-row">
+                <span>Valor</span>
+                <strong>R$ {{ effectivePrice | number:'1.0-0' }} <small>{{ priceSuffix }}</small></strong>
+              </div>
+              <div class="founder-note small" *ngIf="founderApplies">
+                <mat-icon>emoji_events</mat-icon> Preço de Cliente Fundador aplicado.
+              </div>
+              <ul class="summary-list">
+                <li><mat-icon>check</mat-icon> Usuários ilimitados</li>
+                <li><mat-icon>autorenew</mat-icon> Renovação automática</li>
+                <li><mat-icon>schedule</mat-icon> 14 dias grátis</li>
+              </ul>
+              <p class="trial-note">
+                Você não será cobrado durante o período de avaliação. Cancele antes do término
+                para evitar a primeira cobrança.
+              </p>
+            </mat-card>
+
+            <!-- Pagamento -->
+            <div class="pay-form">
+              <h3 class="step-title">Dados de pagamento</h3>
+              <mat-form-field appearance="outline" class="full">
+                <mat-label>Número do cartão</mat-label>
+                <input matInput formControlName="cardNumber" maxlength="16" inputmode="numeric" placeholder="0000000000000000" />
+                <mat-error *ngIf="pagamento.get('cardNumber')?.invalid">Informe 16 dígitos.</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="full">
+                <mat-label>Nome no cartão</mat-label>
+                <input matInput formControlName="cardName" />
+                <mat-error *ngIf="pagamento.get('cardName')?.invalid">Informe o nome no cartão.</mat-error>
+              </mat-form-field>
+              <div class="grid-2">
+                <mat-form-field appearance="outline">
+                  <mat-label>Validade (MM/AA)</mat-label>
+                  <input matInput formControlName="cardExpiry" maxlength="5" placeholder="MM/AA" />
+                  <mat-error *ngIf="pagamento.get('cardExpiry')?.invalid">Formato MM/AA.</mat-error>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>CVV</mat-label>
+                  <input matInput formControlName="cardCvv" maxlength="4" inputmode="numeric" />
+                  <mat-error *ngIf="pagamento.get('cardCvv')?.invalid">3 ou 4 dígitos.</mat-error>
+                </mat-form-field>
+              </div>
+              <p class="secure-note">
+                <mat-icon>lock</mat-icon>
+                Seus dados de cartão são processados de forma segura e tokenizada. O EIP não
+                armazena o número do seu cartão.
+              </p>
+            </div>
+          </div>
+
+          <!-- Aceites -->
+          <div class="acceptances">
+            <mat-checkbox formControlName="aceiteTermos" color="primary">
+              Li e aceito os
+              <a href="/legal/termos" target="_blank" rel="noopener">Termos de Uso e Contrato de Licenciamento SaaS do EIP</a>
+            </mat-checkbox>
+            <mat-checkbox formControlName="aceitePrivacidade" color="primary">
+              Declaro ter lido a
+              <a href="/legal/privacidade" target="_blank" rel="noopener">Política de Privacidade</a>
+            </mat-checkbox>
+            <mat-checkbox formControlName="aceiteCobranca" color="primary">
+              Autorizo a cobrança recorrente do plano contratado.
+            </mat-checkbox>
+          </div>
+
+          <div class="step-actions submit-actions">
+            <button mat-stroked-button matStepperPrevious [disabled]="submitting">Voltar</button>
+            <button mat-flat-button color="primary" class="btn-submit"
+                    (click)="submit()" [disabled]="!canSubmit">
+              <mat-spinner *ngIf="submitting" diameter="20" class="btn-spinner"></mat-spinner>
+              <span *ngIf="!submitting">CONTRATAR E ATIVAR EIP</span>
+              <span *ngIf="submitting">Processando...</span>
+            </button>
+          </div>
+        </form>
+      </mat-step>
+    </mat-stepper>
+  </section>
+</div>

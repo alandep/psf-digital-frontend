@@ -28,9 +28,9 @@ import {
   VesselType,
   VesselStatus,
   NavioKPIs,
-  NavioFilters,
-  PortCall
+  NavioFilters
 } from '../../../../types/navios';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-navios',
@@ -54,7 +54,8 @@ import {
     MatTooltipModule,
     MatDividerModule,
     MatBadgeModule,
-    MatDialogModule
+    MatDialogModule,
+    HasPermissionDirective
   ],
   templateUrl: './navios.component.html',
   styleUrls: ['./navios.component.scss']
@@ -74,11 +75,9 @@ export class NaviosComponent implements OnInit, OnDestroy, AfterViewInit {
 
   navios: Navio[] = [];
   dataSource = new MatTableDataSource<Navio>([]);
-  selectedNavio: Navio | null = null;
   kpis: NavioKPIs | null = null;
 
   isLoading = false;
-  isDetailOpen = false;
 
   filterForm!: FormGroup;
 
@@ -174,13 +173,14 @@ export class NaviosComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   selectNavio(navio: Navio): void {
-    this.selectedNavio = navio;
-    this.isDetailOpen = true;
-  }
-
-  closeDetail(): void {
-    this.isDetailOpen = false;
-    this.selectedNavio = null;
+    import('./navio-detail-dialog/navio-detail-dialog.component').then(m => {
+      this.dialog.open(m.NavioDetailDialogComponent, {
+        width: '820px',
+        maxWidth: '95vw',
+        panelClass: 'navio-detail-panel',
+        data: { navio }
+      });
+    });
   }
 
   openNovoNavioDialog(): void {

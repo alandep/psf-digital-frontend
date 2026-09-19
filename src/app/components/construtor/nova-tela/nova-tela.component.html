@@ -6,7 +6,7 @@
       Nova Tela
     </h1>
     <div class="header-actions">
-      <button mat-raised-button color="primary" (click)="saveScreen()" [disabled]="!screenForm.valid || addedWidgets.length === 0">
+      <button *appHasPermission="'construtor/nova-tela:create'" mat-raised-button color="primary" (click)="saveScreen()" [disabled]="!screenForm.valid || addedWidgets.length === 0">
         <mat-icon>save</mat-icon>
         Salvar Tela
       </button>

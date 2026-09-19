@@ -13,7 +13,7 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button color="primary" (click)="exportCSV()">
+        <button *appHasPermission="'ai-operations/dashboard:export'" mat-raised-button color="primary" (click)="exportCSV()">
           <mat-icon>download</mat-icon> Exportar CSV
         </button>
       </div>
@@ -215,56 +215,4 @@
     </mat-card-content>
   </mat-card>
 
-  <!-- Detail Panel -->
-  <mat-card class="detail-panel" *ngIf="isDetailOpen && selectedAgent">
-    <mat-card-content>
-      <div class="detail-header">
-        <div class="detail-title">
-          <mat-icon>smart_toy</mat-icon>
-          <h3>{{ selectedAgent.name }}</h3>
-          <span class="status-badge" [ngClass]="getStatusClass(selectedAgent.status)">{{ getStatusLabel(selectedAgent.status) }}</span>
-        </div>
-        <button mat-icon-button (click)="closeDetail()">
-          <mat-icon>close</mat-icon>
-        </button>
-      </div>
-
-      <div class="detail-stats">
-        <div class="stat-item">
-          <span class="stat-label">Módulo</span>
-          <span class="stat-value">{{ selectedAgent.module }}</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">Requests (24h)</span>
-          <span class="stat-value">{{ selectedAgent.requests24h | number:'1.0-0' }}</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">Tempo Resposta</span>
-          <span class="stat-value">{{ formatResponseTime(selectedAgent.avgResponseTime) }}</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">Acurácia</span>
-          <span class="stat-value" [style.color]="getAccuracyColor(selectedAgent.accuracy)">{{ selectedAgent.accuracy }}%</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">Custo</span>
-          <span class="stat-value">{{ formatCost(selectedAgent.cost) }}</span>
-        </div>
-      </div>
-
-      <h4 class="errors-title">Log de Erros</h4>
-      <div class="errors-list">
-        <div class="error-entry" *ngFor="let error of agentErrors">
-          <div class="error-time">{{ formatDateTime(error.timestamp) }}</div>
-          <div class="error-type">
-            <span class="error-type-badge">{{ error.type }}</span>
-          </div>
-          <div class="error-message">{{ error.message }}</div>
-        </div>
-        <div class="no-errors" *ngIf="agentErrors.length === 0">
-          Nenhum erro registrado para este agente.
-        </div>
-      </div>
-    </mat-card-content>
-  </mat-card>
 </div>

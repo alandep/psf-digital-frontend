@@ -23,7 +23,7 @@
           <mat-icon [class.spinning]="loading">refresh</mat-icon>
         </button>
         
-        <button mat-stroked-button (click)="exportToExcel()" class="export-btn">
+        <button *appHasPermission="'exportacoes/status:export'" mat-stroked-button (click)="exportToExcel()" class="export-btn">
           <mat-icon>download</mat-icon>
           Exportar
         </button>
@@ -535,7 +535,7 @@
                 <mat-icon>edit</mat-icon>
                 <span>Editar</span>
               </button>
-              <button mat-menu-item (click)="exportRowToPDF(element)">
+              <button *appHasPermission="'exportacoes/status:export'" mat-menu-item (click)="exportRowToPDF(element)">
                 <mat-icon>file_download</mat-icon>
                 <span>Exportar PDF</span>
               </button>

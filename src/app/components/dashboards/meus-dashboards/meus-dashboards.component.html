@@ -7,11 +7,11 @@
         <p>Crie e gerencie seus dashboards personalizados</p>
       </div>
       <div class="header-actions">
-        <button mat-raised-button class="new-btn" (click)="openNewDashboardDialog()">
+        <button mat-raised-button class="new-btn" *appHasPermission="'dashboards/meus:create'" (click)="openNewDashboardDialog()">
           <mat-icon>add</mat-icon>
           Novo Dashboard
         </button>
-        <button mat-icon-button matTooltip="Exportar CSV" (click)="exportToCSV()">
+        <button mat-icon-button *appHasPermission="'dashboards/meus:export'" matTooltip="Exportar CSV" (click)="exportToCSV()">
           <mat-icon>download</mat-icon>
         </button>
       </div>
@@ -75,7 +75,7 @@
             <button mat-icon-button matTooltip="Abrir" (click)="selectDashboard(dashboard); $event.stopPropagation()">
               <mat-icon>open_in_new</mat-icon>
             </button>
-            <button mat-icon-button matTooltip="Compartilhar" (click)="$event.stopPropagation()">
+            <button mat-icon-button matTooltip="Compartilhar" (click)="shareDashboard($event, dashboard)">
               <mat-icon>share</mat-icon>
             </button>
             <button mat-icon-button matTooltip="Excluir" (click)="deleteDashboard($event, dashboard)">

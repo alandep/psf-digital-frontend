@@ -1,0 +1,45 @@
+<div class="auth-container">
+  <mat-card class="auth-card">
+    <div class="brand-header">
+      <div class="brand-badge">
+        <mat-icon>apartment</mat-icon>
+      </div>
+      <h1 class="brand-title">Em qual empresa deseja trabalhar?</h1>
+      <p class="brand-subtitle">Selecione a organização para continuar.</p>
+    </div>
+
+    <mat-card-content class="auth-content">
+      <div *ngIf="errorMessage" class="auth-alert" role="alert">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ errorMessage }}</span>
+      </div>
+
+      <div class="org-list">
+        <div class="org-card"
+             *ngFor="let org of organizations; trackBy: trackByOrgId"
+             [class.is-selected]="selectedId === org.id"
+             (click)="selectOrganization(org)">
+          <div class="org-icon"><mat-icon>business</mat-icon></div>
+          <div class="org-info">
+            <strong class="org-name">{{ org.razaoSocial }}</strong>
+            <span class="org-cnpj">{{ org.cnpjMasked }}</span>
+            <span class="org-role">{{ org.role }}</span>
+          </div>
+          <div class="org-action">
+            <mat-spinner *ngIf="isLoading && selectedId === org.id" diameter="22"></mat-spinner>
+            <button *ngIf="!(isLoading && selectedId === org.id)"
+                    mat-flat-button color="primary" type="button"
+                    (click)="selectOrganization(org); $event.stopPropagation()"
+                    [disabled]="isLoading">
+              Entrar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-link-row">
+        <a routerLink="/login">Voltar ao login</a>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

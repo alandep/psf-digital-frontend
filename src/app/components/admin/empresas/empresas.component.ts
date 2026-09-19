@@ -28,6 +28,7 @@ import { Empresa, EmpresaMetrics, EmpresaStatus, EmpresaTipo } from '../../../..
 import { NovaEmpresaDialogComponent } from './nova-empresa-dialog/nova-empresa-dialog.component';
 import { EditarEmpresaDialogComponent } from './editar-empresa-dialog/editar-empresa-dialog.component';
 import { ConfirmarAcaoDialogComponent, ConfirmDialogData } from '../usuarios/confirmar-acao-dialog/confirmar-acao-dialog.component';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-empresas',
@@ -49,7 +50,8 @@ import { ConfirmarAcaoDialogComponent, ConfirmDialogData } from '../usuarios/con
     MatProgressSpinnerModule,
     MatMenuModule,
     MatDialogModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    HasPermissionDirective
   ],
   templateUrl: './empresas.component.html',
   styleUrls: ['./empresas.component.scss']

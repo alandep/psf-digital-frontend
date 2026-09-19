@@ -1,0 +1,36 @@
+<div class="creditos-dialog">
+  <div class="creditos-header">
+    <mat-icon>auto_awesome</mat-icon>
+    <h2>Comprar créditos de IA</h2>
+  </div>
+
+  <p class="creditos-lead">
+    Escolha um pacote de créditos de IA/OCR para adicionar à sua assinatura.
+  </p>
+
+  <div class="pack-list">
+    <button type="button" class="pack-card"
+            *ngFor="let p of packs; trackBy: trackByCode"
+            [class.selected]="selected === p.code"
+            (click)="select(p.code)">
+      <span class="pack-radio">
+        <mat-icon>{{ selected === p.code ? 'radio_button_checked' : 'radio_button_unchecked' }}</mat-icon>
+      </span>
+      <span class="pack-info">
+        <span class="pack-title-row">
+          <span class="pack-name">{{ p.name }}</span>
+          <span class="pack-badge" *ngIf="p.highlight">Recomendado</span>
+        </span>
+        <span class="pack-desc">{{ p.description }}</span>
+        <span class="pack-price">{{ p.monthlyPrice | currency: 'BRL' }}/mês</span>
+      </span>
+    </button>
+  </div>
+
+  <div class="creditos-actions">
+    <button mat-button (click)="dialogRef.close()">Cancelar</button>
+    <button mat-raised-button color="primary" [disabled]="!selected" (click)="confirm()">
+      <mat-icon>bolt</mat-icon> Confirmar compra
+    </button>
+  </div>
+</div>

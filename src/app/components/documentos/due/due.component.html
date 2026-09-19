@@ -15,13 +15,13 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button (click)="createDue()">
+        <button mat-raised-button *appHasPermission="'documentos/due:create'" (click)="createDue()">
           <mat-icon>add</mat-icon> Nova DU-E
         </button>
-        <button mat-raised-button (click)="exportPDF()">
+        <button mat-raised-button *appHasPermission="'documentos/due:export'" (click)="exportPDF()">
           <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
         </button>
-        <button mat-raised-button (click)="exportXML()">
+        <button mat-raised-button *appHasPermission="'documentos/due:export'" (click)="exportXML()">
           <mat-icon>code</mat-icon> Exportar XML
         </button>
       </div>

@@ -33,6 +33,7 @@ import {
   DUE, DueStatus, DueFilters, DueMetrics
 } from '../../../../types/due';
 import { DueDetailDialogComponent, DueDetailDialogData } from './due-detail-dialog/due-detail-dialog.component';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-due',
@@ -62,6 +63,7 @@ import { DueDetailDialogComponent, DueDetailDialogData } from './due-detail-dial
     MatDialogModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    HasPermissionDirective,
   ],
   templateUrl: './due.component.html',
   styleUrls: ['./due.component.scss']

@@ -1,23 +1,64 @@
-<div class="login-container">
-  <mat-card class="login-card">
+<div class="auth-container">
+  <mat-card class="auth-card">
     <div class="brand-header">
       <div class="brand-badge">
-        <mat-icon>smart_toy</mat-icon>
+        <mat-icon>hub</mat-icon>
       </div>
-      <h1 class="brand-title">Export Intelligence Platform</h1>
+      <h1 class="brand-title">EIP — Export Intelligence Platform</h1>
       <p class="brand-subtitle">Acesse sua conta</p>
     </div>
 
-    <mat-card-content class="login-content">
-      <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+    <mat-card-content class="auth-content">
+      <div *ngIf="errorMessage" class="auth-alert" role="alert">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ errorMessage }}</span>
+      </div>
+
+      <!-- STEP: CPF -->
+      <form *ngIf="step === 'cpf'" [formGroup]="cpfForm" (ngSubmit)="onIdentify()">
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>CPF</mat-label>
-          <input matInput formControlName="cpf" placeholder="Digite seu CPF" autocomplete="username">
+          <input matInput formControlName="cpf" placeholder="000.000.000-00" autocomplete="username" inputmode="numeric">
           <mat-icon matPrefix>badge</mat-icon>
-          <mat-error *ngIf="loginForm.get('cpf')?.hasError('required')">
-            CPF é obrigatório
-          </mat-error>
+          <mat-hint>Informe seu CPF (somente números)</mat-hint>
+          <mat-error *ngIf="cpfForm.get('cpf')?.hasError('required')">CPF é obrigatório</mat-error>
+          <mat-error *ngIf="cpfForm.get('cpf')?.hasError('minlength')">CPF incompleto</mat-error>
         </mat-form-field>
+
+        <div class="auth-actions">
+          <button mat-flat-button color="primary" type="submit" class="btn-primary full-width" [disabled]="isLoading">
+            <mat-spinner *ngIf="isLoading" diameter="20" class="btn-spinner"></mat-spinner>
+            <span>{{ isLoading ? 'Verificando...' : 'Continuar' }}</span>
+          </button>
+        </div>
+
+        <div class="auth-link-row">
+          <a routerLink="/forgot-password">Esqueci minha senha</a>
+        </div>
+
+        <div class="auth-divider"><span>ou</span></div>
+
+        <div class="auth-signup">
+          <span>Ainda não utiliza o EIP?</span>
+          <a mat-stroked-button color="primary" routerLink="/signup" class="full-width">Experimentar grátis</a>
+        </div>
+
+        <div class="auth-demo">
+          <button mat-button type="button" (click)="loginAsDemo()" [disabled]="isLoading">
+            Acessar como demonstração
+          </button>
+        </div>
+      </form>
+
+      <!-- STEP: PASSWORD -->
+      <form *ngIf="step === 'password'" [formGroup]="passwordForm" (ngSubmit)="onVerifyPassword()">
+        <div class="auth-identity">
+          <div class="auth-avatar"><mat-icon>account_circle</mat-icon></div>
+          <div class="auth-identity-info">
+            <strong>{{ userName }}</strong>
+            <span>{{ cpfMasked }}</span>
+          </div>
+        </div>
 
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Senha</mat-label>
@@ -27,36 +68,29 @@
                  placeholder="Digite sua senha"
                  autocomplete="current-password">
           <mat-icon matPrefix>lock</mat-icon>
-          <button mat-icon-button matSuffix
+          <button mat-icon-button matSuffix type="button"
                   (click)="hidePassword = !hidePassword"
                   [attr.aria-label]="hidePassword ? 'Mostrar senha' : 'Ocultar senha'"
-                  [attr.aria-pressed]="!hidePassword"
-                  type="button">
+                  [attr.aria-pressed]="!hidePassword">
             <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
-          <mat-error *ngIf="loginForm.get('password')?.hasError('required')">
-            Senha é obrigatória
-          </mat-error>
+          <mat-error *ngIf="passwordForm.get('password')?.hasError('required')">Senha é obrigatória</mat-error>
         </mat-form-field>
 
-        <div class="login-actions">
-          <button mat-flat-button
-                  color="primary"
-                  type="submit"
-                  class="btn-primary full-width"
-                  [disabled]="isLoading">
+        <div class="auth-row">
+          <mat-checkbox formControlName="keepConnected" color="primary">Manter-me conectado</mat-checkbox>
+        </div>
+
+        <div class="auth-actions">
+          <button mat-flat-button color="primary" type="submit" class="btn-primary full-width" [disabled]="isLoading">
             <mat-spinner *ngIf="isLoading" diameter="20" class="btn-spinner"></mat-spinner>
             <span>{{ isLoading ? 'Entrando...' : 'Entrar' }}</span>
           </button>
+        </div>
 
-          <button mat-stroked-button
-                  color="primary"
-                  type="button"
-                  class="btn-demo full-width"
-                  (click)="loginAsDemo()"
-                  [disabled]="isLoading">
-            Acessar como Demo
-          </button>
+        <div class="auth-link-row auth-link-row--split">
+          <a href="javascript:void(0)" (click)="backToCpf()">Voltar</a>
+          <a routerLink="/forgot-password">Esqueci minha senha</a>
         </div>
       </form>
     </mat-card-content>

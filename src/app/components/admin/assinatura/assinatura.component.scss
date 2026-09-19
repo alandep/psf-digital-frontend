@@ -1,0 +1,225 @@
+.assinatura-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.loading-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+}
+
+// === PAGE HEADER (identidade Portos) ===
+.page-header {
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  color: white;
+  padding: 2rem;
+  margin-bottom: 24px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(25, 118, 210, 0.3);
+
+  .header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+
+    .title-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+
+      .header-icon {
+        font-size: 3rem;
+        width: 3rem;
+        height: 3rem;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(10px);
+      }
+
+      .title-content {
+        h1 {
+          margin: 0;
+          font-size: 2rem;
+          font-weight: 300;
+          letter-spacing: -0.5px;
+          color: #fff;
+        }
+        .subtitle {
+          margin: 0.4rem 0 0;
+          opacity: 0.9;
+          font-size: 1rem;
+          font-weight: 300;
+          color: #fff;
+        }
+      }
+    }
+  }
+}
+
+// === Aviso de licença ===
+.license-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff3e0;
+  border: 1px solid #ffcc80;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 24px;
+
+  mat-icon { color: #ef6c00; }
+  span { flex: 1; color: #5d4037; font-size: 0.92rem; }
+}
+
+// === Grid de cards ===
+.cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.info-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+
+  mat-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #1565c0;
+    mat-icon { color: #1976d2; }
+  }
+
+  mat-card-content { padding-top: 8px; }
+}
+
+.status-chip {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+
+  &.small { padding: 2px 10px; font-size: 0.75rem; }
+}
+
+// === Plano atual ===
+.plano-card {
+  .plan-headline {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+
+    .plan-name { font-size: 1.2rem; font-weight: 600; color: #333; }
+    .plan-price {
+      margin-top: 4px;
+      strong { font-size: 1.8rem; color: #1565c0; }
+      span { color: #888; font-size: 0.9rem; }
+    }
+  }
+
+  .plan-detail {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 14px 0;
+    color: #555;
+    font-size: 0.92rem;
+    mat-icon { color: #90a4ae; font-size: 20px; width: 20px; height: 20px; }
+  }
+
+  .plan-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+
+    button mat-icon { margin-right: 4px; }
+    .cancel-btn { color: #f44336; margin-left: auto; }
+  }
+}
+
+// === Uso do plano ===
+.uso-card {
+  .usage-item {
+    margin-bottom: 20px;
+
+    .usage-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+      color: #444;
+      .usage-values { color: #777; font-weight: 500; }
+    }
+
+    mat-progress-bar { height: 8px; border-radius: 4px; }
+    .warn-bar ::ng-deep .mdc-linear-progress__bar-inner { border-color: #f57f17 !important; }
+
+    .usage-percent {
+      text-align: right;
+      font-size: 0.78rem;
+      color: #888;
+      margin-top: 4px;
+      &.warn-text { color: #ef6c00; font-weight: 600; }
+    }
+  }
+}
+
+// === Faturas ===
+.faturas-card {
+  .faturas-table {
+    width: 100%;
+    th { color: #607d8b; font-weight: 600; }
+    .download-btn { color: #90a4ae; }
+  }
+}
+
+@media (max-width: 900px) {
+  .cards-grid { grid-template-columns: 1fr; }
+}
+
+.creditos-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 14px 16px;
+  background: #fff3e0;
+  border: 1px solid #ffe0b2;
+  border-radius: 12px;
+
+  > mat-icon {
+    color: #ef6c00;
+    flex-shrink: 0;
+  }
+
+  .cta-text {
+    flex: 1;
+    color: #6d4c00;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  button {
+    flex-shrink: 0;
+  }
+}
+
+.creditos-footer {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 12px;
+}

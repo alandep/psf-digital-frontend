@@ -14,13 +14,13 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button (click)="openNovoHedgeDialog()">
+        <button mat-raised-button *appHasPermission="'financeiro/hedge:create'" (click)="openNovoHedgeDialog()">
           <mat-icon>add</mat-icon> Novo Hedge
         </button>
-        <button mat-raised-button (click)="exportCSV()">
+        <button mat-raised-button *appHasPermission="'financeiro/hedge:export'" (click)="exportCSV()">
           <mat-icon>download</mat-icon> CSV
         </button>
-        <button mat-raised-button (click)="exportPDF()">
+        <button mat-raised-button *appHasPermission="'financeiro/hedge:export'" (click)="exportPDF()">
           <mat-icon>picture_as_pdf</mat-icon> PDF
         </button>
       </div>

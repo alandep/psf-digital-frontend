@@ -21,6 +21,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { RelatorioLogisticaMockService } from '../../../../services/relatorioLogisticaMockService';
 import { ExportService } from '../../../../services/exportService';
 import { LogisticsReport, LogisticsMetrics, PortPerformance, CarrierPerformance } from '../../../../types/relatorio-logistica';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-relatorios-logistica',
@@ -39,7 +40,8 @@ import { LogisticsReport, LogisticsMetrics, PortPerformance, CarrierPerformance 
     MatSelectModule,
     MatSnackBarModule,
     MatProgressBarModule,
-    MatTooltipModule
+    MatTooltipModule,
+    HasPermissionDirective
   ],
   templateUrl: './relatorios-logistica.component.html',
   styleUrls: ['./relatorios-logistica.component.scss']

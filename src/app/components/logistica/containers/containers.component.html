@@ -13,11 +13,11 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button (click)="openNovoContainerDialog()">
+        <button mat-raised-button *appHasPermission="'logistica/containers:create'" (click)="openNovoContainerDialog()">
           <mat-icon>add</mat-icon> Novo Container
         </button>
-        <button mat-raised-button (click)="exportCSV()"><mat-icon>download</mat-icon> CSV</button>
-        <button mat-raised-button (click)="exportPDF()"><mat-icon>picture_as_pdf</mat-icon> PDF</button>
+        <button mat-raised-button *appHasPermission="'logistica/containers:export'" (click)="exportCSV()"><mat-icon>download</mat-icon> CSV</button>
+        <button mat-raised-button *appHasPermission="'logistica/containers:export'" (click)="exportPDF()"><mat-icon>picture_as_pdf</mat-icon> PDF</button>
       </div>
     </div>
   </div>
@@ -192,68 +192,4 @@
     </mat-card-content>
   </mat-card>
 
-  @if (isDetailOpen && selectedContainer) {
-    <mat-card class="detail-card">
-      <mat-card-header>
-        <div class="detail-header">
-          <div class="detail-title-section">
-            <mat-icon class="detail-icon">inventory_2</mat-icon>
-            <div>
-              <h2>{{ selectedContainer.containerNumber }}</h2>
-              <p>{{ selectedContainer.size }} {{ getTypeLabel(selectedContainer.type) }} — {{ selectedContainer.vessel }}</p>
-            </div>
-          </div>
-          <div class="detail-header-actions">
-            <span class="status-badge" [ngClass]="getStatusColor(selectedContainer.status)">{{ getStatusLabel(selectedContainer.status) }}</span>
-            <button mat-icon-button (click)="closeDetail()"><mat-icon>close</mat-icon></button>
-          </div>
-        </div>
-      </mat-card-header>
-      <mat-card-content>
-        <mat-tab-group>
-          <mat-tab label="Informações">
-            <div class="tab-content">
-              <div class="info-grid">
-                <div class="info-item"><span class="info-label">Shipper</span><span class="info-value">{{ selectedContainer.shipper }}</span></div>
-                <div class="info-item"><span class="info-label">Consignee</span><span class="info-value">{{ selectedContainer.consignee }}</span></div>
-                <div class="info-item"><span class="info-label">Commodity</span><span class="info-value">{{ selectedContainer.commodity }}</span></div>
-                <div class="info-item"><span class="info-label">Peso</span><span class="info-value">{{ selectedContainer.weight > 0 ? selectedContainer.weight + ' kg' : '—' }}</span></div>
-                <div class="info-item"><span class="info-label">Selo</span><span class="info-value">{{ selectedContainer.sealNumber || '—' }}</span></div>
-                <div class="info-item"><span class="info-label">BL</span><span class="info-value">{{ selectedContainer.blNumber || '—' }}</span></div>
-                <div class="info-item"><span class="info-label">Origem</span><span class="info-value">{{ selectedContainer.origin }}</span></div>
-                <div class="info-item"><span class="info-label">Destino</span><span class="info-value">{{ selectedContainer.destination }}</span></div>
-                <div class="info-item"><span class="info-label">Exportação</span><span class="info-value">{{ selectedContainer.linkedExport }}</span></div>
-              </div>
-            </div>
-          </mat-tab>
-          <mat-tab label="Datas">
-            <div class="tab-content">
-              <div class="info-grid">
-                <div class="info-item"><span class="info-label">Gate-In</span><span class="info-value">{{ formatDate(selectedContainer.gateInDate) }}</span></div>
-                <div class="info-item"><span class="info-label">Embarque</span><span class="info-value">{{ formatDate(selectedContainer.loadDate) }}</span></div>
-                <div class="info-item"><span class="info-label">Descarga</span><span class="info-value">{{ formatDate(selectedContainer.dischargeDate) }}</span></div>
-                <div class="info-item"><span class="info-label">Gate-Out</span><span class="info-value">{{ formatDate(selectedContainer.gateOutDate) }}</span></div>
-                <div class="info-item"><span class="info-label">Devolução</span><span class="info-value">{{ formatDate(selectedContainer.returnDate) }}</span></div>
-                <div class="info-item"><span class="info-label">Última Atualização</span><span class="info-value">{{ formatDate(selectedContainer.lastUpdate) }}</span></div>
-              </div>
-            </div>
-          </mat-tab>
-          <mat-tab label="Demurrage">
-            <div class="tab-content">
-              <div class="demurrage-panel">
-                <div class="info-grid">
-                  <div class="info-item"><span class="info-label">Free Days Contratados</span><span class="info-value">{{ selectedContainer.freeDays }}</span></div>
-                  <div class="info-item"><span class="info-label">Free Days Restantes</span><span class="info-value" [class.critical-value]="selectedContainer.freeDaysRemaining <= 0">{{ selectedContainer.freeDaysRemaining }}</span></div>
-                  <div class="info-item"><span class="info-label">Taxa Demurrage/dia</span><span class="info-value">{{ formatCurrency(selectedContainer.demurrageRate) }}</span></div>
-                  <div class="info-item"><span class="info-label">Taxa Detention/dia</span><span class="info-value">{{ formatCurrency(selectedContainer.detentionRate) }}</span></div>
-                  <div class="info-item"><span class="info-label">Custo Demurrage Acumulado</span><span class="info-value critical-value">{{ formatCurrency(selectedContainer.totalDemurrageCost) }}</span></div>
-                  <div class="info-item"><span class="info-label">Projeção Demurrage</span><span class="info-value critical-value">{{ formatCurrency(calculateDemurrageProjection(selectedContainer)) }}</span></div>
-                </div>
-              </div>
-            </div>
-          </mat-tab>
-        </mat-tab-group>
-      </mat-card-content>
-    </mat-card>
-  }
 </div>

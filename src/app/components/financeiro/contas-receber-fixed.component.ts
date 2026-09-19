@@ -31,6 +31,7 @@ import {
   STATUS_LABELS,
   PAYMENT_METHOD_LABELS
 } from '../../../types/recebimentos';
+import { HasPermissionDirective } from '../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-contas-receber-fixed',
@@ -55,7 +56,8 @@ import {
     MatSnackBarModule,
     MatTooltipModule,
     MatExpansionModule,
-    MatBadgeModule
+    MatBadgeModule,
+    HasPermissionDirective
   ],
   templateUrl: './contas-receber-fixed.component.html',
   styleUrls: ['./contas-receber-fixed.component.scss']

@@ -537,3 +537,298 @@ body.dark-mode {
     padding: 0;
   }
 }
+
+/* ====== Dialog de Detalhe do Navio (4 abas) - identidade Portos ====== */
+.navio-detail-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden; /* keep the gradient header corners clean */
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+    max-height: 90vh;
+  }
+
+  /* zero container padding so the gradient header reaches the edges */
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+
+  .mat-mdc-dialog-container .mat-mdc-dialog-title::before {
+    display: none;
+  }
+}
+
+/* ====== Dialog de Detalhe do Container (3 abas) - identidade Portos ====== */
+.container-detail-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden; /* keep the gradient header corners clean */
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+    max-height: 90vh;
+  }
+
+  /* zero container padding so the gradient header reaches the edges */
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+
+  .mat-mdc-dialog-container .mat-mdc-dialog-title::before {
+    display: none;
+  }
+}
+
+/* === Licença Detail Dialog Panel === */
+.licenca-detail-panel {
+  .mat-mdc-dialog-container {
+    border-radius: 16px;
+    overflow: hidden;
+    padding: 0;
+  }
+
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden;
+    max-height: 92vh;
+  }
+
+  .mat-mdc-dialog-content {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+}
+
+/* ====== Dialog de Detalhe da Regulamentação (7 abas) - identidade Portos ====== */
+.regulamentacao-detail-panel {
+  .mat-mdc-dialog-container {
+    border-radius: 16px;
+    overflow: hidden;
+    padding: 0;
+    max-height: 92vh;
+  }
+
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden;
+    max-height: 92vh;
+  }
+
+  .mat-mdc-dialog-content {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+}
+
+/* ====== Dialog de Detalhe do Cliente CRM (5 abas) - identidade Portos ====== */
+.customer-detail-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden; /* keep the gradient header corners clean */
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+    max-height: 90vh;
+  }
+
+  /* zero container padding so the gradient header reaches the edges */
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+
+  .mat-mdc-dialog-container .mat-mdc-dialog-title::before {
+    display: none;
+  }
+}
+
+/* ====== Dialog de Detalhe do Fornecedor (5 abas) - identidade Portos ====== */
+.supplier-detail-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden; /* keep the gradient header corners clean */
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+    max-height: 90vh;
+  }
+
+  /* zero container padding so the gradient header reaches the edges */
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+
+  .mat-mdc-dialog-container .mat-mdc-dialog-title::before {
+    display: none;
+  }
+}
+
+/* ====== Dialog do Formulário de Produto (7 abas) - identidade Portos ====== */
+.product-form-dialog-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden; /* mantém os cantos do header em gradiente limpos */
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+    max-height: 92vh;
+  }
+
+  /* zera o padding da superfície para o header em gradiente alcançar as bordas */
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+
+  /* deixa o mat-dialog-content controlar a rolagem, não a superfície */
+  .mat-mdc-dialog-content {
+    max-height: none;
+  }
+}
+
+/* ====== Dialog do Formulário de Classificação NCM (5 abas) - identidade Portos ====== */
+.classificacao-form-dialog-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden; /* mantém os cantos do header em gradiente limpos */
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+    max-height: 92vh;
+  }
+
+  /* zera o padding da superfície para o header em gradiente alcançar as bordas */
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+
+  /* deixa o mat-dialog-content controlar a rolagem, não a superfície */
+  .mat-mdc-dialog-content {
+    max-height: none;
+  }
+}
+
+/* ====== Dialog de Novo Cenário (Rentabilidade) - identidade Portos ====== */
+.novo-cenario-dialog-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .mat-mdc-dialog-container {
+    max-height: 92vh;
+  }
+
+  /* zera o padding da superfície para o header em gradiente alcançar as bordas */
+  .mat-mdc-dialog-container .mdc-dialog__content,
+  .mat-mdc-dialog-content {
+    padding: 0;
+  }
+}
+
+/* ====== Dialog de Detalhe de Rastreabilidade (5 abas) - identidade Portos ====== */
+.rastreabilidade-detail-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden; /* keep the gradient header corners clean */
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+    max-height: 92vh;
+  }
+
+  /* zero container padding so the gradient header reaches the edges */
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+
+  /* let mat-dialog-content control scrolling, not the surface */
+  .mat-mdc-dialog-content {
+    max-height: none;
+  }
+
+  .mat-mdc-dialog-container .mat-mdc-dialog-title::before {
+    display: none;
+  }
+}
+
+/* ====== Dialog de Detalhe do Agente (AI Operations) - identidade Portos ====== */
+.agent-detail-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden; /* keep the gradient header corners clean */
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+    max-height: 90vh;
+  }
+
+  /* zero container padding so the gradient header reaches the edges */
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+}
+
+/* ====== Dialog de Permissões de Perfil de Acesso - identidade Portos ====== */
+.perfil-permissoes-dialog-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden; /* keep the gradient header corners clean */
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+    max-height: 92vh;
+  }
+
+  /* zera o padding da superfície para o header em gradiente alcançar as bordas */
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+
+  /* o conteúdo interno rola */
+  .mat-mdc-dialog-content,
+  .mat-mdc-dialog-container .mdc-dialog__content {
+    max-height: 70vh;
+  }
+}
+
+/* ====== Dialogs SaaS Self-Service (WAVE 4B) - identidade Portos ====== */
+.assinatura-dialog-panel {
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .mat-mdc-dialog-surface {
+    border-radius: 16px;
+    overflow: hidden; /* keep the gradient header corners clean */
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #fff;
+  }
+
+  /* zero container padding so the gradient header reaches the edges */
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0;
+  }
+}
+
+/* Cookie preferences dialog (§65) — rounded Portos look */
+.cookie-prefs-panel .mat-mdc-dialog-surface {
+  border-radius: 14px;
+}

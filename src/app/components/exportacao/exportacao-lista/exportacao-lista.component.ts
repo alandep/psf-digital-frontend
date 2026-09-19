@@ -43,11 +43,13 @@ import {
   AiAssistantDialogComponent,
   AiAssistantDialogData
 } from '../ai-assistant-dialog/ai-assistant-dialog.component';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-exportacao-lista',
   standalone: true,
   imports: [
+    HasPermissionDirective,
     CommonModule,
     FormsModule,
     ReactiveFormsModule,

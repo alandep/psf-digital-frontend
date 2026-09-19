@@ -1,0 +1,124 @@
+<div class="trial-container">
+
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header Premium (identidade Portos) -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">rocket_launch</mat-icon>
+        <div class="title-content">
+          <h1>Bem-vindo ao EIP</h1>
+          <p class="subtitle">Seu período de experiência</p>
+        </div>
+      </div>
+      <div class="header-chips" *ngIf="dashboard as d">
+        <mat-chip-set>
+          <mat-chip>Plano em avaliação: {{ d.planName }}</mat-chip>
+          <mat-chip>Restam {{ d.daysRemaining }} dias</mat-chip>
+        </mat-chip-set>
+      </div>
+    </div>
+  </div>
+
+  <ng-container *ngIf="dashboard as d">
+
+    <div class="cards-grid">
+      <!-- Card: Configuração -->
+      <mat-card class="info-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="card-avatar">tune</mat-icon>
+          <mat-card-title>Configuração</mat-card-title>
+          <mat-card-subtitle>Conclua os passos para aproveitar o EIP</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="setup-progress">
+            <mat-progress-bar mode="determinate" [value]="d.setupPercent"></mat-progress-bar>
+            <span class="setup-percent">{{ d.setupPercent }}%</span>
+          </div>
+          <ul class="checklist">
+            <li *ngFor="let step of d.steps; trackBy: trackByStepKey"
+                [class.done]="step.done" [class.pending]="!step.done">
+              <mat-icon *ngIf="step.done" class="icon-done">check_circle</mat-icon>
+              <mat-icon *ngIf="!step.done" class="icon-pending">radio_button_unchecked</mat-icon>
+              <span>{{ step.label }}</span>
+            </li>
+          </ul>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Card: Descubra o EIP -->
+      <mat-card class="info-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="card-avatar">explore</mat-icon>
+          <mat-card-title>Descubra o EIP</mat-card-title>
+          <mat-card-subtitle>Explore os principais módulos</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="shortcuts-row">
+            <a class="shortcut-tile" *ngFor="let s of shortcuts; trackBy: trackByShortcutLabel"
+               [routerLink]="'/home-logged/' + s.route">
+              <mat-icon>{{ s.icon }}</mat-icon>
+              <span>{{ s.label }}</span>
+            </a>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Empty-state / primeiro valor -->
+    <mat-card class="info-card empty-state" *ngIf="!d.hasData">
+      <mat-card-content>
+        <div class="empty-content">
+          <mat-icon class="empty-icon">flight_takeoff</mat-icon>
+          <div class="empty-text">
+            <h2>Crie sua primeira exportação</h2>
+            <p>Leva poucos minutos e o EIP pode ajudar no preenchimento.</p>
+          </div>
+        </div>
+        <div class="empty-actions">
+          <button mat-raised-button color="primary" routerLink="/home-logged/exportacoes/pedidos">
+            <mat-icon>add</mat-icon> Criar exportação
+          </button>
+          <button mat-stroked-button color="primary" (click)="loadSampleData()">
+            <mat-icon>dataset</mat-icon> Carregar dados de exemplo
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Aviso: visualizando dados de exemplo -->
+    <mat-card class="info-card sample-note" *ngIf="d.hasData && d.sampleDataLoaded">
+      <mat-card-content>
+        <div class="sample-content">
+          <mat-icon>info</mat-icon>
+          <span>Você está visualizando dados de exemplo.</span>
+          <button mat-stroked-button (click)="removeSampleData()">
+            <mat-icon>delete_outline</mat-icon> Remover dados de exemplo
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Conversion band (honesto, sem dark patterns) -->
+    <mat-card class="info-card conversion-band">
+      <mat-card-content>
+        <div class="conversion-content">
+          <div class="conversion-text">
+            <h2>Gostou do EIP?</h2>
+            <p>Escolha um plano quando quiser — seus dados são preservados.</p>
+          </div>
+          <div class="conversion-actions">
+            <button mat-raised-button color="primary" routerLink="/home-logged/admin/assinatura">
+              <mat-icon>workspace_premium</mat-icon> Escolher plano
+            </button>
+            <button mat-stroked-button color="primary" routerLink="/precos">
+              <mat-icon>list_alt</mat-icon> Ver planos
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+  </ng-container>
+</div>

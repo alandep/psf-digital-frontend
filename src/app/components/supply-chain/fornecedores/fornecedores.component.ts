@@ -13,7 +13,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatTabsModule } from '@angular/material/tabs';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -24,6 +23,8 @@ import { SupplierMockService } from '../../../../services/supplierMockService';
 import { ExportService } from '../../../../services/exportService';
 import { Supplier, SupplierMetrics, SupplierCategory, QualificationStatus } from '../../../../types/supplier';
 import { NovoFornecedorDialogComponent } from '../dialogs/novo-fornecedor-dialog.component';
+import { SupplierDetailDialogComponent } from './supplier-detail-dialog/supplier-detail-dialog.component';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-fornecedores',
@@ -41,12 +42,12 @@ import { NovoFornecedorDialogComponent } from '../dialogs/novo-fornecedor-dialog
     MatInputModule,
     MatSelectModule,
     MatChipsModule,
-    MatTabsModule,
     MatSnackBarModule,
     MatProgressBarModule,
     MatTooltipModule,
     MatDialogModule,
-    MatMenuModule
+    MatMenuModule,
+    HasPermissionDirective
   ],
   templateUrl: './fornecedores.component.html',
   styleUrls: ['./fornecedores.component.scss']
@@ -66,10 +67,8 @@ export class FornecedoresComponent implements OnInit, OnDestroy, AfterViewInit {
 
   suppliers: Supplier[] = [];
   dataSource = new MatTableDataSource<Supplier>([]);
-  selectedSupplier: Supplier | null = null;
   metrics: SupplierMetrics | null = null;
   isLoading = false;
-  isDetailOpen = false;
 
   filterForm!: FormGroup;
 
@@ -174,13 +173,13 @@ export class FornecedoresComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   selectSupplier(supplier: Supplier): void {
-    this.selectedSupplier = supplier;
-    this.isDetailOpen = true;
-  }
-
-  closeDetail(): void {
-    this.isDetailOpen = false;
-    this.selectedSupplier = null;
+    this.dialog.open(SupplierDetailDialogComponent, {
+      width: '880px',
+      maxWidth: '95vw',
+      maxHeight: '92vh',
+      panelClass: 'supplier-detail-panel',
+      data: { supplier }
+    });
   }
 
   openNewSupplierDialog(): void {

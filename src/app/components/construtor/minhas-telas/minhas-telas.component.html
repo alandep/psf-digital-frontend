@@ -18,7 +18,7 @@
     <div class="table-header">
       <h3>Telas Personalizadas</h3>
       <div class="export-actions">
-        <button mat-icon-button (click)="exportCSV()" matTooltip="Exportar CSV">
+        <button *appHasPermission="'construtor/minhas-telas:export'" mat-icon-button (click)="exportCSV()" matTooltip="Exportar CSV">
           <mat-icon>download</mat-icon>
         </button>
       </div>

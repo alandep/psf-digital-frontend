@@ -37,6 +37,7 @@ import {
   CertificadoMetrics,
 } from '../../../../types/certificados-exportacao';
 import { CertificadoDetailDialogComponent, CertificadoDetailDialogData } from './certificado-detail-dialog/certificado-detail-dialog.component';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-certificados-exportacao',
@@ -66,6 +67,7 @@ import { CertificadoDetailDialogComponent, CertificadoDetailDialogData } from '.
     MatDividerModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    HasPermissionDirective,
   ],
   templateUrl: './certificados.component.html',
   styleUrls: ['./certificados.component.scss']

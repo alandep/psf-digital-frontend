@@ -34,12 +34,12 @@ $teal: #009688;
 
 // === PAGE HEADER ===
 .page-header {
-  background: linear-gradient(135deg, $primary 0%, $dark 100%);
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
   color: white;
   padding: 2rem;
   margin-bottom: 24px;
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(55, 71, 79, 0.3);
+  box-shadow: 0 8px 32px rgba(25,118,210,0.3);
 
   .header-main {
     display: flex;

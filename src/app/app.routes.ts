@@ -1,21 +1,163 @@
 import { Routes } from '@angular/router';
+import { profileAccessGuard } from './guards/profile-access.guard';
 
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: '/login',
+    redirectTo: '/home',
     pathMatch: 'full'
   },
+
+  // === PORTAL PÚBLICO (Home + EIP Intelligence) — sem guard ===
+  {
+    path: 'home',
+    loadComponent: () =>
+      import('./components/public/home-public/home-public.component').then((m) => m.HomePublicComponent),
+  },
+  {
+    path: 'intelligence',
+    loadComponent: () =>
+      import('./components/public/intelligence/intelligence.component').then((m) => m.IntelligenceComponent),
+  },
+  {
+    path: 'intelligence/:slug',
+    loadComponent: () =>
+      import('./components/public/intelligence-detail/intelligence-detail.component').then((m) => m.IntelligenceDetailComponent),
+  },
+
+  // === PÁGINAS INSTITUCIONAIS PÚBLICAS — sem guard ===
+  {
+    path: 'product',
+    loadComponent: () =>
+      import('./components/public/product/product.component').then((m) => m.ProductComponent),
+  },
+  {
+    path: 'about',
+    loadComponent: () =>
+      import('./components/public/about/about.component').then((m) => m.AboutComponent),
+  },
+  {
+    path: 'contact',
+    loadComponent: () =>
+      import('./components/public/contact/contact.component').then((m) => m.ContactComponent),
+  },
+  {
+    path: 'official-links',
+    loadComponent: () =>
+      import('./components/public/official-links/official-links.component').then((m) => m.OfficialLinksComponent),
+  },
+  {
+    path: 'demo',
+    loadComponent: () =>
+      import('./components/public/demo/demo.component').then((m) => m.DemoComponent),
+  },
+  {
+    path: 'security',
+    loadComponent: () =>
+      import('./components/public/security/security.component').then((m) => m.SecurityComponent),
+  },
+
   {
     path: 'login',
     loadComponent: () =>
       import('./components/login/login.component').then((m) => m.LoginComponent),
   },
+
+  // === EIP ACQUISITION (signup + trial) — sem guard ===
+  {
+    path: 'signup',
+    loadComponent: () =>
+      import('./components/public/signup/signup.component').then((m) => m.SignupComponent),
+  },
+  {
+    path: 'trial',
+    loadComponent: () =>
+      import('./components/public/trial/trial.component').then((m) => m.TrialComponent),
+  },
+
+  // === IDENTITY / AUTH (mock) — telas do fluxo de autenticação ===
+  {
+    path: 'mfa',
+    loadComponent: () =>
+      import('./components/auth/mfa/mfa.component').then((m) => m.MfaComponent),
+  },
+  {
+    path: 'select-company',
+    loadComponent: () =>
+      import('./components/auth/select-company/select-company.component').then((m) => m.SelectCompanyComponent),
+  },
+  {
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('./components/auth/forgot-password/forgot-password.component').then((m) => m.ForgotPasswordComponent),
+  },
+  {
+    path: 'reset-password',
+    loadComponent: () =>
+      import('./components/auth/reset-password/reset-password.component').then((m) => m.ResetPasswordComponent),
+  },
+
+  // === SITE COMERCIAL PÚBLICO (SaaS) — sem guard de autenticação ===
+  {
+    path: 'site',
+    loadComponent: () =>
+      import('./components/site/landing/landing.component').then((m) => m.LandingComponent),
+  },
+  {
+    path: 'precos',
+    loadComponent: () =>
+      import('./components/site/precos/precos.component').then((m) => m.PrecosComponent),
+  },
+  {
+    path: 'legal/termos',
+    loadComponent: () =>
+      import('./components/site/legal/termos/termos.component').then((m) => m.TermosComponent),
+  },
+  {
+    path: 'legal/privacidade',
+    loadComponent: () =>
+      import('./components/site/legal/privacidade/privacidade.component').then((m) => m.PrivacidadeComponent),
+  },
+  {
+    path: 'trust',
+    loadComponent: () =>
+      import('./components/site/trust/trust.component').then((m) => m.TrustComponent),
+  },
+  {
+    path: 'checkout',
+    loadComponent: () =>
+      import('./components/site/checkout/checkout.component').then((m) => m.CheckoutComponent),
+  },
+  {
+    path: 'onboarding',
+    loadComponent: () =>
+      import('./components/site/onboarding/onboarding.component').then((m) => m.OnboardingComponent),
+  },
   {
     path: 'home-logged',
     loadComponent: () =>
       import('./components/home-logged/home-logged.component').then((m) => m.HomeLoggedComponent),
+    canActivateChild: [profileAccessGuard],
     children: [
+      // === TRIAL COMMAND CENTER ===
+      {
+        path: 'trial-inicio',
+        loadComponent: () =>
+          import('./components/trial/trial-inicio/trial-inicio.component').then((m) => m.TrialInicioComponent),
+      },
+
+      // === EIP INTELLIGENCE ===
+      {
+        path: 'intelligence/watchlist',
+        loadComponent: () =>
+          import('./components/intelligence/watchlist/watchlist.component').then((m) => m.WatchlistComponent),
+      },
+      {
+        path: 'intelligence/alertas',
+        loadComponent: () =>
+          import('./components/intelligence/alertas/alertas.component').then((m) => m.IntelligenceAlertasComponent),
+      },
+
       // === MÓDULOS EXISTENTES ===
       {
         path: 'cadastros/cidades',
@@ -269,9 +411,78 @@ export const routes: Routes = [
           import('./components/admin/configuracoes/configuracoes.component').then((m) => m.ConfiguracoesComponent),
       },
       {
+        path: 'admin/seguranca',
+        loadComponent: () =>
+          import('./components/admin/seguranca/seguranca.component').then((m) => m.SegurancaComponent),
+      },
+      {
+        path: 'admin/mfa-setup',
+        loadComponent: () =>
+          import('./components/admin/mfa-setup/mfa-setup.component').then((m) => m.MfaSetupComponent),
+      },
+      {
         path: 'admin/auditoria',
         loadComponent: () =>
           import('./components/admin/auditoria/auditoria.component').then((m) => m.AuditoriaComponent),
+      },
+      {
+        path: 'admin/perfis-acesso',
+        loadComponent: () =>
+          import('./components/admin/perfis-acesso/perfis-acesso.component').then((m) => m.PerfisAcessoComponent),
+      },
+
+      // === MÓDULO ADMIN - SAAS SELF-SERVICE (WAVE 4B) ===
+      {
+        path: 'admin/assinatura',
+        loadComponent: () =>
+          import('./components/admin/assinatura/assinatura.component').then((m) => m.AssinaturaComponent),
+      },
+      {
+        path: 'admin/exportar-dados',
+        loadComponent: () =>
+          import('./components/admin/exportar-dados/exportar-dados.component').then((m) => m.ExportarDadosComponent),
+      },
+      {
+        path: 'admin/equipe',
+        loadComponent: () =>
+          import('./components/admin/equipe/equipe.component').then((m) => m.EquipeComponent),
+      },
+
+      // === MÓDULO SUPER ADMIN - SAAS COMMAND CENTER (WAVE 5) ===
+      {
+        path: 'super-admin/saas',
+        loadComponent: () =>
+          import('./components/super-admin/saas-command-center/saas-command-center.component').then((m) => m.SaasCommandCenterComponent),
+      },
+      {
+        path: 'super-admin/eventos-produto',
+        loadComponent: () =>
+          import('./components/super-admin/product-events/product-events.component').then((m) => m.ProductEventsComponent),
+      },
+      {
+        path: 'super-admin/cms-intelligence',
+        loadComponent: () =>
+          import('./components/super-admin/cms-intelligence/cms-intelligence.component').then((m) => m.CmsIntelligenceComponent),
+      },
+      {
+        path: 'super-admin/publicidade',
+        loadComponent: () =>
+          import('./components/super-admin/publicidade/publicidade.component').then((m) => m.PublicidadeComponent),
+      },
+      {
+        path: 'super-admin/leads',
+        loadComponent: () =>
+          import('./components/super-admin/leads/leads.component').then((m) => m.LeadsComponent),
+      },
+      {
+        path: 'super-admin/conversao',
+        loadComponent: () =>
+          import('./components/super-admin/conversao/conversao.component').then((m) => m.ConversaoComponent),
+      },
+      {
+        path: 'super-admin/institucional',
+        loadComponent: () =>
+          import('./components/super-admin/institucional/institucional.component').then((m) => m.InstitucionalComponent),
       },
 
       // === MÓDULO RELATÓRIOS - COMPLIANCE ===
@@ -482,6 +693,20 @@ export const routes: Routes = [
           import('./components/perfil/perfil.component').then(m => m.PerfilComponent),
       },
 
+      // === TELA DE ACESSO NEGADO (RBAC) ===
+      {
+        path: 'acesso-negado',
+        loadComponent: () =>
+          import('./components/shared/acesso-negado/acesso-negado.component').then(m => m.AcessoNegadoComponent),
+      },
+
+      // === DEV-ONLY: SIMULADOR DE LICENÇA (SaaS mock) ===
+      {
+        path: 'dev/licenca',
+        loadComponent: () =>
+          import('./components/shared/license-simulator/license-simulator.component').then(m => m.LicenseSimulatorComponent),
+      },
+
       // Rota padrão - primeiro acesso após login
       {
         path: '',
@@ -498,6 +723,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: '/login'
+    redirectTo: '/home'
   }
 ];

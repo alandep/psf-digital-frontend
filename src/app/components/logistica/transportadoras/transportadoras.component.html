@@ -15,13 +15,13 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button color="primary" (click)="createTransportadora()">
+        <button mat-raised-button color="primary" (click)="createTransportadora()" *appHasPermission="'logistica/transportadoras:create'">
           <mat-icon>add</mat-icon> Nova Transportadora
         </button>
         <button mat-raised-button color="primary" (click)="isSimulationExpanded = !isSimulationExpanded">
           <mat-icon>science</mat-icon> Simular Transporte
         </button>
-        <button mat-raised-button color="primary" (click)="exportPDF()">
+        <button mat-raised-button color="primary" (click)="exportPDF()" *appHasPermission="'logistica/transportadoras:export'">
           <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
         </button>
       </div>

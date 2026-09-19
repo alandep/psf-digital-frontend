@@ -32,11 +32,13 @@ import {
   CONTRACT_TYPE_LABELS,
   COMMODITY_LABELS
 } from '../../../../types/contractTemplates';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-templates-full',
   standalone: true,
   imports: [
+    HasPermissionDirective,
     CommonModule,
     ReactiveFormsModule,
     MatCardModule,

@@ -1,0 +1,118 @@
+<div class="legal">
+  <header class="legal-hero">
+    <div class="hero-inner">
+      <a class="back" routerLink="/site"><mat-icon>arrow_back</mat-icon> Início</a>
+      <h1>{{ doc.title }}</h1>
+      <p class="meta">Versão {{ doc.version }} · Vigente desde {{ doc.effectiveAt | date:'dd/MM/yyyy' }}</p>
+    </div>
+  </header>
+
+  <article class="legal-body">
+    <p class="intro">Esta Política descreve como a plataforma EIP — Export Integration
+      Platform trata dados pessoais no contexto da prestação do serviço, em conformidade com a
+      Lei nº 13.709/2018 (LGPD).</p>
+
+    <section>
+      <h2>1. Objetivo</h2>
+      <p>Informar de forma transparente quais dados são tratados, com quais finalidades,
+        bases legais e por quanto tempo, além dos direitos dos titulares e das medidas de
+        segurança adotadas.</p>
+    </section>
+
+    <section>
+      <h2>2. Papéis: controlador e operador</h2>
+      <p>Em muitos tratamentos realizados dentro do EIP para uma empresa cliente, o cliente
+        atua como controlador dos dados pessoais e o EIP como operador, tratando os dados
+        conforme as instruções do cliente. Em tratamentos relativos à própria operação da
+        plataforma, o EIP poderá atuar como controlador.</p>
+    </section>
+
+    <section>
+      <h2>3. Dados tratados</h2>
+      <p>Dados cadastrais da empresa e dos usuários (nome, e-mail corporativo, telefone,
+        identificadores de acesso), dados de uso da plataforma, registros de acesso e dados
+        inseridos pela empresa em suas operações de exportação, documentos e cadastros.</p>
+    </section>
+
+    <section>
+      <h2>4. Finalidades</h2>
+      <p>Prestação e operação do serviço, autenticação e controle de acesso, suporte,
+        faturamento, segurança da informação, prevenção a fraudes, cumprimento de obrigações
+        legais e regulatórias, e melhoria contínua da plataforma.</p>
+    </section>
+
+    <section>
+      <h2>5. Bases legais</h2>
+      <p>O tratamento apoia-se, conforme o caso, na execução de contrato, no cumprimento de
+        obrigação legal ou regulatória, no legítimo interesse e, quando aplicável, no
+        consentimento do titular.</p>
+    </section>
+
+    <section>
+      <h2>6. Compartilhamento</h2>
+      <p>Os dados poderão ser compartilhados com provedores de infraestrutura, processamento
+        de pagamentos e serviços essenciais à operação, na medida necessária e sob
+        obrigações de confidencialidade e segurança. Não comercializamos dados pessoais.</p>
+    </section>
+
+    <section>
+      <h2>7. Inteligência artificial</h2>
+      <p>Funcionalidades de IA podem processar informações para classificação, extração,
+        tradução, geração e análise. Os resultados podem exigir validação humana e não
+        substituem verificações profissionais aplicáveis à operação do cliente.</p>
+    </section>
+
+    <section>
+      <h2>8. Segurança</h2>
+      <p>Adotamos medidas técnicas e administrativas apropriadas, como criptografia,
+        controle de acesso, isolamento multi-tenant, registros de auditoria e rotinas de
+        backup, considerando a natureza dos dados e os riscos envolvidos.</p>
+    </section>
+
+    <section>
+      <h2>9. Retenção</h2>
+      <p>Os dados são mantidos pelo período necessário às finalidades informadas e às
+        obrigações legais e regulatórias. Após o encerramento, aplicam-se os prazos de
+        retenção e as regras de exclusão ou anonimização cabíveis.</p>
+    </section>
+
+    <section>
+      <h2>10. Direitos dos titulares</h2>
+      <p>Nos termos da LGPD, os titulares podem solicitar confirmação de tratamento, acesso,
+        correção, anonimização, portabilidade, eliminação e informações sobre
+        compartilhamento, observadas as condições legais. Solicitações de titulares
+        vinculados a uma empresa cliente poderão ser direcionadas ao respectivo controlador.</p>
+    </section>
+
+    <section>
+      <h2>11. Transferência internacional</h2>
+      <p>Caso haja transferência internacional de dados, adotaremos as salvaguardas exigidas
+        pela legislação aplicável para assegurar nível adequado de proteção.</p>
+    </section>
+
+    <section>
+      <h2>12. Cookies</h2>
+      <p>Podemos utilizar cookies e tecnologias similares para autenticação, segurança,
+        preferências e métricas de uso, conforme configurações disponibilizadas ao usuário.</p>
+    </section>
+
+    <section>
+      <h2>13. Alterações</h2>
+      <p>Esta Política poderá ser atualizada para refletir mudanças legais, regulatórias,
+        técnicas ou operacionais, com a devida comunicação quando exigível.</p>
+    </section>
+
+    <section>
+      <h2>14. Contato</h2>
+      <p>Para exercer direitos ou esclarecer dúvidas sobre o tratamento de dados pessoais, o
+        titular poderá utilizar os canais de contato disponibilizados pela plataforma e, quando
+        aplicável, o encarregado (DPO) indicado.</p>
+    </section>
+
+    <div class="legal-actions">
+      <button mat-stroked-button color="primary" (click)="voltar()">
+        <mat-icon>arrow_back</mat-icon> Voltar
+      </button>
+    </div>
+  </article>
+</div>

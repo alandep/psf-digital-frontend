@@ -24,6 +24,8 @@ import { CrmMockService } from '../../../../services/crmMockService';
 import { ExportService } from '../../../../services/exportService';
 import { Customer, CrmMetrics, CustomerSegment } from '../../../../types/crm';
 import { NovoClienteDialogComponent } from '../dialogs/novo-cliente-dialog.component';
+import { CustomerDetailDialogComponent } from './customer-detail-dialog/customer-detail-dialog.component';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-visao-360',
@@ -46,7 +48,8 @@ import { NovoClienteDialogComponent } from '../dialogs/novo-cliente-dialog.compo
     MatProgressBarModule,
     MatTooltipModule,
     MatDialogModule,
-    MatMenuModule
+    MatMenuModule,
+    HasPermissionDirective
   ],
   templateUrl: './visao-360.component.html',
   styleUrls: ['./visao-360.component.scss']
@@ -66,10 +69,8 @@ export class Visao360Component implements OnInit, OnDestroy, AfterViewInit {
 
   customers: Customer[] = [];
   dataSource = new MatTableDataSource<Customer>([]);
-  selectedCustomer: Customer | null = null;
   metrics: CrmMetrics | null = null;
   isLoading = false;
-  isDetailOpen = false;
 
   filterForm!: FormGroup;
 
@@ -173,13 +174,13 @@ export class Visao360Component implements OnInit, OnDestroy, AfterViewInit {
   }
 
   selectCustomer(customer: Customer): void {
-    this.selectedCustomer = customer;
-    this.isDetailOpen = true;
-  }
-
-  closeDetail(): void {
-    this.isDetailOpen = false;
-    this.selectedCustomer = null;
+    this.dialog.open(CustomerDetailDialogComponent, {
+      width: '860px',
+      maxWidth: '95vw',
+      maxHeight: '92vh',
+      panelClass: 'customer-detail-panel',
+      data: { customer }
+    });
   }
 
   openNewCustomerDialog(): void {

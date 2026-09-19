@@ -1,0 +1,147 @@
+$primary: #283593;
+$success: #4caf50;
+$warning: #ff9800;
+$danger: #f44336;
+
+.agent-detail-dialog {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
+
+// === HERO HEADER (Portos identity) ===
+.detail-hero {
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  box-shadow: 0 8px 32px rgba(25, 118, 210, 0.3);
+  color: white;
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+
+  .detail-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    mat-icon {
+      color: white;
+      font-size: 1.6rem;
+      width: 1.6rem;
+      height: 1.6rem;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+  }
+
+  .close-btn {
+    color: white;
+  }
+}
+
+// === BODY ===
+.detail-body {
+  padding: 1.5rem 2rem 2rem;
+  overflow-y: auto;
+}
+
+.detail-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: #777;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #333;
+    }
+  }
+}
+
+.errors-title {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.errors-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.error-entry {
+  display: grid;
+  grid-template-columns: 160px 140px 1fr;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  align-items: center;
+
+  &:last-child { border-bottom: none; }
+
+  .error-time {
+    font-size: 0.8rem;
+    color: #777;
+  }
+
+  .error-type-badge {
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: rgba($danger, 0.1);
+    color: $danger;
+    text-transform: uppercase;
+  }
+
+  .error-message {
+    font-size: 0.85rem;
+    color: #555;
+  }
+}
+
+.no-errors {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  font-style: italic;
+}
+
+// === STATUS BADGE ===
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &.status-active { background: #e8f5e9; color: #2e7d32; }
+  &.status-degraded { background: #fff3e0; color: #e65100; }
+  &.status-offline { background: #fce4ec; color: #c62828; }
+  &.status-maintenance { background: #e3f2fd; color: #1565c0; }
+}
+
+@media (max-width: 768px) {
+  .detail-stats { grid-template-columns: repeat(2, 1fr); }
+  .error-entry { grid-template-columns: 1fr; }
+}

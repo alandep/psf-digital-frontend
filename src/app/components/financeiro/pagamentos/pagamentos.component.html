@@ -15,13 +15,13 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button color="primary" (click)="createPayment()">
+        <button mat-raised-button color="primary" *appHasPermission="'financeiro/pagamentos:create'" (click)="createPayment()">
           <mat-icon>add</mat-icon> Novo Pagamento
         </button>
         <button mat-raised-button color="primary" (click)="simulateCashFlow()">
           <mat-icon>show_chart</mat-icon> Simular Fluxo
         </button>
-        <button mat-raised-button color="primary" (click)="exportPDF()">
+        <button mat-raised-button color="primary" *appHasPermission="'financeiro/pagamentos:export'" (click)="exportPDF()">
           <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
         </button>
       </div>

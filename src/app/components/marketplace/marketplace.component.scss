@@ -1,7 +1,7 @@
 @use 'sass:color';
 
-$primary: #e64a19;
-$dark: #bf360c;
+$primary: #1976d2;
+$dark: #1565c0;
 
 .marketplace-container {
   padding: 24px;
@@ -14,18 +14,23 @@ $dark: #bf360c;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 24px;
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  color: #fff;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(25, 118, 210, 0.3);
 }
 
 .page-header h1 {
   margin: 0;
   font-size: 1.8rem;
   font-weight: 600;
-  color: $dark;
+  color: #fff;
 }
 
 .page-header .subtitle {
   margin: 4px 0 0;
-  color: #666;
+  color: rgba(255, 255, 255, 0.9);
   font-size: 0.9rem;
 }
 

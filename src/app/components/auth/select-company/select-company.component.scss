@@ -1,0 +1,70 @@
+@use '../auth-shared' as *;
+
+$primary: #1976d2;
+$primary-dark: #1565c0;
+
+.org-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.org-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid #e0e6ef;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    border-color: $primary;
+    box-shadow: 0 4px 16px rgba(25, 118, 210, 0.15);
+    transform: translateY(-1px);
+  }
+
+  &.is-selected {
+    border-color: $primary-dark;
+    box-shadow: 0 4px 16px rgba(25, 118, 210, 0.25);
+  }
+}
+
+.org-icon {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  mat-icon { color: white; }
+}
+
+.org-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+
+  .org-name {
+    color: #1a237e;
+    font-size: 0.98rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .org-cnpj { color: #6b7280; font-size: 0.82rem; }
+  .org-role { color: $primary-dark; font-size: 0.8rem; font-weight: 600; }
+}
+
+.org-action {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+
+  button { border-radius: 10px; font-weight: 600; }
+}

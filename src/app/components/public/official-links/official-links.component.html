@@ -1,0 +1,40 @@
+<app-public-header></app-public-header>
+
+<main class="official">
+  <section class="hero">
+    <div class="hero-inner">
+      <h1>Links oficiais</h1>
+      <p>Fontes oficiais de comércio exterior no Brasil e no mundo.</p>
+    </div>
+  </section>
+
+  <section class="group">
+    <div class="group-inner">
+      <h2><mat-icon>public</mat-icon> Brasil</h2>
+      <div class="cards">
+        <a class="link-card" *ngFor="let l of brazil; trackBy: trackByUrl"
+           [href]="l.url" target="_blank" rel="noopener noreferrer">
+          <h3>{{ l.name }}</h3>
+          <p>{{ l.description }}</p>
+          <span class="url">{{ l.url }}</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="group alt">
+    <div class="group-inner">
+      <h2><mat-icon>language</mat-icon> Internacional</h2>
+      <div class="cards">
+        <a class="link-card" *ngFor="let l of international; trackBy: trackByUrl"
+           [href]="l.url" target="_blank" rel="noopener noreferrer">
+          <h3>{{ l.name }}</h3>
+          <p>{{ l.description }}</p>
+          <span class="url">{{ l.url }}</span>
+        </a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<app-public-footer></app-public-footer>

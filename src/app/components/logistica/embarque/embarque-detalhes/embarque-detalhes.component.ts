@@ -2,13 +2,17 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { interval, Subscription } from 'rxjs';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { EmbarqueMockService } from '../../../../../services/embarqueMockService';
 import { Embarque } from '../../../../../types/embarque';
 
 @Component({
   selector: 'app-embarque-detalhes',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, MatButtonModule, MatIconModule, MatTooltipModule, MatSnackBarModule],
   templateUrl: './embarque-detalhes.component.html',
   styleUrls: ['./embarque-detalhes.component.scss']
 })
@@ -25,8 +29,32 @@ export class EmbarqueDetalhesComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private embarqueService: EmbarqueMockService
+    private embarqueService: EmbarqueMockService,
+    private snackBar: MatSnackBar
   ) {}
+
+  private notify(message: string): void {
+    this.snackBar.open(message, 'Fechar', {
+      duration: 3500,
+      horizontalPosition: 'right',
+      verticalPosition: 'top'
+    });
+  }
+
+  generateDocuments(): void {
+    if (!this.embarque) { return; }
+    this.notify(`Gerando documentos do embarque ${this.embarque.shipment_number}.`);
+  }
+
+  sendDUE(): void {
+    if (!this.embarque) { return; }
+    this.notify(`DU-E do embarque ${this.embarque.shipment_number} enviada para processamento.`);
+  }
+
+  downloadBL(): void {
+    if (!this.embarque) { return; }
+    this.notify(`Download do Bill of Lading do embarque ${this.embarque.shipment_number} iniciado.`);
+  }
 
   ngOnInit() {
     this.embarqueId = this.route.snapshot.paramMap.get('id');

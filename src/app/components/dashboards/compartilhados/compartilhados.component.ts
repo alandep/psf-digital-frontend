@@ -10,10 +10,12 @@ import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
 import { MatSortModule, MatSort } from '@angular/material/sort';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { DashboardBuilderMockService } from '../../../../services/dashboardBuilderMockService';
 import { ExportService } from '../../../../services/exportService';
 import { SharedDashboard } from '../../../../types/dashboard-builder';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-compartilhados',
@@ -27,7 +29,9 @@ import { SharedDashboard } from '../../../../types/dashboard-builder';
     MatPaginatorModule,
     MatSortModule,
     MatChipsModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatSnackBarModule,
+    HasPermissionDirective
   ],
   templateUrl: './compartilhados.component.html',
   styleUrls: ['./compartilhados.component.scss']
@@ -36,6 +40,7 @@ export class CompartilhadosComponent implements OnInit, OnDestroy, AfterViewInit
 
   private dashboardService = inject(DashboardBuilderMockService);
   private exportService = inject(ExportService);
+  private snackBar = inject(MatSnackBar);
   private destroy$ = new Subject<void>();
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
@@ -88,6 +93,18 @@ export class CompartilhadosComponent implements OnInit, OnDestroy, AfterViewInit
 
   formatDate(date: Date): string {
     return new Date(date).toLocaleDateString('pt-BR');
+  }
+
+  openDashboard(row: SharedDashboard): void {
+    this.snackBar.open(`Abrindo dashboard "${row.dashboardName}"...`, 'OK', { duration: 3000 });
+  }
+
+  editDashboard(row: SharedDashboard): void {
+    this.snackBar.open(`Editando "${row.dashboardName}"...`, 'OK', { duration: 3000 });
+  }
+
+  removeWidget(row: SharedDashboard): void {
+    this.snackBar.open(`Widget removido de "${row.dashboardName}".`, 'OK', { duration: 3000 });
   }
 
   exportToCSV(): void {

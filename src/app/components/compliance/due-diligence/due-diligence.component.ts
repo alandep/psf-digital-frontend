@@ -25,6 +25,7 @@ import { ExportService } from '../../../../services/exportService';
 import { Screening, ScreeningStatus, DueDiligenceMetrics } from '../../../../types/due-diligence';
 import { NovaScreeningDialogComponent } from '../dialogs/nova-screening-dialog.component';
 import { ResolucaoDialogComponent } from '../dialogs/resolucao-dialog.component';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-due-diligence',
@@ -47,7 +48,8 @@ import { ResolucaoDialogComponent } from '../dialogs/resolucao-dialog.component'
     MatProgressBarModule,
     MatTooltipModule,
     MatBadgeModule,
-    MatDialogModule
+    MatDialogModule,
+    HasPermissionDirective
   ],
   templateUrl: './due-diligence.component.html',
   styleUrls: ['./due-diligence.component.scss']

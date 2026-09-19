@@ -1,0 +1,50 @@
+<app-public-header></app-public-header>
+
+<section class="intel-hero">
+  <div class="intel-hero-inner">
+    <span class="eyebrow">EIP INTELLIGENCE</span>
+    <h1>EIP Intelligence — Inteligência para quem opera o comércio exterior.</h1>
+    <p>Câmbio, alertas, notícias, oportunidades e regulação, com análise EIP AI claramente sinalizada.</p>
+  </div>
+</section>
+
+<section class="feed">
+  <div class="chips">
+    <button
+      *ngFor="let c of chips; trackBy: trackByKey"
+      class="chip"
+      [class.active]="activeFilter === c.key"
+      (click)="setFilter(c.key)">
+      {{ c.label }}
+    </button>
+  </div>
+
+  <div class="feed-loading" *ngIf="isLoading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div class="empty" *ngIf="!isLoading && filteredCards.length === 0">
+    <mat-icon>search_off</mat-icon>
+    <p>Nenhum item para este filtro.</p>
+  </div>
+
+  <div class="grid" *ngIf="!isLoading">
+    <article class="card" *ngFor="let c of filteredCards; trackBy: trackById" (click)="open(c.slug)">
+      <div class="card-top">
+        <span class="type-badge">{{ c.typeLabel }}</span>
+        <span class="impact-chip" [style.color]="c.impactColor" [style.background]="c.impactBg">
+          {{ c.impactIcon }} {{ c.impactLabel }}
+        </span>
+      </div>
+      <h3>{{ c.title }}</h3>
+      <p>{{ c.summary }}</p>
+      <div class="card-foot">
+        <span class="src">{{ c.sourceName }}</span>
+        <span class="date">{{ c.publishedAt | date:'dd/MM HH:mm' }}</span>
+      </div>
+      <span class="ai-tag" *ngIf="c.aiGenerated">Análise EIP AI</span>
+    </article>
+  </div>
+</section>
+
+<app-public-footer></app-public-footer>

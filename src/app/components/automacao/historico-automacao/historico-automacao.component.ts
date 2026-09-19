@@ -20,6 +20,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 // Services and Types
 import { HistoricoAutomacaoMockService } from '../../../../services/historicoAutomacaoMockService';
 import { ExecucaoRegra, HistoricoMetrics, ExecucaoStatus } from '../../../../types/automacao-historico';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-historico-automacao',
@@ -38,7 +39,8 @@ import { ExecucaoRegra, HistoricoMetrics, ExecucaoStatus } from '../../../../typ
     MatSelectModule,
     MatSnackBarModule,
     MatProgressBarModule,
-    MatTooltipModule
+    MatTooltipModule,
+    HasPermissionDirective
   ],
   templateUrl: './historico-automacao.component.html',
   styleUrls: ['./historico-automacao.component.scss']

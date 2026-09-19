@@ -17,15 +17,19 @@ import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatBadgeModule } from '@angular/material/badge';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { AiOperationsMockService } from '../../../../services/aiOperationsMockService';
 import { ExportService } from '../../../../services/exportService';
 import { AiAgent, AiOperationsMetrics, AiErrorEntry } from '../../../../types/ai-operations';
+import { AgentDetailDialogComponent } from './agent-detail-dialog/agent-detail-dialog.component';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-ai-operations-dashboard',
   standalone: true,
   imports: [
+    HasPermissionDirective,
     CommonModule,
     ReactiveFormsModule,
     MatCardModule,
@@ -41,7 +45,8 @@ import { AiAgent, AiOperationsMetrics, AiErrorEntry } from '../../../../types/ai
     MatSnackBarModule,
     MatProgressBarModule,
     MatTooltipModule,
-    MatBadgeModule
+    MatBadgeModule,
+    MatDialogModule
   ],
   templateUrl: './ai-operations-dashboard.component.html',
   styleUrls: ['./ai-operations-dashboard.component.scss']
@@ -52,6 +57,7 @@ export class AiOperationsDashboardComponent implements OnInit, OnDestroy {
   private exportService = inject(ExportService);
   private formBuilder = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
 
   private destroy$ = new Subject<void>();
 
@@ -61,12 +67,9 @@ export class AiOperationsDashboardComponent implements OnInit, OnDestroy {
   agents: AiAgent[] = [];
   dataSource = new MatTableDataSource<AiAgent>([]);
   metrics: AiOperationsMetrics | null = null;
-  selectedAgent: AiAgent | null = null;
-  agentErrors: AiErrorEntry[] = [];
   lowAccuracyAgents: AiAgent[] = [];
 
   isLoading = false;
-  isDetailOpen = false;
   filterForm!: FormGroup;
 
   modules: string[] = [];
@@ -155,17 +158,18 @@ export class AiOperationsDashboardComponent implements OnInit, OnDestroy {
   }
 
   selectAgent(agent: AiAgent): void {
-    this.selectedAgent = agent;
-    this.isDetailOpen = true;
     this.aiOpsService.getAgentErrors(agent.id)
       .pipe(takeUntil(this.destroy$))
-      .subscribe(errors => this.agentErrors = errors);
-  }
-
-  closeDetail(): void {
-    this.isDetailOpen = false;
-    this.selectedAgent = null;
-    this.agentErrors = [];
+      .subscribe((errors: AiErrorEntry[]) => {
+        this.dialog.open(AgentDetailDialogComponent, {
+          width: '760px',
+          maxWidth: '95vw',
+          maxHeight: '90vh',
+          autoFocus: false,
+          panelClass: 'agent-detail-panel',
+          data: { agent, errors }
+        });
+      });
   }
 
   exportCSV(): void {

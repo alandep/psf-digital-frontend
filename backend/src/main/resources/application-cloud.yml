@@ -1,0 +1,13 @@
+# Cloud Run profile. Minimal overrides; secrets/URLs are injected via env vars.
+# Logging: Cloud Run captures stdout; use a JSON-structured pattern/encoder here
+# (e.g. logstash/ECS encoder) when structured logs are required by the platform.
+spring:
+  datasource:
+    hikari:
+      # Keep the pool small; Cloud Run scales horizontally with many instances,
+      # so per-instance connections must respect the database connection budget.
+      maximum-pool-size: ${DB_POOL_SIZE:5}
+
+logging:
+  level:
+    com.eip: INFO

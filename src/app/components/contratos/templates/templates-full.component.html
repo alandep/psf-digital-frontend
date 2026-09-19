@@ -11,7 +11,7 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button (click)="openNewTemplate()">
+        <button *appHasPermission="'contratos/templates:create'" mat-raised-button (click)="openNewTemplate()">
           <mat-icon>add</mat-icon>
           Novo Template
         </button>
@@ -136,7 +136,7 @@
           <span>Templates de Contratos</span>
           <span class="count-chip">{{ totalTemplates }} templates</span>
         </div>
-        <button mat-raised-button color="primary" (click)="openNewTemplate()">
+        <button *appHasPermission="'contratos/templates:create'" mat-raised-button color="primary" (click)="openNewTemplate()">
           <mat-icon>add</mat-icon>
           Novo Template
         </button>
@@ -272,7 +272,7 @@
         <mat-icon>content_copy</mat-icon>
         <h3>Nenhum template encontrado</h3>
         <p>Crie seu primeiro template ou ajuste os filtros.</p>
-        <button mat-raised-button color="primary" (click)="openNewTemplate()">
+        <button *appHasPermission="'contratos/templates:create'" mat-raised-button color="primary" (click)="openNewTemplate()">
           <mat-icon>add</mat-icon>
           Criar Primeiro Template
         </button>

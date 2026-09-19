@@ -1,0 +1,67 @@
+<div class="auth-container">
+  <mat-card class="auth-card">
+    <div class="brand-header">
+      <div class="brand-badge">
+        <mat-icon>verified_user</mat-icon>
+      </div>
+      <h1 class="brand-title">Verificação em duas etapas</h1>
+      <p class="brand-subtitle">Abra seu aplicativo autenticador e informe o código de 6 dígitos.</p>
+    </div>
+
+    <mat-card-content class="auth-content">
+      <div *ngIf="errorMessage" class="auth-alert" role="alert">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ errorMessage }}</span>
+      </div>
+
+      <!-- Authenticator code -->
+      <form *ngIf="!useRecovery" [formGroup]="codeForm" (ngSubmit)="onVerify()">
+        <mat-form-field appearance="outline" class="full-width auth-code-field">
+          <mat-label>Código de verificação</mat-label>
+          <input matInput formControlName="code" placeholder="000000" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+          <mat-icon matPrefix>pin</mat-icon>
+          <mat-error *ngIf="codeForm.get('code')?.hasError('required')">Informe o código</mat-error>
+          <mat-error *ngIf="codeForm.get('code')?.hasError('minlength') || codeForm.get('code')?.hasError('maxlength')">
+            O código deve ter 6 dígitos
+          </mat-error>
+        </mat-form-field>
+
+        <div class="auth-actions">
+          <button mat-flat-button color="primary" type="submit" class="btn-primary full-width" [disabled]="isLoading">
+            <mat-spinner *ngIf="isLoading" diameter="20" class="btn-spinner"></mat-spinner>
+            <span>{{ isLoading ? 'Verificando...' : 'Verificar' }}</span>
+          </button>
+        </div>
+
+        <div class="auth-link-row">
+          <a href="javascript:void(0)" (click)="toggleRecovery()">Usar código de recuperação</a>
+        </div>
+      </form>
+
+      <!-- Recovery code -->
+      <form *ngIf="useRecovery" [formGroup]="recoveryForm" (ngSubmit)="onVerifyRecovery()">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Código de recuperação</mat-label>
+          <input matInput formControlName="recoveryCode" placeholder="XXXX-XXXX" autocomplete="off">
+          <mat-icon matPrefix>vpn_key</mat-icon>
+          <mat-error *ngIf="recoveryForm.get('recoveryCode')?.hasError('required')">Informe o código de recuperação</mat-error>
+        </mat-form-field>
+
+        <div class="auth-actions">
+          <button mat-flat-button color="primary" type="submit" class="btn-primary full-width" [disabled]="isLoading">
+            <mat-spinner *ngIf="isLoading" diameter="20" class="btn-spinner"></mat-spinner>
+            <span>{{ isLoading ? 'Verificando...' : 'Verificar' }}</span>
+          </button>
+        </div>
+
+        <div class="auth-link-row">
+          <a href="javascript:void(0)" (click)="toggleRecovery()">Usar aplicativo autenticador</a>
+        </div>
+      </form>
+
+      <div class="auth-link-row">
+        <a routerLink="/login">Voltar ao login</a>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

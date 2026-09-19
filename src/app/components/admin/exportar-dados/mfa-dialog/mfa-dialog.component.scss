@@ -1,0 +1,31 @@
+.mfa-dialog {
+  display: flex;
+  flex-direction: column;
+
+  .mfa-header {
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+    color: #fff;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    mat-icon { font-size: 28px; width: 28px; height: 28px; }
+    h2 { margin: 0; font-size: 1.25rem; font-weight: 500; }
+  }
+
+  .mfa-body {
+    padding: 24px 24px 0;
+
+    .lead { margin: 0 0 16px; color: #444; font-weight: 500; }
+    .full { width: 100%; }
+    .hint { margin: 0; font-size: 0.8rem; color: #999; }
+  }
+
+  .mfa-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px 20px;
+  }
+}

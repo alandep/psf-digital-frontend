@@ -21,6 +21,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 // Services and Types
 import { AuditoriaMockService } from '../../../../services/auditoriaMockService';
 import { AuditEntry, AuditMetrics, AuditAction, AuditModule } from '../../../../types/admin-auditoria';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-auditoria',
@@ -39,7 +40,8 @@ import { AuditEntry, AuditMetrics, AuditAction, AuditModule } from '../../../../
     MatSelectModule,
     MatSnackBarModule,
     MatProgressBarModule,
-    MatTooltipModule
+    MatTooltipModule,
+    HasPermissionDirective
   ],
   templateUrl: './auditoria.component.html',
   styleUrls: ['./auditoria.component.scss'],

@@ -1,0 +1,64 @@
+<app-public-header></app-public-header>
+
+<main class="contact">
+  <section class="hero">
+    <div class="hero-inner">
+      <h1>Fale com o EIP</h1>
+      <p>Envie sua mensagem e nossa equipe retornará o contato.</p>
+    </div>
+  </section>
+
+  <section class="body">
+    <div class="body-inner">
+      <form class="form-card" [formGroup]="form" (ngSubmit)="submit()">
+        <mat-form-field appearance="outline">
+          <mat-label>Nome</mat-label>
+          <input matInput formControlName="nome" />
+          <mat-error *ngIf="form.get('nome')?.hasError('required')">Informe seu nome.</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>E-mail corporativo</mat-label>
+          <input matInput type="email" formControlName="email" />
+          <mat-error *ngIf="form.get('email')?.hasError('required')">Informe seu e-mail.</mat-error>
+          <mat-error *ngIf="form.get('email')?.hasError('email')">E-mail inválido.</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Empresa</mat-label>
+          <input matInput formControlName="empresa" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Assunto</mat-label>
+          <mat-select formControlName="assunto">
+            <mat-option *ngFor="let s of subjects" [value]="s">{{ s }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('assunto')?.hasError('required')">Selecione um assunto.</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Mensagem</mat-label>
+          <textarea matInput rows="5" formControlName="mensagem"></textarea>
+          <mat-error *ngIf="form.get('mensagem')?.hasError('required')">Escreva sua mensagem.</mat-error>
+        </mat-form-field>
+
+        <button mat-flat-button color="primary" type="submit">Enviar mensagem</button>
+      </form>
+
+      <aside class="info-card">
+        <h2>Canais de atendimento</h2>
+        <div class="channel" *ngFor="let c of channels; trackBy: trackById">
+          <div class="channel-icon"><mat-icon>support_agent</mat-icon></div>
+          <div class="channel-body">
+            <span class="channel-label">{{ c.label }}</span>
+            <span class="channel-value">{{ c.value }}</span>
+          </div>
+        </div>
+        <p class="note">Os canais de contato são definidos conforme configuração institucional.</p>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<app-public-footer></app-public-footer>

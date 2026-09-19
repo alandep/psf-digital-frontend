@@ -25,6 +25,7 @@ import {
   CountryBreakdown,
   ProductBreakdown
 } from '../../../../types/relatorios';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-relatorios-exportacoes',
@@ -42,7 +43,8 @@ import {
     MatInputModule,
     MatSnackBarModule,
     MatProgressBarModule,
-    MatTooltipModule
+    MatTooltipModule,
+    HasPermissionDirective
   ],
   templateUrl: './relatorios-exportacoes.component.html',
   styleUrls: ['./relatorios-exportacoes.component.scss']

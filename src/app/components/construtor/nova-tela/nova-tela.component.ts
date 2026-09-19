@@ -15,11 +15,13 @@ import { MatDividerModule } from '@angular/material/divider';
 
 import { ConstrutorTelasMockService } from '../../../../services/construtorTelasMockService';
 import { WidgetCatalogItem, ScreenWidget, LayoutType } from '../../../../types/construtor-telas';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-nova-tela',
   standalone: true,
   imports: [
+    HasPermissionDirective,
     CommonModule,
     ReactiveFormsModule,
     MatCardModule,

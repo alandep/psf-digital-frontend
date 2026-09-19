@@ -15,13 +15,13 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button (click)="openNovaLCDialog()">
+        <button mat-raised-button *appHasPermission="'financeiro/trade-finance:create'" (click)="openNovaLCDialog()">
           <mat-icon>add_card</mat-icon> Nova LC
         </button>
-        <button mat-raised-button (click)="openNovaCobrancaDialog()">
+        <button mat-raised-button *appHasPermission="'financeiro/trade-finance:create'" (click)="openNovaCobrancaDialog()">
           <mat-icon>receipt_long</mat-icon> Nova Cobrança
         </button>
-        <button mat-raised-button (click)="openNovaGarantiaDialog()">
+        <button mat-raised-button *appHasPermission="'financeiro/trade-finance:create'" (click)="openNovaGarantiaDialog()">
           <mat-icon>verified_user</mat-icon> Nova Garantia
         </button>
       </div>
@@ -132,10 +132,10 @@
       <div class="results-header">
         <h3>{{ dataSource.filteredData.length }} instrumento(s) encontrado(s)</h3>
         <div class="export-actions">
-          <button mat-button (click)="exportCSV()" matTooltip="Exportar CSV">
+          <button mat-button *appHasPermission="'financeiro/trade-finance:export'" (click)="exportCSV()" matTooltip="Exportar CSV">
             <mat-icon>download</mat-icon> CSV
           </button>
-          <button mat-button (click)="exportPDF()" matTooltip="Exportar PDF">
+          <button mat-button *appHasPermission="'financeiro/trade-finance:export'" (click)="exportPDF()" matTooltip="Exportar PDF">
             <mat-icon>picture_as_pdf</mat-icon> PDF
           </button>
         </div>

@@ -1,0 +1,91 @@
+<div class="detail-dialog">
+  <div class="dialog-hero">
+    <div class="hero-main">
+      <mat-icon class="hero-icon">directions_boat</mat-icon>
+      <div class="hero-title">
+        <h2 mat-dialog-title>{{ navio.vesselName }}</h2>
+        <p class="hero-subtitle">IMO {{ navio.imoNumber }} &mdash; {{ navio.flag }} &mdash; {{ getVesselTypeLabel(navio.vesselType) }}</p>
+        <div class="hero-chips">
+          <span class="status-badge" [ngClass]="getStatusColor(navio.status)">
+            <mat-icon class="status-icon">{{ getStatusIcon(navio.status) }}</mat-icon>
+            {{ getStatusLabel(navio.status) }}
+          </span>
+        </div>
+      </div>
+    </div>
+    <button mat-icon-button class="hero-close" mat-dialog-close matTooltip="Fechar">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="dialog-body" mat-dialog-content>
+    <mat-tab-group>
+      <mat-tab label="Especificações">
+        <div class="tab-content">
+          <div class="info-grid">
+            <div class="info-item"><span class="info-label">Proprietário</span><span class="info-value">{{ navio.owner }}</span></div>
+            <div class="info-item"><span class="info-label">Operador</span><span class="info-value">{{ navio.operator }}</span></div>
+            <div class="info-item"><span class="info-label">Ano Construção</span><span class="info-value">{{ navio.yearBuilt }}</span></div>
+            <div class="info-item"><span class="info-label">Comprimento</span><span class="info-value">{{ navio.length }}m</span></div>
+            <div class="info-item"><span class="info-label">Boca</span><span class="info-value">{{ navio.beam }}m</span></div>
+            <div class="info-item"><span class="info-label">Calado</span><span class="info-value">{{ navio.draft }}m</span></div>
+            <div class="info-item"><span class="info-label">Arqueação Bruta</span><span class="info-value">{{ formatNumber(navio.grossTonnage) }} GT</span></div>
+            <div class="info-item"><span class="info-label">Porte Bruto</span><span class="info-value">{{ formatNumber(navio.deadweight) }} DWT</span></div>
+            <div class="info-item"><span class="info-label">Capacidade</span><span class="info-value">{{ formatNumber(navio.capacity) }} {{ navio.capacityUnit }}</span></div>
+          </div>
+        </div>
+      </mat-tab>
+      <mat-tab label="Viagem Atual">
+        <div class="tab-content">
+          <div class="info-grid">
+            <div class="info-item"><span class="info-label">Viagem</span><span class="info-value">{{ navio.voyageNumber }}</span></div>
+            <div class="info-item"><span class="info-label">Rota</span><span class="info-value">{{ navio.route }}</span></div>
+            <div class="info-item"><span class="info-label">Velocidade</span><span class="info-value">{{ navio.speed }} nós</span></div>
+            <div class="info-item"><span class="info-label">ETA</span><span class="info-value">{{ formatDate(navio.eta) }}</span></div>
+            <div class="info-item"><span class="info-label">ETA Original</span><span class="info-value">{{ formatDate(navio.originalEta) }}</span></div>
+            <div class="info-item"><span class="info-label">ETD</span><span class="info-value">{{ formatDate(navio.etd) }}</span></div>
+          </div>
+        </div>
+      </mat-tab>
+      <mat-tab label="Histórico de Escalas">
+        <div class="tab-content">
+          <div class="port-calls-list">
+            @for (call of navio.portCalls; track call.port) {
+              <div class="port-call-item">
+                <div class="port-call-header">
+                  <mat-icon>location_on</mat-icon>
+                  <span class="port-name">{{ call.port }}, {{ call.country }}</span>
+                  <span class="port-purpose">{{ call.purpose }}</span>
+                </div>
+                <div class="port-call-details">
+                  <span>Chegada: {{ formatDate(call.arrivalDate) }}</span>
+                  <span>Saída: {{ formatDate(call.departureDate) }}</span>
+                  <span>Operação: {{ call.cargoOps }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </mat-tab>
+      <mat-tab label="Embarques Vinculados">
+        <div class="tab-content">
+          @if (navio.linkedShipments.length > 0) {
+            <div class="shipments-list">
+              @for (shipment of navio.linkedShipments; track shipment) {
+                <div class="shipment-item">
+                  <mat-icon>local_shipping</mat-icon>
+                  <span>{{ shipment }}</span>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="empty-state">
+              <mat-icon>inbox</mat-icon>
+              <p>Nenhum embarque vinculado</p>
+            </div>
+          }
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+</div>

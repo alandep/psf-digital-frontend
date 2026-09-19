@@ -23,6 +23,7 @@ import { CrmMockService } from '../../../../services/crmMockService';
 import { ExportService } from '../../../../services/exportService';
 import { Opportunity, OpportunityStage } from '../../../../types/crm';
 import { NovaOportunidadeDialogComponent } from '../dialogs/nova-oportunidade-dialog.component';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-oportunidades',
@@ -44,7 +45,8 @@ import { NovaOportunidadeDialogComponent } from '../dialogs/nova-oportunidade-di
     MatProgressBarModule,
     MatTooltipModule,
     MatDialogModule,
-    MatMenuModule
+    MatMenuModule,
+    HasPermissionDirective
   ],
   templateUrl: './oportunidades.component.html',
   styleUrls: ['./oportunidades.component.scss']

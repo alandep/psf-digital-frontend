@@ -637,8 +637,8 @@ Seja mais específico ou use uma das sugestões acima!`;
         const element = this.messagesContainer.nativeElement;
         element.scrollTop = element.scrollHeight;
       }
-    } catch (err) {
-      console.error('Error scrolling to bottom:', err);
+    } catch {
+      /* ignore scroll errors */
     }
   }
 

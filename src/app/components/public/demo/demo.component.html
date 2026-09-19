@@ -1,0 +1,61 @@
+<app-public-header></app-public-header>
+
+<!-- INFO STRIP (preview do banner demonstrativo) -->
+<section class="demo-strip" role="status">
+  <mat-icon>science</mat-icon>
+  <span class="strip-text">
+    Você está conhecendo o EIP em um ambiente demonstrativo. Todos os dados são fictícios.
+  </span>
+  <a mat-flat-button class="strip-btn" routerLink="/signup">Criar minha empresa</a>
+</section>
+
+<!-- HERO / INTRO -->
+<section class="demo-hero">
+  <div class="hero-inner">
+    <mat-card class="intro-card">
+      <span class="eyebrow">DEMONSTRAÇÃO</span>
+      <h1>Conheça o EIP</h1>
+      <p>Explore uma empresa fictícia e veja como uma operação de exportação funciona.</p>
+
+      <div class="demo-facts">
+        <div class="fact">
+          <span class="fact-label">Empresa demonstrativa</span>
+          <strong>Brasil Agro Export S.A.</strong>
+        </div>
+        <div class="fact">
+          <span class="fact-label">Dados</span>
+          <strong>100% fictícios</strong>
+        </div>
+      </div>
+
+      <button mat-flat-button color="primary" class="enter-btn" (click)="enterDemo()">
+        <mat-icon>login</mat-icon>
+        Entrar na demonstração
+      </button>
+    </mat-card>
+  </div>
+</section>
+
+<!-- SAFETY NOTES -->
+<section class="demo-safety">
+  <div class="section-head">
+    <h2>Ambiente seguro e isolado</h2>
+    <p>A demonstração roda em um espaço separado, sem impacto em dados reais.</p>
+  </div>
+  <div class="safety-grid">
+    <div class="safety-item" *ngFor="let n of safetyNotes; trackBy: trackByNote">
+      <mat-icon>{{ n.icon }}</mat-icon>
+      <span>{{ n.label }}</span>
+    </div>
+  </div>
+</section>
+
+<!-- CONVERSION BAND -->
+<section class="demo-cta">
+  <div class="cta-inner">
+    <h2>Pronto para experimentar com sua própria operação?</h2>
+    <a mat-flat-button class="cta-btn" routerLink="/signup">Experimente grátis por 14 dias</a>
+  </div>
+</section>
+
+<app-public-footer></app-public-footer>

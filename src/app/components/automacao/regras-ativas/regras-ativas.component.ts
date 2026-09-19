@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 
 // Angular Material
@@ -21,6 +22,7 @@ import { MatChipsModule } from '@angular/material/chips';
 // Services and Types
 import { RegrasAtivasMockService } from '../../../../services/regrasAtivasMockService';
 import { RegraAutomacao, RegrasMetrics, RegraCategoria, RegraTrigger, RegraStatus } from '../../../../types/automacao-regras';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-regras-ativas',
@@ -40,7 +42,8 @@ import { RegraAutomacao, RegrasMetrics, RegraCategoria, RegraTrigger, RegraStatu
     MatSnackBarModule,
     MatProgressBarModule,
     MatTooltipModule,
-    MatChipsModule
+    MatChipsModule,
+    HasPermissionDirective
   ],
   templateUrl: './regras-ativas.component.html',
   styleUrls: ['./regras-ativas.component.scss']
@@ -50,6 +53,7 @@ export class RegrasAtivasComponent implements OnInit, OnDestroy {
   private regrasService = inject(RegrasAtivasMockService);
   private fb = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
+  private router = inject(Router);
   private destroy$ = new Subject<void>();
 
   @ViewChild('regrasPaginator') regrasPaginator!: MatPaginator;
@@ -158,7 +162,7 @@ export class RegrasAtivasComponent implements OnInit, OnDestroy {
   }
 
   novaRegra(): void {
-    this.snackBar.open('Abrindo formulário de nova regra...', 'OK', { duration: 3000 });
+    this.router.navigate(['/automacao/criar-regra']);
   }
 
   toggleRegra(regra: RegraAutomacao): void {

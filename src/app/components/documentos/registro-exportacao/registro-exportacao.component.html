@@ -15,10 +15,10 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button color="primary" (click)="importRE()">
+        <button mat-raised-button color="primary" *appHasPermission="'documentos/re:create'" (click)="importRE()">
           <mat-icon>upload_file</mat-icon> Importar RE
         </button>
-        <button mat-raised-button color="primary" (click)="exportPDF()">
+        <button mat-raised-button color="primary" *appHasPermission="'documentos/re:export'" (click)="exportPDF()">
           <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
         </button>
       </div>
@@ -263,7 +263,7 @@
               <button mat-menu-item (click)="selectRE(re)">
                 <mat-icon>fact_check</mat-icon> Validar
               </button>
-              <button mat-menu-item (click)="exportPDF()">
+              <button mat-menu-item *appHasPermission="'documentos/re:export'" (click)="exportPDF()">
                 <mat-icon>picture_as_pdf</mat-icon> Exportar
               </button>
             </mat-menu>

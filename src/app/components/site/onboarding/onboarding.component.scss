@@ -1,0 +1,249 @@
+:host { display: block; }
+
+.onboarding {
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  color: #1f2937;
+  background: #f8fafc;
+  min-height: 100vh;
+  padding-bottom: 56px;
+}
+
+/* Hero Portos */
+.ob-hero {
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  box-shadow: 0 8px 32px rgba(25, 118, 210, 0.3);
+  color: #fff;
+  padding: 48px 24px 40px;
+  text-align: center;
+}
+.ob-hero h1 { font-size: 2.2rem; margin: 0 0 8px; }
+.ob-hero p { opacity: 0.95; margin: 0; font-size: 1.05rem; }
+
+/* Copilot */
+.ob-copilot {
+  max-width: 1120px;
+  margin: -22px auto 0;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.copilot-avatar {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1976d2, #0d47a1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(25, 118, 210, 0.35);
+}
+.copilot-avatar mat-icon { font-size: 28px; width: 28px; height: 28px; }
+
+.copilot-msg {
+  background: #fff;
+  border: 1px solid #e3ecf7;
+  border-radius: 14px;
+  padding: 12px 18px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.copilot-msg strong { color: #1565c0; font-size: 0.9rem; }
+.copilot-msg span { font-size: 0.95rem; line-height: 1.4; }
+
+/* Progresso */
+.ob-progress {
+  max-width: 1120px;
+  margin: 24px auto 0;
+  padding: 0 20px;
+}
+.progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+.progress-head span:first-child { font-weight: 600; color: #1565c0; }
+.progress-count { font-size: 0.85rem; color: #64748b; }
+
+/* Layout */
+.ob-layout {
+  max-width: 1120px;
+  margin: 24px auto 0;
+  padding: 0 20px;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* Steps card */
+.steps-card { padding: 18px 14px; border-radius: 16px; }
+.steps-title { margin: 0 0 12px; color: #1565c0; font-size: 1.05rem; padding: 0 6px; }
+.steps-list { list-style: none; margin: 0; padding: 0; }
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.step-item:hover { background: #f1f5fb; }
+.step-item.current { background: #e8f1fc; }
+
+.step-marker { display: flex; align-items: center; }
+.step-marker mat-icon { color: #b0bec5; }
+.step-item.current .step-marker mat-icon { color: #1976d2; }
+.step-item.done .step-marker mat-icon { color: #2e7d32; }
+.step-text { display: flex; flex-direction: column; }
+.step-index { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.4px; color: #94a3b8; }
+.step-label { font-size: 0.98rem; font-weight: 500; }
+.step-item.done .step-label { color: #2e7d32; }
+
+.skip-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 6px 8px;
+  color: #64748b;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.skip-all:hover { color: #1565c0; text-decoration: underline; }
+.skip-all mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+/* Content */
+.content-card { padding: 24px; border-radius: 16px; }
+.content-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.content-head h2 { margin: 0; font-size: 1.25rem; color: #1f2937; }
+.content-icon {
+  color: #1976d2;
+  font-size: 30px;
+  width: 30px;
+  height: 30px;
+}
+.panel-lead { color: #475569; margin: 0 0 18px; }
+
+/* Summary card (etapa 1) */
+.summary-card {
+  border: 1px solid #e3ecf7;
+  border-radius: 12px;
+  background: #f8fbff;
+  padding: 6px 16px;
+}
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid #eef2f7;
+}
+.summary-row:last-child { border-bottom: none; }
+.summary-key { color: #64748b; font-size: 0.9rem; }
+.summary-val { font-weight: 600; text-align: right; }
+
+/* Forms */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px 18px;
+}
+.form-grid mat-form-field { width: 100%; }
+
+.mini-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.mini-form mat-form-field { flex: 1 1 200px; }
+.add-btn { height: 48px; white-space: nowrap; }
+
+.chips { margin: 8px 0 4px; }
+.empty-hint { color: #94a3b8; font-size: 0.9rem; margin: 8px 0; font-style: italic; }
+
+/* Nota gratuita (usuários) */
+.free-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #e8f5e9;
+  border: 1px solid #a5d6a7;
+  color: #2e7d32;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+}
+.free-note mat-icon { color: #2e7d32; }
+
+/* CTA (etapa 6) */
+.cta-card {
+  text-align: center;
+  border: 1px dashed #90caf9;
+  background: #f5faff;
+  border-radius: 14px;
+  padding: 32px 20px;
+  margin-bottom: 8px;
+}
+.cta-icon {
+  font-size: 46px;
+  width: 46px;
+  height: 46px;
+  color: #1976d2;
+  margin-bottom: 8px;
+}
+.cta-card h3 { margin: 0 0 6px; color: #1565c0; }
+.cta-card p { margin: 0 0 18px; color: #475569; }
+
+/* Actions */
+.step-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+/* Finish card */
+.finish-card {
+  margin-top: 20px;
+  padding: 20px 24px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  border: 1px solid #e3ecf7;
+}
+.finish-card.ready {
+  border-color: #a5d6a7;
+  background: #f4fbf5;
+}
+.finish-text { display: flex; align-items: center; gap: 10px; color: #475569; }
+.finish-card.ready .finish-text { color: #2e7d32; }
+.finish-text mat-icon { color: #1976d2; }
+.finish-card.ready .finish-text mat-icon { color: #2e7d32; }
+.go-btn { font-weight: 700; letter-spacing: 0.4px; }
+
+/* Responsivo */
+@media (max-width: 900px) {
+  .ob-layout { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .mini-form { flex-direction: column; align-items: stretch; }
+  .mini-form mat-form-field { flex: 1 1 auto; }
+  .add-btn { width: 100%; }
+}
+
+@media (max-width: 600px) {
+  .ob-hero h1 { font-size: 1.7rem; }
+  .ob-copilot { flex-direction: column; align-items: flex-start; }
+  .finish-card { flex-direction: column; align-items: stretch; }
+  .go-btn { width: 100%; }
+}

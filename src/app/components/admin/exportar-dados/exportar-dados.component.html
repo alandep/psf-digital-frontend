@@ -1,0 +1,75 @@
+<div class="exportar-container">
+
+  <!-- Header Premium (identidade Portos) -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">cloud_download</mat-icon>
+        <div class="title-content">
+          <h1>Exportar Dados da Empresa</h1>
+          <p class="subtitle">Gere um pacote completo com todos os dados da sua empresa</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card explicativo -->
+  <mat-card class="info-card intro-card">
+    <mat-card-content>
+      <h2 class="lead-title"><mat-icon>lock</mat-icon> Seus dados são seus. Sempre.</h2>
+      <p class="security-note">
+        O pacote poderá conter informações confidenciais da sua empresa. Por segurança,
+        somente administradores autorizados podem solicitar a exportação.
+      </p>
+
+      <mat-divider></mat-divider>
+
+      <p class="items-title">O pacote inclui:</p>
+      <div class="items-grid">
+        <span class="item-chip" *ngFor="let item of packageItems">
+          <mat-icon>folder_zip</mat-icon> {{ item }}
+        </span>
+      </div>
+
+      <div class="generate-row">
+        <button mat-raised-button color="primary" class="generate-btn"
+                [disabled]="processing" (click)="gerarPacote()">
+          <mat-icon>inventory_2</mat-icon> GERAR PACOTE DE DADOS
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Status / timeline do job -->
+  <mat-card class="info-card status-card" *ngIf="job">
+    <mat-card-header>
+      <mat-card-title><mat-icon>timeline</mat-icon> Status da exportação</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="job-meta">
+        <span><strong>ID:</strong> {{ job.id }}</span>
+        <span><strong>Solicitado por:</strong> {{ job.requestedBy }}</span>
+        <span><strong>Em:</strong> {{ job.requestedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+      </div>
+
+      <div class="stepper">
+        <div class="step" *ngFor="let s of steps"
+             [class.done]="isStepDone(s)"
+             [class.active]="isStepActive(s)">
+          <div class="step-icon"><mat-icon>{{ s.icon }}</mat-icon></div>
+          <div class="step-label">{{ s.label }}</div>
+        </div>
+      </div>
+
+      <mat-progress-bar *ngIf="processing" mode="indeterminate" class="job-progress"></mat-progress-bar>
+
+      <div class="ready-box" *ngIf="job.status === 'READY'">
+        <button mat-raised-button color="primary" (click)="baixarPacote()">
+          <mat-icon>download</mat-icon> Baixar pacote (eip-export.zip)
+        </button>
+        <span class="expires-note"><mat-icon>schedule</mat-icon> Expira em 15 minutos</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+</div>

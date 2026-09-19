@@ -216,8 +216,8 @@ export class AiCopilotSimpleComponent implements OnInit, AfterViewInit {
       if (element) {
         element.scrollTop = element.scrollHeight;
       }
-    } catch (err) {
-      console.error('Error scrolling to bottom:', err);
+    } catch {
+      /* ignore scroll errors */
     }
   }
 

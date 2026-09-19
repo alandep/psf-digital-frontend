@@ -39,6 +39,7 @@ import {
   CambioMetrics,
   FinancialKPIs
 } from '../../../../types/cambio';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-cambio',
@@ -65,7 +66,8 @@ import {
     MatDividerModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatDialogModule
+    MatDialogModule,
+    HasPermissionDirective
   ],
   templateUrl: './cambio.component.html',
   styleUrls: ['./cambio.component.scss']

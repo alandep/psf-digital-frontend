@@ -1,44 +1,37 @@
 <div class="embarque-detalhes-container" *ngIf="!loading && embarque">
-  <!-- Header da página -->
+  <!-- Header Premium (identidade Portos) -->
   <div class="page-header">
-    <div class="d-flex justify-content-between align-items-center">
-      <div>
-        <div class="breadcrumb-nav">
-          <button class="btn btn-link p-0" (click)="goBack()">
-            <i class="fas fa-arrow-left"></i>
-            Voltar aos Embarques
-          </button>
+    <div class="header-main">
+      <div class="title-section">
+        <button mat-icon-button class="back-btn" (click)="goBack()" matTooltip="Voltar aos Embarques">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <mat-icon class="header-icon">directions_boat</mat-icon>
+        <div class="title-content">
+          <h1>{{ embarque.shipment_number }}</h1>
+          <p class="subtitle">
+            {{ embarque.commodity }} - {{ formatQuantity(embarque.quantity, embarque.unit) }}
+          </p>
         </div>
-        <h2 class="page-title">
-          <i class="fas fa-ship"></i>
-          {{ embarque.shipment_number }}
-        </h2>
-        <p class="page-subtitle">
-          {{ embarque.commodity }} - {{ formatQuantity(embarque.quantity, embarque.unit) }}
-        </p>
       </div>
       <div class="header-actions">
-        <button 
-          type="button" 
-          class="btn btn-outline-secondary me-2"
-          (click)="refreshData()">
-          <i class="fas fa-sync-alt"></i>
-          Atualizar
+        <button mat-raised-button color="primary" (click)="refreshData()" matTooltip="Atualizar dados">
+          <mat-icon>sync</mat-icon> Atualizar
         </button>
-        <button 
-          type="button" 
-          class="btn btn-outline-info me-2"
-          (click)="openTracking()"
-          [disabled]="!embarque.tracking_url">
-          <i class="fas fa-map-marked-alt"></i>
-          Tracking
+        <button mat-raised-button color="primary" (click)="openTracking()" [disabled]="!embarque.tracking_url" matTooltip="Rastreamento">
+          <mat-icon>map</mat-icon> Tracking
         </button>
-        <button 
-          type="button" 
-          class="btn btn-primary"
-          (click)="editEmbarque()">
-          <i class="fas fa-edit"></i>
-          Editar
+        <button mat-raised-button color="primary" (click)="generateDocuments()" matTooltip="Gerar documentos">
+          <mat-icon>description</mat-icon> Documentos
+        </button>
+        <button mat-raised-button color="primary" (click)="sendDUE()" matTooltip="Enviar DU-E">
+          <mat-icon>send</mat-icon> DU-E
+        </button>
+        <button mat-raised-button color="primary" (click)="downloadBL()" matTooltip="Download B/L">
+          <mat-icon>file_download</mat-icon> B/L
+        </button>
+        <button mat-raised-button color="primary" (click)="editEmbarque()" matTooltip="Editar embarque">
+          <mat-icon>edit</mat-icon> Editar
         </button>
       </div>
     </div>

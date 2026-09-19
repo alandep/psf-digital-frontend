@@ -1,34 +1,23 @@
 <div class="embarque-lista-container">
-  <!-- Header da página -->
+  <!-- Header Premium (identidade Portos) -->
   <div class="page-header">
-    <div class="header-content">
-      <div class="header-info">
-        <h1>
-          <mat-icon>local_shipping</mat-icon>
-          Embarques
-        </h1>
-        <p>Gerencie todo o ciclo de embarques de exportação</p>
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">local_shipping</mat-icon>
+        <div class="title-content">
+          <h1>Embarques</h1>
+          <p class="subtitle">Gerencie todo o ciclo de embarques de exportação</p>
+        </div>
       </div>
       <div class="header-actions">
-        <button 
-          mat-button
-          (click)="refreshData()"
-          [disabled]="loading">
-          <mat-icon>refresh</mat-icon>
-          Atualizar
+        <button mat-raised-button color="primary" (click)="refreshData()" [disabled]="loading">
+          <mat-icon>refresh</mat-icon> Atualizar
         </button>
-        <button 
-          mat-button
-          (click)="exportToExcel()">
-          <mat-icon>file_download</mat-icon>
-          Exportar
+        <button mat-raised-button color="primary" *appHasPermission="'logistica/embarque:export'" (click)="exportToExcel()">
+          <mat-icon>file_download</mat-icon> Exportar
         </button>
-        <button 
-          mat-raised-button
-          color="primary"
-          (click)="createEmbarque()">
-          <mat-icon>add</mat-icon>
-          Novo Embarque
+        <button mat-raised-button color="primary" *appHasPermission="'logistica/embarque:create'" (click)="createEmbarque()">
+          <mat-icon>add</mat-icon> Novo Embarque
         </button>
       </div>
     </div>
@@ -101,18 +90,22 @@
 
           <mat-form-field appearance="outline">
             <mat-label>Data Início</mat-label>
-            <input 
+            <input
               matInput
-              type="date"
+              [matDatepicker]="startPicker"
               formControlName="date_range_start">
+            <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+            <mat-datepicker #startPicker></mat-datepicker>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
             <mat-label>Data Fim</mat-label>
-            <input 
+            <input
               matInput
-              type="date"
+              [matDatepicker]="endPicker"
               formControlName="date_range_end">
+            <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
+            <mat-datepicker #endPicker></mat-datepicker>
           </mat-form-field>
         </div>
 
@@ -735,7 +728,7 @@
                     <span>Duplicar Embarque</span>
                   </button>
                   
-                  <button mat-menu-item (click)="exportEmbarqueData(embarque)">
+                  <button mat-menu-item *appHasPermission="'logistica/embarque:export'" (click)="exportEmbarqueData(embarque)">
                     <mat-icon>file_download</mat-icon>
                     <span>Exportar Dados</span>
                   </button>
@@ -779,7 +772,7 @@
             <br>Ajuste os filtros ou crie um novo embarque.
           </p>
           <div class="empty-actions">
-            <button mat-raised-button color="primary" (click)="createEmbarque()" class="empty-primary-btn">
+            <button mat-raised-button color="primary" *appHasPermission="'logistica/embarque:create'" (click)="createEmbarque()" class="empty-primary-btn">
               <mat-icon>add</mat-icon>
               Criar Novo Embarque
             </button>

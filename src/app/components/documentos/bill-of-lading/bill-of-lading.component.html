@@ -10,7 +10,7 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button (click)="openNewBLDialog()">
+        <button mat-raised-button *appHasPermission="'documentos/bill-of-lading:create'" (click)="openNewBLDialog()">
           <mat-icon>add</mat-icon> Novo BL
         </button>
       </div>
@@ -105,10 +105,10 @@
     <div class="table-header">
       <h3>Bills of Lading</h3>
       <div class="export-actions">
-        <button mat-icon-button (click)="exportCSV()" matTooltip="Exportar CSV">
+        <button mat-icon-button *appHasPermission="'documentos/bill-of-lading:export'" (click)="exportCSV()" matTooltip="Exportar CSV">
           <mat-icon>download</mat-icon>
         </button>
-        <button mat-icon-button (click)="exportPDF()" matTooltip="Exportar PDF">
+        <button mat-icon-button *appHasPermission="'documentos/bill-of-lading:export'" (click)="exportPDF()" matTooltip="Exportar PDF">
           <mat-icon>picture_as_pdf</mat-icon>
         </button>
       </div>

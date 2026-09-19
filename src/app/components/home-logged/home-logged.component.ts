@@ -11,16 +11,24 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCardModule } from '@angular/material/card';
 import { MatBadgeModule } from '@angular/material/badge';
-import { Router, NavigationEnd, RouterOutlet } from '@angular/router';
+import { Router, NavigationEnd, RouterOutlet, ActivatedRoute } from '@angular/router';
+import { GuidedTourComponent } from '../shared/guided-tour/guided-tour.component';
+import { ProductTourService } from '../../../services/productTourService';
 import { NotificationBellComponent } from '../shared/notification-bell/notification-bell.component';
 import { LoadingComponent } from '../shared/loading/loading.component';
 import { NotificationService } from '../../services/notification.service';
 import { filter } from 'rxjs/operators';
 import { AiCopilotComponent } from '../shared/ai-copilot/ai-copilot.component';
+import { LicenseBannerComponent } from '../shared/license-banner/license-banner.component';
+import { TrialBannerComponent } from '../shared/trial-banner/trial-banner.component';
+import { DemoBannerComponent } from '../shared/demo-banner/demo-banner.component';
+import { OnboardingProgressComponent } from '../shared/onboarding-progress/onboarding-progress.component';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { CambioService, ExchangeRate } from '../../services/cambio.service';
+import { AuthProfileService } from '../../../services/authProfileService';
+import { UserAvatarService } from '../../../services/userAvatarService';
 
 interface LoggedUser {
   cpf: string;
@@ -45,7 +53,12 @@ interface LoggedUser {
     MatMenuModule,
     MatBadgeModule,
     MatDividerModule,
-    AiCopilotComponent
+    AiCopilotComponent,
+    LicenseBannerComponent,
+    TrialBannerComponent,
+    DemoBannerComponent,
+    OnboardingProgressComponent,
+    GuidedTourComponent
   ],
   template: `
     <div class="app-wrapper">
@@ -78,7 +91,7 @@ interface LoggedUser {
 
         <!-- Navigation Menu -->
         <mat-nav-list class="nav-list">
-          <ng-container *ngFor="let item of menuItems">
+          <ng-container *ngFor="let item of visibleMenuItems; trackBy: trackMenuItem">
             
             <!-- Menu com submenu -->
             <ng-container *ngIf="item.items; else simpleMenuItem">
@@ -190,19 +203,31 @@ interface LoggedUser {
             </button>
 
             <!-- Profile Menu -->
-            <button mat-icon-button [matMenuTriggerFor]="userMenu">
-              <mat-icon>account_circle</mat-icon>
+            <button mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="Abrir menu do usuário">
+              <ng-container *ngIf="(avatar$ | async) as avatar; else defaultAvatar">
+                <img class="toolbar-avatar" [src]="avatar" alt="Foto do usuário">
+              </ng-container>
+              <ng-template #defaultAvatar>
+                <mat-icon>account_circle</mat-icon>
+              </ng-template>
             </button>
           </div>
         </mat-toolbar>
 
         <!-- Page Content -->
         <main class="main-content">
+          <app-license-banner></app-license-banner>
+          <app-trial-banner></app-trial-banner>
+          <app-demo-banner></app-demo-banner>
+          <app-onboarding-progress></app-onboarding-progress>
           <router-outlet></router-outlet>
         </main>
 
         <!-- AI Copilot -->
         <app-ai-copilot></app-ai-copilot>
+
+        <!-- Guided product tour overlay -->
+        <app-guided-tour></app-guided-tour>
 
       </mat-sidenav-content>
     </mat-sidenav-container>
@@ -263,6 +288,14 @@ interface LoggedUser {
       <button mat-menu-item (click)="viewProfile()">
         <mat-icon>person</mat-icon>
         <span>Meu Perfil</span>
+      </button>
+      <button mat-menu-item (click)="switchCompany()">
+        <mat-icon>swap_horiz</mat-icon>
+        <span>Trocar empresa</span>
+      </button>
+      <button mat-menu-item (click)="openSecurity()">
+        <mat-icon>security</mat-icon>
+        <span>Segurança</span>
       </button>
       <button mat-menu-item (click)="openSettings()">
         <mat-icon>settings</mat-icon>
@@ -926,6 +959,15 @@ interface LoggedUser {
         height: 14px !important;
       }
     }
+
+    .toolbar-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255, 255, 255, 0.85);
+      display: block;
+    }
   `]
 })
 export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
@@ -935,6 +977,11 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
   private notificationService = inject(NotificationService);
   private breakpointObserver = inject(BreakpointObserver);
   private cambioService = inject(CambioService);
+  private authProfileService = inject(AuthProfileService);
+  private userAvatarService = inject(UserAvatarService);
+  private activatedRoute = inject(ActivatedRoute);
+  private productTourService = inject(ProductTourService);
+  avatar$ = this.userAvatarService.avatar$;
   private destroy$ = new Subject<void>();
 
   exchangeRate$ = this.cambioService.exchangeRate$;
@@ -958,6 +1005,22 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
   ];
 
   ngOnInit(): void {
+    // Compute the visible menu now and whenever the profile changes.
+    this.recomputeVisibleMenu();
+    this.authProfileService.profile$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.recomputeVisibleMenu());
+
+    // Ensure the access profile is available on a hard refresh / direct nav.
+    if (!this.authProfileService.currentProfile) {
+      this.authProfileService.loadProfile().subscribe();
+    }
+
+    // Auto-start the guided product tour when entering via ?tour=start.
+    if (this.activatedRoute.snapshot.queryParamMap.get('tour') === 'start') {
+      this.productTourService.start();
+    }
+
     this.notificationService.showInfo('Bem-vindo à Export Intelligence Platform!');
     
     // Apply dark mode from localStorage
@@ -1029,6 +1092,14 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
       title: 'Dashboard Principal',
       icon: 'dashboard',
       route: 'dashboards/principal'
+    },
+    {
+      title: 'EIP Intelligence',
+      icon: 'insights',
+      items: [
+        { name: 'Watchlist', route: 'intelligence/watchlist', icon: 'notifications_active' },
+        { name: 'Alertas', route: 'intelligence/alertas', icon: 'campaign' }
+      ]
     },
     {
       title: 'Exportações',
@@ -1237,10 +1308,55 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
         { name: 'Usuários', route: 'admin/usuarios', icon: 'group' },
         { name: 'Empresas', route: 'admin/empresas', icon: 'business' },
         { name: 'Configurações', route: 'admin/configuracoes', icon: 'tune' },
-        { name: 'Auditoria', route: 'admin/auditoria', icon: 'history' }
+        { name: 'Auditoria', route: 'admin/auditoria', icon: 'history' },
+        { name: 'Perfis de Acesso', route: 'admin/perfis-acesso', icon: 'admin_panel_settings' },
+        { name: 'Assinatura', route: 'admin/assinatura', icon: 'credit_card' },
+        { name: 'Usuários da Equipe', route: 'admin/equipe', icon: 'group_add' },
+        { name: 'Exportar Dados', route: 'admin/exportar-dados', icon: 'cloud_download' }
+      ]
+    },
+    {
+      title: 'Super Admin',
+      icon: 'shield_person',
+      items: [
+        { name: 'Command Center SaaS', route: 'super-admin/saas', icon: 'insights' },
+        { name: 'Eventos de Produto', route: 'super-admin/eventos-produto', icon: 'timeline' },
+        { name: 'CMS Intelligence', route: 'super-admin/cms-intelligence', icon: 'article' },
+        { name: 'Publicidade', route: 'super-admin/publicidade', icon: 'ads_click' },
+        { name: 'Leads (CRM)', route: 'super-admin/leads', icon: 'contacts' },
+        { name: 'Conversão por Canal', route: 'super-admin/conversao', icon: 'conversion_path' },
+        { name: 'Conteúdo Institucional', route: 'super-admin/institucional', icon: 'corporate_fare' }
       ]
     }
   ];
+
+  // Filtered copy of menuItems honoring the current access profile, computed
+  // once when the profile loads/changes (NOT per change-detection cycle) to
+  // avoid rebuilding the array every CD which froze the UI.
+  visibleMenuItems: any[] = [];
+
+  private recomputeVisibleMenu(): void {
+    const auth = this.authProfileService;
+    const result: any[] = [];
+    for (const item of this.menuItems) {
+      if (item.items) {
+        const subitems = item.items.filter((s: any) => auth.canAccessRoute(s.route));
+        if (subitems.length > 0) {
+          result.push({ ...item, items: subitems });
+        }
+      } else if (item.route) {
+        if (auth.canAccessRoute(item.route)) {
+          result.push(item);
+        }
+      }
+    }
+    this.visibleMenuItems = result;
+  }
+
+  // trackBy keeps the *ngFor stable across change detection.
+  trackMenuItem(_index: number, item: any): string {
+    return item.route || item.title;
+  }
 
   navigateTo(route: string): void {
     const currentUrl = this.router.url;
@@ -1274,7 +1390,9 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     }
 
-    const matches = allRoutes.filter(r => r.name.toLowerCase().includes(query));
+    const matches = allRoutes
+      .filter(r => r.name.toLowerCase().includes(query))
+      .filter(r => this.authProfileService.canAccessRoute(r.route));
 
     if (matches.length === 1) {
       // Direct navigation if single match
@@ -1357,6 +1475,14 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
 
   openSettings(): void {
     this.navigateTo('admin/configuracoes');
+  }
+
+  switchCompany(): void {
+    this.router.navigate(['/select-company']);
+  }
+
+  openSecurity(): void {
+    this.navigateTo('admin/seguranca');
   }
 
   viewHelp(): void {

@@ -1,0 +1,48 @@
+<app-public-header></app-public-header>
+
+<main class="about">
+  <section class="hero">
+    <div class="hero-inner">
+      <h1>Sobre o EIP</h1>
+      <p>Uma plataforma brasileira de inteligência e gestão integrada de exportações, que conecta empresas ao comércio global por meio de tecnologia e inteligência artificial.</p>
+    </div>
+  </section>
+
+  <section class="intro">
+    <div class="intro-inner">
+      <p>
+        O EIP — Export Intelligence Platform reúne operações, documentos, logística,
+        financeiro e compliance em um único ambiente. Nosso propósito é tornar o comércio
+        exterior mais eficiente, seguro e previsível, apoiando exportadores em cada etapa
+        da jornada com dados e inteligência.
+      </p>
+    </div>
+  </section>
+
+  <section class="mv">
+    <div class="mv-inner">
+      <div class="mv-card">
+        <div class="mv-icon"><mat-icon>flag</mat-icon></div>
+        <h2>Missão</h2>
+        <p>Simplificar e integrar a operação de comércio exterior, conectando pessoas, processos, dados e inteligência para tornar as exportações mais eficientes, seguras e previsíveis.</p>
+      </div>
+      <div class="mv-card">
+        <div class="mv-icon"><mat-icon>visibility</mat-icon></div>
+        <h2>Visão</h2>
+        <p>Ser uma plataforma brasileira de referência em inteligência e gestão integrada de exportações, conectando empresas ao comércio global por meio de tecnologia e inteligência artificial.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="values">
+    <div class="values-inner">
+      <h2>Valores</h2>
+      <div class="chips">
+        <span class="chip" *ngFor="let v of values; trackBy: trackById">{{ v.label }}</span>
+      </div>
+      <p class="note">Dados institucionais (razão social, CNPJ e endereço) são publicados conforme configuração institucional.</p>
+    </div>
+  </section>
+</main>
+
+<app-public-footer></app-public-footer>

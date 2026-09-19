@@ -21,6 +21,7 @@ import {
   SanctionEntity, SanctionListType, EntityType,
   ScreeningStatus, SancoesMetrics
 } from '../../../../types/sancoes';
+import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-sancoes',
@@ -38,7 +39,8 @@ import {
     MatInputModule,
     MatSelectModule,
     MatTooltipModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    HasPermissionDirective
   ],
   templateUrl: './sancoes.component.html',
   styleUrls: ['./sancoes.component.scss']
@@ -125,15 +127,15 @@ export class SancoesComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   viewEntity(entity: SanctionEntity): void {
-    this.snackBar.open(`Detalhes: ${entity.entityName}`, 'OK', { duration: 3000 });
+    this.snackBar.open(`Exibindo detalhes de "${entity.entityName}".`, 'Fechar', { duration: 3000 });
   }
 
   recheck(entity: SanctionEntity): void {
-    this.snackBar.open(`Re-verificando: ${entity.entityName}...`, 'OK', { duration: 3000 });
+    this.snackBar.open(`Re-verificando "${entity.entityName}" nas listas de sanções...`, 'Fechar', { duration: 3000 });
   }
 
   runNewScreening(): void {
-    this.snackBar.open('Iniciando nova verificação de sanções...', 'OK', { duration: 3000 });
+    this.snackBar.open('Nova verificação de sanções iniciada.', 'Fechar', { duration: 3000 });
   }
 
   exportCSV(): void {

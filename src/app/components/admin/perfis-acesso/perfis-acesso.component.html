@@ -1,0 +1,112 @@
+<div class="perfis-container">
+
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header Premium (identidade Portos) -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">admin_panel_settings</mat-icon>
+        <div class="title-content">
+          <h1>Perfis de Acesso</h1>
+          <p class="subtitle">Defina o que cada perfil pode acessar no sistema</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button color="primary" *appHasPermission="'admin/perfis-acesso:create'" (click)="novoPerfil()">
+          <mat-icon>add</mat-icon> Novo Perfil
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-dashboard">
+    <mat-card class="kpi-card kpi-total">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>badge</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.totalPerfis || 0 }}</div>
+          <div class="kpi-label">Total Perfis</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-system">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>verified_user</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.perfisSistema || 0 }}</div>
+          <div class="kpi-label">Perfis do Sistema</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-custom">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>tune</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.perfisCustom || 0 }}</div>
+          <div class="kpi-label">Perfis Personalizados</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-telas">
+      <mat-card-content>
+        <div class="kpi-icon"><mat-icon>grid_view</mat-icon></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ metrics?.totalTelas || 0 }}</div>
+          <div class="kpi-label">Total de Telas</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Grid de Perfis -->
+  <div class="perfis-grid">
+    <mat-card class="perfil-card" *ngFor="let profile of profiles">
+      <div class="perfil-color-bar" [style.background]="profile.color"></div>
+      <mat-card-content>
+        <div class="perfil-head">
+          <div class="perfil-chip" [style.background]="profile.color">
+            <mat-icon>{{ profile.system ? 'verified_user' : 'person' }}</mat-icon>
+          </div>
+          <div class="perfil-title">
+            <div class="perfil-name">
+              {{ profile.name }}
+              <span class="badge-system" *ngIf="profile.system"
+                    matTooltip="Perfil do sistema">Sistema</span>
+            </div>
+            <div class="perfil-users">
+              <mat-icon>group</mat-icon> {{ profile.usersCount }} usuário(s)
+            </div>
+          </div>
+        </div>
+
+        <p class="perfil-desc">{{ profile.description }}</p>
+
+        <div class="perfil-summary">
+          <mat-icon>grid_view</mat-icon>
+          <span><strong>{{ telasLiberadas(profile) }}</strong> de {{ totalTelas }} telas liberadas</span>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions class="perfil-actions">
+        <button mat-button color="primary" (click)="editarPerfil(profile)"
+                matTooltip="Editar permissões">
+          <mat-icon>edit</mat-icon> Editar
+        </button>
+        <button mat-button (click)="duplicarPerfil(profile)"
+                matTooltip="Duplicar perfil">
+          <mat-icon>content_copy</mat-icon> Duplicar
+        </button>
+        <button mat-button color="warn" *ngIf="!profile.system"
+                (click)="excluirPerfil(profile)" matTooltip="Excluir perfil">
+          <mat-icon>delete</mat-icon> Excluir
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+</div>

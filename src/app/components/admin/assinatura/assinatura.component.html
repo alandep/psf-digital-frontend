@@ -1,0 +1,160 @@
+<div class="assinatura-container">
+
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <!-- Header Premium (identidade Portos) -->
+  <div class="page-header">
+    <div class="header-main">
+      <div class="title-section">
+        <mat-icon class="header-icon">credit_card</mat-icon>
+        <div class="title-content">
+          <h1>Assinatura e Faturamento</h1>
+          <p class="subtitle">Gerencie seu plano, pagamentos e faturas</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Aviso de licença pendente (READ_ONLY) -->
+  <div class="license-note" *ngIf="isReadOnly">
+    <mat-icon>warning</mat-icon>
+    <span>Sua assinatura está pendente. Regularize o pagamento para restaurar o acesso completo.</span>
+    <button mat-raised-button color="primary" (click)="reactivate()">
+      <mat-icon>autorenew</mat-icon> Reativar (simular pagamento)
+    </button>
+  </div>
+
+  <div class="cards-grid">
+
+    <!-- Plano atual -->
+    <mat-card class="info-card plano-card" *ngIf="subscription as s">
+      <mat-card-header>
+        <mat-card-title><mat-icon>workspace_premium</mat-icon> Plano atual</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="plan-headline">
+          <div>
+            <div class="plan-name">{{ s.planName }}</div>
+            <div class="plan-price">
+              <strong>{{ s.amount | currency: 'BRL' }}</strong>
+              <span>/ {{ s.billingInterval === 'ANNUAL' ? 'ano' : 'mês' }}</span>
+            </div>
+          </div>
+          <span class="status-chip"
+                [style.color]="statusView(s.status).color"
+                [style.background]="statusView(s.status).bg">
+            {{ statusView(s.status).label }}
+          </span>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="plan-detail">
+          <mat-icon>event</mat-icon>
+          <span>Próxima cobrança: <strong>{{ s.currentPeriodEnd | date: 'dd/MM/yyyy' }}</strong></span>
+        </div>
+        <div class="plan-detail">
+          <mat-icon>credit_card</mat-icon>
+          <span>{{ paymentBrand }} •••• {{ paymentLast4 }}</span>
+        </div>
+
+        <div class="plan-actions">
+          <button mat-stroked-button color="primary" (click)="changePaymentMethod()">
+            <mat-icon>credit_card</mat-icon> Alterar forma de pagamento
+          </button>
+          <button mat-stroked-button color="primary" (click)="changePlan()">
+            <mat-icon>swap_horiz</mat-icon> Alterar plano
+          </button>
+          <button mat-button class="cancel-btn" (click)="cancelSubscription()">
+            <mat-icon>cancel</mat-icon> Cancelar assinatura
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Uso do plano -->
+    <mat-card class="info-card uso-card">
+      <mat-card-header>
+        <mat-card-title><mat-icon>speed</mat-icon> Uso do plano</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="usage-item" *ngFor="let m of usage">
+          <div class="usage-label">
+            <span>{{ m.label }}</span>
+            <span class="usage-values">{{ m.used | number }}/{{ m.included | number }} {{ m.unit }}</span>
+          </div>
+          <mat-progress-bar
+            mode="determinate"
+            [value]="usagePercent(m)"
+            [class.warn-bar]="usageWarning(m)">
+          </mat-progress-bar>
+          <div class="usage-percent" [class.warn-text]="usageWarning(m)">{{ usagePercent(m) }}%</div>
+        </div>
+
+        <div class="creditos-cta" *ngIf="nearLimit">
+          <mat-icon>bolt</mat-icon>
+          <div class="cta-text">
+            <span>Sua empresa está próxima do limite da franquia de IA/OCR.</span>
+          </div>
+          <button mat-raised-button color="primary" (click)="comprarCreditos()">
+            <mat-icon>auto_awesome</mat-icon> Comprar créditos de IA
+          </button>
+        </div>
+
+        <div class="creditos-footer">
+          <button mat-button color="primary" (click)="comprarCreditos()">
+            <mat-icon>add_shopping_cart</mat-icon> Comprar pacote de créditos
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Histórico de faturas -->
+  <mat-card class="info-card faturas-card">
+    <mat-card-header>
+      <mat-card-title><mat-icon>receipt_long</mat-icon> Histórico de faturas</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <table mat-table [dataSource]="invoices" class="faturas-table">
+        <ng-container matColumnDef="date">
+          <th mat-header-cell *matHeaderCellDef>Data</th>
+          <td mat-cell *matCellDef="let inv">{{ inv.date | date: 'dd/MM/yyyy' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="period">
+          <th mat-header-cell *matHeaderCellDef>Período</th>
+          <td mat-cell *matCellDef="let inv">{{ inv.period }}</td>
+        </ng-container>
+        <ng-container matColumnDef="plan">
+          <th mat-header-cell *matHeaderCellDef>Plano</th>
+          <td mat-cell *matCellDef="let inv">{{ inv.planName }}</td>
+        </ng-container>
+        <ng-container matColumnDef="amount">
+          <th mat-header-cell *matHeaderCellDef>Valor</th>
+          <td mat-cell *matCellDef="let inv">{{ inv.amount | currency: 'BRL' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let inv">
+            <span class="status-chip small"
+                  [style.color]="invoiceStatusView(inv.status).color"
+                  [style.background]="invoiceStatusView(inv.status).bg">
+              {{ invoiceStatusView(inv.status).label }}
+            </span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let inv">
+            <button mat-icon-button class="download-btn" matTooltip="Baixar fatura" (click)="downloadInvoice(inv)">
+              <mat-icon>download</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="invoiceCols"></tr>
+        <tr mat-row *matRowDef="let row; columns: invoiceCols;"></tr>
+      </table>
+    </mat-card-content>
+  </mat-card>
+
+</div>
