@@ -12,6 +12,6 @@ public record AuditEvent(
         UUID actorId,
         String action,
         String resourceType,
-        UUID resourceId,
+        String resourceId,
         OffsetDateTime occurredAt) {
 }

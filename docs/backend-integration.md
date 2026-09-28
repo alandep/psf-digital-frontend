@@ -139,3 +139,51 @@ chamadas `HttpClient` manuais e mantendo os tipos sincronizados com o backend.
   pronto para exibição em snackbars.
 
 A API pública `/api/v1` (OAuth2) não é usada pela SPA.
+
+---
+
+## Endpoints de dashboard adicionados (agregação/leitura)
+
+Foram adicionados três endpoints BFF de agregação, de forma puramente aditiva
+(novos métodos em use cases/services/controllers já existentes — nenhum código
+existente foi alterado). Todos exigem sessão autenticada e passam pelo RBAC.
+
+| Módulo | Endpoint | Retorno (resumo) |
+|--------|----------|------------------|
+| Export | `GET /bff/exportacoes/dashboard` | `total`, `rascunho`, `confirmadas`, `canceladas`, `valorTotal`, `porStatus[]` |
+| CRM | `GET /bff/crm/oportunidades/dashboard` | `total`, `valorTotalEstimado`, `porEstagio[]` (estágio, quantidade, valor) |
+| Logística | `GET /bff/logistica/embarques/dashboard` | `total`, `porStatus[]` (status, quantidade) |
+
+O front do módulo Export já consome o seu dashboard: `ExportacaoRealService.getDashboardData()`
+busca `GET /bff/exportacoes/dashboard` e mescla os contadores reais sobre o mock
+(campos ricos — top países/produtos, alertas de risco, métricas de IA/compliance —
+seguem vindo do mock). Em caso de erro, cai no mock. Isso só vale quando
+`realApis.export = true`.
+
+Os dashboards de CRM e Logística estão prontos no backend; o consumo no front
+pode ser ligado quando desejado, seguindo o mesmo padrão híbrido do Export.
+
+## Como confirmar que o backend está de pé
+
+A partir de `backend/`:
+
+```
+docker compose up --build
+```
+
+Sinais de sucesso nos logs do container `app`:
+
+- `Started EipBackendApplication` e `Tomcat started on port 8080`.
+- Flyway aplica as migrações e 45+ repositórios JPA são carregados.
+
+Verificações rápidas:
+
+- Saúde: `GET http://localhost:8080/actuator/health` → `{"status":"UP"}`.
+- API docs: `GET http://localhost:8080/v3/api-docs` (ou `/swagger-ui.html`).
+
+Para o teste e2e com o front (mesma origem via proxy):
+
+1. `realApis.auth = true` e `realApis.export = true` em `src/environments/environment.ts`.
+2. `npx ng serve --configuration=development` (o `proxy.conf.json` encaminha `/bff` para `:8080`).
+3. Login: identificador → senha `senha123` → MFA `123456` (qualquer 6 dígitos).
+4. Tela de exportações (`/exportacoes/gerenciar`) chama `GET /bff/exportacoes` e o dashboard.

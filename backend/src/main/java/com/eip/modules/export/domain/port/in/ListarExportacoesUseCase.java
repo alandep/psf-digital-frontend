@@ -15,6 +15,8 @@ public interface ListarExportacoesUseCase {
 
     ExportacaoView porId(UUID id);
 
+    ExportacoesDashboard dashboard();
+
     /** Page of export summaries. */
     record ExportacoesPage(
             List<ExportacaoResumo> content,
@@ -31,5 +33,19 @@ public interface ListarExportacoesUseCase {
             String destinationCountry,
             BigDecimal totalAmount,
             String currency) {
+    }
+
+    /** Aggregate counters for the export dashboard. */
+    record ExportacoesDashboard(
+            long total,
+            long rascunho,
+            long confirmadas,
+            long canceladas,
+            BigDecimal valorTotal,
+            List<ContagemPorStatus> porStatus) {
+    }
+
+    /** One status bucket. */
+    record ContagemPorStatus(String status, long quantidade) {
     }
 }

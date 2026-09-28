@@ -24,6 +24,8 @@ public interface GerenciarOportunidadesUseCase {
 
     OportunidadeView perder(UUID id);
 
+    PipelineDashboard dashboard();
+
     /** Command to create an opportunity. */
     record CriarOportunidadeCommand(
             UUID clienteId,
@@ -60,5 +62,19 @@ public interface GerenciarOportunidadesUseCase {
                     o.probabilidade(),
                     o.fechamentoPrevisto());
         }
+    }
+
+    /** Aggregate view of the sales pipeline for the dashboard. */
+    record PipelineDashboard(
+            long total,
+            BigDecimal valorTotalEstimado,
+            List<ContagemPorEstagio> porEstagio) {
+    }
+
+    /** One pipeline stage bucket. */
+    record ContagemPorEstagio(
+            String estagio,
+            long quantidade,
+            BigDecimal valorEstimado) {
     }
 }

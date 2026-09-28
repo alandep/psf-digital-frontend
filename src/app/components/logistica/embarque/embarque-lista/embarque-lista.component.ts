@@ -79,6 +79,11 @@ export class EmbarqueListaComponent implements OnInit {
   currentPage = 1;
   itemsPerPage = 25;
 
+  // Real shipment summary loaded from the logistics gateway (getDashboard()).
+  statusResumo: { status: string; quantidade: number }[] = [];
+  totalEmbarques = 0;
+  dashboardLoading = false;
+
   // Dashboard Metrics - Mock Data
   dashboardMetrics = {
     activeShipments: 42,
@@ -174,6 +179,7 @@ export class EmbarqueListaComponent implements OnInit {
 
   ngOnInit() {
     this.loadEmbarques();
+    this.loadDashboard();
     this.setupFormSubscription();
   }
 
@@ -192,6 +198,33 @@ export class EmbarqueListaComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  loadDashboard() {
+    this.dashboardLoading = true;
+    this.embarqueService.getDashboard().subscribe({
+      next: (dashboard) => {
+        this.statusResumo = dashboard.porStatus ?? [];
+        this.totalEmbarques = dashboard.total ?? 0;
+        // Reflect the real total in the summary metric.
+        this.dashboardMetrics.activeShipments = dashboard.total ?? this.dashboardMetrics.activeShipments;
+        this.dashboardLoading = false;
+      },
+      error: () => {
+        this.dashboardLoading = false;
+      }
+    });
+  }
+
+  statusLabel(status: string): string {
+    switch ((status || '').toLowerCase()) {
+      case 'planned': case 'planejado': return 'Planejado';
+      case 'booked': return 'Reservado';
+      case 'in transit': case 'in-transit': case 'em_transito': return 'Em Trânsito';
+      case 'delivered': case 'entregue': return 'Entregue';
+      case 'delayed': case 'cancelado': return 'Atrasado/Cancelado';
+      default: return status || 'Outro';
+    }
   }
 
   setupFormSubscription() {
@@ -380,6 +413,7 @@ export class EmbarqueListaComponent implements OnInit {
 
   refreshData() {
     this.loadEmbarques();
+    this.loadDashboard();
   }
 
   getTotalPages(): number {

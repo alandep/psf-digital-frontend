@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
+import { Component, OnInit, ViewChild, OnDestroy, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -34,7 +34,8 @@ import { MatStepperModule } from '@angular/material/stepper';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 
-import { ExportacaoMockService } from '../../../../services/exportacaoMockService';
+import { EXPORTACAO_SERVICE } from '../../../services/exportacao/exportacao-service.token';
+import { IExportacaoService } from '../../../services/exportacao/exportacao-service.interface';
 import { ExportService } from '../../../../services/exportService';
 import { 
   Exportacao, 
@@ -193,7 +194,7 @@ export class AcompanharStatusComponent implements OnInit, OnDestroy {
   ];
 
   constructor(
-    private exportacaoService: ExportacaoMockService,
+    @Inject(EXPORTACAO_SERVICE) private exportacaoService: IExportacaoService,
     private fb: FormBuilder,
     private router: Router,
     private snackBar: MatSnackBar,

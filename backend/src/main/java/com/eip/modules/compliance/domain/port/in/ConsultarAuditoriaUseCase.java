@@ -19,7 +19,7 @@ public interface ConsultarAuditoriaUseCase {
             UUID actorId,
             String action,
             String resourceType,
-            UUID resourceId,
+            String resourceId,
             OffsetDateTime occurredAt) {
 
         public static AuditView from(AuditEvent e) {

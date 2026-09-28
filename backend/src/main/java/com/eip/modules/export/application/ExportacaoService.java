@@ -1,7 +1,10 @@
 package com.eip.modules.export.application;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -91,6 +94,32 @@ public class ExportacaoService
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Exportacao nao encontrada: " + id));
         return ExportacaoView.from(exportacao);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ExportacoesDashboard dashboard() {
+        UUID org = currentOrg();
+        PageResult result = repo.listar(org, null, 0, 10000);
+        Map<String, Long> counts = new LinkedHashMap<>();
+        BigDecimal valorTotal = BigDecimal.ZERO;
+        for (Exportacao e : result.content()) {
+            String status = e.status().name();
+            counts.merge(status, 1L, Long::sum);
+            if (e.totalAmount() != null) {
+                valorTotal = valorTotal.add(e.totalAmount());
+            }
+        }
+        List<ContagemPorStatus> porStatus = counts.entrySet().stream()
+                .map(en -> new ContagemPorStatus(en.getKey(), en.getValue()))
+                .toList();
+        return new ExportacoesDashboard(
+                result.total(),
+                counts.getOrDefault("RASCUNHO", 0L),
+                counts.getOrDefault("CONFIRMADA", 0L),
+                counts.getOrDefault("CANCELADA", 0L),
+                valorTotal,
+                porStatus);
     }
 
     private static String payload(UUID exportId, UUID org) {

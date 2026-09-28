@@ -16,6 +16,7 @@ import com.eip.modules.export.domain.port.in.ConfirmarExportacaoUseCase;
 import com.eip.modules.export.domain.port.in.CriarExportacaoUseCase;
 import com.eip.modules.export.domain.port.in.CriarExportacaoUseCase.ExportacaoView;
 import com.eip.modules.export.domain.port.in.ListarExportacoesUseCase;
+import com.eip.modules.export.domain.port.in.ListarExportacoesUseCase.ExportacoesDashboard;
 import com.eip.modules.export.domain.port.in.ListarExportacoesUseCase.ExportacoesPage;
 import com.eip.platform.idempotency.IdempotencyService;
 
@@ -48,6 +49,12 @@ public class ExportacaoBffController {
     @PreAuthorize("@rbac.can('exportacoes/gerenciar','view')")
     public ExportacaoView porId(@PathVariable UUID id) {
         return listarUseCase.porId(id);
+    }
+
+    @GetMapping("/dashboard")
+    @PreAuthorize("@rbac.can('exportacoes/gerenciar','view')")
+    public ExportacoesDashboard dashboard() {
+        return listarUseCase.dashboard();
     }
 
     @PostMapping

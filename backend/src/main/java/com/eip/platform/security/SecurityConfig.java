@@ -3,6 +3,7 @@ package com.eip.platform.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -10,6 +11,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 /**
@@ -19,7 +21,8 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
  *   <li><b>apiChain</b> ({@code /api/v1/**}) — stateless, JWT bearer resource
  *       server, CSRF disabled. Consumed by machine/SPA clients.</li>
  *   <li><b>bffChain</b> ({@code /bff/**}, {@code /login/**}, {@code /actuator/**})
- *       — session-based BFF with form login and cookie CSRF for browser clients.</li>
+ *       — session-based BFF with cookie CSRF for browser clients. Unauthenticated
+ *       requests get HTTP 401 (not a redirect) so the SPA can handle it.</li>
  * </ul>
  *
  * Method-level security ({@code @PreAuthorize}) is enabled for the whole app.
@@ -59,7 +62,8 @@ public class SecurityConfig {
                                 // authenticity is verified by signature + inbox idempotency.
                                 "/webhooks/**").permitAll()
                         .anyRequest().authenticated())
-                .formLogin(Customizer.withDefaults())
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())

@@ -1,6 +1,8 @@
 package com.eip.modules.logistics.application;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -88,6 +90,21 @@ public class LogisticsService
     @Transactional
     public EmbarqueView cancelar(UUID id) {
         return transicionar(id, "EmbarqueCancelado", Embarque::cancelar);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public EmbarquesDashboard dashboard() {
+        UUID org = currentOrg();
+        List<Embarque> todos = embarques.listar(org, null);
+        Map<String, Long> counts = new LinkedHashMap<>();
+        for (Embarque e : todos) {
+            counts.merge(e.status().name(), 1L, Long::sum);
+        }
+        List<ContagemPorStatus> porStatus = counts.entrySet().stream()
+                .map(en -> new ContagemPorStatus(en.getKey(), en.getValue()))
+                .toList();
+        return new EmbarquesDashboard(todos.size(), porStatus);
     }
 
     private EmbarqueView transicionar(UUID id, String eventType,

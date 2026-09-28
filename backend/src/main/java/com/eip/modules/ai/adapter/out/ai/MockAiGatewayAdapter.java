@@ -1,6 +1,6 @@
 package com.eip.modules.ai.adapter.out.ai;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import com.eip.modules.ai.domain.model.AiModel;
@@ -17,11 +17,12 @@ import com.eip.modules.ai.domain.model.AiResult;
  * in the domain.
  *
  * <p>TODO: replace with a Vertex AI adapter active in the cloud profile. The
- * router picks provider/model and this adapter calls the real API. The bean is
- * {@link ConditionalOnMissingBean} so a real adapter simply overrides it.
+ * router picks provider/model and this adapter calls the real API. This bean is
+ * active in every profile except {@code cloud}; the real
+ * Vertex adapter will be annotated {@code @Profile("cloud")} to replace it.
  */
 @Component
-@ConditionalOnMissingBean(com.eip.modules.ai.domain.port.out.AiGatewayPort.class)
+@Profile("!cloud")
 public class MockAiGatewayAdapter implements com.eip.modules.ai.domain.port.out.AiGatewayPort {
 
     @Override

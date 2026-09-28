@@ -13,19 +13,20 @@ export interface RealApiFlags {
 export interface Environment {
   production: boolean;
   useMockServices: boolean;
-  // Base URL of the backend. BFF paths already include the '/bff' prefix, so
-  // this is just the origin (dev) or '' for same-origin (prod).
+  // Empty in dev too: requests use relative '/bff/...' paths and the Angular
+  // dev-server proxy (proxy.conf.json) forwards them to the backend
+  // same-origin, so no CORS and the session cookie flows.
   bffBaseUrl: string;
   realApis: RealApiFlags;
 }
 
 export const environment: Environment = {
   production: false,
-  useMockServices: true,
-  bffBaseUrl: 'http://localhost:8080',
+  useMockServices: false,
+  bffBaseUrl: '',
   realApis: {
-    auth: false,
-    export: false,
+    auth: true,
+    export: true,
     subscription: false,
     documents: false,
     logistics: false,

@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { Embarque, Rota, PortoInfo, EmbarqueFilters } from '../../../types/embarque';
+import { Embarque, Rota, PortoInfo, EmbarqueFilters, LogisticsDashboard } from '../../../types/embarque';
 
 // Gateway interface for the logistica/embarque module. Method names and return
 // types mirror EmbarqueMockService EXACTLY (Observable vs sync) so the embarque
@@ -11,6 +11,7 @@ export interface ILogisticsService {
   createEmbarque(embarque: Partial<Embarque>): Observable<Embarque>;
   updateEmbarque(id: string, updates: Partial<Embarque>): Observable<Embarque>;
   deleteEmbarque(id: string): Observable<boolean>;
+  getDashboard(): Observable<LogisticsDashboard>;
 
   getRotas(): Observable<Rota[]>;
   getPortos(): Observable<PortoInfo[]>;

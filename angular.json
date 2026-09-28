@@ -67,7 +67,8 @@
               "buildTarget": "psf-digital-frontend:build:production"
             },
             "development": {
-              "buildTarget": "psf-digital-frontend:build:development"
+              "buildTarget": "psf-digital-frontend:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

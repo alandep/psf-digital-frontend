@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.eip.modules.crm.domain.port.in.GerenciarOportunidadesUseCase;
 import com.eip.modules.crm.domain.port.in.GerenciarOportunidadesUseCase.OportunidadeView;
+import com.eip.modules.crm.domain.port.in.GerenciarOportunidadesUseCase.PipelineDashboard;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,12 @@ public class OportunidadeBffController {
     @PreAuthorize("@rbac.can('crm/oportunidades','view')")
     public List<OportunidadeView> listar(@RequestParam(required = false) String estagio) {
         return useCase.listar(estagio);
+    }
+
+    @GetMapping("/dashboard")
+    @PreAuthorize("@rbac.can('crm/oportunidades','view')")
+    public PipelineDashboard dashboard() {
+        return useCase.dashboard();
     }
 
     @GetMapping("/{id}")

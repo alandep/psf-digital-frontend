@@ -148,3 +148,11 @@ export interface EmbarqueFilters {
   date_range_start?: Date;
   date_range_end?: Date;
 }
+
+// Aggregate counters for the logistics (shipments) dashboard. Mirrors the
+// backend GET /bff/logistica/embarques/dashboard response, plus a status map
+// convenient for the UI.
+export interface LogisticsDashboard {
+  total: number;
+  porStatus: { status: string; quantidade: number }[];
+}

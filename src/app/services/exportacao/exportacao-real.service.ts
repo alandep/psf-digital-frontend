@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, of, forkJoin } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { IExportacaoService } from './exportacao-service.interface';
 import { ExportacaoMockService } from '../../../services/exportacaoMockService';
 import { environment } from '../../../environments/environment';
@@ -39,6 +39,16 @@ interface ExportacoesPageResponse {
   items?: ExportacaoView[];
   totalElements?: number;
   page?: number;
+}
+
+// Backend dashboard counters (subset the backend exposes).
+interface ExportacoesDashboardResponse {
+  total?: number;
+  rascunho?: number;
+  confirmadas?: number;
+  canceladas?: number;
+  valorTotal?: number;
+  porStatus?: { status: string; quantidade: number }[];
 }
 
 // PARTIAL: backend covers CRUD list/create/confirm; other methods use mock
@@ -159,9 +169,28 @@ export class ExportacaoRealService implements IExportacaoService {
     return this.mock.updateExportacao(id, exportacao);
   }
 
-  // --- Not yet exposed by the backend: delegate to the mock ---
+  // PARTIAL: backend provides aggregate counters (total/status/valorTotal);
+  // the rich fields (top countries/products, risk alerts, AI/compliance
+  // metrics) remain mock-sourced and are merged with the backend counters.
   getDashboardData(): Observable<ExportacaoDashboard> {
-    return this.mock.getDashboardData();
+    const backend$ = this.http
+      .get<ExportacoesDashboardResponse>(`${this.api}/dashboard`)
+      .pipe(catchError(() => of<ExportacoesDashboardResponse>({})));
+    return forkJoin({ mock: this.mock.getDashboardData(), backend: backend$ }).pipe(
+      map(({ mock, backend }) => {
+        if (backend == null || backend.total == null) {
+          return mock;
+        }
+        return {
+          ...mock,
+          totalExportacoes: backend.total ?? mock.totalExportacoes,
+          totalValue: backend.valorTotal ?? mock.totalValue,
+          exportacoesPendentes: backend.rascunho ?? mock.exportacoesPendentes,
+          exportacoesAprovadas: backend.confirmadas ?? mock.exportacoesAprovadas,
+          exportacoesBloqueadas: backend.canceladas ?? mock.exportacoesBloqueadas
+        };
+      })
+    );
   }
 
   getExportacaoDetails(exportId: string): Observable<any> {

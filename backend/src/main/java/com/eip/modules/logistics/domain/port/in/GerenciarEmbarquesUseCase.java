@@ -23,6 +23,8 @@ public interface GerenciarEmbarquesUseCase {
 
     EmbarqueView cancelar(UUID id);
 
+    EmbarquesDashboard dashboard();
+
     /** Command to create a shipment. */
     record CriarEmbarqueCommand(
             UUID exportId,
@@ -74,5 +76,15 @@ public interface GerenciarEmbarquesUseCase {
             String reference,
             String status,
             LocalDate eta) {
+    }
+
+    /** Aggregate counters for the shipments dashboard. */
+    record EmbarquesDashboard(
+            long total,
+            List<ContagemPorStatus> porStatus) {
+    }
+
+    /** One shipment status bucket. */
+    record ContagemPorStatus(String status, long quantidade) {
     }
 }

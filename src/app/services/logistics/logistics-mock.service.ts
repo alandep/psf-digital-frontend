@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ILogisticsService } from './logistics-service.interface';
 import { EmbarqueMockService } from '../../../services/embarqueMockService';
-import { Embarque, Rota, PortoInfo, EmbarqueFilters } from '../../../types/embarque';
+import { Embarque, Rota, PortoInfo, EmbarqueFilters, LogisticsDashboard } from '../../../types/embarque';
 
 // Mock adapter: delegates every method to EmbarqueMockService so behavior is
 // identical to the pre-gateway state.
@@ -30,6 +30,10 @@ export class LogisticsMockAdapter implements ILogisticsService {
 
   deleteEmbarque(id: string): Observable<boolean> {
     return this.mock.deleteEmbarque(id);
+  }
+
+  getDashboard(): Observable<LogisticsDashboard> {
+    return this.mock.getDashboard();
   }
 
   getRotas(): Observable<Rota[]> {

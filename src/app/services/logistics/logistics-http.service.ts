@@ -1,11 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, of, forkJoin } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { ILogisticsService } from './logistics-service.interface';
 import { EmbarqueMockService } from '../../../services/embarqueMockService';
 import { environment } from '../../../environments/environment';
-import { Embarque, Rota, PortoInfo, EmbarqueFilters } from '../../../types/embarque';
+import { Embarque, Rota, PortoInfo, EmbarqueFilters, LogisticsDashboard } from '../../../types/embarque';
 
 // --- Backend BFF DTOs (/bff/logistica) ---
 interface EmbarqueView {
@@ -34,6 +34,12 @@ interface CriarEmbarqueRequest {
   eta?: string;
   modal?: string;
   containerCount?: number;
+}
+
+// Backend dashboard counters for shipments.
+interface EmbarquesDashboardResponse {
+  total?: number;
+  porStatus?: { status: string; quantidade: number }[];
 }
 
 // HTTP gateway for the logistica/embarque module. Only used when
@@ -114,6 +120,27 @@ export class LogisticsHttpService implements ILogisticsService {
     return this.http
       .get<EmbarqueView[]>(`${this.api}/embarques`, { params })
       .pipe(map((rows) => (rows ?? []).map((r) => this.toEmbarque(r))));
+  }
+
+  // Consumes GET /bff/logistica/embarques/dashboard; falls back to the mock
+  // aggregation when the backend is unavailable or returns nothing.
+  getDashboard(): Observable<LogisticsDashboard> {
+    const backend$ = this.http
+      .get<EmbarquesDashboardResponse>(`${this.api}/embarques/dashboard`)
+      .pipe(catchError(() => of<EmbarquesDashboardResponse>({})));
+    return forkJoin({ mock: this.mock.getDashboard(), backend: backend$ }).pipe(
+      map(({ mock, backend }) => {
+        if (backend == null || backend.total == null) {
+          return mock;
+        }
+        return {
+          total: backend.total,
+          porStatus: backend.porStatus && backend.porStatus.length > 0
+            ? backend.porStatus
+            : mock.porStatus
+        } as LogisticsDashboard;
+      })
+    );
   }
 
   getEmbarqueById(id: string): Observable<Embarque | undefined> {

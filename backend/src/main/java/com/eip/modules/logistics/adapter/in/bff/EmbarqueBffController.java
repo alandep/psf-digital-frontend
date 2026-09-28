@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.eip.modules.logistics.domain.port.in.GerenciarEmbarquesUseCase;
+import com.eip.modules.logistics.domain.port.in.GerenciarEmbarquesUseCase.EmbarquesDashboard;
 import com.eip.modules.logistics.domain.port.in.GerenciarEmbarquesUseCase.EmbarqueResumo;
 import com.eip.modules.logistics.domain.port.in.GerenciarEmbarquesUseCase.EmbarqueView;
 
@@ -32,6 +33,12 @@ public class EmbarqueBffController {
     @PreAuthorize("@rbac.can('logistica/embarque','view')")
     public List<EmbarqueResumo> listar(@RequestParam(required = false) String status) {
         return useCase.listar(status);
+    }
+
+    @GetMapping("/dashboard")
+    @PreAuthorize("@rbac.can('logistica/embarque','view')")
+    public EmbarquesDashboard dashboard() {
+        return useCase.dashboard();
     }
 
     @GetMapping("/{id}")

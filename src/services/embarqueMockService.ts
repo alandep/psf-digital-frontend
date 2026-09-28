@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable, of, delay } from 'rxjs';
-import { Embarque, Container, Rota, PortoInfo, EmbarqueFilters } from '../types/embarque';
+import { Embarque, Container, Rota, PortoInfo, EmbarqueFilters, LogisticsDashboard } from '../types/embarque';
 
 @Injectable({
   providedIn: 'root'
@@ -287,6 +287,23 @@ export class EmbarqueMockService {
     }
 
     return of(filteredEmbarques).pipe(delay(500));
+  }
+
+  getDashboard(): Observable<LogisticsDashboard> {
+    const counts = new Map<string, number>();
+    for (const e of this.embarques) {
+      const status = e.shipment_status ?? 'Planned';
+      counts.set(status, (counts.get(status) ?? 0) + 1);
+    }
+    const porStatus = Array.from(counts.entries()).map(([status, quantidade]) => ({
+      status,
+      quantidade
+    }));
+    const dashboard: LogisticsDashboard = {
+      total: this.embarques.length,
+      porStatus
+    };
+    return of(dashboard).pipe(delay(300));
   }
 
   getEmbarqueById(id: string): Observable<Embarque | undefined> {

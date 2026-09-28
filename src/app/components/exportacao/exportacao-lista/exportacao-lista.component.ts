@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, ViewChild } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChild, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -27,7 +27,8 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 
-import { ExportacaoMockService } from '../../../../services/exportacaoMockService';
+import { EXPORTACAO_SERVICE } from '../../../services/exportacao/exportacao-service.token';
+import { IExportacaoService } from '../../../services/exportacao/exportacao-service.interface';
 import {
   ConfirmarAcaoDialogComponent,
   ConfirmDialogData
@@ -120,7 +121,7 @@ export class ExportacaoListaComponent implements OnInit, AfterViewInit {
   nlpProcessing = false;
 
   constructor(
-    private exportacaoService: ExportacaoMockService,
+    @Inject(EXPORTACAO_SERVICE) private exportacaoService: IExportacaoService,
     private fb: FormBuilder,
     private router: Router,
     private snackBar: MatSnackBar,

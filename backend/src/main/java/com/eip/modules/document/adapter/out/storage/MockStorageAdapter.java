@@ -3,7 +3,7 @@ package com.eip.modules.document.adapter.out.storage;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import com.eip.modules.document.domain.port.out.StoragePort;
@@ -12,14 +12,14 @@ import com.eip.modules.document.domain.port.out.StoragePort;
  * DEV / mock implementation of {@link StoragePort}. Returns fake signed URLs
  * with a short expiry instead of talking to a real object store.
  *
- * <p>Registered only when no other {@link StoragePort} bean exists, so a real
- * adapter can transparently override it.
+ * <p>Active in every profile except {@code cloud}, so a real cloud storage
+ * adapter annotated {@code @Profile("cloud")} transparently replaces it.
  *
  * <p>TODO: replace with Google Cloud Storage V4 signed URLs (upload + download)
  * in the cloud profile, backed by a service-account signer.
  */
 @Component
-@ConditionalOnMissingBean(StoragePort.class)
+@Profile("!cloud")
 public class MockStorageAdapter implements StoragePort {
 
     private static final String BASE = "https://storage.eip.mock/";

@@ -76,10 +76,19 @@ public class AuthBffController {
         return toResponse(authService.verifyPassword(request.challengeId(), request.password()));
     }
 
-    /** Step 3 — verify MFA, returns org selection or {@code AUTHENTICATED}. */
+    /** Step 3 — verify MFA. May reach {@code AUTHENTICATED} directly when the
+     * user has exactly one organization (auto-selection); bind the session then. */
     @PostMapping("/mfa/verify")
-    public AuthResponse verifyMfa(@RequestBody MfaRequest request) {
-        return toResponse(authService.verifyMfa(request.challengeId(), request.code()));
+    public AuthResponse verifyMfa(@RequestBody MfaRequest request,
+                                  HttpServletRequest httpRequest) {
+        AuthChallenge challenge = authService.verifyMfa(request.challengeId(), request.code());
+        if (challenge.state() == AuthState.AUTHENTICATED
+                && challenge.organizations() != null
+                && !challenge.organizations().isEmpty()) {
+            UUID organizationId = challenge.organizations().get(0).organizationId();
+            bindSession(httpRequest, request.challengeId(), organizationId);
+        }
+        return toResponse(challenge);
     }
 
     /**
@@ -92,13 +101,7 @@ public class AuthBffController {
         AuthChallenge challenge =
                 authService.selectOrganization(request.challengeId(), request.organizationId());
         if (challenge.state() == AuthState.AUTHENTICATED) {
-            UUID userId = authService.userIdOf(request.challengeId()).orElse(null);
-            HttpSession session = httpRequest.getSession(true);
-            session.setAttribute(SESSION_ORG, request.organizationId().toString());
-            if (userId != null) {
-                session.setAttribute(SESSION_USER, userId.toString());
-            }
-            authService.discard(request.challengeId());
+            bindSession(httpRequest, request.challengeId(), request.organizationId());
         }
         return toResponse(challenge);
     }
@@ -111,6 +114,21 @@ public class AuthBffController {
             session.invalidate();
         }
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Binds the authenticated user + organization to a fresh HTTP session and
+     * discards the in-flight challenge. Called on every path that reaches
+     * {@code AUTHENTICATED} (MFA auto-selection or explicit org selection).
+     */
+    private void bindSession(HttpServletRequest httpRequest, String challengeId, UUID organizationId) {
+        UUID userId = authService.userIdOf(challengeId).orElse(null);
+        HttpSession session = httpRequest.getSession(true);
+        session.setAttribute(SESSION_ORG, organizationId.toString());
+        if (userId != null) {
+            session.setAttribute(SESSION_USER, userId.toString());
+        }
+        authService.discard(challengeId);
     }
 
     /** @return the current session's user/org, or 401 when no session is bound. */

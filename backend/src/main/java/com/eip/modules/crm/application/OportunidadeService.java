@@ -1,6 +1,9 @@
 package com.eip.modules.crm.application;
 
+import java.math.BigDecimal;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -108,6 +111,30 @@ public class OportunidadeService implements GerenciarOportunidadesUseCase {
         outbox.record("Oportunidade", salvo.id().asString(), org, "OportunidadePerdida",
                 CrmEnums.payload("oportunidadeId", salvo.id().value(), org));
         return OportunidadeView.from(salvo);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PipelineDashboard dashboard() {
+        UUID org = currentOrg();
+        List<Oportunidade> todas = repo.listar(org, null);
+        Map<String, Long> counts = new LinkedHashMap<>();
+        Map<String, BigDecimal> valores = new LinkedHashMap<>();
+        BigDecimal valorTotal = BigDecimal.ZERO;
+        for (Oportunidade o : todas) {
+            String estagio = o.estagio().name();
+            counts.merge(estagio, 1L, Long::sum);
+            BigDecimal v = o.valorEstimado() == null ? BigDecimal.ZERO : o.valorEstimado();
+            valores.merge(estagio, v, BigDecimal::add);
+            valorTotal = valorTotal.add(v);
+        }
+        List<ContagemPorEstagio> porEstagio = counts.entrySet().stream()
+                .map(e -> new ContagemPorEstagio(
+                        e.getKey(),
+                        e.getValue(),
+                        valores.getOrDefault(e.getKey(), BigDecimal.ZERO)))
+                .toList();
+        return new PipelineDashboard(todas.size(), valorTotal, porEstagio);
     }
 
     private static String normalize(String value) {

@@ -37,7 +37,7 @@ public class AuditEventEntity {
     private String resourceType;
 
     @Column(name = "resource_id")
-    private UUID resourceId;
+    private String resourceId;
 
     @Column(name = "before_hash")
     private String beforeHash;

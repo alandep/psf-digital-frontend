@@ -9,6 +9,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AUTH_FLOW_SERVICE } from '../../../services/auth-flow/auth-flow.token';
+import { AuthProfileService } from '../../../../services/authProfileService';
 
 @Component({
   selector: 'app-mfa',
@@ -30,6 +31,7 @@ import { AUTH_FLOW_SERVICE } from '../../../services/auth-flow/auth-flow.token';
 export class MfaComponent {
   private router = inject(Router);
   private authFlow = inject(AUTH_FLOW_SERVICE);
+  private authProfileService = inject(AuthProfileService);
 
   isLoading = false;
   errorMessage = '';
@@ -59,7 +61,9 @@ export class MfaComponent {
     this.authFlow.verifyMfa(code).subscribe({
       next: (challenge) => {
         this.isLoading = false;
-        if (challenge.state === 'ORGANIZATION_SELECTION_REQUIRED') {
+        if (challenge.state === 'AUTHENTICATED') {
+          this.enterApp();
+        } else if (challenge.state === 'ORGANIZATION_SELECTION_REQUIRED') {
           this.router.navigate(['/select-company']);
         } else {
           this.errorMessage = challenge.message ?? 'Código inválido. Tente novamente.';
@@ -83,7 +87,9 @@ export class MfaComponent {
     this.authFlow.verifyRecoveryCode(code).subscribe({
       next: (challenge) => {
         this.isLoading = false;
-        if (challenge.state === 'ORGANIZATION_SELECTION_REQUIRED') {
+        if (challenge.state === 'AUTHENTICATED') {
+          this.enterApp();
+        } else if (challenge.state === 'ORGANIZATION_SELECTION_REQUIRED') {
           this.router.navigate(['/select-company']);
         } else {
           this.errorMessage = challenge.message ?? 'Código de recuperação inválido.';
@@ -93,6 +99,14 @@ export class MfaComponent {
         this.isLoading = false;
         this.errorMessage = 'Não foi possível verificar o código.';
       }
+    });
+  }
+
+  // Reuse the select-company pattern: load the mock access profile, then navigate.
+  private enterApp(): void {
+    this.authProfileService.loadProfile().subscribe({
+      next: () => this.router.navigate(['/home-logged']),
+      error: () => this.router.navigate(['/home-logged'])
     });
   }
 }

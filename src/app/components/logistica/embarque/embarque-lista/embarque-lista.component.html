@@ -23,6 +23,31 @@
     </div>
   </div>
 
+  <!-- Resumo por status (dados reais via gateway getDashboard) -->
+  <mat-card class="resumo-status-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>insights</mat-icon>
+        Resumo de Embarques
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="resumo-total">
+        <span class="resumo-total-label">Total de embarques</span>
+        <span class="resumo-total-value">{{ totalEmbarques }}</span>
+      </div>
+      <div class="resumo-status-grid">
+        <div class="resumo-status-item" *ngFor="let item of statusResumo">
+          <span class="resumo-status-qtd">{{ item.quantidade }}</span>
+          <span class="resumo-status-label">{{ statusLabel(item.status) }}</span>
+        </div>
+        <div class="resumo-status-empty" *ngIf="!statusResumo.length && !dashboardLoading">
+          Nenhum embarque para resumir.
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
   <!-- Filtros -->
   <mat-card class="filtros-card">
     <mat-card-header>
