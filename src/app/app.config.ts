@@ -15,6 +15,7 @@ import { authFlowServiceProvider } from './services/auth-flow/auth-flow.token';
 import { subscriptionServiceProvider } from './services/subscription/subscription-service.token';
 import { documentsServiceProvider } from './services/documents/documents-service.token';
 import { logisticsServiceProvider } from './services/logistics/logistics-service.token';
+import { crmServiceProvider } from './services/crm/crm-service.token';
 import { pagamentosServiceProvider } from './services/finance/pagamentos-service.token';
 import { cambioServiceProvider } from './services/finance/cambio-service.token';
 import { hedgeServiceProvider } from './services/finance/hedge-service.token';
@@ -45,6 +46,7 @@ export const appConfig: ApplicationConfig = {
     subscriptionServiceProvider,
     documentsServiceProvider,
     logisticsServiceProvider,
+    crmServiceProvider,
     pagamentosServiceProvider,
     cambioServiceProvider,
     hedgeServiceProvider,

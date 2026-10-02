@@ -5,6 +5,11 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,6 +22,7 @@ import com.eip.modules.identity.domain.model.AuthState;
 import com.eip.modules.organization.application.OrganizationQueryService.OrganizationOption;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
@@ -37,6 +43,9 @@ public class AuthBffController {
     public static final String SESSION_USER = "EIP_USER";
 
     private final AuthService authService;
+
+    private final HttpSessionSecurityContextRepository securityContextRepository =
+            new HttpSessionSecurityContextRepository();
 
     // --- Request records -------------------------------------------------
 
@@ -80,13 +89,14 @@ public class AuthBffController {
      * user has exactly one organization (auto-selection); bind the session then. */
     @PostMapping("/mfa/verify")
     public AuthResponse verifyMfa(@RequestBody MfaRequest request,
-                                  HttpServletRequest httpRequest) {
+                                  HttpServletRequest httpRequest,
+                                  HttpServletResponse httpResponse) {
         AuthChallenge challenge = authService.verifyMfa(request.challengeId(), request.code());
         if (challenge.state() == AuthState.AUTHENTICATED
                 && challenge.organizations() != null
                 && !challenge.organizations().isEmpty()) {
             UUID organizationId = challenge.organizations().get(0).organizationId();
-            bindSession(httpRequest, request.challengeId(), organizationId);
+            bindSession(httpRequest, httpResponse, request.challengeId(), organizationId);
         }
         return toResponse(challenge);
     }
@@ -97,11 +107,12 @@ public class AuthBffController {
      */
     @PostMapping("/select-organization")
     public AuthResponse selectOrganization(@RequestBody SelectOrganizationRequest request,
-                                           HttpServletRequest httpRequest) {
+                                           HttpServletRequest httpRequest,
+                                           HttpServletResponse httpResponse) {
         AuthChallenge challenge =
                 authService.selectOrganization(request.challengeId(), request.organizationId());
         if (challenge.state() == AuthState.AUTHENTICATED) {
-            bindSession(httpRequest, request.challengeId(), request.organizationId());
+            bindSession(httpRequest, httpResponse, request.challengeId(), request.organizationId());
         }
         return toResponse(challenge);
     }
@@ -117,17 +128,31 @@ public class AuthBffController {
     }
 
     /**
-     * Binds the authenticated user + organization to a fresh HTTP session and
+     * Binds the authenticated user + organization to a fresh HTTP session,
+     * establishes a Spring SecurityContext (persisted in the session so the
+     * standard SecurityContextHolderFilter restores it on later requests), and
      * discards the in-flight challenge. Called on every path that reaches
-     * {@code AUTHENTICATED} (MFA auto-selection or explicit org selection).
+     * {@code AUTHENTICATED}.
      */
-    private void bindSession(HttpServletRequest httpRequest, String challengeId, UUID organizationId) {
+    private void bindSession(HttpServletRequest httpRequest, HttpServletResponse httpResponse,
+                             String challengeId, UUID organizationId) {
         UUID userId = authService.userIdOf(challengeId).orElse(null);
         HttpSession session = httpRequest.getSession(true);
         session.setAttribute(SESSION_ORG, organizationId.toString());
         if (userId != null) {
             session.setAttribute(SESSION_USER, userId.toString());
         }
+        // Establish a Spring SecurityContext and persist it in the session so
+        // authorization (.authenticated() / @PreAuthorize) recognizes the user
+        // on subsequent requests.
+        String principal = userId != null ? userId.toString() : organizationId.toString();
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(
+                        principal, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        SecurityContextHolder.setContext(context);
+        securityContextRepository.saveContext(context, httpRequest, httpResponse);
         authService.discard(challengeId);
     }
 

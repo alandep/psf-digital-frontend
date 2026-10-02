@@ -1,0 +1,105 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "11.1 Create the CRM gateway interface and dashboard type": [
+      {
+        "executionId": "e63b7858-b1aa-47d1-967a-1255472e9768",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1790861325267
+      },
+      {
+        "executionId": "e63b7858-b1aa-47d1-967a-1255472e9768",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1790861687225
+      }
+    ],
+    "11.2 Create the CRM mock adapter": [
+      {
+        "executionId": "5a9bc651-a8d3-4de3-93e7-4eb5e654d9c7",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1790861859027
+      },
+      {
+        "executionId": "5a9bc651-a8d3-4de3-93e7-4eb5e654d9c7",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1790862053293
+      }
+    ],
+    "11.3 Create the CRM HTTP adapter": [
+      {
+        "executionId": "5a9bc651-a8d3-4de3-93e7-4eb5e654d9c7",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1790861859963
+      },
+      {
+        "executionId": "5a9bc651-a8d3-4de3-93e7-4eb5e654d9c7",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1790862054161
+      }
+    ],
+    "11.4 Add the CRM InjectionToken + flag-driven provider": [
+      {
+        "executionId": "5a9bc651-a8d3-4de3-93e7-4eb5e654d9c7",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1790862065245
+      },
+      {
+        "executionId": "5a9bc651-a8d3-4de3-93e7-4eb5e654d9c7",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1790862232392
+      }
+    ],
+    "11.5 Wire a CRM screen to consume the token": [
+      {
+        "executionId": "5a9bc651-a8d3-4de3-93e7-4eb5e654d9c7",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1790862240254
+      },
+      {
+        "executionId": "5a9bc651-a8d3-4de3-93e7-4eb5e654d9c7",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1790862477735
+      }
+    ],
+    "11. Build the CRM front gateway quartet and wire a CRM screen": [
+      {
+        "executionId": "5a9bc651-a8d3-4de3-93e7-4eb5e654d9c7",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1790862477865
+      }
+    ],
+    "12.1 Audit subscription consumers and rewire to the token": [
+      {
+        "executionId": "fc69ef44-531c-41f4-928f-e28378fd548a",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1790862771295
+      },
+      {
+        "executionId": "fc69ef44-531c-41f4-928f-e28378fd548a",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1790862936796
+      }
+    ],
+    "12.2 Audit documents consumers and rewire to the token": [
+      {
+        "executionId": "fc69ef44-531c-41f4-928f-e28378fd548a",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1790862938893
+      }
+    ],
+    "12.3 Audit finance consumers and rewire to the tokens": [
+      {
+        "executionId": "fc69ef44-531c-41f4-928f-e28378fd548a",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1790862940140
+      }
+    ],
+    "12. Rewire-audit: ensure already-built gateways actually honor their flags": [
+      {
+        "executionId": "fc69ef44-531c-41f4-928f-e28378fd548a",
+        "chatSessionId": "sess_f558c36e-74bd-4875-873d-f5997c4ba229",
+        "timestamp": 1790862940291
+      }
+    ]
+  }
+}

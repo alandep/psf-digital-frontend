@@ -50,3 +50,11 @@ export interface CrmMetrics {
   opportunitiesOpen: number;
   pipelineValue: number;
 }
+
+// Aggregate view of the CRM sales pipeline. Mirrors the backend
+// GET /bff/crm/oportunidades/dashboard response (PipelineDashboard).
+export interface CrmDashboard {
+  total: number;
+  valorTotalEstimado: number;
+  porEstagio: { estagio: string; quantidade: number; valorEstimado: number }[];
+}

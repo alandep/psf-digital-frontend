@@ -1,5 +1,6 @@
 package com.eip.platform.security;
 
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -11,8 +12,11 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+
+import com.eip.modules.identity.adapter.in.SessionOrganizationContextFilter;
 
 /**
  * HTTP security configuration split into two independent filter chains:
@@ -47,7 +51,8 @@ public class SecurityConfig {
 
     @Bean
     @Order(2)
-    public SecurityFilterChain bffChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain bffChain(HttpSecurity http,
+            SessionOrganizationContextFilter sessionOrganizationContextFilter) throws Exception {
         http
                 .securityMatcher("/bff/**", "/login/**", "/actuator/**", "/webhooks/**")
                 .authorizeHttpRequests(auth -> auth
@@ -71,8 +76,25 @@ public class SecurityConfig {
                         // cannot carry a CSRF token yet; exempt them. All other
                         // /bff/** endpoints keep cookie-based CSRF protection.
                         // Webhooks are server-to-server and cannot carry a CSRF token.
-                        .ignoringRequestMatchers("/bff/auth/**", "/webhooks/**"));
+                        .ignoringRequestMatchers("/bff/auth/**", "/webhooks/**"))
+                .addFilterBefore(sessionOrganizationContextFilter, AuthorizationFilter.class);
         return http.build();
+    }
+
+    /**
+     * The SessionOrganizationContextFilter is wired INTO the bffChain (before
+     * AuthorizationFilter) so it populates the SecurityContext before
+     * authorization is evaluated. Disable its automatic global servlet-filter
+     * registration so it does not also run (in the wrong order) outside the
+     * security chain.
+     */
+    @Bean
+    public FilterRegistrationBean<SessionOrganizationContextFilter> sessionOrgFilterRegistration(
+            SessionOrganizationContextFilter filter) {
+        FilterRegistrationBean<SessionOrganizationContextFilter> registration =
+                new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
     }
 
     /**

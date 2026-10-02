@@ -33,6 +33,14 @@
     </div>
   </div>
 
+  <!-- Pipeline total (CRM gateway) -->
+  @if (dashboardTotalCount > 0) {
+    <div class="pipeline-total">
+      <mat-icon>insights</mat-icon>
+      <span>Pipeline (backend): {{ dashboardTotalCount }} oportunidades &middot; {{ formatCurrency(dashboardTotalValue) }}</span>
+    </div>
+  }
+
   <!-- Pipeline Summary -->
   <div class="pipeline-summary">
     @for (item of pipelineSummary; track item.stage) {

@@ -19,7 +19,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatMenuModule } from '@angular/material/menu';
 
-import { CrmMockService } from '../../../../services/crmMockService';
+import { CRM_SERVICE } from '../../../services/crm/crm-service.token';
+import { ICrmService } from '../../../services/crm/crm-service.interface';
 import { ExportService } from '../../../../services/exportService';
 import { Opportunity, OpportunityStage } from '../../../../types/crm';
 import { NovaOportunidadeDialogComponent } from '../dialogs/nova-oportunidade-dialog.component';
@@ -53,7 +54,7 @@ import { HasPermissionDirective } from '../../../directives/has-permission.direc
 })
 export class OportunidadesComponent implements OnInit, OnDestroy, AfterViewInit {
 
-  private service = inject(CrmMockService);
+  private service = inject<ICrmService>(CRM_SERVICE);
   private exportService = inject(ExportService);
   private formBuilder = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
@@ -79,10 +80,16 @@ export class OportunidadesComponent implements OnInit, OnDestroy, AfterViewInit 
   // Pipeline summary
   pipelineSummary: { stage: OpportunityStage; label: string; count: number; value: number; color: string }[] = [];
 
+  // Real pipeline total from the CRM gateway (getDashboard()); backend value
+  // when realApis.crm is true, mock aggregation otherwise.
+  dashboardTotalValue = 0;
+  dashboardTotalCount = 0;
+
   ngOnInit(): void {
     this.initForms();
     this.stages = this.service.getStages();
     this.loadOpportunities();
+    this.loadDashboard();
     this.setupFilterListeners();
   }
 
@@ -127,6 +134,20 @@ export class OportunidadesComponent implements OnInit, OnDestroy, AfterViewInit 
         error: () => {
           this.snackBar.open('Erro ao carregar oportunidades', 'Fechar', { duration: 3000 });
           this.isLoading = false;
+        }
+      });
+  }
+
+  loadDashboard(): void {
+    this.service.getDashboard()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (dash) => {
+          this.dashboardTotalValue = dash.valorTotalEstimado ?? 0;
+          this.dashboardTotalCount = dash.total ?? 0;
+        },
+        error: () => {
+          // Keep the screen functional; the pipeline summary from the list remains.
         }
       });
   }

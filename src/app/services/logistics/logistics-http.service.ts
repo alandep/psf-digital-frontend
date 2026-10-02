@@ -42,6 +42,14 @@ interface EmbarquesDashboardResponse {
   porStatus?: { status: string; quantidade: number }[];
 }
 
+// Backend port registry DTO (/bff/logistica/portos → PortoView).
+interface PortoView {
+  id: string;
+  code: string;
+  name: string;
+  country: string;
+}
+
 // HTTP gateway for the logistica/embarque module. Only used when
 // environment.realApis.logistics === true; otherwise the mock adapter is
 // provided. The front mock is far richer than the backend, so methods with no
@@ -172,10 +180,21 @@ export class LogisticsHttpService implements ILogisticsService {
     return this.mock.getRotas();
   }
 
-  // PARTIAL: /bff/logistica/portos exists but returns a different shape; the
-  // rich PortoInfo (congestion, avg operation time) is mock-only.
+  // Consumes GET /bff/logistica/portos (PortoView) and maps it to the front
+  // PortoInfo, filling the rich fields (congestion, avg operation time) with
+  // safe defaults since the backend does not provide them. Falls back to the
+  // mock when the backend is unavailable.
   getPortos(): Observable<PortoInfo[]> {
-    return this.mock.getPortos();
+    return this.http.get<PortoView[]>(`${this.api}/portos`).pipe(
+      map((rows) => (rows ?? []).map((p) => ({
+        codigo: p.code ?? '',
+        nome: p.name ?? '',
+        pais: p.country ?? '',
+        congestionamento_atual: 0,
+        tempo_medio_operacao: 0
+      } as PortoInfo))),
+      catchError(() => this.mock.getPortos())
+    );
   }
 
   // PARTIAL: AI route suggestion has no backend endpoint.

@@ -11,6 +11,7 @@ export const environment: Environment = {
     subscription: false,
     documents: false,
     logistics: false,
-    finance: false
+    finance: false,
+    crm: false
   }
 };

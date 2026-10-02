@@ -8,6 +8,7 @@ export interface RealApiFlags {
   documents: boolean;
   logistics: boolean;
   finance: boolean;
+  crm: boolean;
 }
 
 export interface Environment {
@@ -25,11 +26,12 @@ export const environment: Environment = {
   useMockServices: false,
   bffBaseUrl: '',
   realApis: {
-    auth: true,
-    export: true,
+    auth: false,
+    export: false,
     subscription: false,
     documents: false,
     logistics: false,
-    finance: false
+    finance: false,
+    crm: false
   }
 };
