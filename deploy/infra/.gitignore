@@ -1,0 +1,13 @@
+# Artefatos locais do Terraform — NÃO versionar.
+# State pode conter dados sensíveis e é específico do ambiente de quem aplicou.
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+.terraformrc
+terraform.rc
+
+# O lock de providers DEVE ser versionado (fixa a versão do provider).
+!.terraform.lock.hcl

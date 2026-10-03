@@ -1,0 +1,83 @@
+# ==============================================================================
+# Validate WIF — Workflow de validação manual da Etapa 1 (Workload Identity Federation)
+# ------------------------------------------------------------------------------
+# OBJETIVO:
+#   Provar que o GitHub Actions deste repositório (alandep/psf-digital-frontend,
+#   branch master) consegue autenticar na GCP via OIDC/WIF, SEM usar key.json.
+#
+# CARACTERÍSTICAS:
+#   - Roda SOMENTE via acionamento manual (workflow_dispatch, aba Actions).
+#     Não dispara em push nem pull_request — para não se misturar com ci.yml/cd.yml
+#     nem rodar sozinho.
+#   - NÃO cria nenhum recurso e NÃO faz deploy. É apenas uma verificação de leitura.
+#
+# PRÉ-REQUISITOS:
+#   Os "repository variables" abaixo já devem estar configurados no GitHub
+#   (Settings → Secrets and variables → Actions → aba Variables):
+#     - WIF_PROVIDER            -> ID completo do Workload Identity Provider
+#     - DEPLOY_SERVICE_ACCOUNT  -> e-mail da Service Account deployer
+#   Usamos vars.* (NUNCA secret / credentials_json / key.json).
+#
+# OBSERVAÇÃO IMPORTANTE (least-privilege na Etapa 1):
+#   A SA deployer hoje tem SOMENTE `roles/iam.workloadIdentityUser` e NENHUMA role
+#   de projeto. Portanto, `gcloud projects describe` PODE retornar "permission denied".
+#   Isso é ESPERADO nesta etapa e NÃO deve ser interpretado como erro do WIF.
+#   A PROVA de sucesso é a própria autenticação OIDC:
+#     - `gcloud auth list` mostrando a SA deployer ativa, e
+#     - `gcloud auth print-access-token` retornando um token (redirecionado para
+#       /dev/null — o token NÃO é impresso).
+#   O `gcloud projects describe` é apenas informativo e não derruba o workflow.
+# ==============================================================================
+
+name: Validate WIF
+
+# Gatilho: SOMENTE manual, pela aba Actions do GitHub.
+on:
+  workflow_dispatch:
+
+# Permissões mínimas. `id-token: write` é obrigatório para o fluxo OIDC/WIF.
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  validate:
+    name: Validar autenticação OIDC/WIF (sem key.json)
+    runs-on: ubuntu-latest
+    steps:
+      # 1) Checkout do repositório.
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2) Autenticação na GCP via Workload Identity Federation (OIDC).
+      #    Sem key.json: usamos o provider WIF + a SA deployer, ambos via vars.*.
+      - name: Autenticar na GCP (WIF/OIDC)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOY_SERVICE_ACCOUNT }}
+
+      # 3) Instalar e configurar a CLI gcloud.
+      - name: Configurar gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      # 4) Verificação (NÃO cria nada / NÃO altera nada).
+      #    - `gcloud auth list`  -> deve mostrar a SA deployer ativa.
+      #    - `gcloud config list` -> contexto atual da CLI.
+      #    - `gcloud auth print-access-token` -> prova OIDC (token mascarado: vai p/ /dev/null).
+      #    - `gcloud projects describe` -> leitura informativa; pode falhar sem permissão
+      #      (esperado na Etapa 1), por isso usa `|| echo` para NÃO derrubar o workflow.
+      - name: Verificar autenticação (somente leitura)
+        run: |
+          echo "== Contas autenticadas (deve listar a SA deployer como ACTIVE) =="
+          gcloud auth list
+
+          echo "== Configuração atual da gcloud =="
+          gcloud config list
+
+          echo "== Prova de OIDC: obter access token (token NÃO é impresso) =="
+          gcloud auth print-access-token >/dev/null && echo "OIDC auth OK"
+
+          echo "== Leitura informativa do projeto (pode falhar na Etapa 1) =="
+          gcloud projects describe eip-ai-prod --format="value(projectId,projectNumber)" \
+            || echo "describe sem permissao (esperado na Etapa 1 — SA sem role de projeto); OIDC auth OK é suficiente"
