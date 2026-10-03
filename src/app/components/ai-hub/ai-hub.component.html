@@ -1,0 +1,339 @@
+<div class="ai-hub">
+  <header class="ai-hub__header">
+    <mat-icon class="ai-hub__header-icon">smart_toy</mat-icon>
+    <div>
+      <h1>IA (Gemini)</h1>
+      <p>Classifique NCM, extraia documentos e reconcilie pedido, packing e invoice com IA.</p>
+    </div>
+  </header>
+
+  <mat-tab-group animationDuration="200ms">
+    <!-- Aba 1: Classificar NCM -->
+    <mat-tab label="Classificar NCM">
+      <mat-card class="ai-hub__card">
+        <mat-card-content>
+          <mat-form-field appearance="outline" class="ai-hub__field">
+            <mat-label>Descricao do produto</mat-label>
+            <textarea
+              matInput
+              rows="4"
+              [(ngModel)]="ncmInput"
+              placeholder="Ex.: Cafe verde arabica, nao torrado, nao descafeinado"
+            ></textarea>
+          </mat-form-field>
+
+          <div class="ai-hub__actions">
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="classificarNcm()"
+              [disabled]="ncmLoading()"
+            >
+              <mat-icon>category</mat-icon>
+              Classificar
+            </button>
+          </div>
+
+          @if (ncmLoading()) {
+            <div class="ai-hub__loading">
+              <mat-spinner diameter="28"></mat-spinner>
+              <span>Classificando...</span>
+            </div>
+          }
+
+          @if (ncmErro(); as err) {
+            <div class="ai-hub__error">
+              <mat-icon>error_outline</mat-icon>
+              <span>{{ err.message }}</span>
+            </div>
+            @if (err.correlationId) {
+              <small class="ai-hub__correlation">Codigo de suporte: {{ err.correlationId }}</small>
+            }
+            @if (err.retryable) {
+              <div class="ai-hub__actions">
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  (click)="retryNcm()"
+                  [disabled]="ncmLoading() || ncmRetryIn() > 0"
+                >
+                  <mat-icon>refresh</mat-icon>
+                  @if (ncmRetryIn() > 0) {
+                    Tentar novamente em {{ ncmRetryIn() }}s
+                  } @else {
+                    Tentar novamente
+                  }
+                </button>
+              </div>
+            }
+          }
+
+          @if (ncmResult(); as r) {
+            <div class="ai-hub__result">
+              <div class="ai-hub__ncm-code">{{ r.output }}</div>
+              <div class="ai-hub__meta">
+                <span>Modelo: {{ r.model }}</span>
+                <span>Provedor: {{ r.provider }}</span>
+                <span>Tokens: {{ r.inputUnits }} entrada / {{ r.outputUnits }} saida</span>
+              </div>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    </mat-tab>
+
+    <!-- Aba 2: Extrair Documento -->
+    <mat-tab label="Extrair Documento">
+      <mat-card class="ai-hub__card">
+        <mat-card-content>
+          <mat-form-field appearance="outline" class="ai-hub__field">
+            <mat-label>Texto do documento</mat-label>
+            <textarea
+              matInput
+              rows="6"
+              [(ngModel)]="docInput"
+              placeholder="Cole aqui o texto do documento (invoice, packing list, etc.)"
+            ></textarea>
+          </mat-form-field>
+
+          <div class="ai-hub__actions">
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="extrairDocumento()"
+              [disabled]="docLoading()"
+            >
+              <mat-icon>description</mat-icon>
+              Extrair
+            </button>
+          </div>
+
+          @if (docLoading()) {
+            <div class="ai-hub__loading">
+              <mat-spinner diameter="28"></mat-spinner>
+              <span>Extraindo...</span>
+            </div>
+          }
+
+          @if (docErro(); as err) {
+            <div class="ai-hub__error">
+              <mat-icon>error_outline</mat-icon>
+              <span>{{ err.message }}</span>
+            </div>
+            @if (err.correlationId) {
+              <small class="ai-hub__correlation">Codigo de suporte: {{ err.correlationId }}</small>
+            }
+            @if (err.retryable) {
+              <div class="ai-hub__actions">
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  (click)="retryDoc()"
+                  [disabled]="docLoading() || docRetryIn() > 0"
+                >
+                  <mat-icon>refresh</mat-icon>
+                  @if (docRetryIn() > 0) {
+                    Tentar novamente em {{ docRetryIn() }}s
+                  } @else {
+                    Tentar novamente
+                  }
+                </button>
+              </div>
+            }
+          }
+
+          @if (docResult(); as json) {
+            <div class="ai-hub__result">
+              <pre class="ai-hub__json">{{ json }}</pre>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    </mat-tab>
+
+    <!-- Aba 3: Reconciliar -->
+    <mat-tab label="Reconciliar">
+      <mat-card class="ai-hub__card">
+        <mat-card-content>
+          <mat-form-field appearance="outline" class="ai-hub__field">
+            <mat-label>Pedido</mat-label>
+            <textarea matInput rows="4" [(ngModel)]="recPedido"></textarea>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="ai-hub__field">
+            <mat-label>Packing list</mat-label>
+            <textarea matInput rows="4" [(ngModel)]="recPacking"></textarea>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="ai-hub__field">
+            <mat-label>Invoice</mat-label>
+            <textarea matInput rows="4" [(ngModel)]="recInvoice"></textarea>
+          </mat-form-field>
+
+          <div class="ai-hub__actions">
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="reconciliar()"
+              [disabled]="recLoading()"
+            >
+              <mat-icon>fact_check</mat-icon>
+              Reconciliar
+            </button>
+          </div>
+
+          @if (recLoading()) {
+            <div class="ai-hub__loading">
+              <mat-spinner diameter="28"></mat-spinner>
+              <span>Reconciliando...</span>
+            </div>
+          }
+
+          @if (recErro(); as err) {
+            <div class="ai-hub__error">
+              <mat-icon>error_outline</mat-icon>
+              <span>{{ err.message }}</span>
+            </div>
+            @if (err.correlationId) {
+              <small class="ai-hub__correlation">Codigo de suporte: {{ err.correlationId }}</small>
+            }
+            @if (err.retryable) {
+              <div class="ai-hub__actions">
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  (click)="retryRec()"
+                  [disabled]="recLoading() || recRetryIn() > 0"
+                >
+                  <mat-icon>refresh</mat-icon>
+                  @if (recRetryIn() > 0) {
+                    Tentar novamente em {{ recRetryIn() }}s
+                  } @else {
+                    Tentar novamente
+                  }
+                </button>
+              </div>
+            }
+          }
+
+          @if (recResult(); as r) {
+            <div class="ai-hub__result">
+              <!-- Status por documento -->
+              <div class="ai-hub__doc-status">
+                <h3>Status por documento</h3>
+                @for (doc of [r.pedido, r.packing, r.invoice]; track doc.kind) {
+                  <div class="ai-hub__doc">
+                    <span class="ai-hub__doc-kind">{{ doc.kind }}</span>
+                    <span
+                      class="ai-hub__badge"
+                      [class.ai-hub__badge--ok]="doc.status === 'OK'"
+                      [class.ai-hub__badge--nok]="doc.status === 'FAILED'"
+                    >
+                      <mat-icon>{{ doc.status === 'OK' ? 'check_circle' : 'cancel' }}</mat-icon>
+                      <span>{{ doc.status }}</span>
+                    </span>
+                    @if (doc.status === 'FAILED') {
+                      <div class="ai-hub__doc-failure">
+                        <strong>{{ doc.failureKind }}</strong>
+                        @if (doc.failureDetail) {
+                          <span>&mdash; {{ doc.failureDetail }}</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+
+              <!-- Indicador allExtracted -->
+              <div
+                class="ai-hub__badge"
+                [class.ai-hub__badge--ok]="r.allExtracted"
+                [class.ai-hub__badge--nok]="!r.allExtracted"
+              >
+                <mat-icon>{{ r.allExtracted ? 'done_all' : 'remove_done' }}</mat-icon>
+                <span>{{ r.allExtracted ? 'Todos os documentos extraidos' : 'Extracao parcial' }}</span>
+              </div>
+
+              <!-- Reconciliacao: caminho feliz (todos extraidos) -->
+              @if (r.reconciliation; as rec) {
+                <div
+                  class="ai-hub__badge"
+                  [class.ai-hub__badge--ok]="rec.ok"
+                  [class.ai-hub__badge--nok]="!rec.ok"
+                >
+                  <mat-icon>{{ rec.ok ? 'check_circle' : 'cancel' }}</mat-icon>
+                  <span>{{ rec.ok ? 'Documentos conferem' : 'Divergencias encontradas' }}</span>
+                </div>
+
+                @if (rec.divergences.length) {
+                  <div class="ai-hub__divergences">
+                    <h3>Divergencias</h3>
+                    <ul>
+                      @for (d of rec.divergences; track d) {
+                        <li>{{ d }}</li>
+                      }
+                    </ul>
+                  </div>
+                }
+
+                @if (rec.explanation) {
+                  <div class="ai-hub__explanation">
+                    <h3>Explicacao</h3>
+                    <p>{{ rec.explanation }}</p>
+                  </div>
+                }
+              } @else {
+                <!-- Reconciliacao nao executada (extracao parcial) -->
+                <div class="ai-hub__partial">
+                  <mat-icon>info</mat-icon>
+                  <div>
+                    <p>
+                      A reconciliacao nao foi executada porque nem todos os documentos
+                      foram extraidos com sucesso.
+                    </p>
+                    <p>Documentos com falha:</p>
+                    <ul>
+                      @for (doc of [r.pedido, r.packing, r.invoice]; track doc.kind) {
+                        @if (doc.status === 'FAILED') {
+                          <li>
+                            {{ doc.kind }}
+                            @if (doc.failureKind) {
+                              &mdash; {{ doc.failureKind }}
+                            }
+                          </li>
+                        }
+                      }
+                    </ul>
+                  </div>
+                </div>
+              }
+
+              <!-- Bloco de revisao humana -->
+              <div class="ai-hub__review">
+                <h3>Revisao humana</h3>
+                @if (r.review.needsReview) {
+                  <div
+                    class="ai-hub__badge ai-hub__badge--nok"
+                  >
+                    <mat-icon>flag</mat-icon>
+                    <span>Revisao humana necessaria</span>
+                  </div>
+                  <ul>
+                    @for (reason of r.review.reasons; track reason) {
+                      <li>{{ reviewReasonLabel(reason) }}</li>
+                    }
+                  </ul>
+                } @else {
+                  <div class="ai-hub__badge ai-hub__badge--ok">
+                    <mat-icon>verified</mat-icon>
+                    <span>Nenhuma revisao humana necessaria</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    </mat-tab>
+  </mat-tab-group>
+</div>

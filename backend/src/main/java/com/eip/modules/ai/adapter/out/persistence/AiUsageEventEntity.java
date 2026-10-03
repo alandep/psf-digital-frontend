@@ -65,4 +65,25 @@ public class AiUsageEventEntity {
 
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
+
+    @Column(name = "thinking_tokens")
+    private long thinkingTokens;
+
+    @Column(name = "total_tokens")
+    private long totalTokens;
+
+    @Column(name = "finish_reason")
+    private String finishReason;
+
+    @Column(name = "latency_ms")
+    private Long latencyMs;
+
+    @Column(name = "outcome")
+    private String outcome;
+
+    @Column(name = "failure_category")
+    private String failureCategory;
+
+    @Column(name = "trace_id")
+    private String traceId;
 }

@@ -1,0 +1,27 @@
+# Caminho A — APENAS DESENVOLVIMENTO/TESTE TÉCNICO. NÃO É PRODUÇÃO.
+#
+# Service NodePort: expõe o backend numa porta do nó, sem IP estável nem HTTPS gerenciado.
+# Use apenas para validação técnica rápida. Produção = Caminho B (expose-b/).
+#
+# Alternativa sem NodePort (mais efêmera): port-forward direto ao Service ClusterIP:
+#   kubectl port-forward svc/eip-backend 8080:8080
+#   (acessa em http://localhost:8080 enquanto o comando roda; sem exposição externa)
+apiVersion: v1
+kind: Service
+metadata:
+  name: eip-backend-nodeport
+  namespace: default
+  labels:
+    app: eip-backend
+    environment: dev-test-only   # marcador: NÃO usar em produção
+spec:
+  type: NodePort
+  selector:
+    app: eip-backend
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      # nodePort fixo opcional (30000-32767); omitido => o cluster escolhe.
+      nodePort: 30080
+      protocol: TCP

@@ -1,0 +1,13 @@
+# Certificado TLS gerenciado pelo Google para o backend de produção.
+# ALVO DE PRODUÇÃO (Caminho B). Aplicado apenas na fase faturável (💲).
+#
+# Pré-requisito: o DNS A/AAAA de api.iaexport.com.br deve apontar ao IP estático do LB
+# ANTES de o certificado ser emitido/validado (o Google valida via HTTP/DNS).
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: eip-backend-cert
+  namespace: default
+spec:
+  domains:
+    - api.iaexport.com.br

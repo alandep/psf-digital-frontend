@@ -1,6 +1,10 @@
 # Cloud Run profile. Minimal overrides; secrets/URLs are injected via env vars.
 # Logging: Cloud Run captures stdout; use a JSON-structured pattern/encoder here
 # (e.g. logstash/ECS encoder) when structured logs are required by the platform.
+#
+# Vertex AI credentials are resolved via ADC (Application Default Credentials):
+# GOOGLE_APPLICATION_CREDENTIALS locally / Workload Identity on Cloud Run. No
+# key.json path or secret is ever placed in this file.
 spring:
   datasource:
     hikari:
@@ -8,16 +12,126 @@ spring:
       # so per-instance connections must respect the database connection budget.
       maximum-pool-size: ${DB_POOL_SIZE:5}
 
+# Browser flow (PRODUCTION): the SPA is served from https://iaexport.com.br
+# (Firebase Hosting) and calls the BFF at https://api.iaexport.com.br (GKE).
+#
+# Topology (corrected): iaexport.com.br and api.iaexport.com.br share the same
+# registrable domain (iaexport.com.br), so they are SAME-SITE — only the host/origin
+# differs. They ARE cross-origin, which is why CORS stays mandatory and restricted to
+# https://iaexport.com.br (see eip.cors below). But because the flow is same-site, the
+# session cookie does NOT need SameSite=None: with SameSite=Lax the cookie is still sent
+# on the SPA's fetch/XHR to api.iaexport.com.br, since from the destination's point of
+# view (api.iaexport.com.br sets it and api.iaexport.com.br receives it) the cookie is
+# first-party. Lax is strictly MORE RESTRICTIVE than None (it blocks genuinely cross-site
+# / third-party sends), so it is the preferred, most-restrictive policy that works here.
+# Secure stays on because production is HTTPS-only (the LB redirects HTTP->HTTPS).
+# The cookie is intentionally host-only (no Domain attribute): it is set by and sent to
+# api.iaexport.com.br only, which is exactly what the SPA flow needs under SameSite=Lax.
+server:
+  servlet:
+    session:
+      cookie:
+        # Same-site (same registrable domain) over HTTPS: Lax suffices and is the most
+        # restrictive policy that still allows the same-site cross-origin SPA flow.
+        same-site: lax
+        secure: true
+        http-only: true
+
 # Reporting datasource (Super Admin cross-tenant analytics). In production the
 # eip_report role/credentials come from Secret Manager and are injected via the
 # REPORTING_DATASOURCE_URL / REPORTING_DB_USER / REPORTING_DB_PASSWORD env vars;
 # the role + BYPASSRLS grant are provisioned by a database admin, not by Flyway.
 eip:
+  # Production CORS allowlist. Configurable via env; default is the real frontend origin.
+  # NEVER "*": credentials (session/CSRF cookies) require an explicit origin.
+  cors:
+    allowed-origins: ${EIP_CORS_ALLOWED_ORIGINS:https://iaexport.com.br}
+  security:
+    cookie:
+      # Apply Secure + SameSite=Lax to the CSRF cookie (session cookie handled above) for
+      # the production HTTPS flow. The frontend/backend share the registrable domain
+      # iaexport.com.br (same-site), so Lax is sufficient and more restrictive than None;
+      # Secure is required because production is HTTPS-only. Enabled in cloud so the CSRF
+      # cookie carries Secure; overridable via env if the origin topology ever changes.
+      cross-site: ${EIP_COOKIE_CROSS_SITE:true}
+  ai:
+    # Vertex AI gateway config (cloud profile only). project/location/endpoint/
+    # api-version come from env vars with confirmed defaults. The model id
+    # (e.g. gemini-3.8-flash) is NOT here — it is resolved by the router from
+    # ai_model_config. No secrets or key.json paths belong in this file.
+    vertex:
+      project: ${GOOGLE_CLOUD_PROJECT:eip-ai-dev}
+      location: ${VERTEX_LOCATION:global}
+      endpoint: ${VERTEX_ENDPOINT:https://aiplatform.googleapis.com}
+      api-version: ${VERTEX_API_VERSION:v1}
+      # HTTP-client-level timeouts for the Vertex call (replaces @TimeLimiter;
+      # see VertexAiCaller javadoc). Config-driven per environment via env vars;
+      # Spring parses the ISO-ish duration suffix ("30s") into java.time.Duration.
+      timeout:
+        connect: ${VERTEX_CONNECT_TIMEOUT:30s}
+        read: ${VERTEX_READ_TIMEOUT:30s}
+  gcs:
+    # Google Cloud Storage config for the document module (cloud profile only).
+    # Bucket region is us-central1 (set at bucket creation; not needed in client
+    # config). V4 signed URLs are signed via the IAM signBlob API by impersonating
+    # the signer SA below — no key.json is used or referenced.
+    bucket: ${GCS_BUCKET:eip-ai-dev-documents}
+    project: ${GOOGLE_CLOUD_PROJECT:eip-ai-dev}
+    signer-service-account: ${GCS_SIGNER_SA:eip-backend@eip-ai-dev.iam.gserviceaccount.com}
+    signed-url-ttl-minutes: ${GCS_SIGNED_URL_TTL_MIN:15}
   reporting:
     datasource:
       url: ${REPORTING_DATASOURCE_URL:${SPRING_DATASOURCE_URL}}
       username: ${REPORTING_DB_USER}
       password: ${REPORTING_DB_PASSWORD}
+
+# Resilience4j for the Vertex AI provider call (cloud profile only; the default/
+# demo profile uses the deterministic mock and is unaffected). The circuit
+# breaker fails fast while OPEN (R9.5) and retries are transient-only (R9.3):
+# non-transient failures such as 4xx (HttpClientErrorException) are NOT in the
+# retry allow-list, so they propagate immediately without a retry.
+resilience4j:
+  retry:
+    instances:
+      vertex:
+        max-attempts: 2          # at most 1 retry (R9.2)
+        wait-duration: 500ms
+        # Exponential backoff + randomized jitter for the single retry, so bursts
+        # of concurrent retries do not synchronize ("thundering herd"). multiplier
+        # 2 doubles the base wait; randomized-wait-factor 0.5 spreads it +/-50%.
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        enable-randomized-wait: true
+        randomized-wait-factor: 0.5
+        retry-exceptions:
+          - java.io.IOException
+          - org.springframework.web.client.ResourceAccessException
+          - org.springframework.web.client.HttpServerErrorException
+        # 4xx (HttpClientErrorException) is NOT listed -> non-transient, no retry (R9.3)
+  circuitbreaker:
+    instances:
+      vertex:
+        sliding-window-size: 20
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+  bulkhead:
+    instances:
+      vertex:
+        max-concurrent-calls: 8
+
+# Actuator exposure (cloud profile override of the base application.yml). Adds the
+# circuitbreakers endpoint so the Vertex breaker state is observable, plus metrics,
+# and wires the breaker health indicator into the aggregate health. health/info/
+# prometheus remain exposed as in the base config.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics,circuitbreakers
+  health:
+    circuitbreakers:
+      enabled: true
 
 logging:
   level:

@@ -3,7 +3,9 @@ package com.eip.modules.ai.adapter.out.ai;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
+import com.eip.modules.ai.domain.model.AiExecutionPolicy;
 import com.eip.modules.ai.domain.model.AiModel;
+import com.eip.modules.ai.domain.model.AiPromptSpec;
 import com.eip.modules.ai.domain.model.AiRequest;
 import com.eip.modules.ai.domain.model.AiResult;
 
@@ -26,9 +28,9 @@ import com.eip.modules.ai.domain.model.AiResult;
 public class MockAiGatewayAdapter implements com.eip.modules.ai.domain.port.out.AiGatewayPort {
 
     @Override
-    public AiResult run(AiModel model, AiRequest request) {
+    public AiResult run(AiModel model, AiRequest request, AiExecutionPolicy policy, AiPromptSpec prompt) {
         String input = request.input() != null ? request.input() : "";
-        long inputUnits = Math.max(1, input.length());
+        long promptTokens = Math.max(1, input.length());
         String output = switch (request.task()) {
             case NCM_CLASSIFICATION -> "0901.21.00";
             case DOCUMENT_SUMMARY -> "Resumo: " + truncate(input, 120);
@@ -37,8 +39,9 @@ public class MockAiGatewayAdapter implements com.eip.modules.ai.domain.port.out.
             case DOCUMENT_EXTRACTION -> "{\"campos\":{},\"texto\":\"" + truncate(input, 80) + "\"}";
             case CHAT -> "Resposta (mock): " + truncate(input, 200);
         };
-        long outputUnits = Math.max(1, output.length());
-        return new AiResult(output, model.provider(), model.model(), inputUnits, outputUnits, 0);
+        long outputTokens = Math.max(1, output.length());
+        return AiResult.of(output, model.provider(), model.model(), 0,
+                promptTokens, outputTokens, 0, promptTokens + outputTokens, "STOP", 0);
     }
 
     private static String truncate(String value, int max) {

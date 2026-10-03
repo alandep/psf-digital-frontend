@@ -576,6 +576,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./components/ai-operations/dashboard/ai-operations-dashboard.component').then((m) => m.AiOperationsDashboardComponent),
       },
+      {
+        path: 'ai-hub',
+        loadComponent: () =>
+          import('./components/ai-hub/ai-hub.component').then((m) => m.AiHubComponent),
+      },
 
       // === MÓDULO COMMAND CENTER ===
       {

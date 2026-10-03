@@ -1,0 +1,35 @@
+# Ingress GKE (HTTP(S) Load Balancer gerenciado) — ALVO DE PRODUÇÃO (Caminho B).
+# Escolhido Ingress (em vez de Gateway API) pela simplicidade.
+#
+# NADA É APLICADO AUTOMATICAMENTE. Só na fase faturável (💲), após aprovação de custos.
+#
+# Componentes de produção que este manifesto aciona:
+#  - HTTP(S) Load Balancer gerenciado (forwarding rule ~US$18+/mês)
+#  - IP estático global (anotação global-static-ip-name — reservar IP na fase 💲)
+#  - Certificado TLS gerenciado pelo Google (ManagedCertificate — managedcertificate.yaml)
+#  - Domínio: api.iaexport.com.br (registrar A/AAAA -> IP estático do LB)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: eip-backend-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    # IP estático reservado na fase 💲 (ex.: `gcloud compute addresses create eip-backend-ip --global`).
+    kubernetes.io/ingress.global-static-ip-name: "eip-backend-ip"
+    # Certificado TLS gerenciado pelo Google (ver managedcertificate.yaml).
+    networking.gke.io/managed-certificates: "eip-backend-cert"
+    # Redireciona HTTP->HTTPS.
+    kubernetes.io/ingress.allow-http: "false"
+spec:
+  rules:
+    - host: api.iaexport.com.br
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: eip-backend
+                port:
+                  number: 8080

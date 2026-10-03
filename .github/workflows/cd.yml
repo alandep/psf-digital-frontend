@@ -1,0 +1,168 @@
+# =============================================================================
+# CD — push/merge na branch master.
+#
+#   CI = PR (build/test, SEM deploy).  CD = master (push imagem + rollout + firebase).
+#
+# ⚠️ ESTE WORKFLOW SÓ FUNCIONARÁ APÓS A INFRA FATURÁVEL (fase 💲) SER PROVISIONADA
+#    e os vars/secrets de WIF existirem (ver `vars` abaixo). O arquivo em si NÃO cria
+#    nada e NÃO roda em PR. Ele dispara apenas em push na master.
+#
+# Autenticação na GCP: Workload Identity Federation (WIF/OIDC), SEM chave de SA
+# persistente. Usa `workload_identity_provider` e `service_account` como VARS
+# (identificadores, não segredos). Nunca `credentials_json`.
+#
+# Imagem: SEMPRE `eip-backend:${{ github.sha }}` em southamerica-east1. NUNCA `latest`.
+#
+# Gate: os mesmos testes bloqueantes do CI (1.4/2.4/3.6/4.4) rodam antes do deploy.
+# =============================================================================
+name: CD
+
+on:
+  push:
+    branches: ["master"]
+
+permissions:
+  contents: read
+  id-token: write   # necessário para WIF/OIDC
+
+# Placeholders — preencher após provisionamento (fase 💲):
+env:
+  PROJECT_ID: eip-ai-prod
+  REGION: southamerica-east1
+  AR_REPO: eip-backend
+  IMAGE_NAME: eip-backend
+  GKE_CLUSTER: eip-autopilot          # preencher: nome do cluster GKE Autopilot
+  GKE_LOCATION: southamerica-east1
+  FIREBASE_PROJECT: eip-ai-prod       # preencher: projeto Firebase (frontend iaexport.com.br)
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1) GATE — mesmos checks do CI (bloqueia o deploy).
+  # ---------------------------------------------------------------------------
+  gate:
+    name: Gate de testes (backend + frontend)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Maven verify (gate 1.4/2.4/3.6/4.4)
+        working-directory: backend
+        run: mvn -B verify
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install deps
+        run: npm ci
+      - name: Angular production build
+        run: npx ng build --configuration=production
+      - name: Angular unit tests (headless, best-effort 5.5)
+        continue-on-error: true
+        run: npx ng test --watch=false --browsers=ChromeHeadless
+
+  # ---------------------------------------------------------------------------
+  # 2) BUILD + PUSH — imagem eip-backend:<git-sha> no Artifact Registry.
+  # ---------------------------------------------------------------------------
+  build-and-push:
+    name: Build & push (Artifact Registry)
+    runs-on: ubuntu-latest
+    needs: [gate]
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+      # Auth via WIF/OIDC — sem key.json. Vars preenchidas na fase 💲.
+      - name: Authenticate to GCP (WIF)
+        uses: google-github-actions/auth@v2
+        with:
+          # Caminho do provider WIF, ex.:
+          # projects/<PROJECT_NUMBER>/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOY_SERVICE_ACCOUNT }}
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+      - name: Compute image ref
+        id: meta
+        run: echo "image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.AR_REPO }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      # Tag = github.sha. NUNCA latest.
+      - name: Build & push image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ steps.meta.outputs.image }}
+
+  # ---------------------------------------------------------------------------
+  # 3) DEPLOY BACKEND — rollout no GKE com a imagem :<sha> e espera de readiness.
+  # ---------------------------------------------------------------------------
+  deploy-backend:
+    name: Deploy backend (GKE rollout)
+    runs-on: ubuntu-latest
+    needs: [build-and-push]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate to GCP (WIF)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOY_SERVICE_ACCOUNT }}
+      - name: Setup gcloud + GKE auth plugin
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          install_components: gke-gcloud-auth-plugin
+      - name: Get cluster credentials
+        run: gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} --location ${{ env.GKE_LOCATION }} --project ${{ env.PROJECT_ID }}
+      # Aplica os manifests base (SA, service) e injeta a imagem :<sha> no Deployment.
+      - name: Apply base manifests
+        run: |
+          kubectl apply -f deploy/k8s/serviceaccount.yaml
+          kubectl apply -f deploy/k8s/service.yaml
+          kubectl apply -f deploy/k8s/deployment.yaml
+      - name: Set image to this commit SHA (nunca latest)
+        run: kubectl set image deployment/eip-backend backend=${{ needs.build-and-push.outputs.image }}
+      # Aguarda readiness (readinessState,db) — o rollout só conclui com o pod pronto.
+      - name: Wait for rollout (readiness)
+        run: kubectl rollout status deployment/eip-backend --timeout=300s
+      # Exposição de produção (Caminho B). Idempotente; pré-requisito: IP estático + DNS.
+      - name: Apply production exposure (Caminho B)
+        run: |
+          kubectl apply -f deploy/k8s/expose-b/managedcertificate.yaml
+          kubectl apply -f deploy/k8s/expose-b/ingress.yaml
+
+  # ---------------------------------------------------------------------------
+  # 4) DEPLOY FRONTEND — Firebase Hosting (iaexport.com.br), autenticado por WIF/OIDC.
+  # ---------------------------------------------------------------------------
+  deploy-frontend:
+    name: Deploy frontend (Firebase Hosting)
+    runs-on: ubuntu-latest
+    needs: [deploy-backend]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install deps
+        run: npm ci
+      - name: Angular production build
+        run: npx ng build --configuration=production
+      # Auth via WIF/OIDC — sem token/key persistente de Firebase.
+      - name: Authenticate to GCP (WIF)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOY_SERVICE_ACCOUNT }}
+      # firebase-tools usa o ADC obtido via WIF (GOOGLE_APPLICATION_CREDENTIALS exportado pelo auth).
+      - name: Firebase deploy (hosting)
+        run: npx -y firebase-tools@latest deploy --only hosting --project ${{ env.FIREBASE_PROJECT }} --non-interactive

@@ -1,0 +1,35 @@
+# Cloud override for the EIP backend — runs the AI Hub against real Vertex AI.
+#
+# Usage (from backend/):
+#   1. On the host, authenticate ADC first:
+#        gcloud auth application-default login
+#        gcloud config set project eip-ai-dev
+#      This writes credentials to the host ADC path (Linux/macOS:
+#      ~/.config/gcloud ; Windows: %APPDATA%\gcloud).
+#   2. Point ADC_DIR at that host gcloud directory (see below), then:
+#        docker compose -f docker-compose.yml -f docker-compose.cloud.yml up -d
+#
+# SECURITY: no key.json is baked into the image and no secret is committed.
+# The host ADC directory is mounted READ-ONLY and resolved at runtime only.
+services:
+  app:
+    environment:
+      # Activate the Vertex adapter (@Profile("cloud")) in place of the mock.
+      SPRING_PROFILES_ACTIVE: cloud
+      # ADC: the Google auth library reads this path INSIDE the container.
+      GOOGLE_APPLICATION_CREDENTIALS: /gcloud/application_default_credentials.json
+      # Vertex config (consumed by VertexAiProperties / application-cloud.yml).
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT:-eip-ai-dev}
+      VERTEX_LOCATION: ${VERTEX_LOCATION:-global}
+      # Legitimate per-environment datasource credentials: for local cloud-profile
+      # runs they point at the compose Postgres (db service uses eip/eip); in
+      # production they come from Secret Manager. URL falls back to
+      # SPRING_DATASOURCE_URL.
+      REPORTING_DB_USER: ${REPORTING_DB_USER:-eip}
+      REPORTING_DB_PASSWORD: ${REPORTING_DB_PASSWORD:-eip}
+    volumes:
+      # Mount the host's gcloud ADC directory read-only. Set ADC_DIR to the host
+      # gcloud config dir:
+      #   Linux/macOS: export ADC_DIR=$HOME/.config/gcloud
+      #   Windows (PowerShell): $env:ADC_DIR="$env:APPDATA\gcloud"
+      - ${ADC_DIR:-~/.config/gcloud}:/gcloud:ro

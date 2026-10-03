@@ -33,10 +33,22 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
           code?: string;
           correlationId?: string;
           status?: number;
+          retryAfterSeconds?: number;
         };
         normalized.code = body.code;
         normalized.correlationId = body.correlationId;
         normalized.status = err.status;
+        // Captura o header Retry-After (ex.: 429 AI_RATE_LIMITED) para que o front
+        // possa honrar a espera antes de oferecer o retry manual. Apenas a forma
+        // "inteiro em segundos" e suportada (espelhando o translator do backend);
+        // ausente/invalido => undefined. HttpHeaders faz o lookup case-insensitive.
+        const retryAfterRaw = err.headers?.get('Retry-After');
+        if (retryAfterRaw != null) {
+          const seconds = Number.parseInt(retryAfterRaw.trim(), 10);
+          if (Number.isInteger(seconds) && seconds >= 0 && String(seconds) === retryAfterRaw.trim()) {
+            normalized.retryAfterSeconds = seconds;
+          }
+        }
         return throwError(() => normalized);
       }
       return throwError(() => err);

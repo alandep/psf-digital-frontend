@@ -1,0 +1,113 @@
+# Deployment do backend EIP (Spring Boot) no GKE Autopilot (southamerica-east1).
+#
+# NADA É APLICADO AUTOMATICAMENTE. Este manifesto só é aplicado na fase faturável (💲),
+# após o checkpoint de aprovação de custos.
+#
+# Imagem: o SHA (GIT_SHA_PLACEHOLDER) é INJETADO pelo CD (cd.yml) via `kubectl set image`
+# ou substituição no apply. NUNCA usar `latest`.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eip-backend
+  namespace: default
+  labels:
+    app: eip-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eip-backend
+  template:
+    metadata:
+      labels:
+        app: eip-backend
+    spec:
+      # Workload Identity: sem key.json. Credenciais Google (Vertex/GCS/Cloud SQL) via GSA eip-pod.
+      serviceAccountName: eip-ksa
+      containers:
+        # --- Container principal: backend Spring Boot ---
+        - name: backend
+          # SHA injetado no CD (cd.yml). Placeholder abaixo nunca deve chegar a `latest`.
+          image: southamerica-east1-docker.pkg.dev/eip-ai-prod/eip-backend/eip-backend:GIT_SHA_PLACEHOLDER
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "cloud"
+            - name: PORT
+              value: "8080"
+            # Conexão ao Cloud SQL via sidecar Auth Proxy (127.0.0.1:5432). Sem IP público do banco.
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://127.0.0.1:5432/eip"
+            # Credenciais do banco vêm de um Secret do K8s alimentado pelo Secret Manager.
+            # Os valores NÃO estão aqui — apenas referências (secretKeyRef).
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: eip-db-credentials
+                  key: db-user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: eip-db-credentials
+                  key: db-password
+            - name: REPORTING_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: eip-db-credentials
+                  key: reporting-db-user
+            - name: REPORTING_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: eip-db-credentials
+                  key: reporting-db-password
+            - name: GOOGLE_CLOUD_PROJECT
+              value: "eip-ai-prod"
+            # VERTEX_LOCATION placeholder: confirmar `global` ou `southamerica-east1`
+            # (disponibilidade do modelo na região) antes do go-live.
+            - name: VERTEX_LOCATION
+              value: "global"
+          resources:
+            # 512Mi é PONTO DE PARTIDA a MEDIR (RSS/heap/CPU do Spring Boot sob carga).
+            # Se houver OOMKilled/pressão, subir o request de memória para 1Gi.
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+        # --- Sidecar: Cloud SQL Auth Proxy ---
+        # Conecta ao Cloud SQL via IAM (sem senha de rede). O backend fala com 127.0.0.1:5432.
+        - name: cloud-sql-proxy
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1
+          args:
+            - "--private-ip=false"
+            # CONNECTION_NAME placeholder: <PROJECT>:<REGION>:<INSTANCE>
+            # preencher após provisionar o Cloud SQL (fase 💲).
+            - "eip-ai-prod:southamerica-east1:eip-sql"
+            - "--port=5432"
+          securityContext:
+            runAsNonRoot: true
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "100m"
+              memory: "128Mi"

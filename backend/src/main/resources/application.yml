@@ -38,6 +38,8 @@ management:
       probes:
         enabled: true
       group:
+        liveness:
+          include: livenessState
         readiness:
           include: readinessState,db
 
@@ -48,9 +50,42 @@ springdoc:
     path: /swagger-ui.html
 
 eip:
+  # CORS / cookie security knobs for the browser BFF flow.
+  #
+  # Base defaults are LOCAL-SAFE: the Angular dev server runs same-origin behind
+  # the dev proxy (proxy.conf.json) or at http://localhost:4200, so the hardened
+  # cookie attributes MUST stay off here (Secure/SameSite would break plain
+  # http://localhost). The cloud profile (application-cloud.yml) overrides these
+  # for production (iaexport.com.br -> api.iaexport.com.br), which is cross-origin
+  # (CORS mandatory) but same-site (same registrable domain) → SameSite=Lax + Secure.
+  cors:
+    # Comma-separated allowlist. NEVER "*": credentials require a specific origin.
+    allowed-origins: ${EIP_CORS_ALLOWED_ORIGINS:http://localhost:4200}
+  security:
+    cookie:
+      # When true, the session + CSRF cookies are hardened with Secure and SameSite=Lax
+      # for the production HTTPS flow (same registrable domain iaexport.com.br → same-site;
+      # Lax is sufficient and more restrictive than None). MUST stay false locally (plain
+      # HTTP, same-origin): leaving it off avoids forcing Secure/SameSite and breaking
+      # http://localhost. Flipped to true in the cloud profile.
+      cross-site: ${EIP_COOKIE_CROSS_SITE:false}
   ai:
     worker:
       poll-ms: 5000
+    # Versioned AI price table (FinOps). Lives under the base eip.ai section so it
+    # applies to ALL profiles (mock/demo included) and needs no DB migration.
+    # Consumed by AiPriceCatalogPort to compute ai_usage_event.provider_cost.
+    # A price change is a config change only (bump `version` + edit a rate) — no deploy.
+    # NOTE: the numbers below are ILLUSTRATIVE placeholders and MUST be confirmed
+    # against Google's official Vertex AI price sheet before go-live.
+    # Rates are USD per 1,000,000 tokens. Keys are quoted because they contain a colon.
+    pricing:
+      version: "2026-01"
+      rates:
+        "vertex-ai:gemini-3.8-flash":
+          input-per-million: 0.075
+          output-per-million: 0.30
+          thinking-per-million: 0.30
   document:
     worker:
       poll-ms: 7000

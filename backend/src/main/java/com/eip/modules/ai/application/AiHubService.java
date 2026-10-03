@@ -5,18 +5,26 @@ import java.math.RoundingMode;
 import java.util.List;
 import java.util.UUID;
 
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.eip.modules.ai.domain.model.AiExecutionPolicy;
+import com.eip.modules.ai.domain.model.AiLedgerEntry;
 import com.eip.modules.ai.domain.model.AiModel;
+import com.eip.modules.ai.domain.model.AiOutcome;
+import com.eip.modules.ai.domain.model.AiPromptSpec;
 import com.eip.modules.ai.domain.model.AiRequest;
 import com.eip.modules.ai.domain.model.AiResult;
 import com.eip.modules.ai.domain.model.AiTask;
 import com.eip.modules.ai.domain.port.in.AnalyzeUseCase;
 import com.eip.modules.ai.domain.port.in.UsageQueryUseCase;
+import com.eip.modules.ai.domain.port.out.AiExecutionPolicyResolver;
 import com.eip.modules.ai.domain.port.out.AiGatewayPort;
 import com.eip.modules.ai.domain.port.out.AiJobPort;
 import com.eip.modules.ai.domain.port.out.AiJobPort.AiJobSnapshot;
+import com.eip.modules.ai.domain.port.out.AiPriceCatalogPort;
+import com.eip.modules.ai.domain.port.out.AiPromptRegistry;
 import com.eip.modules.ai.domain.port.out.AiUsageLedgerPort;
 import com.eip.modules.ai.domain.port.out.ModelRouterPort;
 import com.eip.modules.ai.domain.port.out.QuotaPort;
@@ -42,11 +50,17 @@ public class AiHubService implements AnalyzeUseCase, UsageQueryUseCase {
     private static final String AI_FEATURE = "AI";
 
     private final ModelRouterPort router;
+    private final AiExecutionPolicyResolver policyResolver;
+    private final AiPromptRegistry promptRegistry;
     private final AiGatewayPort gateway;
+    private final ExtractionIdempotencyService idempotency;
+    private final ExtractionResultValidator extractionValidator;
     private final AiUsageLedgerPort ledger;
+    private final AiPriceCatalogPort priceCatalog;
     private final QuotaPort quota;
     private final AiJobPort jobs;
     private final OutboxPublisher outbox;
+    private final AiCallLogger aiCallLogger;
 
     private static OrganizationContext ctx() {
         return OrganizationContextHolder.current();
@@ -76,16 +90,56 @@ public class AiHubService implements AnalyzeUseCase, UsageQueryUseCase {
                     "Franquia de IA esgotada. Adquira creditos de IA para continuar.");
         }
 
-        AiModel model = router.resolve(task);
+        // Policy and prompt are resolved here, in the application layer — never in
+        // controllers and never in the provider adapter (Requirements 5.3, 6.1).
+        AiExecutionPolicy policy = policyResolver.resolve(task);
+        AiModel model = policy.model();
+        AiPromptSpec prompt = promptRegistry.specFor(task, cmd.input());
         AiRequest request = new AiRequest(task, cmd.input(), org, userId);
-        AiResult result = gateway.run(model, request);
 
-        String requestId = UUID.randomUUID().toString();
-        ledger.record(org, userId, task, result, requestId);
-        outbox.record(AGGREGATE_TYPE, requestId, org, "IaUtilizada", usagePayload(task, result));
+        try {
+            // Structured extraction goes through the idempotency cache (task 9.3): the
+            // same tenant+doc+task+promptVersion+modelVersion key skips a redundant
+            // Gemini call on a cache hit (Property 4, Requirements 10.1-10.4). Other
+            // tasks call the gateway directly.
+            AiResult result = (task == AiTask.DOCUMENT_EXTRACTION)
+                    ? idempotency.extract(org, model, request, policy, prompt)
+                    : gateway.run(model, request, policy, prompt);
 
-        return new AnalysisView(task.name(), result.output(), result.provider(),
-                result.model(), result.inputUnits(), result.outputUnits(), result.ocrPages());
+            // Extraction output is parsed + validated BEFORE any persistence (task 9.2):
+            // an invalid invoice extraction throws a descriptive error here, so no
+            // invalid DTO is ever recorded (Requirement 7.4). Non-invoice-shaped output
+            // (e.g. the mock/demo) is skipped as a best-effort for mixed outputs.
+            if (task == AiTask.DOCUMENT_EXTRACTION) {
+                extractionValidator.validateInvoice(result.output());
+            }
+
+            // FinOps (task 7.2): provider_cost is computed here, in the application layer,
+            // from a versioned price source — never in the Vertex adapter — so a price
+            // change requires no code deploy (Requirements 11.1, 11.2, 11.4).
+            BigDecimal cost = priceCatalog.providerCost(result.provider(), result.model(), result);
+
+            String requestId = UUID.randomUUID().toString();
+            ledger.record(org, userId, task, result, requestId, cost);
+            // Outcome-aware observability (Req 9.2, 9.3): structured success log + a SUCCESS
+            // ledger outcome. recordOutcome shares this transaction (committed on success).
+            aiCallLogger.logSuccess(task, result);
+            ledger.recordOutcome(new AiLedgerEntry(org, userId, task, requestId,
+                    MDC.get("traceId"), AiOutcome.SUCCESS, null, result, cost));
+            outbox.record(AGGREGATE_TYPE, requestId, org, "IaUtilizada", usagePayload(task, result));
+
+            return new AnalysisView(task.name(), result.output(), result.provider(),
+                    result.model(), result.inputUnits(), result.outputUnits(), result.ocrPages());
+        } catch (RuntimeException ex) {
+            // FAILURE outcome (Req 9.2): classify, log (redacted) and persist a FAILURE row in a
+            // SEPARATE transaction so it survives the rollback caused by rethrowing. The exception
+            // is rethrown unchanged so AiExceptionHandler still maps it to the correct HTTP status.
+            String cat = AiFailureCategory.of(ex);
+            aiCallLogger.logFailure(task, cat, ex);
+            ledger.recordFailureOutcome(new AiLedgerEntry(org, userId, task,
+                    UUID.randomUUID().toString(), MDC.get("traceId"), AiOutcome.FAILURE, cat, null, null));
+            throw ex;
+        }
     }
 
     @Override
@@ -135,6 +189,10 @@ public class AiHubService implements AnalyzeUseCase, UsageQueryUseCase {
     }
 
     private static String usagePayload(AiTask task, AiResult result) {
+        // Phase 0: keeps emitting the legacy metering signals only
+        // (inputUnits/outputUnits/ocrPages). Real token telemetry
+        // (promptTokens/outputTokens/thinkingTokens/totalTokens/finishReason/latencyMs)
+        // is wired into the ledger/outbox in Phase 1 (tasks 3.2/3.3).
         return "{\"task\":\"" + task.name()
                 + "\",\"provider\":\"" + result.provider()
                 + "\",\"model\":\"" + result.model()

@@ -1,5 +1,6 @@
 package com.eip.modules.ai.adapter.in.worker;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +16,7 @@ import com.eip.modules.ai.domain.model.AiRequest;
 import com.eip.modules.ai.domain.model.AiResult;
 import com.eip.modules.ai.domain.model.AiTask;
 import com.eip.modules.ai.domain.port.out.AiGatewayPort;
+import com.eip.modules.ai.domain.port.out.AiPriceCatalogPort;
 import com.eip.modules.ai.domain.port.out.AiUsageLedgerPort;
 import com.eip.modules.ai.domain.port.out.ModelRouterPort;
 
@@ -46,6 +48,7 @@ public class AiJobProcessor {
     private final ModelRouterPort router;
     private final AiGatewayPort gateway;
     private final AiUsageLedgerPort ledger;
+    private final AiPriceCatalogPort priceCatalog;
 
     /** A claimed job reduced to what the processing loop needs. */
     public record Claim(UUID id, UUID organizationId) {
@@ -88,8 +91,13 @@ public class AiJobProcessor {
                     task, job.getInputRef(), job.getOrganizationId(), job.getUserId());
             AiResult result = gateway.run(model, request);
 
+            // FinOps (task 7.2): provider_cost is computed here, in the worker/application
+            // layer, from a versioned price source — never in the Vertex adapter — keeping
+            // the async path consistent with AiHubService (Requirements 11.1, 11.2, 11.4).
+            BigDecimal cost = priceCatalog.providerCost(result.provider(), result.model(), result);
+
             String requestId = UUID.randomUUID().toString();
-            ledger.record(job.getOrganizationId(), job.getUserId(), task, result, requestId);
+            ledger.record(job.getOrganizationId(), job.getUserId(), task, result, requestId, cost);
 
             job.setStatus("COMPLETED");
             job.setResultRef(result.output());

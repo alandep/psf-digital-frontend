@@ -1252,7 +1252,8 @@ export class HomeLoggedComponent implements OnInit, OnDestroy, AfterViewInit {
       title: 'AI Operations',
       icon: 'smart_toy',
       items: [
-        { name: 'Dashboard IA', route: 'ai-operations/dashboard', icon: 'monitoring' }
+        { name: 'Dashboard IA', route: 'ai-operations/dashboard', icon: 'monitoring' },
+        { name: 'IA (Gemini)', route: 'ai-hub', icon: 'smart_toy' }
       ]
     },
     {

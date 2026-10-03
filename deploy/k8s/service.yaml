@@ -1,0 +1,19 @@
+# Service ClusterIP do backend. Expõe a porta 8080 dentro do cluster.
+# A exposição externa é feita pelo Caminho B (Ingress em expose-b/) na produção,
+# ou pelo Caminho A (NodePort/port-forward em expose-a/) apenas em dev/teste.
+apiVersion: v1
+kind: Service
+metadata:
+  name: eip-backend
+  namespace: default
+  labels:
+    app: eip-backend
+spec:
+  type: ClusterIP
+  selector:
+    app: eip-backend
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP

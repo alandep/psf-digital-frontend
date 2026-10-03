@@ -16,11 +16,13 @@ import { subscriptionServiceProvider } from './services/subscription/subscriptio
 import { documentsServiceProvider } from './services/documents/documents-service.token';
 import { logisticsServiceProvider } from './services/logistics/logistics-service.token';
 import { crmServiceProvider } from './services/crm/crm-service.token';
+import { aiServiceProvider } from './services/ai/ai-service.token';
 import { pagamentosServiceProvider } from './services/finance/pagamentos-service.token';
 import { cambioServiceProvider } from './services/finance/cambio-service.token';
 import { hedgeServiceProvider } from './services/finance/hedge-service.token';
 import { credentialsInterceptor } from './http/credentials.interceptor';
 import { csrfInterceptor } from './http/csrf.interceptor';
+import { traceInterceptor } from './http/trace.interceptor';
 import { errorInterceptor } from './http/error.interceptor';
 
 // Registra o locale pt-BR para pipes de data/numero do Angular.
@@ -33,7 +35,7 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideHttpClient(
       withFetch(),
-      withInterceptors([credentialsInterceptor, csrfInterceptor, errorInterceptor])
+      withInterceptors([credentialsInterceptor, csrfInterceptor, traceInterceptor, errorInterceptor])
     ),
     provideNativeDateAdapter(),
     { provide: MAT_DATE_LOCALE, useValue: 'pt-BR' },
@@ -47,6 +49,7 @@ export const appConfig: ApplicationConfig = {
     documentsServiceProvider,
     logisticsServiceProvider,
     crmServiceProvider,
+    aiServiceProvider,
     pagamentosServiceProvider,
     cambioServiceProvider,
     hedgeServiceProvider,

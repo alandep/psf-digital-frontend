@@ -26,6 +26,9 @@
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
         <springdoc.version>2.8.9</springdoc.version>
         <archunit.version>1.3.0</archunit.version>
+        <google-auth.version>1.30.1</google-auth.version>
+        <google-cloud-bom.version>26.50.0</google-cloud-bom.version>
+        <resilience4j.version>2.2.0</resilience4j.version>
     </properties>
 
     <dependencyManagement>
@@ -34,6 +37,16 @@
                 <groupId>org.springframework.modulith</groupId>
                 <artifactId>spring-modulith-bom</artifactId>
                 <version>${spring-modulith.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- Google Cloud libraries BOM: aligns google-cloud-storage with the
+                 already-used google-auth-library-oauth2-http, so no explicit
+                 version is needed on google-cloud-storage below. -->
+            <dependency>
+                <groupId>com.google.cloud</groupId>
+                <artifactId>libraries-bom</artifactId>
+                <version>${google-cloud-bom.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -110,6 +123,34 @@
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>${springdoc.version}</version>
+        </dependency>
+
+        <!-- Google Application Default Credentials (ADC) for Vertex AI REST auth.
+             Provides GoogleCredentials.getApplicationDefault() without key.json.
+             Vertex is called via plain REST (RestClient from spring-boot-starter-web),
+             so the full google-cloud-vertexai SDK is intentionally NOT included. -->
+        <dependency>
+            <groupId>com.google.auth</groupId>
+            <artifactId>google-auth-library-oauth2-http</artifactId>
+            <version>${google-auth.version}</version>
+        </dependency>
+
+        <!-- Google Cloud Storage client for the document module's cloud StoragePort
+             (GcsStorageAdapter, @Profile("cloud")). Version is managed by the
+             com.google.cloud:libraries-bom import above (no explicit version),
+             keeping it consistent with google-auth-library ImpersonatedCredentials
+             used to sign V4 URLs via IAM signBlob (no key.json). -->
+        <dependency>
+            <groupId>com.google.cloud</groupId>
+            <artifactId>google-cloud-storage</artifactId>
+        </dependency>
+
+        <!-- Resilience4j for Spring Boot 3 (TimeLimiter/Retry/CircuitBreaker/Bulkhead
+             + annotations/AOP). Spring AOP is already provided by spring-boot-starter-aop. -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-spring-boot3</artifactId>
+            <version>${resilience4j.version}</version>
         </dependency>
 
         <dependency>

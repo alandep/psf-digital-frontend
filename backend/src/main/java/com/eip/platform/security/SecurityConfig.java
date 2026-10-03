@@ -1,5 +1,6 @@
 package com.eip.platform.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,8 +16,19 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.eip.modules.identity.adapter.in.SessionOrganizationContextFilter;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
 
 /**
  * HTTP security configuration split into two independent filter chains:
@@ -34,6 +46,30 @@ import com.eip.modules.identity.adapter.in.SessionOrganizationContextFilter;
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+
+    /**
+     * When true (cloud profile), the CSRF cookie is hardened with {@code Secure} and
+     * {@code SameSite=Lax} for the production HTTPS flow from
+     * {@code https://iaexport.com.br} to {@code https://api.iaexport.com.br}.
+     *
+     * <p>Those two hosts share the same registrable domain ({@code iaexport.com.br}),
+     * so the flow is <b>same-site</b> (only the origin/host differs). It is still
+     * cross-origin — hence CORS stays mandatory — but same-site means {@code SameSite=Lax}
+     * is sufficient: the SPA's fetch/XHR to {@code api.iaexport.com.br} still carries the
+     * cookie because, from the destination's perspective, the cookie is first-party.
+     * Lax is strictly more restrictive than {@code None} (it blocks genuinely cross-site /
+     * third-party sends), so it is the preferred, most-restrictive policy that works.
+     * {@code Secure} is required because production is HTTPS-only. The CSRF cookie's
+     * {@code httpOnly} stays false (readable by Angular's XSRF mechanism) and CSRF
+     * protection itself is never disabled. Defaults to false so the local flow (plain
+     * HTTP, same-origin) is not broken.
+     */
+    private final boolean crossSiteCookie;
+
+    public SecurityConfig(
+            @Value("${eip.security.cookie.cross-site:false}") boolean crossSiteCookie) {
+        this.crossSiteCookie = crossSiteCookie;
+    }
 
     @Bean
     @Order(1)
@@ -53,6 +89,25 @@ public class SecurityConfig {
     @Order(2)
     public SecurityFilterChain bffChain(HttpSecurity http,
             SessionOrganizationContextFilter sessionOrganizationContextFilter) throws Exception {
+        // Opt OUT of Spring Security 6's deferred CSRF token loading: by setting the
+        // request-attribute name to null the token is resolved eagerly instead of only
+        // when something reads it. Combined with the CsrfCookieFilter below this ensures
+        // the XSRF-TOKEN cookie is actually written to responses.
+        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+        requestHandler.setCsrfRequestAttributeName(null);
+
+        // Cookie CSRF repository. The cookie MUST remain readable by JS (httpOnly=false)
+        // so the SPA can mirror XSRF-TOKEN into the X-XSRF-TOKEN header. In the cloud
+        // profile we additionally harden it with Secure + SameSite=Lax: the production
+        // flow iaexport.com.br -> api.iaexport.com.br is same-site (same registrable
+        // domain), so Lax is sufficient and more restrictive than None, while Secure is
+        // required on HTTPS. By default (local) those attributes stay off to avoid
+        // breaking plain http://localhost. CSRF protection itself is never disabled.
+        CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        if (crossSiteCookie) {
+            csrfTokenRepository.setCookieCustomizer(cookie -> cookie.secure(true).sameSite("Lax"));
+        }
+
         http
                 .securityMatcher("/bff/**", "/login/**", "/actuator/**", "/webhooks/**")
                 .authorizeHttpRequests(auth -> auth
@@ -71,14 +126,41 @@ public class SecurityConfig {
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRepository(csrfTokenRepository)
+                        .csrfTokenRequestHandler(requestHandler)
                         // The SPA's first login calls are a pre-auth JSON API and
                         // cannot carry a CSRF token yet; exempt them. All other
                         // /bff/** endpoints keep cookie-based CSRF protection.
                         // Webhooks are server-to-server and cannot carry a CSRF token.
                         .ignoringRequestMatchers("/bff/auth/**", "/webhooks/**"))
-                .addFilterBefore(sessionOrganizationContextFilter, AuthorizationFilter.class);
+                .addFilterBefore(sessionOrganizationContextFilter, AuthorizationFilter.class)
+                // Materialize the CSRF token on every request so the cookie is emitted
+                // (see CsrfCookieFilter below for the full rationale).
+                .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class);
         return http.build();
+    }
+
+    /**
+     * Forces the deferred {@link CsrfToken} to be materialized on every request so that
+     * {@link CookieCsrfTokenRepository} actually writes the {@code XSRF-TOKEN} cookie to
+     * the response.
+     *
+     * <p>Spring Security 6 loads the CSRF token lazily: the cookie is only written once
+     * something reads the token value. Nothing in the plain BFF flow reads it, so the SPA
+     * never receives {@code XSRF-TOKEN} and every authenticated {@code POST /bff/**}
+     * subsequently fails CSRF validation with HTTP 403. Reading the token here (via
+     * {@code getToken()}) triggers the deferred load and causes the cookie to be emitted.
+     */
+    private static final class CsrfCookieFilter extends OncePerRequestFilter {
+        @Override
+        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+                FilterChain filterChain) throws ServletException, IOException {
+            CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+            if (csrfToken != null) {
+                csrfToken.getToken(); // touch -> triggers deferred load -> cookie is written
+            }
+            filterChain.doFilter(request, response);
+        }
     }
 
     /**
