@@ -28,6 +28,11 @@
         <archunit.version>1.3.0</archunit.version>
         <google-auth.version>1.30.1</google-auth.version>
         <google-cloud-bom.version>26.50.0</google-cloud-bom.version>
+        <!-- Versão do Cloud SQL socket factory (PostgreSQL). O com.google.cloud:libraries-bom
+             26.50.0 NÃO gerencia o artefato com.google.cloud.sql:postgres-socket-factory, por isso
+             a versão é fixada aqui explicitamente. Pode ser REMOVIDA (junto com a <version> na
+             dependência) se um dia o BOM passar a gerenciar este artefato. -->
+        <cloud-sql-socket-factory.version>1.21.0</cloud-sql-socket-factory.version>
         <resilience4j.version>2.2.0</resilience4j.version>
     </properties>
 
@@ -105,6 +110,21 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- Cloud SQL connector (socket factory) para PostgreSQL. Usado SOMENTE em produção
+             (Cloud Run), onde o SPRING_DATASOURCE_URL usa
+             socketFactory=com.google.cloud.sql.postgres.SocketFactory + cloudSqlInstance=<conn>.
+             O com.google.cloud:libraries-bom 26.50.0 NÃO gerencia este artefato, então a versão é
+             fixada via a property cloud-sql-socket-factory.version (ver <properties>). Pode ser
+             removida se o BOM passar a gerenciá-lo.
+             Em local/dev (docker-compose) o datasource continua TCP normal; esta lib não interfere.
+             Scope runtime: a classe SocketFactory é carregada via JDBC URL em runtime (alinhado ao
+             driver org.postgresql:postgresql, que também é runtime). -->
+        <dependency>
+            <groupId>com.google.cloud.sql</groupId>
+            <artifactId>postgres-socket-factory</artifactId>
+            <version>${cloud-sql-socket-factory.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>

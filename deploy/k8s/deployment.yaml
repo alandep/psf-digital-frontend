@@ -5,6 +5,10 @@
 #
 # Imagem: o SHA (GIT_SHA_PLACEHOLDER) é INJETADO pelo CD (cd.yml) via `kubectl set image`
 # ou substituição no apply. NUNCA usar `latest`.
+#
+# DEPENDÊNCIA (Etapa 4): o volume CSI + secretKeyRef das senhas dependem do ADD-ON GERENCIADO
+# do Secret Manager habilitado no cluster e do SecretProviderClass eip-db-credentials-spc
+# (ver deploy/k8s/secret-provider-class.yaml). Usernames são literais; só as senhas são secret.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -39,23 +43,18 @@ spec:
             # Conexão ao Cloud SQL via sidecar Auth Proxy (127.0.0.1:5432). Sem IP público do banco.
             - name: SPRING_DATASOURCE_URL
               value: "jdbc:postgresql://127.0.0.1:5432/eip"
-            # Credenciais do banco vêm de um Secret do K8s alimentado pelo Secret Manager.
-            # Os valores NÃO estão aqui — apenas referências (secretKeyRef).
+            # Usernames NÃO são secret -> valores literais.
             - name: DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: eip-db-credentials
-                  key: db-user
+              value: "eip_app"
+            # Senhas vêm do K8s Secret `eip-db-credentials`, sincronizado do Secret Manager
+            # pelo add-on gerenciado do Secret Manager (ver secret-provider-class.yaml / volume CSI).
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: eip-db-credentials
                   key: db-password
             - name: REPORTING_DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: eip-db-credentials
-                  key: reporting-db-user
+              value: "eip_report"
             - name: REPORTING_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -92,6 +91,12 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 3
+          # Monta os secrets via add-on gerenciado do Secret Manager (CSI). O secretObjects do
+          # SecretProviderClass sincroniza para o K8s Secret eip-db-credentials usado nos env acima.
+          volumeMounts:
+            - name: db-secrets-store
+              mountPath: "/mnt/secrets-store"
+              readOnly: true
         # --- Sidecar: Cloud SQL Auth Proxy ---
         # Conecta ao Cloud SQL via IAM (sem senha de rede). O backend fala com 127.0.0.1:5432.
         - name: cloud-sql-proxy
@@ -111,3 +116,12 @@ spec:
             limits:
               cpu: "100m"
               memory: "128Mi"
+      # Volume CSI do add-on gerenciado do Secret Manager (Etapa 4). Requer o add-on habilitado
+      # no cluster + binding secretAccessor por-secret na GSA eip-pod (ver gsa_pod.tf).
+      volumes:
+        - name: db-secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "eip-db-credentials-spc"

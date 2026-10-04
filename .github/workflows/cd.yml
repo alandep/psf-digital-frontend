@@ -1,17 +1,25 @@
 # =============================================================================
 # CD — push/merge na branch master.
 #
-#   CI = PR (build/test, SEM deploy).  CD = master (push imagem + rollout + firebase).
+#   CI = PR (build/test, SEM deploy).  CD = master (push imagem + deploy Cloud Run + firebase).
 #
-# ⚠️ ESTE WORKFLOW SÓ FUNCIONARÁ APÓS A INFRA FATURÁVEL (fase 💲) SER PROVISIONADA
-#    e os vars/secrets de WIF existirem (ver `vars` abaixo). O arquivo em si NÃO cria
-#    nada e NÃO roda em PR. Ele dispara apenas em push na master.
+# ⚠️ ESTE WORKFLOW SÓ FUNCIONARÁ APÓS A INFRA SER PROVISIONADA pela IaC
+#    (serviço Cloud Run `eip-backend` criado em `deploy/infra/etapa4-cloud-run/`)
+#    e os vars de WIF existirem (ver `vars` abaixo — já configurados no repo).
+#    O arquivo em si NÃO cria o serviço e NÃO roda em PR. Dispara apenas em push na master.
+#
+# Modelo de deploy: Cloud Run (o modelo GKE foi abandonado). O CD NÃO cria o serviço —
+# ele apenas ATUALIZA A IMAGEM da revisão a cada push (deploy contínuo). Toda a config
+# de ambiente/secrets/cloud-sql/scaling é de responsabilidade do Terraform (IaC).
 #
 # Autenticação na GCP: Workload Identity Federation (WIF/OIDC), SEM chave de SA
 # persistente. Usa `workload_identity_provider` e `service_account` como VARS
 # (identificadores, não segredos). Nunca `credentials_json`.
 #
 # Imagem: SEMPRE `eip-backend:${{ github.sha }}` em southamerica-east1. NUNCA `latest`.
+#
+# Migrations NÃO rodam no CD: são um passo administrativo separado (Cloud Run Job/manual).
+# O CD só faz build + push + deploy do serviço (nova revisão) + deploy do frontend.
 #
 # Gate: os mesmos testes bloqueantes do CI (1.4/2.4/3.6/4.4) rodam antes do deploy.
 # =============================================================================
@@ -25,15 +33,14 @@ permissions:
   contents: read
   id-token: write   # necessário para WIF/OIDC
 
-# Placeholders — preencher após provisionamento (fase 💲):
 env:
   PROJECT_ID: eip-ai-prod
   REGION: southamerica-east1
   AR_REPO: eip-backend
   IMAGE_NAME: eip-backend
-  GKE_CLUSTER: eip-autopilot          # preencher: nome do cluster GKE Autopilot
-  GKE_LOCATION: southamerica-east1
-  FIREBASE_PROJECT: eip-ai-prod       # preencher: projeto Firebase (frontend iaexport.com.br)
+  SERVICE_NAME: eip-backend
+  RUNTIME_SA: eip-run@eip-ai-prod.iam.gserviceaccount.com   # runtime SA do serviço Cloud Run (criada pela IaC)
+  FIREBASE_PROJECT: eip-ai-prod                             # projeto Firebase (frontend iaexport.com.br)
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -77,7 +84,7 @@ jobs:
       image: ${{ steps.meta.outputs.image }}
     steps:
       - uses: actions/checkout@v4
-      # Auth via WIF/OIDC — sem key.json. Vars preenchidas na fase 💲.
+      # Auth via WIF/OIDC — sem key.json. Vars já configuradas no repo.
       - name: Authenticate to GCP (WIF)
         uses: google-github-actions/auth@v2
         with:
@@ -103,10 +110,22 @@ jobs:
           tags: ${{ steps.meta.outputs.image }}
 
   # ---------------------------------------------------------------------------
-  # 3) DEPLOY BACKEND — rollout no GKE com a imagem :<sha> e espera de readiness.
+  # 3) DEPLOY BACKEND — nova revisão no Cloud Run com a imagem :<sha>.
+  #
+  # O serviço `eip-backend` JÁ EXISTE (criado pela IaC em etapa4-cloud-run/).
+  # Aqui o CD apenas aponta a nova imagem: `gcloud run deploy` com a imagem
+  # recém-publicada cria uma NOVA REVISÃO e migra 100% do tráfego por padrão.
+  #
+  # As configs de env/secrets/cloud-sql/scaling/min-instances já estão no serviço
+  # (definidas pelo Terraform) e são PRESERVADAS entre revisões — por isso NÃO
+  # repassamos --set-env-vars/--set-secrets aqui (evita divergência com a IaC;
+  # o CD só troca a imagem). Se futuramente o CD precisar mudar config, isso deve
+  # ser feito via Terraform, nunca no gcloud do CD.
+  #
+  # Sem GKE, sem kubectl, sem manifests k8s. Migrations NÃO rodam aqui.
   # ---------------------------------------------------------------------------
   deploy-backend:
-    name: Deploy backend (GKE rollout)
+    name: Deploy backend (Cloud Run)
     runs-on: ubuntu-latest
     needs: [build-and-push]
     steps:
@@ -116,28 +135,26 @@ jobs:
         with:
           workload_identity_provider: ${{ vars.WIF_PROVIDER }}
           service_account: ${{ vars.DEPLOY_SERVICE_ACCOUNT }}
-      - name: Setup gcloud + GKE auth plugin
+      - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
-        with:
-          install_components: gke-gcloud-auth-plugin
-      - name: Get cluster credentials
-        run: gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} --location ${{ env.GKE_LOCATION }} --project ${{ env.PROJECT_ID }}
-      # Aplica os manifests base (SA, service) e injeta a imagem :<sha> no Deployment.
-      - name: Apply base manifests
+      # Nova revisão com a imagem deste commit (:<sha>). A runtime SA é a `eip-run`
+      # (a SA de deploy `deployer` tem iam.serviceAccountUser sobre ela — IaC roles_deployer.tf).
+      - name: Deploy nova revisão (Cloud Run)
         run: |
-          kubectl apply -f deploy/k8s/serviceaccount.yaml
-          kubectl apply -f deploy/k8s/service.yaml
-          kubectl apply -f deploy/k8s/deployment.yaml
-      - name: Set image to this commit SHA (nunca latest)
-        run: kubectl set image deployment/eip-backend backend=${{ needs.build-and-push.outputs.image }}
-      # Aguarda readiness (readinessState,db) — o rollout só conclui com o pod pronto.
-      - name: Wait for rollout (readiness)
-        run: kubectl rollout status deployment/eip-backend --timeout=300s
-      # Exposição de produção (Caminho B). Idempotente; pré-requisito: IP estático + DNS.
-      - name: Apply production exposure (Caminho B)
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image ${{ needs.build-and-push.outputs.image }} \
+            --region ${{ env.REGION }} \
+            --project ${{ env.PROJECT_ID }} \
+            --service-account ${{ env.RUNTIME_SA }} \
+            --quiet
+      # Passo informativo: consulta o status da condição principal do serviço.
+      # Não bloqueia o pipeline (|| true) — apenas registra a saúde da revisão.
+      - name: Verificar revisão
         run: |
-          kubectl apply -f deploy/k8s/expose-b/managedcertificate.yaml
-          kubectl apply -f deploy/k8s/expose-b/ingress.yaml
+          gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region ${{ env.REGION }} \
+            --project ${{ env.PROJECT_ID }} \
+            --format='value(status.conditions[0].status)' || true
 
   # ---------------------------------------------------------------------------
   # 4) DEPLOY FRONTEND — Firebase Hosting (iaexport.com.br), autenticado por WIF/OIDC.

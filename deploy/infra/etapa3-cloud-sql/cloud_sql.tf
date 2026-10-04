@@ -10,17 +10,24 @@ resource "google_sql_database_instance" "eip" {
 
   settings {
     tier              = "db-f1-micro" # tier mínimo (econômico inicial)
+    edition           = "ENTERPRISE"  # ENTERPRISE (não ENTERPRISE_PLUS): necessário para o tier shared-core db-f1-micro
     availability_type = "ZONAL"       # sem HA (REGIONAL dobraria o custo)
     disk_type         = "PD_HDD"      # disco mais barato para o início
     disk_size         = 10            # GB (mínimo)
     disk_autoresize   = true
+    deletion_protection_enabled = true # proteção de exclusão no nível da API do Cloud SQL (além do deletion_protection do Terraform)
 
     backup_configuration {
       enabled = true # backups mínimos; ajustar quando houver criticidade
     }
 
     ip_configuration {
-      ipv4_enabled = false # sem IP público; conexão via Cloud SQL Auth Proxy (IAM)
+      # IP público habilitado (exigência do Cloud SQL: ao menos uma conectividade).
+      # Acesso SOMENTE via Cloud SQL Auth Proxy autenticado por IAM — NENHUM
+      # authorized_networks é liberado, então nenhuma rede acessa o banco diretamente.
+      # ssl_mode não é forçado aqui (o Auth Proxy já faz túnel TLS por IAM); endurecer
+      # depois, se necessário, como ajuste separado. VPC/IP privado = evolução futura.
+      ipv4_enabled = true
     }
   }
 

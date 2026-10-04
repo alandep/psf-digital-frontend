@@ -6,6 +6,15 @@
 # GOOGLE_APPLICATION_CREDENTIALS locally / Workload Identity on Cloud Run. No
 # key.json path or secret is ever placed in this file.
 spring:
+  # Em PRODUÇÃO (modelo "A-variante") as migrations NÃO são aplicadas pelo app.
+  # Elas rodam num passo ADMIN separado, como `postgres`
+  # (deploy/db/bootstrap-prod.sql + Flyway V1..V23). O app conecta como `eip_app`
+  # (sem privilégio de migração), então o Flyway fica DESLIGADO aqui no cloud.
+  # O schema ainda é VALIDADO no boot via `hibernate.ddl-auto=validate` (herdado
+  # do application.yml base) — isso confere que o schema bate com as entidades,
+  # sem exigir privilégio de migração. (O profile local segue com flyway ligado.)
+  flyway:
+    enabled: false
   datasource:
     hikari:
       # Keep the pool small; Cloud Run scales horizontally with many instances,

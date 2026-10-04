@@ -4,6 +4,11 @@
 > **definições declarativas**. Nenhuma etapa é aplicada sem autorização explícita do usuário.
 > `terraform apply` em etapas 2+ **cria recursos faturáveis** na GCP.
 
+> ℹ️ **Etapa 4 — alvo atual é CLOUD RUN.** A Etapa 4 passou a ser **Cloud Run**
+> (`etapa4-cloud-run/`), por **custo mínimo ocioso** (scale-to-zero, sem Load Balancer, HTTPS/domínio
+> incluso). A pasta `etapa4-gke-pod/` é **mantida como ALTERNATIVA/legado** (referência caso se
+> migre para GKE no futuro) — **não é o alvo atual** e não deve ser aplicada.
+
 ## Pré-requisito fora da IaC: projeto + billing (Console)
 
 O **projeto `eip-ai-prod`** e a **vinculação de BILLING** são criados e controlados pelo usuário
@@ -37,7 +42,19 @@ deploy/infra/
 │   ├── project.tf              # APIs sqladmin + secretmanager
 │   ├── cloud_sql.tf            # Cloud SQL PostgreSQL 16 (db-f1-micro, zonal, sem HA)
 │   └── secrets.tf              # Secret Manager (NOMES, sem valores)
-└── etapa4-gke-pod/             # Etapa 4 — GKE + GSA do pod + Firebase (💲)
+├── etapa4-cloud-run/           # Etapa 4 — Cloud Run (💲) — ALVO ATUAL (scale-to-zero, custo mínimo)
+│   ├── providers.tf
+│   ├── variables.tf            # + sql_connection_name, image, domain
+│   ├── project.tf              # APIs run, aiplatform, storage
+│   ├── runtime_sa.tf           # GSA eip-run + roles (cloudsql.client, aiplatform.user, secretAccessor por secret)
+│   ├── signer.tf               # signer eip-signer + tokenCreator p/ eip-run + role custom de bucket
+│   ├── bucket.tf               # bucket eip-ai-prod-documents
+│   ├── cloud_run.tf            # serviço eip-backend (min=0, cpu_idle, secrets, Cloud SQL volume, probes)
+│   ├── domain_mapping.tf       # api.iaexport.com.br (TLS gerenciado; DNS manual)
+│   ├── iam_invoker.tf          # roles/run.invoker=allUsers (público; app faz auth de sessão/BFF)
+│   ├── roles_deployer.tf       # deployer: run.developer + iam.serviceAccountUser sobre eip-run
+│   └── outputs.tf              # service_uri, SAs, domain mapping + DNS records
+└── etapa4-gke-pod/             # Etapa 4 — GKE + GSA do pod + Firebase (💲) — LEGADO/ALTERNATIVA (não aplicar)
     ├── providers.tf
     ├── variables.tf
     ├── project.tf              # APIs container, aiplatform, storage, compute, firebasehosting
@@ -72,12 +89,17 @@ workflow/`gcloud`, não um recurso Terraform.)
 |-------|-----------------------------|----------------|
 | Etapa 1 — WIF | **Nenhuma role de projeto** (apenas o binding `roles/iam.workloadIdentityUser` sobre a própria SA) | `etapa1-wif/wif.tf` |
 | Etapa 2 — Artifact Registry | `roles/artifactregistry.writer` | `etapa2-artifact-registry/roles.tf` |
-| Etapa 3 — Cloud SQL / Secrets | *(nenhuma role nova para a `deployer`; cria a GSA do pod só na Etapa 4)* | — |
-| Etapa 4 — GKE / Pod / Firebase | `roles/container.developer` + `roles/firebasehosting.admin` | `etapa4-gke-pod/roles.tf` |
+| Etapa 3 — Cloud SQL / Secrets | *(nenhuma role nova para a `deployer`; a GSA de runtime é criada na Etapa 4)* | — |
+| Etapa 4 — **Cloud Run (alvo atual)** | `roles/run.developer` + `roles/iam.serviceAccountUser` (actAs sobre `eip-run`) | `etapa4-cloud-run/roles_deployer.tf` |
+| Etapa 4 — GKE / Pod / Firebase *(legado/alternativa)* | `roles/container.developer` + `roles/firebasehosting.admin` | `etapa4-gke-pod/roles.tf` |
 
-> A GSA do pod (`eip-pod`) e suas próprias roles (`aiplatform.user`, `cloudsql.client`,
-> `secretmanager.secretAccessor`, acesso GCS) + binding Workload Identity KSA↔GSA são criadas na
-> **Etapa 4** (`etapa4-gke-pod/gsa_pod.tf`).
+> **Cloud Run (alvo atual):** a GSA de **runtime** `eip-run` e suas roles (`aiplatform.user`,
+> `cloudsql.client`, `secretmanager.secretAccessor` **por secret**) + `serviceAccountTokenCreator`
+> sobre o `eip-signer` são criadas na **Etapa 4** (`etapa4-cloud-run/runtime_sa.tf` + `signer.tf`).
+> O Cloud Run NÃO usa Workload Identity de pod; roda diretamente sob `eip-run`.
+>
+> **GKE (legado):** a GSA do pod (`eip-pod`) + binding Workload Identity KSA↔GSA ficam em
+> `etapa4-gke-pod/gsa_pod.tf` (referência; não é o alvo atual).
 
 ## APIs habilitadas por etapa
 
@@ -86,7 +108,8 @@ workflow/`gcloud`, não um recurso Terraform.)
 | Etapa 1 — WIF | `iam`, `iamcredentials`, `sts`, `cloudresourcemanager` |
 | Etapa 2 — Artifact Registry | `artifactregistry` |
 | Etapa 3 — Cloud SQL / Secrets | `sqladmin`, `secretmanager` |
-| Etapa 4 — GKE / Pod / Firebase | `container`, `aiplatform`, `storage`, `compute`, `firebasehosting` |
+| Etapa 4 — **Cloud Run (alvo atual)** | `run`, `aiplatform`, `storage` |
+| Etapa 4 — GKE / Pod / Firebase *(legado/alternativa)* | `container`, `aiplatform`, `storage`, `compute`, `firebasehosting` |
 
 ## Como seria aplicado (NÃO rodar agora)
 
@@ -100,7 +123,8 @@ workflow/`gcloud`, não um recurso Terraform.)
 # Etapas 2+ (💲 faturáveis) — cada uma só após sua própria autorização:
 #   cd etapa2-artifact-registry && terraform init && terraform apply
 #   cd etapa3-cloud-sql         && terraform init && terraform apply
-#   cd etapa4-gke-pod           && terraform init && terraform apply
+#   cd etapa4-cloud-run         && terraform init && terraform apply   # ALVO ATUAL (Cloud Run)
+#   # etapa4-gke-pod/ é LEGADO/ALTERNATIVA — NÃO aplicar (mantida como referência).
 ```
 
 > **Variáveis comuns** (`project_id`, `region`, `github_repo`, `github_branch`) são **duplicadas**
