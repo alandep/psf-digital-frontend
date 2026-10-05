@@ -21,28 +21,31 @@ spring:
       # so per-instance connections must respect the database connection budget.
       maximum-pool-size: ${DB_POOL_SIZE:5}
 
-# Browser flow (PRODUCTION): the SPA is served from https://iaexport.com.br
-# (Firebase Hosting) and calls the BFF at https://api.iaexport.com.br (GKE).
+# Browser flow (DEGUSTAÇÃO / produção): the SPA is served from https://iaexport.com.br
+# (Firebase Hosting) and calls the BFF at the Cloud Run NATIVE URL
+# (https://eip-backend-...-rj.a.run.app).
 #
-# Topology (corrected): iaexport.com.br and api.iaexport.com.br share the same
-# registrable domain (iaexport.com.br), so they are SAME-SITE — only the host/origin
-# differs. They ARE cross-origin, which is why CORS stays mandatory and restricted to
-# https://iaexport.com.br (see eip.cors below). But because the flow is same-site, the
-# session cookie does NOT need SameSite=None: with SameSite=Lax the cookie is still sent
-# on the SPA's fetch/XHR to api.iaexport.com.br, since from the destination's point of
-# view (api.iaexport.com.br sets it and api.iaexport.com.br receives it) the cookie is
-# first-party. Lax is strictly MORE RESTRICTIVE than None (it blocks genuinely cross-site
-# / third-party sends), so it is the preferred, most-restrictive policy that works here.
-# Secure stays on because production is HTTPS-only (the LB redirects HTTP->HTTPS).
-# The cookie is intentionally host-only (no Domain attribute): it is set by and sent to
-# api.iaexport.com.br only, which is exactly what the SPA flow needs under SameSite=Lax.
+# Topology (DEGUSTAÇÃO): iaexport.com.br (Firebase) and run.app (Cloud Run) have
+# DIFFERENT registrable domains (iaexport.com.br vs run.app), so the flow is CROSS-SITE —
+# not merely cross-origin. For a cross-site authenticated fetch/XHR the browser only sends
+# the session/CSRF cookie if it is marked SameSite=None; Secure. SameSite=Lax would NOT be
+# sent cross-site and would silently break login. Therefore SameSite=None + Secure is
+# MANDATORY here. CORS stays mandatory and restricted to https://iaexport.com.br (see
+# eip.cors below) — NEVER a wildcard, since credentials require an explicit origin.
+# Secure stays on because production/Cloud Run is HTTPS-only. The cookie is host-only
+# (no Domain attribute): set by and sent to the run.app host only.
+#
+# FUTURO: quando o backend migrar para api.iaexport.com.br (via LB), o fluxo passa a ser
+# SAME-SITE (mesmo registrable domain iaexport.com.br) e o correto é voltar para SameSite=Lax
+# (mais restritivo). Até lá, mantém-se None por obrigatoriedade do cenário cross-site.
 server:
   servlet:
     session:
       cookie:
-        # Same-site (same registrable domain) over HTTPS: Lax suffices and is the most
-        # restrictive policy that still allows the same-site cross-origin SPA flow.
-        same-site: lax
+        # Cross-site (registrable domains diferentes: iaexport.com.br x run.app) sobre HTTPS:
+        # None + Secure é OBRIGATÓRIO para o cookie trafegar no XHR/fetch autenticado da degustação.
+        # Reverter para `lax` quando migrar para api.iaexport.com.br (same-site).
+        same-site: none
         secure: true
         http-only: true
 
@@ -57,11 +60,13 @@ eip:
     allowed-origins: ${EIP_CORS_ALLOWED_ORIGINS:https://iaexport.com.br}
   security:
     cookie:
-      # Apply Secure + SameSite=Lax to the CSRF cookie (session cookie handled above) for
-      # the production HTTPS flow. The frontend/backend share the registrable domain
-      # iaexport.com.br (same-site), so Lax is sufficient and more restrictive than None;
-      # Secure is required because production is HTTPS-only. Enabled in cloud so the CSRF
-      # cookie carries Secure; overridable via env if the origin topology ever changes.
+      # Apply Secure + SameSite=None to the CSRF cookie (session cookie handled above) for
+      # the DEGUSTAÇÃO flow. The frontend (iaexport.com.br / Firebase) and the backend
+      # (run.app / Cloud Run) have DIFFERENT registrable domains → CROSS-SITE, so SameSite=None
+      # is MANDATORY (Lax would not be sent cross-site and would break CSRF/login); Secure is
+      # required because Cloud Run is HTTPS-only. Enabled in cloud; overridable via env if the
+      # origin topology changes. FUTURO: ao migrar para api.iaexport.com.br (same-site), o
+      # SecurityConfig volta a aplicar SameSite=Lax.
       cross-site: ${EIP_COOKIE_CROSS_SITE:true}
   ai:
     # Vertex AI gateway config (cloud profile only). project/location/endpoint/

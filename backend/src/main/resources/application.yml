@@ -56,18 +56,20 @@ eip:
   # the dev proxy (proxy.conf.json) or at http://localhost:4200, so the hardened
   # cookie attributes MUST stay off here (Secure/SameSite would break plain
   # http://localhost). The cloud profile (application-cloud.yml) overrides these
-  # for production (iaexport.com.br -> api.iaexport.com.br), which is cross-origin
-  # (CORS mandatory) but same-site (same registrable domain) → SameSite=Lax + Secure.
+  # for the DEGUSTAÇÃO (iaexport.com.br/Firebase -> Cloud Run run.app), which is
+  # cross-origin AND CROSS-SITE (different registrable domains) → SameSite=None + Secure.
   cors:
     # Comma-separated allowlist. NEVER "*": credentials require a specific origin.
     allowed-origins: ${EIP_CORS_ALLOWED_ORIGINS:http://localhost:4200}
   security:
     cookie:
-      # When true, the session + CSRF cookies are hardened with Secure and SameSite=Lax
-      # for the production HTTPS flow (same registrable domain iaexport.com.br → same-site;
-      # Lax is sufficient and more restrictive than None). MUST stay false locally (plain
-      # HTTP, same-origin): leaving it off avoids forcing Secure/SameSite and breaking
-      # http://localhost. Flipped to true in the cloud profile.
+      # When true (DEGUSTAÇÃO/cloud), the session + CSRF cookies are hardened with Secure and
+      # SameSite=None for the cross-site HTTPS flow (frontend iaexport.com.br/Firebase and
+      # backend run.app/Cloud Run have DIFFERENT registrable domains → cross-site, so None is
+      # MANDATORY; Lax would not be sent cross-site). MUST stay false locally (plain HTTP,
+      # same-origin): leaving it off avoids forcing Secure/SameSite and breaking
+      # http://localhost. Flipped to true in the cloud profile. FUTURO: ao migrar para
+      # api.iaexport.com.br (same-site), volta-se a SameSite=Lax.
       cross-site: ${EIP_COOKIE_CROSS_SITE:false}
   ai:
     worker:

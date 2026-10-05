@@ -79,3 +79,9 @@ variable "domain" {
   type        = string
   default     = "api.iaexport.com.br"
 }
+
+variable "enable_domain_mapping" {
+  description = "Habilita o domain mapping api.iaexport.com.br. FALSE por padrão: NÃO suportado em southamerica-east1 (Error 501) e evitamos LB na degustação. Arquitetura futura."
+  type        = bool
+  default     = false
+}

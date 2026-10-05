@@ -60,11 +60,11 @@ resource "google_cloud_run_v2_service" "backend" {
       image = var.image # SHA real injetado pelo CD; default é placeholder (variables.tf)
 
       resources {
-        # Ponto de partida a MEDIR. Se houver OOM (Flyway + JPA + Vertex client no startup),
-        # subir memory para "1Gi". CPU "1" é suficiente p/ degustação.
+        # 512Mi causou OOM no boot do Spring Boot (JPA + entidades + Vertex client); subido para
+        # "1Gi" (medição real). CPU "1" é suficiente p/ degustação.
         limits = {
           cpu    = "1"
-          memory = "512Mi"
+          memory = "1Gi"
         }
         # cpu_idle=true: NÃO paga CPU fora de request (reforça custo mínimo ocioso).
         cpu_idle = true
@@ -83,12 +83,7 @@ resource "google_cloud_run_v2_service" "backend" {
         name  = "SPRING_PROFILES_ACTIVE"
         value = "cloud"
       }
-      env {
-        # Cloud Run injeta PORT automaticamente; mantido explícito por coerência com o Dockerfile
-        # (server.port=${PORT:8080}, EXPOSE 8080).
-        name  = "PORT"
-        value = "8080"
-      }
+      # NÃO definir env PORT: o Cloud Run injeta PORT automaticamente (reservado) e o Spring lê server.port=${PORT:8080}.
       env {
         name  = "GOOGLE_CLOUD_PROJECT"
         value = "eip-ai-prod"

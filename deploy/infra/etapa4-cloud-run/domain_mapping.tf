@@ -1,5 +1,13 @@
 # ⛔ NÃO EXECUTAR — Etapa 4 (Cloud Run) — aguardando autorização
 #
+# ⚠️ DESABILITADO POR PADRÃO (count via var.enable_domain_mapping, default false).
+#    O domain mapping do Cloud Run NÃO é permitido em southamerica-east1 (retorna Error 501),
+#    e na DEGUSTAÇÃO evitamos subir Load Balancer. Portanto api.iaexport.com.br é
+#    ARQUITETURA FUTURA — será entregue via Global External LB + Serverless NEG quando houver
+#    justificativa comercial. Enquanto isso, o backend é consumido pela URL NATIVA run.app
+#    (ex.: https://eip-backend-mturyukj4a-rj.a.run.app). Para habilitar no futuro, basta
+#    passar -var="enable_domain_mapping=true" numa região suportada.
+#
 # Domain mapping: api.iaexport.com.br -> serviço Cloud Run eip-backend.
 # TLS gerenciado automaticamente pelo Cloud Run (certificado provisionado após o DNS apontar).
 #
@@ -15,6 +23,9 @@
 #    pendente, verificar o domínio e reaplicar. Este é um passo manual, fora da IaC.
 
 resource "google_cloud_run_domain_mapping" "backend" {
+  # Desabilitado por padrão (ver cabeçalho): não suportado em southamerica-east1 e sem LB na degustação.
+  count = var.enable_domain_mapping ? 1 : 0
+
   project  = var.project_id
   location = var.region
   name     = var.domain # api.iaexport.com.br

@@ -18,14 +18,15 @@ output "signer_service_account_email" {
 }
 
 output "domain_mapping_name" {
-  description = "Domínio customizado mapeado para o serviço (api.iaexport.com.br)."
-  value       = google_cloud_run_domain_mapping.backend.name
+  description = "Domínio customizado mapeado para o serviço (api.iaexport.com.br). null quando o domain mapping está desabilitado (degustação)."
+  value       = var.enable_domain_mapping ? google_cloud_run_domain_mapping.backend[0].name : null
 }
 
 output "domain_mapping_dns_records" {
   description = <<-EOT
     Registros DNS exigidos pelo domain mapping. Criar estes records no provedor DNS para completar
-    o mapeamento e disparar a emissão do TLS gerenciado (passo manual pós-apply).
+    o mapeamento e disparar a emissão do TLS gerenciado (passo manual pós-apply). null quando o
+    domain mapping está desabilitado (degustação via URL run.app, sem LB/domínio custom).
   EOT
-  value       = google_cloud_run_domain_mapping.backend.status[0].resource_records
+  value       = var.enable_domain_mapping ? google_cloud_run_domain_mapping.backend[0].status[0].resource_records : null
 }

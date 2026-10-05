@@ -49,9 +49,16 @@
 -- NÃO definimos senha: ela já veio do Secret Manager via gcloud. Mexer na senha
 -- aqui divergiria do secret.
 --
--- Requer `postgres` (cloudsqlsuperuser): só um superuser/membro de
--- cloudsqlsuperuser pode conceder BYPASSRLS a outro role no Cloud SQL.
-ALTER ROLE eip_report WITH LOGIN NOSUPERUSER BYPASSRLS;
+-- IMPORTANTE (Cloud SQL): o usuário `postgres` é membro de `cloudsqlsuperuser`,
+-- mas NÃO possui o atributo SUPERUSER. Por isso o ALTER NÃO pode mencionar o
+-- atributo SUPERUSER/NOSUPERUSER — fazê-lo exigiria ser SUPERUSER e falha com
+-- "permission denied to alter role / Only roles with the SUPERUSER attribute
+-- may change the SUPERUSER attribute". Concedemos APENAS BYPASSRLS.
+-- O LOGIN e o NOSUPERUSER já são o estado atual do role (criado via
+-- `gcloud sql users create`, que cria com LOGIN e sem SUPERUSER por padrão),
+-- portanto não precisam ser reafirmados. Mantém a idempotência (rodar de novo
+-- é inócuo).
+ALTER ROLE eip_report WITH BYPASSRLS;
 
 -- OBS DE SEGURANÇA: `eip_app` NÃO recebe BYPASSRLS em momento algum. Ele é o
 -- role de runtime do app e DEVE permanecer RLS-enforced (as policies FORCE RLS

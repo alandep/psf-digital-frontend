@@ -48,21 +48,25 @@ import java.io.IOException;
 public class SecurityConfig {
 
     /**
-     * When true (cloud profile), the CSRF cookie is hardened with {@code Secure} and
-     * {@code SameSite=Lax} for the production HTTPS flow from
-     * {@code https://iaexport.com.br} to {@code https://api.iaexport.com.br}.
+     * When true (cloud profile / DEGUSTAÇÃO), the CSRF cookie is hardened with
+     * {@code Secure} and {@code SameSite=None} for the cross-site HTTPS flow from
+     * {@code https://iaexport.com.br} (Firebase Hosting) to the Cloud Run NATIVE URL
+     * {@code https://eip-backend-...-rj.a.run.app}.
      *
-     * <p>Those two hosts share the same registrable domain ({@code iaexport.com.br}),
-     * so the flow is <b>same-site</b> (only the origin/host differs). It is still
-     * cross-origin — hence CORS stays mandatory — but same-site means {@code SameSite=Lax}
-     * is sufficient: the SPA's fetch/XHR to {@code api.iaexport.com.br} still carries the
-     * cookie because, from the destination's perspective, the cookie is first-party.
-     * Lax is strictly more restrictive than {@code None} (it blocks genuinely cross-site /
-     * third-party sends), so it is the preferred, most-restrictive policy that works.
-     * {@code Secure} is required because production is HTTPS-only. The CSRF cookie's
+     * <p>Those two hosts have <b>different registrable domains</b>
+     * ({@code iaexport.com.br} vs {@code run.app}), so the flow is <b>cross-site</b> —
+     * not merely cross-origin. A cross-site authenticated fetch/XHR only carries the
+     * cookie when it is marked {@code SameSite=None; Secure}; {@code SameSite=Lax} would
+     * NOT be sent cross-site and would silently break CSRF/login. Hence {@code None} is
+     * mandatory here. CORS stays mandatory and restricted to {@code https://iaexport.com.br}.
+     * {@code Secure} is required because Cloud Run is HTTPS-only. The CSRF cookie's
      * {@code httpOnly} stays false (readable by Angular's XSRF mechanism) and CSRF
      * protection itself is never disabled. Defaults to false so the local flow (plain
      * HTTP, same-origin) is not broken.
+     *
+     * <p>FUTURO: quando o backend migrar para {@code api.iaexport.com.br} (mesmo registrable
+     * domain {@code iaexport.com.br} → same-site), o correto é voltar a {@code SameSite=Lax}
+     * (mais restritivo).
      */
     private final boolean crossSiteCookie;
 
@@ -98,14 +102,16 @@ public class SecurityConfig {
 
         // Cookie CSRF repository. The cookie MUST remain readable by JS (httpOnly=false)
         // so the SPA can mirror XSRF-TOKEN into the X-XSRF-TOKEN header. In the cloud
-        // profile we additionally harden it with Secure + SameSite=Lax: the production
-        // flow iaexport.com.br -> api.iaexport.com.br is same-site (same registrable
-        // domain), so Lax is sufficient and more restrictive than None, while Secure is
+        // profile (DEGUSTAÇÃO) we additionally harden it with Secure + SameSite=None: the
+        // flow iaexport.com.br (Firebase) -> run.app (Cloud Run) is CROSS-SITE (different
+        // registrable domains), so None is MANDATORY for the cookie to travel on the
+        // authenticated XHR/fetch (Lax would not be sent cross-site), while Secure is
         // required on HTTPS. By default (local) those attributes stay off to avoid
         // breaking plain http://localhost. CSRF protection itself is never disabled.
+        // FUTURO: ao migrar para api.iaexport.com.br (same-site), voltar a SameSite=Lax.
         CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
         if (crossSiteCookie) {
-            csrfTokenRepository.setCookieCustomizer(cookie -> cookie.secure(true).sameSite("Lax"));
+            csrfTokenRepository.setCookieCustomizer(cookie -> cookie.secure(true).sameSite("None"));
         }
 
         http
