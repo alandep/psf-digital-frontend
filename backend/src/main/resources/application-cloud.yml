@@ -54,10 +54,14 @@ server:
 # REPORTING_DATASOURCE_URL / REPORTING_DB_USER / REPORTING_DB_PASSWORD env vars;
 # the role + BYPASSRLS grant are provisioned by a database admin, not by Flyway.
 eip:
-  # Production CORS allowlist. Configurable via env; default is the real frontend origin.
-  # NEVER "*": credentials (session/CSRF cookies) require an explicit origin.
+  # CORS allowlist de PRODUÇÃO/DEGUSTAÇÃO. Lista separada por vírgula (o WebConfig faz
+  # split por vírgula em splitOrigins). Durante a DEGUSTAÇÃO o front pode ser servido tanto
+  # pelo domínio custom (iaexport.com.br, futuro) quanto pela URL NATIVA do Firebase
+  # (eip-ai-prod.web.app / eip-ai-prod.firebaseapp.com); todas são origens EXPLÍCITAS.
+  # NUNCA "*": credentials (cookies de sessão/CSRF) exigem origin específica, não wildcard.
+  # EIP_CORS_ALLOWED_ORIGINS pode sobrescrever a lista em runtime.
   cors:
-    allowed-origins: ${EIP_CORS_ALLOWED_ORIGINS:https://iaexport.com.br}
+    allowed-origins: ${EIP_CORS_ALLOWED_ORIGINS:https://iaexport.com.br,https://eip-ai-prod.web.app,https://eip-ai-prod.firebaseapp.com}
   security:
     cookie:
       # Apply Secure + SameSite=None to the CSRF cookie (session cookie handled above) for

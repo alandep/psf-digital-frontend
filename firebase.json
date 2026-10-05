@@ -1,0 +1,13 @@
+{
+  "hosting": {
+    "public": "dist/psf-digital-frontend/browser",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      { "source": "**", "destination": "/index.html" }
+    ]
+  }
+}
