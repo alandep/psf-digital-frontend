@@ -27,6 +27,8 @@ import { dashboardServiceProvider } from './services/dashboard/dashboard-service
 import { pagamentosServiceProvider } from './services/finance/pagamentos-service.token';
 import { cambioServiceProvider } from './services/finance/cambio-service.token';
 import { hedgeServiceProvider } from './services/finance/hedge-service.token';
+import { empresaServiceProvider } from './services/empresa/empresa-service.token';
+import { localidadeServiceProvider } from './services/localidade/localidade-service.token';
 import { credentialsInterceptor } from './http/credentials.interceptor';
 import { csrfInterceptor } from './http/csrf.interceptor';
 import { traceInterceptor } from './http/trace.interceptor';
@@ -67,5 +69,7 @@ export const appConfig: ApplicationConfig = {
     pagamentosServiceProvider,
     cambioServiceProvider,
     hedgeServiceProvider,
+    empresaServiceProvider,
+    localidadeServiceProvider,
   ],
 };

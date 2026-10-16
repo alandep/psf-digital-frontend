@@ -8,6 +8,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { Empresa } from '../../../../../types/admin-empresas';
+import { PaisComboComponent } from '../../../shared/pais-combo/pais-combo.component';
+import { EstadoComboComponent } from '../../../shared/estado-combo/estado-combo.component';
+import { CidadeComboComponent } from '../../../shared/cidade-combo/cidade-combo.component';
 
 @Component({
   selector: 'app-editar-empresa-dialog',
@@ -20,7 +23,10 @@ import { Empresa } from '../../../../../types/admin-empresas';
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
+    PaisComboComponent,
+    EstadoComboComponent,
+    CidadeComboComponent
   ],
   template: `
     <div class="editar-empresa-dialog">
@@ -80,23 +86,11 @@ import { Empresa } from '../../../../../types/admin-empresas';
             <mat-icon matPrefix>toggle_on</mat-icon>
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
-            <mat-label>País</mat-label>
-            <input matInput formControlName="pais">
-            <mat-icon matPrefix>public</mat-icon>
-          </mat-form-field>
+          <app-pais-combo class="full-width" formControlName="pais" label="País"></app-pais-combo>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Estado</mat-label>
-            <input matInput formControlName="estado">
-            <mat-icon matPrefix>map</mat-icon>
-          </mat-form-field>
+          <app-estado-combo formControlName="estado" label="Estado" (ufChange)="onUfChange($event)"></app-estado-combo>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Cidade</mat-label>
-            <input matInput formControlName="cidade">
-            <mat-icon matPrefix>location_city</mat-icon>
-          </mat-form-field>
+          <app-cidade-combo formControlName="cidade" label="Cidade" [uf]="ufSelecionada"></app-cidade-combo>
 
           <mat-form-field appearance="outline">
             <mat-label>Responsável</mat-label>
@@ -117,15 +111,33 @@ import { Empresa } from '../../../../../types/admin-empresas';
             <mat-icon matPrefix>phone</mat-icon>
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" class="full-width">
             <mat-label>Plano</mat-label>
             <mat-select formControlName="plano">
-              @for (p of planos; track p) {
-                <mat-option [value]="p">{{ p }}</mat-option>
+              @for (p of planos; track p.code) {
+                <mat-option [value]="p.code">{{ p.label }}</mat-option>
               }
             </mat-select>
             <mat-icon matPrefix>workspace_premium</mat-icon>
           </mat-form-field>
+          @if (planoResumo) {
+            <div class="plano-resumo full-width">
+              <div class="plano-resumo-header">
+                <mat-icon>auto_awesome</mat-icon>
+                <span>Parametrização do plano {{ planoResumo.label }}</span>
+              </div>
+              <div class="plano-modulos">
+                @for (m of planoResumo.modulos; track m) {
+                  <span class="modulo-chip"><mat-icon>check_circle</mat-icon>{{ m }}</span>
+                }
+              </div>
+              <div class="plano-limites">
+                <span><mat-icon>group</mat-icon>Usuários: {{ planoResumo.usuarios }}</span>
+                <span><mat-icon>smart_toy</mat-icon>Créditos de IA: {{ planoResumo.ia }}</span>
+              </div>
+              <p class="plano-nota">Alterar o plano reaplica os módulos e limites acima ao salvar.</p>
+            </div>
+          }
         </form>
       </div>
 
@@ -235,6 +247,16 @@ import { Empresa } from '../../../../../types/admin-empresas';
       font-weight: 500;
     }
 
+    .plano-resumo { background: #f5f7ff; border: 1px solid #d7defb; border-radius: 10px; padding: 14px 16px; margin-top: 6px; }
+    .plano-resumo-header { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #283593; margin-bottom: 10px; }
+    .plano-resumo-header mat-icon { color: #3f51b5; }
+    .plano-modulos { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .modulo-chip { display: inline-flex; align-items: center; gap: 4px; background: #fff; border: 1px solid #c5cae9; color: #283593; border-radius: 16px; padding: 3px 10px; font-size: 0.8rem; }
+    .modulo-chip mat-icon { font-size: 16px; width: 16px; height: 16px; color: #43a047; }
+    .plano-limites { display: flex; gap: 18px; font-size: 0.82rem; color: #555; }
+    .plano-limites span { display: inline-flex; align-items: center; gap: 5px; }
+    .plano-limites mat-icon { font-size: 17px; width: 17px; height: 17px; color: #5c6bc0; }
+    .plano-nota { margin: 10px 0 0; font-size: 0.75rem; color: #888; }
     @media (max-width: 600px) {
       .form-grid {
         grid-template-columns: 1fr;
@@ -258,9 +280,16 @@ export class EditarEmpresaDialogComponent {
   form: FormGroup;
   tipos = ['EXPORTADOR', 'TRADING', 'COOPERATIVA', 'INDÚSTRIA', 'OPERADOR_LOGÍSTICO'];
   statuses = ['ATIVA', 'SUSPENSA', 'BLOQUEADA', 'EM_ONBOARDING'];
-  planos = ['Starter', 'Professional', 'Enterprise'];
+  ufSelecionada = '';
+  planos: { code: string; label: string; modulos: string[]; usuarios: string; ia: string }[] = [
+    { code: 'START', label: 'EIP Start', modulos: ['Exportações', 'NCM', 'Documentos'], usuarios: '3', ia: '500/mês' },
+    { code: 'BUSINESS', label: 'EIP Business', modulos: ['Exportações', 'NCM', 'Documentos', 'Compliance', 'Logística'], usuarios: '15', ia: '5.000/mês' },
+    { code: 'PRO', label: 'EIP Pro', modulos: ['Exportações', 'NCM', 'Documentos', 'Compliance', 'Logística', 'Financeiro', 'CRM', 'Inteligência', 'API'], usuarios: '50', ia: '20.000/mês' },
+    { code: 'ENTERPRISE', label: 'EIP Enterprise', modulos: ['Todos os módulos'], usuarios: 'Ilimitado', ia: 'Ilimitado' }
+  ];
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: Empresa) {
+    this.ufSelecionada = data.estado || '';
     this.form = this.fb.group({
       razaoSocial: [data.razaoSocial, Validators.required],
       nomeFantasia: [data.nomeFantasia, Validators.required],
@@ -273,8 +302,22 @@ export class EditarEmpresaDialogComponent {
       responsavel: [data.responsavel, Validators.required],
       email: [data.email],
       telefone: [data.telefone],
-      plano: [data.plano]
+      plano: [this.normalizePlano(data.plano)]
     });
+  }
+
+  get planoResumo(): { code: string; label: string; modulos: string[]; usuarios: string; ia: string } | undefined {
+    return this.planos.find(p => p.code === this.form.get('plano')?.value);
+  }
+
+  onUfChange(uf: string): void {
+    this.ufSelecionada = uf;
+  }
+
+  private normalizePlano(p: string): string {
+    const u = (p || '').trim().toUpperCase();
+    const map: Record<string, string> = { STARTER: 'START', START: 'START', PROFESSIONAL: 'PRO', PRO: 'PRO', BUSINESS: 'BUSINESS', ENTERPRISE: 'ENTERPRISE' };
+    return map[u] || 'BUSINESS';
   }
 
   cancel(): void {

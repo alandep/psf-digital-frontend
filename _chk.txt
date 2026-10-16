@@ -1,7 +1,0 @@
-﻿True : adapter\out\persistence\BrStateEntity.java (577b)
-True : adapter\out\persistence\BrCityEntity.java (576b)
-True : adapter\out\persistence\BrStateJpaRepository.java (388b)
-True : adapter\out\persistence\BrCityJpaRepository.java (392b)
-True : domain\port\in\ConsultarLocalidadesUseCase.java (570b)
-True : application\LocalidadeService.java (1445b)
-True : adapter\in\bff\LocalidadeBffController.java (1202b)

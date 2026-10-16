@@ -1,0 +1,9 @@
+package com.eip.modules.admin.adapter.out.persistence;
+
+import java.util.UUID;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+/** Admin repository for {@link AdminOrgEntitlementEntity} (RLS-scoped at runtime). */
+public interface AdminOrgEntitlementJpaRepository extends JpaRepository<AdminOrgEntitlementEntity, AdminOrgEntitlementId> {
+}

@@ -1,2 +1,0 @@
-﻿backend-app-1 Up About a minute
-backend-db-1 Up 13 days (healthy)

@@ -21,7 +21,8 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 
 // Services and Types
-import { EmpresasMockService } from '../../../../services/empresasMockService';
+import { EMPRESA_SERVICE } from '../../../services/empresa/empresa-service.token';
+import { IEmpresaService } from '../../../services/empresa/empresa-service.interface';
 import { Empresa, EmpresaMetrics, EmpresaStatus, EmpresaTipo } from '../../../../types/admin-empresas';
 
 // Dialogs
@@ -58,7 +59,7 @@ import { HasPermissionDirective } from '../../../directives/has-permission.direc
 })
 export class EmpresasComponent implements OnInit, OnDestroy, AfterViewInit {
 
-  private empresasService = inject(EmpresasMockService);
+  private empresasService = inject<IEmpresaService>(EMPRESA_SERVICE);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);

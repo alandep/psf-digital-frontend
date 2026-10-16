@@ -15,6 +15,7 @@ export interface Empresa {
   email: string;
   telefone: string;
   plano: string;
+  gcpTenantId?: string;
   dataAdesao: Date;
   ultimoAcesso: Date;
   usuarios: number;

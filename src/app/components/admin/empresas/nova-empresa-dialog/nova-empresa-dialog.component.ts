@@ -7,6 +7,18 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { PaisComboComponent } from '../../../shared/pais-combo/pais-combo.component';
+import { EstadoComboComponent } from '../../../shared/estado-combo/estado-combo.component';
+import { CidadeComboComponent } from '../../../shared/cidade-combo/cidade-combo.component';
+
+/** Plan -> enabled modules preview (mirrors the backend plan_feature default matrix). */
+interface PlanoResumo {
+  code: string;
+  label: string;
+  modulos: string[];
+  usuarios: string;
+  ia: string;
+}
 
 @Component({
   selector: 'app-nova-empresa-dialog',
@@ -19,7 +31,10 @@ import { MatIconModule } from '@angular/material/icon';
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
+    PaisComboComponent,
+    EstadoComboComponent,
+    CidadeComboComponent
   ],
   template: `
     <div class="nova-empresa-dialog">
@@ -69,23 +84,11 @@ import { MatIconModule } from '@angular/material/icon';
             <mat-icon matPrefix>category</mat-icon>
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
-            <mat-label>País</mat-label>
-            <input matInput formControlName="pais">
-            <mat-icon matPrefix>public</mat-icon>
-          </mat-form-field>
+          <app-pais-combo class="full-width" formControlName="pais" label="País"></app-pais-combo>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Estado</mat-label>
-            <input matInput formControlName="estado" placeholder="Ex: SP, RJ, MG">
-            <mat-icon matPrefix>map</mat-icon>
-          </mat-form-field>
+          <app-estado-combo formControlName="estado" label="Estado" (ufChange)="onUfChange($event)"></app-estado-combo>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Cidade</mat-label>
-            <input matInput formControlName="cidade" placeholder="Cidade">
-            <mat-icon matPrefix>location_city</mat-icon>
-          </mat-form-field>
+          <app-cidade-combo formControlName="cidade" label="Cidade" [uf]="ufSelecionada"></app-cidade-combo>
 
           <mat-form-field appearance="outline">
             <mat-label>Responsável</mat-label>
@@ -106,15 +109,34 @@ import { MatIconModule } from '@angular/material/icon';
             <mat-icon matPrefix>phone</mat-icon>
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" class="full-width">
             <mat-label>Plano</mat-label>
             <mat-select formControlName="plano">
-              @for (p of planos; track p) {
-                <mat-option [value]="p">{{ p }}</mat-option>
+              @for (p of planos; track p.code) {
+                <mat-option [value]="p.code">{{ p.label }}</mat-option>
               }
             </mat-select>
             <mat-icon matPrefix>workspace_premium</mat-icon>
           </mat-form-field>
+
+          @if (planoResumo) {
+            <div class="plano-resumo full-width">
+              <div class="plano-resumo-header">
+                <mat-icon>auto_awesome</mat-icon>
+                <span>Parametrização automática do plano {{ planoResumo.label }}</span>
+              </div>
+              <div class="plano-modulos">
+                @for (m of planoResumo.modulos; track m) {
+                  <span class="modulo-chip"><mat-icon>check_circle</mat-icon>{{ m }}</span>
+                }
+              </div>
+              <div class="plano-limites">
+                <span><mat-icon>group</mat-icon>Usuários: {{ planoResumo.usuarios }}</span>
+                <span><mat-icon>smart_toy</mat-icon>Créditos de IA: {{ planoResumo.ia }}</span>
+              </div>
+              <p class="plano-nota">Os módulos e limites acima serão aplicados automaticamente à empresa ao salvar.</p>
+            </div>
+          }
         </form>
       </div>
 
@@ -127,118 +149,32 @@ import { MatIconModule } from '@angular/material/icon';
     </div>
   `,
   styles: [`
-    :host {
-      display: block;
-    }
-
-    .nova-empresa-dialog {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      max-height: 80vh;
-      overflow: hidden;
-    }
-
-    .dialog-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 20px 28px 14px;
-      border-bottom: 1px solid #e0e0e0;
-      flex-shrink: 0;
-    }
-
-    .dialog-header .header-left {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .dialog-header .header-icon {
-      font-size: 36px;
-      width: 36px;
-      height: 36px;
-      color: #283593;
-      background: rgba(40, 53, 147, 0.08);
-      border-radius: 50%;
-      padding: 8px;
-      box-sizing: content-box;
-    }
-
-    .dialog-header h2 {
-      margin: 0;
-      font-weight: 500;
-      font-size: 1.4rem;
-      color: #283593;
-      line-height: 1.2;
-    }
-
-    .dialog-header .header-subtitle {
-      margin: 2px 0 0;
-      font-size: 0.85rem;
-      color: #666;
-    }
-
-    .dialog-header .close-btn {
-      color: #999;
-    }
-
-    .dialog-header .close-btn:hover {
-      color: #333;
-    }
-
-    .dialog-body {
-      padding: 20px 28px;
-      overflow-y: auto;
-      flex: 1;
-      min-height: 0;
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 4px 20px;
-    }
-
-    .form-grid .full-width {
-      grid-column: 1 / -1;
-    }
-
-    .dialog-footer {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      gap: 12px;
-      padding: 16px 28px;
-      border-top: 1px solid #e0e0e0;
-      flex-shrink: 0;
-      background: #fafafa;
-    }
-
-    .dialog-footer .cancel-btn {
-      color: #666;
-    }
-
-    .dialog-footer .save-btn {
-      min-width: 160px;
-      height: 40px;
-      font-weight: 500;
-    }
-
-    @media (max-width: 600px) {
-      .form-grid {
-        grid-template-columns: 1fr;
-      }
-      .dialog-header {
-        padding: 16px 20px 12px;
-      }
-      .dialog-body {
-        padding: 16px 20px;
-      }
-      .dialog-footer {
-        padding: 12px 20px;
-      }
-    }
+    :host { display: block; }
+    .nova-empresa-dialog { display: flex; flex-direction: column; height: 100%; max-height: 80vh; overflow: hidden; }
+    .dialog-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 28px 14px; border-bottom: 1px solid #e0e0e0; flex-shrink: 0; }
+    .dialog-header .header-left { display: flex; align-items: center; gap: 14px; }
+    .dialog-header .header-icon { font-size: 36px; width: 36px; height: 36px; color: #283593; background: rgba(40, 53, 147, 0.08); border-radius: 50%; padding: 8px; box-sizing: content-box; }
+    .dialog-header h2 { margin: 0; font-weight: 500; font-size: 1.4rem; color: #283593; line-height: 1.2; }
+    .dialog-header .header-subtitle { margin: 2px 0 0; font-size: 0.85rem; color: #666; }
+    .dialog-header .close-btn { color: #999; }
+    .dialog-header .close-btn:hover { color: #333; }
+    .dialog-body { padding: 20px 28px; overflow-y: auto; flex: 1; min-height: 0; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 20px; }
+    .form-grid .full-width { grid-column: 1 / -1; }
+    .plano-resumo { background: #f5f7ff; border: 1px solid #d7defb; border-radius: 10px; padding: 14px 16px; margin-top: 6px; }
+    .plano-resumo-header { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #283593; margin-bottom: 10px; }
+    .plano-resumo-header mat-icon { color: #3f51b5; }
+    .plano-modulos { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .modulo-chip { display: inline-flex; align-items: center; gap: 4px; background: #fff; border: 1px solid #c5cae9; color: #283593; border-radius: 16px; padding: 3px 10px; font-size: 0.8rem; }
+    .modulo-chip mat-icon { font-size: 16px; width: 16px; height: 16px; color: #43a047; }
+    .plano-limites { display: flex; gap: 18px; font-size: 0.82rem; color: #555; }
+    .plano-limites span { display: inline-flex; align-items: center; gap: 5px; }
+    .plano-limites mat-icon { font-size: 17px; width: 17px; height: 17px; color: #5c6bc0; }
+    .plano-nota { margin: 10px 0 0; font-size: 0.75rem; color: #888; }
+    .dialog-footer { display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 16px 28px; border-top: 1px solid #e0e0e0; flex-shrink: 0; background: #fafafa; }
+    .dialog-footer .cancel-btn { color: #666; }
+    .dialog-footer .save-btn { min-width: 160px; height: 40px; font-weight: 500; }
+    @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } .dialog-header { padding: 16px 20px 12px; } .dialog-body { padding: 16px 20px; } .dialog-footer { padding: 12px 20px; } }
   `]
 })
 export class NovaEmpresaDialogComponent {
@@ -247,7 +183,14 @@ export class NovaEmpresaDialogComponent {
 
   form: FormGroup;
   tipos = ['EXPORTADOR', 'TRADING', 'COOPERATIVA', 'INDÚSTRIA', 'OPERADOR_LOGÍSTICO'];
-  planos = ['Starter', 'Professional', 'Enterprise'];
+  ufSelecionada = '';
+
+  planos: PlanoResumo[] = [
+    { code: 'START', label: 'EIP Start', modulos: ['Exportações', 'NCM', 'Documentos'], usuarios: '3', ia: '500/mês' },
+    { code: 'BUSINESS', label: 'EIP Business', modulos: ['Exportações', 'NCM', 'Documentos', 'Compliance', 'Logística'], usuarios: '15', ia: '5.000/mês' },
+    { code: 'PRO', label: 'EIP Pro', modulos: ['Exportações', 'NCM', 'Documentos', 'Compliance', 'Logística', 'Financeiro', 'CRM', 'Inteligência', 'API'], usuarios: '50', ia: '20.000/mês' },
+    { code: 'ENTERPRISE', label: 'EIP Enterprise', modulos: ['Todos os módulos'], usuarios: 'Ilimitado', ia: 'Ilimitado' }
+  ];
 
   constructor() {
     this.form = this.fb.group({
@@ -261,8 +204,16 @@ export class NovaEmpresaDialogComponent {
       responsavel: ['', Validators.required],
       email: [''],
       telefone: [''],
-      plano: ['Professional']
+      plano: ['BUSINESS']
     });
+  }
+
+  get planoResumo(): PlanoResumo | undefined {
+    return this.planos.find(p => p.code === this.form.get('plano')?.value);
+  }
+
+  onUfChange(uf: string): void {
+    this.ufSelecionada = uf;
   }
 
   cancel(): void {
