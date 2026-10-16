@@ -386,6 +386,49 @@ export class ExportacaoMockService {
     return of(true).pipe(delay(500));
   }
 
+  // Marca a exportação como embarcada (Req 6.4). Idempotente: aplicar 2x == 1x
+  // (shipped=true, shipped_at estável após a primeira marcação).
+  marcarEmbarcado(id: string): Observable<Exportacao> {
+    const index = this.exportacoes.findIndex(exp => exp.export_id === id);
+    if (index === -1) {
+      return throwError(() => new Error('Exportação não encontrada'));
+    }
+
+    const current = this.exportacoes[index];
+    if (!current.shipped) {
+      this.exportacoes[index] = {
+        ...current,
+        shipped: true,
+        shipped_at: new Date(),
+        updated_at: new Date()
+      };
+    }
+
+    return of(this.exportacoes[index]).pipe(delay(500));
+  }
+
+  // Confirma a exportação (RASCUNHO → CONFIRMADA, mapeada para 'Approved' no
+  // front). Idempotente: se já estiver em um estado confirmado/posterior
+  // ('Approved'/'Shipped'/'Completed'), retorna sem alterações.
+  confirmarExportacao(id: string): Observable<Exportacao> {
+    const index = this.exportacoes.findIndex(exp => exp.export_id === id);
+    if (index === -1) {
+      return throwError(() => new Error('Exportação não encontrada'));
+    }
+
+    const current = this.exportacoes[index];
+    const alreadyConfirmed = ['Approved', 'Shipped', 'Completed'].includes(current.export_status);
+    if (!alreadyConfirmed) {
+      this.exportacoes[index] = {
+        ...current,
+        export_status: 'Approved',
+        updated_at: new Date()
+      };
+    }
+
+    return of(this.exportacoes[index]).pipe(delay(500));
+  }
+
   // ================================
   // MÉTODOS DE DASHBOARD E DETALHES
   // ================================

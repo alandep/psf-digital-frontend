@@ -1,6 +1,7 @@
 package com.eip.modules.export.domain.model;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,17 +26,24 @@ public final class Exportacao {
     private final UUID customerId;
     private String reference;
     private ExportacaoStatus status;
-    private final String destinationCountry;
-    private final String incoterm;
+    private String destinationCountry;
+    private String incoterm;
     private BigDecimal totalAmount;
-    private final String currency;
+    private String currency;
     private long version;
     private final List<ItemExportacao> itens;
+    /** Total cost of the export; {@code null} means not informed (treated as zero in analytics). */
+    private BigDecimal totalCost;
+    /** Whether the export has been shipped (orthogonal to {@link ExportacaoStatus}). */
+    private boolean shipped;
+    /** Instant the export was marked as shipped; {@code null} while pending. */
+    private OffsetDateTime shippedAt;
 
     public Exportacao(ExportacaoId id, UUID organizationId, UUID legalEntityId, UUID customerId,
                       String reference, ExportacaoStatus status, String destinationCountry,
                       String incoterm, BigDecimal totalAmount, String currency, long version,
-                      List<ItemExportacao> itens) {
+                      List<ItemExportacao> itens, BigDecimal totalCost, boolean shipped,
+                      OffsetDateTime shippedAt) {
         this.id = id;
         this.organizationId = organizationId;
         this.legalEntityId = legalEntityId;
@@ -48,6 +56,9 @@ public final class Exportacao {
         this.currency = currency;
         this.version = version;
         this.itens = itens == null ? new ArrayList<>() : new ArrayList<>(itens);
+        this.totalCost = totalCost;
+        this.shipped = shipped;
+        this.shippedAt = shippedAt;
     }
 
     /**
@@ -72,7 +83,10 @@ public final class Exportacao {
                 total,
                 currency == null || currency.isBlank() ? "USD" : currency,
                 0L,
-                lista);
+                lista,
+                null,
+                false,
+                null);
     }
 
     /**
@@ -97,6 +111,64 @@ public final class Exportacao {
             return;
         }
         this.status = ExportacaoStatus.CANCELADA;
+    }
+
+    /**
+     * Marks the export as shipped. Idempotent: a no-op when already shipped,
+     * so repeated calls preserve the original {@code shippedAt}.
+     *
+     * @param quando the instant the shipment occurred
+     */
+    public void marcarEmbarcado(OffsetDateTime quando) {
+        if (this.shipped) {
+            return;
+        }
+        this.shipped = true;
+        this.shippedAt = quando;
+    }
+
+    /**
+     * Edits a draft export in place. Only allowed while in RASCUNHO.
+     * Replaces items (recomputing totalAmount), destination, incoterm, currency and cost.
+     *
+     * @throws BusinessRuleException if status is not RASCUNHO
+     */
+    public void editarRascunho(String destino, String incoterm, String currency,
+                               java.util.List<ItemExportacao> novosItens, BigDecimal custo) {
+        if (status != ExportacaoStatus.RASCUNHO) {
+            throw new BusinessRuleException("Somente exportacoes em RASCUNHO podem ser editadas");
+        }
+        this.destinationCountry = destino;
+        this.incoterm = incoterm;
+        if (currency != null && !currency.isBlank()) {
+            this.currency = currency;
+        }
+        this.itens.clear();
+        if (novosItens != null) {
+            this.itens.addAll(novosItens);
+        }
+        this.totalAmount = this.itens.stream()
+                .map(ItemExportacao::subtotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        definirCusto(custo);
+    }
+
+    /** Assigns the system-generated human-readable reference (once). */
+    public void atribuirReferencia(String ref) {
+        this.reference = ref;
+    }
+
+    /**
+     * Sets the total cost of the export.
+     *
+     * @param custo the cost ({@code null} means not informed)
+     * @throws BusinessRuleException if {@code custo} is negative
+     */
+    public void definirCusto(BigDecimal custo) {
+        if (custo != null && custo.signum() < 0) {
+            throw new BusinessRuleException("Custo da exportacao nao pode ser negativo");
+        }
+        this.totalCost = custo;
     }
 
     public ExportacaoId id() {
@@ -145,5 +217,20 @@ public final class Exportacao {
 
     public List<ItemExportacao> itens() {
         return Collections.unmodifiableList(itens);
+    }
+
+    /** @return the total cost, or {@code null} when not informed. */
+    public BigDecimal totalCost() {
+        return totalCost;
+    }
+
+    /** @return {@code true} when the export has been shipped. */
+    public boolean shipped() {
+        return shipped;
+    }
+
+    /** @return the shipment instant, or {@code null} while pending. */
+    public OffsetDateTime shippedAt() {
+        return shippedAt;
     }
 }

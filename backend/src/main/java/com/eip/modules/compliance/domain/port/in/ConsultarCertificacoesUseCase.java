@@ -1,12 +1,14 @@
 package com.eip.modules.compliance.domain.port.in;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 import com.eip.modules.compliance.domain.model.Certificacao;
 
 /**
- * Inbound port: consult and register certifications.
+ * Inbound port: consult, register, update and delete certifications.
  */
 public interface ConsultarCertificacoesUseCase {
 
@@ -14,7 +16,11 @@ public interface ConsultarCertificacoesUseCase {
 
     CertificacaoView criar(CriarCertificacaoCommand cmd);
 
-    /** Command to create a certification. */
+    CertificacaoView atualizar(UUID id, CriarCertificacaoCommand cmd);
+
+    void excluir(UUID id);
+
+    /** Command to create or update a certification. */
     record CriarCertificacaoCommand(
             String name,
             String tipo,
@@ -22,19 +28,49 @@ public interface ConsultarCertificacoesUseCase {
             String numero,
             String status,
             LocalDate emitidaEm,
-            LocalDate validaAte) {
+            LocalDate validaAte,
+            String productId,
+            String productName,
+            String categoria,
+            String descricao,
+            String paisEmissor,
+            String paisDestino,
+            boolean assinaturaDigital,
+            String complianceStatus,
+            String exportId,
+            String dueNumber,
+            boolean aiGenerated,
+            BigDecimal aiConfidenceScore,
+            BigDecimal aiRiskScore,
+            String aiRiskLevel,
+            String createdBy) {
     }
 
     /** Read view of a single certification. */
     record CertificacaoView(
-            java.util.UUID id,
+            UUID id,
             String name,
             String tipo,
             String orgaoEmissor,
             String numero,
             String status,
             LocalDate emitidaEm,
-            LocalDate validaAte) {
+            LocalDate validaAte,
+            String productId,
+            String productName,
+            String categoria,
+            String descricao,
+            String paisEmissor,
+            String paisDestino,
+            boolean assinaturaDigital,
+            String complianceStatus,
+            String exportId,
+            String dueNumber,
+            boolean aiGenerated,
+            BigDecimal aiConfidenceScore,
+            BigDecimal aiRiskScore,
+            String aiRiskLevel,
+            String createdBy) {
 
         public static CertificacaoView from(Certificacao c) {
             return new CertificacaoView(
@@ -45,7 +81,22 @@ public interface ConsultarCertificacoesUseCase {
                     c.numero(),
                     c.status().name(),
                     c.emitidaEm(),
-                    c.validaAte());
+                    c.validaAte(),
+                    c.productId(),
+                    c.productName(),
+                    c.categoria(),
+                    c.descricao(),
+                    c.paisEmissor(),
+                    c.paisDestino(),
+                    c.assinaturaDigital(),
+                    c.complianceStatus(),
+                    c.exportId(),
+                    c.dueNumber(),
+                    c.aiGenerated(),
+                    c.aiConfidenceScore(),
+                    c.aiRiskScore(),
+                    c.aiRiskLevel(),
+                    c.createdBy());
         }
     }
 }

@@ -1001,6 +1001,34 @@ $sidebar-width: 400px;
   }
 }
 
+// === SHIPMENT CHIPS (embarcado / pendente) ===
+.shipment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  mat-icon {
+    font-size: 0.9rem;
+    width: 0.9rem;
+    height: 0.9rem;
+  }
+
+  &.shipment-shipped {
+    background: rgba($success, 0.12);
+    color: color.adjust($success, $lightness: -15%);
+  }
+
+  &.shipment-pending {
+    background: rgba($grey, 0.15);
+    color: #555;
+  }
+}
+
 // === ASSISTENTE IA SIDEBAR ===
 .ai-sidebar-container {
   position: fixed;

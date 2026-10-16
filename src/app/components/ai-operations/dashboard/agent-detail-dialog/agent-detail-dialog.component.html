@@ -27,7 +27,7 @@
       </div>
       <div class="stat-item">
         <span class="stat-label">Acurácia</span>
-        <span class="stat-value" [style.color]="getAccuracyColor(data.agent.accuracy)">{{ data.agent.accuracy }}%</span>
+        <span class="stat-value" [style.color]="getAccuracyColor(data.agent.accuracy)">{{ displayAccuracy(data.agent.accuracy) }}</span>
       </div>
       <div class="stat-item">
         <span class="stat-label">Custo</span>

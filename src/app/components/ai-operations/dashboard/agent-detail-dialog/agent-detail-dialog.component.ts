@@ -63,10 +63,16 @@ export class AgentDetailDialogComponent {
     return new Date(date).toLocaleString('pt-BR');
   }
 
-  getAccuracyColor(accuracy: number): string {
+  getAccuracyColor(accuracy: number | null): string {
+    if (accuracy == null) return 'inherit';
     if (accuracy >= 95) return '#4caf50';
     if (accuracy >= 90) return '#8bc34a';
     if (accuracy >= 85) return '#ff9800';
     return '#f44336';
+  }
+
+  // Renderiza "n/a" quando a capacidade não expõe sinal de acurácia (null).
+  displayAccuracy(accuracy: number | null): string {
+    return accuracy == null ? 'n/a' : `${accuracy}%`;
   }
 }

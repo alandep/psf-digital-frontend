@@ -99,7 +99,55 @@ public class VertexAiGatewayAdapter implements AiGatewayPort {
 
     @Override
     public AiResult run(AiModel model, AiRequest request, AiExecutionPolicy policy, AiPromptSpec prompt) {
-        Map<String, Object> body = buildRequestBody(policy, prompt);
+        // contents: a single user turn carrying the prompt text only.
+        Map<String, Object> userPart = Map.of("text", prompt.userPrompt());
+        Map<String, Object> userTurn = Map.of("role", "user", "parts", List.of(userPart));
+        Map<String, Object> body = buildRequestBody(policy, prompt, List.of(userTurn));
+
+        return execute(model, body);
+    }
+
+    /**
+     * Executa a chamada multimodal (OCR de binário) do Gemini via Vertex AI. É a
+     * contraparte multimodal do {@link #run}: usa exatamente a mesma montagem de
+     * corpo, URL, token ADC, resiliência, validação de completude e mapeamento de
+     * telemetria, diferindo apenas no turno do usuário, que carrega DUAS parts —
+     * uma {@code fileData} apontando para o binário no object storage pela
+     * {@code fileUri} ({@code gs://bucket/key}) e uma {@code text} com o prompt.
+     *
+     * <p>O provedor (Gemini multimodal) lê o binário diretamente pela
+     * {@code fileUri} informada no {@link StorageRef}; este adapter nunca baixa os
+     * bytes nem os envia inline, e <strong>não</strong> habilita nenhuma nova API
+     * GCP — tudo passa pelo mesmo endpoint {@code generateContent} já usado pelo
+     * {@link #run}. O {@code responseSchema} do {@link AiPromptSpec} é aplicado da
+     * mesma forma, garantindo saída estruturada da extração.
+     */
+    @Override
+    public AiResult runMultimodal(AiModel model, AiRequest request, AiExecutionPolicy policy,
+                                  AiPromptSpec prompt, StorageRef storageRef) {
+        // contents: a single user turn carrying the file reference (fileData) read
+        // by the provider from the storage URI, followed by the prompt text. The
+        // binary is NEVER downloaded here nor sent inline — only its gs:// URI.
+        Map<String, Object> fileDataPart = Map.of("fileData",
+                Map.of("fileUri", storageRef.uri(), "mimeType", storageRef.mediaType()));
+        Map<String, Object> textPart = Map.of("text", prompt.userPrompt());
+        Map<String, Object> userTurn = Map.of("role", "user", "parts", List.of(fileDataPart, textPart));
+        Map<String, Object> body = buildRequestBody(policy, prompt, List.of(userTurn));
+
+        return execute(model, body);
+    }
+
+    /**
+     * Shared transport pipeline for both {@link #run} and {@link #runMultimodal}:
+     * resolves the URL and ADC bearer token, performs the single resilient
+     * provider call (translating transport failures into the AI error taxonomy),
+     * measures latency, validates response completeness and maps telemetry.
+     *
+     * @param model the resolved model route to call
+     * @param body  the fully assembled {@code generateContent} request body
+     * @return the AI result with telemetry
+     */
+    private AiResult execute(AiModel model, Map<String, Object> body) {
         String url = buildUrl(model.model());
         String bearerToken = credentials.bearerToken();
 
@@ -138,21 +186,27 @@ public class VertexAiGatewayAdapter implements AiGatewayPort {
 
     /**
      * Assembles the Gemini {@code generateContent} request body from the prompt
-     * and execution policy. The adapter never injects business content — it only
-     * wires the already-built {@link AiPromptSpec} into the provider shape.
+     * and execution policy, wiring in the already-built {@code contents} turns.
+     * The adapter never injects business content — it only wires the already-built
+     * {@link AiPromptSpec} into the provider shape. The {@code contents} are built
+     * by the caller: {@link #run} passes a single text turn, while
+     * {@link #runMultimodal} passes a turn carrying a {@code fileData} part plus
+     * the prompt text. Everything else (systemInstruction + generationConfig) is
+     * identical for both flows.
      *
-     * @param policy the execution policy (max output tokens, thinking support +
-     *               budget)
-     * @param prompt the fully built prompt spec
+     * @param policy   the execution policy (max output tokens, thinking support +
+     *                 budget)
+     * @param prompt   the fully built prompt spec
+     * @param contents the already-assembled {@code contents} turns to send
      * @return the JSON request body as a map
      */
-    private Map<String, Object> buildRequestBody(AiExecutionPolicy policy, AiPromptSpec prompt) {
+    private Map<String, Object> buildRequestBody(AiExecutionPolicy policy, AiPromptSpec prompt,
+                                                 List<Map<String, Object>> contents) {
         Map<String, Object> body = new LinkedHashMap<>();
 
-        // contents: a single user turn carrying the prompt text.
-        Map<String, Object> userPart = Map.of("text", prompt.userPrompt());
-        Map<String, Object> userTurn = Map.of("role", "user", "parts", List.of(userPart));
-        body.put("contents", List.of(userTurn));
+        // contents: the user turn(s) assembled by the caller (text-only for run,
+        // fileData + text for runMultimodal).
+        body.put("contents", contents);
 
         // systemInstruction: only when provided.
         if (prompt.systemInstruction() != null) {

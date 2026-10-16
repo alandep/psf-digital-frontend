@@ -1,0 +1,49 @@
+<h2 mat-dialog-title>Novo Importador</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="importador-form" (ngSubmit)="salvar()">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Nome</mat-label>
+      <input matInput formControlName="name" placeholder="Razão social completa"
+             aria-label="Nome do importador" required>
+      <mat-error *ngIf="form.get('name')?.hasError('required')">
+        Campo obrigatório
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Documento</mat-label>
+      <input matInput formControlName="document" placeholder="CNPJ ou Tax ID"
+             aria-label="Documento do importador">
+    </mat-form-field>
+
+    <app-pais-combo class="full-width" formControlName="country" label="País"></app-pais-combo>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Endereço</mat-label>
+      <textarea matInput formControlName="address" rows="2"
+                placeholder="Endereço completo"
+                aria-label="Endereço do importador"></textarea>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Contato</mat-label>
+      <input matInput formControlName="contact" placeholder="Email e telefone"
+             aria-label="Contato do importador">
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancelar()"
+          [disabled]="saving" aria-label="Cancelar cadastro">
+    Cancelar
+  </button>
+  <button mat-raised-button color="primary" type="button" (click)="salvar()"
+          [disabled]="saving" aria-label="Salvar importador">
+    <mat-progress-spinner *ngIf="saving" diameter="18" mode="indeterminate"
+                          class="button-spinner"></mat-progress-spinner>
+    <span *ngIf="!saving">Salvar</span>
+    <span *ngIf="saving">Salvando...</span>
+  </button>
+</mat-dialog-actions>

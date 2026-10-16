@@ -46,6 +46,14 @@ public class MockStorageAdapter implements StoragePort {
         return "organizations/" + org + "/documents/" + documentId + "/" + sanitize(filename);
     }
 
+    @Override
+    public String upload(String storageKey, byte[] content, String mediaType) {
+        // DEV/mock: no real object store. Return a deterministic mock URI; the
+        // mock AI gateway does not read the bytes. In cloud the GcsStorageAdapter
+        // performs a real upload and returns a gs:// URI.
+        return "mock://" + storageKey;
+    }
+
     private static String sanitize(String filename) {
         if (filename == null || filename.isBlank()) {
             return "file";

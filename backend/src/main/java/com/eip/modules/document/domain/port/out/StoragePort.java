@@ -18,6 +18,13 @@ public interface StoragePort {
     /** Builds the canonical storage key for a document's file. */
     String buildKey(UUID org, UUID documentId, String filename);
 
+    /**
+     * Uploads bytes to object storage server-side and returns the canonical
+     * storage URI (ex.: {@code gs://bucket/key}) that providers can read. Unlike
+     * {@link #signedUpload}, the backend writes the bytes itself (no client PUT).
+     */
+    String upload(String storageKey, byte[] content, String mediaType);
+
     /** A signed, expiring URL. */
     record SignedUrl(String url, OffsetDateTime expiresAt) {
     }

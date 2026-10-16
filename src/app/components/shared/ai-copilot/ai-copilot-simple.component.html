@@ -14,6 +14,37 @@
     </div>
   </div>
 
+  <!-- Painel de uso/quota (Req 5) -->
+  <mat-card class="usage-card">
+    <mat-card-content>
+      <div class="usage-header">
+        <mat-icon>insights</mat-icon>
+        <span>Consumo de IA</span>
+      </div>
+
+      <!-- Indisponibilidade sem bloquear a tela (Req 5.4) -->
+      <div *ngIf="usageUnavailable" class="usage-unavailable">
+        Consumo de IA indisponível
+      </div>
+
+      <div *ngIf="!usageUnavailable && usage.length === 0" class="usage-empty">
+        Sem dados de consumo no momento.
+      </div>
+
+      <div *ngIf="!usageUnavailable && usage.length > 0" class="usage-list">
+        <div class="usage-item" *ngFor="let item of usage">
+          <div class="usage-item-top">
+            <span class="usage-label">{{ item.label }}</span>
+            <span class="usage-numbers">
+              {{ item.used }} / {{ item.included }} {{ item.unit }} ({{ item.percent }}%)
+            </span>
+          </div>
+          <mat-progress-bar mode="determinate" [value]="item.percent"></mat-progress-bar>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
   <!-- Quick Actions -->
   <mat-card class="quick-actions-card">
     <mat-card-content>
@@ -36,12 +67,47 @@
     </mat-card-content>
   </mat-card>
 
+  <!-- Agentes de roadmap (Req 12.6/12.7/12.8) -->
+  <!-- Secao puramente informativa: estes agentes NAO possuem capacidade real -->
+  <!-- no backend. Sao chips estaticos, nao acionaveis, sem botao nem clique, -->
+  <!-- marcados como "roadmap/indisponivel" e nunca disparam chamada ou -->
+  <!-- resposta mockada. -->
+  <mat-card class="roadmap-card">
+    <mat-card-content>
+      <div class="roadmap-header">
+        <mat-icon>schedule</mat-icon>
+        <span>Agentes em roadmap (indisponíveis)</span>
+      </div>
+      <p class="roadmap-note">
+        Capacidades futuras ainda sem backend de IA. Não são acionáveis nesta versão.
+      </p>
+      <div class="roadmap-list" role="list" aria-label="Agentes em roadmap, indisponíveis">
+        <span class="roadmap-chip"
+              role="listitem"
+              *ngFor="let agent of roadmapAgents"
+              [attr.aria-label]="agent.label + ' — roadmap, indisponível'"
+              [matTooltip]="'Capacidade futura (roadmap). Agente indisponível nesta versão.'">
+          <mat-icon>{{ agent.icon }}</mat-icon>
+          <span class="roadmap-chip-label">{{ agent.label }}</span>
+          <span class="roadmap-badge">Roadmap / indisponível</span>
+        </span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
   <!-- Chat Card -->
   <mat-card class="chat-card">
     <mat-card-content class="chat-content">
 
       <!-- Messages Area -->
-      <div #messagesContainer class="messages-container">
+      <!-- Regiao viva (Req 11.1): leitores de tela anunciam novas mensagens de
+           IA conforme sao adicionadas a conversa. -->
+      <div #messagesContainer
+           class="messages-container"
+           role="log"
+           aria-live="polite"
+           aria-relevant="additions text"
+           aria-label="Conversa com o Assistente de IA">
 
         <!-- Welcome message quando não há mensagens -->
         <div *ngIf="messages.length === 0" class="welcome-message">
@@ -66,7 +132,18 @@
             </div>
 
             <!-- Content -->
-            <div *ngIf="!message.loading" class="message-body" [innerHTML]="message.content"></div>
+            <div *ngIf="!message.loading"
+                 class="message-body"
+                 [class.message-error]="message.error"
+                 [innerHTML]="message.content"></div>
+
+            <!-- Rodapé de uso (provider/model/unidades) para respostas de IA -->
+            <div *ngIf="!message.loading && message.meta" class="message-meta">
+              <span class="meta-item">{{ taskLabel(message.meta.task) }}</span>
+              <span class="meta-item">{{ message.meta.provider }} · {{ message.meta.model }}</span>
+              <span class="meta-item">in: {{ message.meta.inputUnits }} / out: {{ message.meta.outputUnits }}</span>
+              <span class="meta-item" *ngIf="showsOcrPages(message.meta)">páginas OCR: {{ message.meta.ocrPages }}</span>
+            </div>
 
             <!-- Timestamp -->
             <div *ngIf="!message.loading" class="message-time">
@@ -78,13 +155,33 @@
 
       <!-- Input Area (sticky footer) -->
       <div class="input-area">
+        <!-- Seletor de agente: chat livre ou um agente estruturado -->
+        <mat-form-field class="task-field" appearance="outline">
+          <mat-label>Agente</mat-label>
+          <mat-select [(ngModel)]="selectedTask" [disabled]="isProcessing">
+            <mat-option *ngFor="let option of taskOptions" [value]="option.id">
+              {{ option.label }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Execução assíncrona (job polling) — Req 4 -->
+        <mat-checkbox class="async-toggle"
+                      [(ngModel)]="async"
+                      [disabled]="isProcessing"
+                      matTooltip="Executa via job assíncrono com acompanhamento de status">
+          Execução assíncrona
+        </mat-checkbox>
+
         <mat-form-field class="input-field" appearance="outline">
           <mat-label>Digite sua pergunta...</mat-label>
           <input matInput
                  [(ngModel)]="userInput"
                  (keydown.enter)="sendMessage()"
+                 (ngModelChange)="inputInvalid = false"
                  [disabled]="isProcessing"
                  placeholder="Ex: Gere um relatório de recebimentos em USD">
+          <mat-hint *ngIf="inputInvalid" class="input-invalid-hint">Digite uma mensagem para enviar.</mat-hint>
         </mat-form-field>
 
         <button mat-fab

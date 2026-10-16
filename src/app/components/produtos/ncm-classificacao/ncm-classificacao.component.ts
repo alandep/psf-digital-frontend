@@ -30,12 +30,13 @@ import { MatStepperModule } from '@angular/material/stepper';
 
 // Services e Types
 import { NCMClassificationMockService } from '../../../../services/ncm-classification-mock.service';
+import { AI_SERVICE } from '../../../services/ai/ai-service.token';
+import { IAiService } from '../../../services/ai/ai-service.interface';
+import { NcmClassificationResult } from '../../../../types/ai-hub';
 import { 
   NCMClassification,
   NCMClassificationFilters,
   NCMClassificationStats,
-  AIClassificationRequest,
-  AIClassificationResponse,
   CommodityType,
   ComplianceStatus,
   ClassificationSource,
@@ -94,7 +95,12 @@ import {
   styleUrls: ['./ncm-classificacao.component.scss']
 })
 export class NCMClassificacaoComponent implements OnInit {
+  // CRUD de classificações permanece no mock enquanto não há endpoint real.
   private readonly clasificacaoService = inject(NCMClassificationMockService);
+  // A SUGESTÃO DE NCM POR IA passa a vir do backend real via AI_SERVICE
+  // (POST /bff/ai/ncm/classificar). O mock de IA não participa mais do caminho
+  // de IA desta tela.
+  private readonly ai = inject<IAiService>(AI_SERVICE);
   private readonly fb = inject(FormBuilder);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
@@ -347,65 +353,105 @@ export class NCMClassificacaoComponent implements OnInit {
 
   // === MÉTODOS DE IA ===
 
+  // Limiar de confiança (fração 0..1) abaixo do qual a sugestão de IA exige
+  // revisão humana explícita. O backend devolve confidence em 0..1.
+  private static readonly AI_REVIEW_THRESHOLD = 0.9;
+
   public quickClassifyWithAI(): void {
+    // Bloquear envio sem descrição (Req 14.5): a descrição do produto é
+    // obrigatória para acionar a classificação por IA.
     if (this.quickClassifyForm.invalid) {
       this.snackBar.open('Por favor, preencha a descrição do produto', 'Fechar', { duration: 3000 });
+      this.quickClassifyForm.markAllAsTouched();
       return;
     }
 
     this.isClassifyingWithAI = true;
-    const request: AIClassificationRequest = this.quickClassifyForm.value;
-    
-    console.log('🤖 Classificação rápida com IA:', request);
-    
-    this.clasificacaoService.classifyWithAI(request).subscribe({
-      next: (response: AIClassificationResponse) => {
-        this.handleAIResponse(response);
-        this.isClassifyingWithAI = false;
-      },
-      error: () => {
-        this.snackBar.open('Erro na classificação com IA', 'Fechar', { duration: 3000 });
-        this.isClassifyingWithAI = false;
-      }
-    });
+    const form = this.quickClassifyForm.value;
+
+    // Sugestão de NCM via backend real (não mais pelo mock de IA).
+    this.ai
+      .classificarNcm({
+        description: form.product_description,
+        productName: form.product_name || undefined,
+        scientificName: form.scientific_name || undefined,
+        commodityType: form.commodity_type || undefined
+      })
+      .subscribe({
+        next: (result: NcmClassificationResult) => {
+          this.handleAIResponse(result);
+          this.isClassifyingWithAI = false;
+        },
+        error: (err: unknown) => {
+          this.snackBar.open(this.mensagemErroIa(err), 'Fechar', { duration: 4000 });
+          this.isClassifyingWithAI = false;
+        }
+      });
   }
 
   /**
-   * Recebe a sugestão da IA e abre o dialog pré-populado com a semente derivada.
-   * O painel de classificação rápida permanece na página.
+   * Recebe a sugestão TIPADA da IA (ncm/confidence/rationale/alternatives) e
+   * abre o dialog pré-populado com a semente derivada para revisão humana. A
+   * sugestão NÃO é aplicada automaticamente: o usuário revisa e salva (humano
+   * no circuito, Req 14.8). O painel de classificação rápida permanece na página.
    */
-  private handleAIResponse(response: AIClassificationResponse): void {
-    const suggestion = response.primary_suggestion;
+  private handleAIResponse(result: NcmClassificationResult): void {
+    // confidence vem como fração 0..1; a tela/formulário usa percentual 0..100.
+    const confidencePercent = Math.round((result.confidence ?? 0) * 1000) / 10;
+    const needsReview = (result.confidence ?? 0) < NCMClassificacaoComponent.AI_REVIEW_THRESHOLD;
 
     // Semente derivada da IA (tratada como "classification" de criação pelo dialog).
     const seed = {
       product_description: this.quickClassifyForm.get('product_description')?.value,
-      product_name: this.quickClassifyForm.get('product_name')?.value || suggestion.ncm_description,
+      product_name: this.quickClassifyForm.get('product_name')?.value || result.ncm,
       scientific_name: this.quickClassifyForm.get('scientific_name')?.value,
       commodity_type: this.quickClassifyForm.get('commodity_type')?.value || 'GRAO',
       origin_country: 'Brasil',
-      ncm_code: suggestion.ncm_code,
-      ncm_description: suggestion.ncm_description,
-      hs_code: suggestion.hs_code,
-      ai_suggested_ncm: suggestion.ncm_code,
-      ai_alternative_ncm_codes: response.alternative_suggestions.map((alt: any) => alt.ncm_code),
-      ai_confidence_score: response.confidence_score,
-      ai_classification_reason: response.classification_reason,
-      ai_data_sources: response.data_sources,
+      ncm_code: result.ncm,
+      ai_suggested_ncm: result.ncm,
+      ai_alternative_ncm_codes: (result.alternatives ?? []).map(alt => alt.ncm),
+      ai_confidence_score: confidencePercent,
+      ai_classification_reason: result.rationale,
       ai_auto_classification_enabled: true,
-      ai_requires_human_review: response.confidence_score < 90,
-      ai_classification_status: response.confidence_score >= 90 ? 'APPROVED' : 'PENDING'
+      ai_requires_human_review: needsReview,
+      ai_classification_status: needsReview ? 'PENDING' : 'APPROVED'
     } as unknown as NCMClassification;
 
+    const reviewHint = needsReview ? ' — revisão humana recomendada' : '';
     this.snackBar.open(
-      `🤖 Classificação IA: ${suggestion.ncm_code} (${response.confidence_score.toFixed(1)}% confiança)`,
+      `🤖 NCM sugerido pela IA: ${result.ncm} (${confidencePercent.toFixed(1)}% confiança)${reviewHint}`,
       'Fechar',
       { duration: 5000 }
     );
 
     // Limpar formulário rápido e abrir o dialog (modo criação) com a sugestão.
+    // Nada é persistido automaticamente: o usuário revisa e confirma no dialog.
     this.quickClassifyForm.reset();
     this.openClassificationDialog(seed, null);
+  }
+
+  // Mapeia o Erro_IA (já normalizado pelo errorInterceptor) para uma mensagem
+  // simples pt-BR exibida via snackBar, sem fallback mock (Req 14.11).
+  private mensagemErroIa(err: unknown): string {
+    const e = err as { status?: number; code?: string; message?: string };
+    if (e?.status === 402 || e?.code === 'AI_QUOTA_EXCEEDED') {
+      return 'Seus créditos de IA acabaram. Compre créditos para continuar.';
+    }
+    switch (e?.status) {
+      case 403:
+        return 'Acesso negado: você não tem permissão para usar a IA.';
+      case 422:
+        return 'A resposta da IA foi inválida para a solicitação enviada.';
+      case 429:
+        return 'Limite de uso de IA atingido. Aguarde e tente novamente.';
+      case 502:
+      case 503:
+        return 'O serviço de IA está temporariamente indisponível. Tente novamente em instantes.';
+      case 504:
+        return 'O serviço de IA demorou para responder. Tente novamente.';
+      default:
+        return e?.message || 'Erro na classificação com IA.';
+    }
   }
 
   // === MÉTODOS AUXILIARES ===

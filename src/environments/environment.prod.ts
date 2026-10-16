@@ -22,12 +22,16 @@ export const environment = {
   realApis: {
     // Mesmo conjunto habilitado hoje no dev (environment.ts): auth + ai reais.
     auth: true,
-    export: false,
+    export: true,
     subscription: false,
     documents: false,
     logistics: false,
     finance: false,
     crm: false,
-    ai: true
+    ai: true,
+    // Tela de Certificações usa o backend real de compliance (BFF)
+    compliance: true,
+    // Roteia o Dashboard Principal ao BFF real; false só p/ demo local com mock.
+    dashboard: true
   }
 };

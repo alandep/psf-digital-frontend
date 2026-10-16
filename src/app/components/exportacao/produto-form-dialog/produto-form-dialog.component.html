@@ -1,0 +1,66 @@
+<h2 mat-dialog-title>Novo Produto</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="produto-form" (ngSubmit)="salvar()">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Nome</mat-label>
+      <input matInput formControlName="name" placeholder="Nome comercial do produto"
+             aria-label="Nome do produto" required>
+      <mat-error *ngIf="form.get('name')?.hasError('required')">
+        Campo obrigatório
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Código NCM</mat-label>
+      <input matInput formControlName="ncm" placeholder="0000.00.00"
+             aria-label="Código NCM do produto">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Descrição</mat-label>
+      <textarea matInput formControlName="description" rows="2"
+                placeholder="Descrição detalhada do produto"
+                aria-label="Descrição do produto"></textarea>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Unidade</mat-label>
+      <input matInput formControlName="unit" placeholder="MT, KG, TON..."
+             aria-label="Unidade de medida do produto">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Preço Padrão</mat-label>
+      <input matInput type="number" formControlName="standardPrice" min="0" step="0.01"
+             placeholder="Preço unitário padrão"
+             aria-label="Preço padrão do produto">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Moeda</mat-label>
+      <input matInput formControlName="currency" placeholder="USD, EUR, BRL..."
+             aria-label="Moeda do produto">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>País de Origem</mat-label>
+      <input matInput formControlName="originCountry" placeholder="País de origem"
+             aria-label="País de origem do produto">
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancelar()"
+          [disabled]="saving" aria-label="Cancelar cadastro">
+    Cancelar
+  </button>
+  <button mat-raised-button color="primary" type="button" (click)="salvar()"
+          [disabled]="saving" aria-label="Salvar produto">
+    <mat-progress-spinner *ngIf="saving" diameter="18" mode="indeterminate"
+                          class="button-spinner"></mat-progress-spinner>
+    <span *ngIf="!saving">Salvar</span>
+    <span *ngIf="saving">Salvando...</span>
+  </button>
+</mat-dialog-actions>

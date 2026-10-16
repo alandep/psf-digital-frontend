@@ -39,3 +39,55 @@ export interface AiReconciliationResult {
   reconciliation: ReconciliationView | null;
   review: ReviewOutcome;
 }
+
+// --- Escopo B — operações e capacidades (Data Models — Frontend) ---
+
+// Operações base (Req 8)
+export interface AiJobView { jobId: string; status: string; }
+export interface AiUsageView {
+  feature: string; label: string; used: number; included: number; unit: string; percent: number;
+}
+export interface AiModelRouteView {
+  task: string; priority: string; provider: string; model: string; enabled: boolean;
+}
+
+// NCM estruturado (Req 14)
+export interface NcmClassifyRequest {
+  description: string; productName?: string; scientificName?: string; commodityType?: string;
+}
+export interface NcmClassificationResult {
+  ncm: string;
+  confidence: number;
+  rationale: string;
+  alternatives: { ncm: string; confidence: number; reason: string }[];
+}
+
+// Simulação de transporte (Req 15)
+export interface TransportSimRequest {
+  origin: string; destination: string; product: string; quantityTons: number;
+  preferredModal: string; incoterm: string; desiredDate: string;
+}
+export interface TransportSimResult {
+  carrier: string; modal: string; route: string; rationale: string;
+  estimatedTransitDays?: number; estimatedCost?: number;
+}
+
+// Criação por linguagem natural (Req 16)
+export interface NlCreateRequest { command: string; }
+export interface ExportDraft {
+  incoterm: string; origin: string; destination: string; product: string;
+  ncm?: string; quantity: number; unit: string; notes?: string;
+}
+
+// OCR Upload multimodal (Req 17)
+export interface OcrRequest { storageKey: string; mediaType: string; docKind: string; }
+export interface OcrExtractionResult {
+  docKind: string;
+  extraction: unknown;
+  completenessScore: number;
+  discrepancies: string[];
+  needsReview: boolean;
+  provider: string;
+  model: string;
+  ocrPages: number;
+}

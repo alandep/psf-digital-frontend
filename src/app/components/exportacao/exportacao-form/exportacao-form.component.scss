@@ -429,7 +429,7 @@ $success-color: $success;
 
   .add-documents-section {
     display: flex;
-    align-items: flex-end;
+    align-items: flex-start;
     flex-wrap: wrap;
     gap: 16px;
     margin-top: 24px;
@@ -446,6 +446,8 @@ $success-color: $success;
     button {
       height: 56px;
       min-width: 160px;
+      margin-top: 0;
+      align-self: flex-start;
     }
   }
 }
@@ -732,6 +734,86 @@ $success-color: $success;
       button {
         width: 100%;
       }
+    }
+  }
+}
+
+// === Importador reutilizável (combo + botão "Novo") ===
+.importador-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+
+  .importador-field {
+    flex: 1 1 auto;
+    min-width: 240px;
+  }
+
+  .novo-importador-button {
+    // Alinha o botão ao topo do campo (mesma linha-base do mat-form-field).
+    margin-top: 6px;
+    white-space: nowrap;
+  }
+}
+
+.importador-detalhes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 8px 24px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.02);
+
+  .detalhe-item {
+    display: flex;
+    gap: 8px;
+    font-size: 0.875rem;
+
+    label {
+      font-weight: 600;
+      color: rgba(0, 0, 0, 0.6);
+    }
+  }
+}
+
+// === Produto reutilizável (combo com filtro + botão "Novo") ===
+.produto-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+
+  .produto-field {
+    flex: 1 1 auto;
+    min-width: 240px;
+  }
+
+  .novo-produto-button {
+    // Alinha o botão ao topo do campo (mesma linha-base do mat-form-field).
+    margin-top: 6px;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .importador-row {
+    flex-direction: column;
+
+    .novo-importador-button {
+      margin-top: 0;
+    }
+  }
+
+  .importador-detalhes {
+    grid-template-columns: 1fr;
+  }
+
+  .produto-row {
+    flex-direction: column;
+
+    .novo-produto-button {
+      margin-top: 0;
     }
   }
 }

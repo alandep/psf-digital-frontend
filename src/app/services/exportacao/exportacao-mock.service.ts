@@ -39,6 +39,14 @@ export class ExportacaoMockServiceAdapter implements IExportacaoService {
     return this.mockService.deleteExportacao(id);
   }
 
+  marcarEmbarcado(id: string): Observable<Exportacao> {
+    return this.mockService.marcarEmbarcado(id);
+  }
+
+  confirmarExportacao(id: string): Observable<Exportacao> {
+    return this.mockService.confirmarExportacao(id);
+  }
+
   // Dashboard & Details
   getDashboardData(): Observable<ExportacaoDashboard> {
     return this.mockService.getDashboardData();

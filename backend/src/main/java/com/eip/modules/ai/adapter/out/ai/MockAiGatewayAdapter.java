@@ -27,20 +27,49 @@ import com.eip.modules.ai.domain.model.AiResult;
 @Profile("!cloud")
 public class MockAiGatewayAdapter implements com.eip.modules.ai.domain.port.out.AiGatewayPort {
 
+    /**
+     * Deterministic invoice extraction JSON compatible with the OCR/extraction
+     * (INVOICE) schema. Shared by {@code OCR_DOCUMENT}, {@code DOCUMENT_EXTRACTION}
+     * and {@link #runMultimodal} so the structured output parser accepts the mock.
+     */
+    private static final String MOCK_INVOICE_JSON =
+            "{\"invoiceNumber\":\"INV-2024-0001\",\"totalAmount\":4500,\"currency\":\"USD\","
+                    + "\"incoterm\":\"FOB\",\"lines\":[{\"sku\":\"CAFE-AR\",\"quantity\":1000,\"unitPrice\":4.5}]}";
+
     @Override
     public AiResult run(AiModel model, AiRequest request, AiExecutionPolicy policy, AiPromptSpec prompt) {
         String input = request.input() != null ? request.input() : "";
         long promptTokens = Math.max(1, input.length());
         String output = switch (request.task()) {
-            case NCM_CLASSIFICATION -> "0901.21.00";
+            case NCM_CLASSIFICATION -> "{\"ncm\":\"0901.11.10\",\"confidence\":0.93,"
+                    + "\"rationale\":\"Café não torrado (mock).\","
+                    + "\"alternatives\":[{\"ncm\":\"0901.21.00\",\"confidence\":0.4,\"reason\":\"Se torrado\"}]}";
             case DOCUMENT_SUMMARY -> "Resumo: " + truncate(input, 120);
             case TRANSLATION -> "Traducao (mock): " + truncate(input, 200);
             case RISK_ANALYSIS -> "Analise de risco (mock): risco moderado.";
-            case DOCUMENT_EXTRACTION -> "{\"campos\":{},\"texto\":\"" + truncate(input, 80) + "\"}";
+            case DOCUMENT_EXTRACTION -> MOCK_INVOICE_JSON;
             case CHAT -> "Resposta (mock): " + truncate(input, 200);
+            case TRANSPORT_SIMULATION -> "{\"carrier\":\"Transportadora Mock\",\"modal\":\"Rodoviário\","
+                    + "\"route\":\"Origem → Destino\",\"rationale\":\"Melhor custo/prazo (mock).\","
+                    + "\"estimatedTransitDays\":4,\"estimatedCost\":12500}";
+            case EXPORT_NL_CREATION -> "{\"incoterm\":\"FOB\",\"origin\":\"Rondonópolis - MT\","
+                    + "\"destination\":\"Hamburgo - Alemanha\",\"product\":\"Café verde\","
+                    + "\"ncm\":\"0901.11.10\",\"quantity\":1000,\"unit\":\"KG\",\"notes\":\"Rascunho (mock).\"}";
+            case OCR_DOCUMENT -> MOCK_INVOICE_JSON;
         };
         long outputTokens = Math.max(1, output.length());
         return AiResult.of(output, model.provider(), model.model(), 0,
+                promptTokens, outputTokens, 0, promptTokens + outputTokens, "STOP", 0);
+    }
+
+    @Override
+    public AiResult runMultimodal(AiModel model, AiRequest request, AiExecutionPolicy policy,
+                                  AiPromptSpec prompt, StorageRef storageRef) {
+        String input = request.input() != null ? request.input() : "";
+        long promptTokens = Math.max(1, input.length());
+        String output = MOCK_INVOICE_JSON;
+        long outputTokens = Math.max(1, output.length());
+        return AiResult.of(output, model.provider(), model.model(), 2 /* ocrPages */,
                 promptTokens, outputTokens, 0, promptTokens + outputTokens, "STOP", 0);
     }
 

@@ -1,5 +1,6 @@
 package com.eip.modules.compliance.adapter.out.persistence;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -50,4 +51,52 @@ public class CertificacaoEntity {
 
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
+
+    @Column(name = "product_id")
+    private String productId;
+
+    @Column(name = "product_name")
+    private String productName;
+
+    @Column(name = "categoria")
+    private String categoria;
+
+    @Column(name = "descricao")
+    private String descricao;
+
+    @Column(name = "pais_emissor")
+    private String paisEmissor;
+
+    @Column(name = "pais_destino")
+    private String paisDestino;
+
+    @Column(name = "assinatura_digital")
+    private boolean assinaturaDigital;
+
+    @Column(name = "compliance_status")
+    private String complianceStatus;
+
+    @Column(name = "export_id")
+    private String exportId;
+
+    @Column(name = "due_number")
+    private String dueNumber;
+
+    @Column(name = "ai_generated")
+    private boolean aiGenerated;
+
+    @Column(name = "ai_confidence_score", precision = 6, scale = 4)
+    private BigDecimal aiConfidenceScore;
+
+    @Column(name = "ai_risk_score", precision = 6, scale = 4)
+    private BigDecimal aiRiskScore;
+
+    @Column(name = "ai_risk_level")
+    private String aiRiskLevel;
+
+    @Column(name = "created_by")
+    private String createdBy;
+
+    @Column(name = "updated_at")
+    private OffsetDateTime updatedAt;
 }

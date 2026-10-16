@@ -327,6 +327,49 @@
                     </mat-slide-toggle>
                   </div>
                 </div>
+
+                <div class="ai-actions" *ngIf="templateForm.get('ai_enabled')?.value">
+                  <h4>Ações de IA (agentes GCP)</h4>
+                  <p class="ai-actions-note">
+                    As ações usam os agentes de IA reais (Vertex/GCP). O "Preenchimento Automático"
+                    permanece como preferência salva no template.
+                  </p>
+
+                  <div class="ai-action" *ngIf="templateForm.get('ai_risk_analysis')?.value">
+                    <button mat-stroked-button type="button" (click)="analisarRiscos()" [disabled]="aiRunning['risco']" aria-label="Analisar riscos com IA">
+                      <mat-icon>warning</mat-icon> Analisar Riscos
+                    </button>
+                    <mat-progress-spinner *ngIf="aiRunning['risco']" diameter="20" mode="indeterminate"></mat-progress-spinner>
+                    <div class="ai-result" *ngIf="aiResults.risco">{{ aiResults.risco }}</div>
+                  </div>
+
+                  <div class="ai-action" *ngIf="templateForm.get('ai_compliance_check')?.value">
+                    <button mat-stroked-button type="button" (click)="verificarConformidade()" [disabled]="aiRunning['conformidade']" aria-label="Verificar conformidade com IA">
+                      <mat-icon>verified</mat-icon> Verificar Conformidade
+                    </button>
+                    <mat-progress-spinner *ngIf="aiRunning['conformidade']" diameter="20" mode="indeterminate"></mat-progress-spinner>
+                    <div class="ai-result" *ngIf="aiResults.conformidade">{{ aiResults.conformidade }}</div>
+                  </div>
+
+                  <div class="ai-action" *ngIf="templateForm.get('ai_suggest_incoterm')?.value">
+                    <button mat-stroked-button type="button" (click)="sugerirIncoterm()" [disabled]="aiRunning['incoterm']" aria-label="Sugerir incoterm com IA">
+                      <mat-icon>lightbulb</mat-icon> Sugerir Incoterm
+                    </button>
+                    <mat-progress-spinner *ngIf="aiRunning['incoterm']" diameter="20" mode="indeterminate"></mat-progress-spinner>
+                    <div class="ai-result" *ngIf="aiResults.incoterm">{{ aiResults.incoterm }}</div>
+                  </div>
+
+                  <div class="ai-action" *ngIf="templateForm.get('ai_generate_contract_text')?.value">
+                    <button mat-stroked-button type="button" (click)="gerarTextoContratual()" [disabled]="aiRunning['texto']" aria-label="Gerar texto contratual com IA">
+                      <mat-icon>article</mat-icon> Gerar Texto Contratual
+                    </button>
+                    <mat-progress-spinner *ngIf="aiRunning['texto']" diameter="20" mode="indeterminate"></mat-progress-spinner>
+                    <div class="ai-result" *ngIf="aiResults.texto">
+                      <pre class="ai-text">{{ aiResults.texto }}</pre>
+                      <button mat-button color="primary" type="button" (click)="aplicarTextoGerado()">Usar este texto nas Cláusulas</button>
+                    </div>
+                  </div>
+                </div>
               }
             </div>
           </div>

@@ -76,13 +76,15 @@
             Atualizar
           </button>
           
-          <input #ocrFileInput type="file" [accept]="'.pdf,.png,.jpg,.jpeg'" 
+          <input #ocrFileInput type="file"
+                 [accept]="'application/pdf,image/png,image/jpeg,image/webp,image/tiff'"
                  (change)="processOCRUpload($event)" style="display: none;">
           <button 
             mat-stroked-button
+            [disabled]="ocrProcessing"
             (click)="ocrFileInput.click()">
             <mat-icon>document_scanner</mat-icon>
-            OCR Upload
+            {{ ocrProcessing ? 'Processando OCR...' : 'OCR Upload' }}
           </button>
           
           <button 
@@ -97,6 +99,52 @@
       </mat-card-content>
     </mat-card>
   </div>
+
+  <!-- Resultado do OCR Upload (Req 17): extração para REVISÃO (humano no circuito).
+       Nenhuma exportação é criada automaticamente a partir deste resultado. -->
+  <mat-card *ngIf="ocrResult as ocr" class="ocr-result-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>document_scanner</mat-icon>
+        Extração OCR — revisão
+      </mat-card-title>
+      <mat-card-subtitle>
+        {{ ocr.docKind }} · {{ ocr.provider }}/{{ ocr.model }}
+        <span *ngIf="ocr.ocrPages"> · {{ ocr.ocrPages }} página(s)</span>
+      </mat-card-subtitle>
+      <button mat-icon-button (click)="clearOcrResult()" matTooltip="Fechar" aria-label="Fechar resultado do OCR">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-card-header>
+    <mat-card-content>
+      <!-- Score de completude (Req 17.5) + sinalização de revisão (Req 17.6) -->
+      <div class="ocr-score-row">
+        <span class="ocr-score-label">Completude:</span>
+        <mat-progress-bar mode="determinate" [value]="ocr.completenessScore"></mat-progress-bar>
+        <span class="ocr-score-value">{{ ocr.completenessScore }}%</span>
+      </div>
+
+      <div *ngIf="ocr.needsReview || ocr.completenessScore < ocrCompletenessThreshold"
+           class="ocr-review-flag">
+        <mat-icon color="warn">report_problem</mat-icon>
+        <span>Extração abaixo do limiar — requer revisão humana.</span>
+      </div>
+
+      <!-- Discrepâncias destacadas (Req 17.7, ex.: peso divergente em Packing List) -->
+      <div *ngIf="ocr.discrepancies?.length" class="ocr-discrepancies">
+        <h4><mat-icon color="warn">warning</mat-icon> Discrepâncias</h4>
+        <ul>
+          <li *ngFor="let d of ocr.discrepancies">{{ d }}</li>
+        </ul>
+      </div>
+
+      <!-- Dados extraídos (apenas para revisão) -->
+      <div class="ocr-extraction">
+        <h4>Dados extraídos</h4>
+        <pre>{{ ocr.extraction | json }}</pre>
+      </div>
+    </mat-card-content>
+  </mat-card>
 
   <!-- Loading Indicator -->
   <div *ngIf="loading" class="loading-container">
@@ -485,6 +533,14 @@
                         <mat-icon>{{ exp.compliance_status === 'OK' ? 'check' : exp.compliance_status === 'Error' ? 'error' : 'warning' }}</mat-icon>
                         {{ exp.compliance_status }}
                       </span>
+                      <!-- Estado de embarque (Flag_Embarque, Req 6.4) -->
+                      <span
+                        class="shipment-chip"
+                        [class]="getShipmentChipClass(exp.shipped)"
+                        [attr.aria-label]="exp.shipped ? 'Exportação embarcada' : 'Embarque pendente'">
+                        <mat-icon>{{ exp.shipped ? 'local_shipping' : 'pending' }}</mat-icon>
+                        {{ exp.shipped ? 'Embarcado' : 'Pendente' }}
+                      </span>
                     </div>
                   </td>
                 </ng-container>
@@ -597,6 +653,26 @@
                         <button mat-menu-item (click)="validateExportacao(exp)">
                           <mat-icon>fact_check</mat-icon>
                           <span>Validar IA</span>
+                        </button>
+
+                        <!-- Confirmar exportação (RASCUNHO → CONFIRMADA): habilitada só para Draft -->
+                        <button
+                          mat-menu-item
+                          (click)="confirmarExportacao(exp)"
+                          [disabled]="exp.export_status !== 'Draft'"
+                          [attr.aria-label]="'Confirmar exportação ' + exp.export_number">
+                          <mat-icon>task_alt</mat-icon>
+                          <span>Confirmar</span>
+                        </button>
+
+                        <!-- Marcar embarque (Req 6.4): idempotente no backend -->
+                        <button
+                          mat-menu-item
+                          (click)="marcarEmbarque(exp)"
+                          [disabled]="exp.shipped"
+                          [attr.aria-label]="exp.shipped ? 'Exportação já embarcada' : 'Marcar exportação como embarcada'">
+                          <mat-icon>local_shipping</mat-icon>
+                          <span>{{ exp.shipped ? 'Já embarcado' : 'Marcar embarque' }}</span>
                         </button>
 
                         <mat-divider></mat-divider>

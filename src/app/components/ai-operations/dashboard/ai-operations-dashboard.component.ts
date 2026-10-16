@@ -19,7 +19,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
-import { AiOperationsMockService } from '../../../../services/aiOperationsMockService';
+import { AI_OPERATIONS_SERVICE } from '../../../services/ai/ai-operations-service.token';
 import { ExportService } from '../../../../services/exportService';
 import { AiAgent, AiOperationsMetrics, AiErrorEntry } from '../../../../types/ai-operations';
 import { AgentDetailDialogComponent } from './agent-detail-dialog/agent-detail-dialog.component';
@@ -53,7 +53,7 @@ import { HasPermissionDirective } from '../../../directives/has-permission.direc
 })
 export class AiOperationsDashboardComponent implements OnInit, OnDestroy {
 
-  private aiOpsService = inject(AiOperationsMockService);
+  private aiOpsService = inject(AI_OPERATIONS_SERVICE);
   private exportService = inject(ExportService);
   private formBuilder = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
@@ -198,7 +198,12 @@ export class AiOperationsDashboardComponent implements OnInit, OnDestroy {
   }
 
   isLowAccuracy(agent: AiAgent): boolean {
-    return agent.accuracy < 85;
+    return agent.accuracy != null && agent.accuracy < 85;
+  }
+
+  // Renderiza "n/a" quando a capacidade não expõe sinal de acurácia (null).
+  displayAccuracy(accuracy: number | null): string {
+    return accuracy == null ? 'n/a' : `${accuracy}%`;
   }
 
   formatResponseTime(ms: number): string {
@@ -215,7 +220,8 @@ export class AiOperationsDashboardComponent implements OnInit, OnDestroy {
     return new Date(date).toLocaleString('pt-BR');
   }
 
-  getAccuracyColor(accuracy: number): string {
+  getAccuracyColor(accuracy: number | null): string {
+    if (accuracy == null) return 'inherit';
     if (accuracy >= 95) return '#4caf50';
     if (accuracy >= 90) return '#8bc34a';
     if (accuracy >= 85) return '#ff9800';

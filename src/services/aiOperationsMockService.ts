@@ -118,7 +118,7 @@ export class AiOperationsMockService {
     const metrics: AiOperationsMetrics = {
       totalRequests24h: this.mockAgents.reduce((sum, a) => sum + a.requests24h, 0),
       avgResponseTime: Math.round(this.mockAgents.reduce((sum, a) => sum + a.avgResponseTime, 0) / this.mockAgents.length),
-      accuracyRate: Math.round(this.mockAgents.reduce((sum, a) => sum + a.accuracy, 0) / this.mockAgents.length * 10) / 10,
+      accuracyRate: Math.round(this.mockAgents.reduce((sum, a) => sum + (a.accuracy ?? 0), 0) / this.mockAgents.length * 10) / 10,
       estimatedCost: Math.round(this.mockAgents.reduce((sum, a) => sum + a.cost, 0) * 100) / 100,
       activeAgents: this.mockAgents.filter(a => a.status === 'ACTIVE').length,
       totalAgents: this.mockAgents.length
@@ -144,7 +144,7 @@ export class AiOperationsMockService {
   }
 
   getLowAccuracyAgents(): Observable<AiAgent[]> {
-    const filtered = this.mockAgents.filter(a => a.accuracy < 85);
+    const filtered = this.mockAgents.filter(a => a.accuracy != null && a.accuracy < 85);
     return of(filtered).pipe(delay(200));
   }
 }

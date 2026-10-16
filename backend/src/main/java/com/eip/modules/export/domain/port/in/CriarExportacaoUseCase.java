@@ -1,6 +1,7 @@
 package com.eip.modules.export.domain.port.in;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,7 +21,8 @@ public interface CriarExportacaoUseCase {
             String destinationCountry,
             String incoterm,
             String currency,
-            List<ItemCommand> itens) {
+            List<ItemCommand> itens,
+            BigDecimal totalCost) {
 
         /** Single line item within a create command. */
         public record ItemCommand(
@@ -40,7 +42,10 @@ public interface CriarExportacaoUseCase {
             String incoterm,
             BigDecimal totalAmount,
             String currency,
-            int itemCount) {
+            int itemCount,
+            BigDecimal totalCost,
+            boolean shipped,
+            OffsetDateTime shippedAt) {
 
         public static ExportacaoView from(Exportacao e) {
             return new ExportacaoView(
@@ -51,7 +56,10 @@ public interface CriarExportacaoUseCase {
                     e.incoterm(),
                     e.totalAmount(),
                     e.currency(),
-                    e.itens().size());
+                    e.itens().size(),
+                    e.totalCost(),
+                    e.shipped(),
+                    e.shippedAt());
         }
     }
 }

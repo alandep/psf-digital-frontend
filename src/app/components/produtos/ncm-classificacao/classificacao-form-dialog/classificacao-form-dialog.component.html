@@ -39,22 +39,28 @@
 
               <div class="form-row">
                 <mat-form-field appearance="outline">
-                  <mat-label>Código do Produto *</mat-label>
-                  <input matInput formControlName="product_id" placeholder="Ex: PROD-001">
-                  <mat-icon matSuffix>tag</mat-icon>
-                  <mat-error *ngIf="classificacaoForm.get('product_id')?.hasError('required')">
-                    Campo obrigatório
+                  <mat-label>Produto *</mat-label>
+                  <input matInput [matAutocomplete]="autoProd"
+                         [value]="classificacaoForm.get('product_name')?.value"
+                         (input)="produtoFiltro = $any($event.target).value"
+                         placeholder="Buscar por nome ou NCM" aria-label="Produto">
+                  <mat-autocomplete #autoProd="matAutocomplete"
+                                    (optionSelected)="onProdutoSelecionado($event.option.value)">
+                    <mat-option *ngFor="let p of filtrarProdutos(produtoFiltro)" [value]="p.id">
+                      {{ p.name }}<span *ngIf="p.ncm"> — NCM {{ p.ncm }}</span>
+                    </mat-option>
+                  </mat-autocomplete>
+                  <mat-icon matSuffix>inventory</mat-icon>
+                  <mat-error *ngIf="classificacaoForm.get('product_name')?.hasError('required')">
+                    Selecione um produto
                   </mat-error>
                 </mat-form-field>
 
-                <mat-form-field appearance="outline">
-                  <mat-label>Nome do Produto *</mat-label>
-                  <input matInput formControlName="product_name" placeholder="Ex: Soja em grãos">
-                  <mat-icon matSuffix>inventory</mat-icon>
-                  <mat-error *ngIf="classificacaoForm.get('product_name')?.hasError('required')">
-                    Campo obrigatório
-                  </mat-error>
-                </mat-form-field>
+                <button mat-stroked-button type="button" (click)="abrirNovoProduto()"
+                        aria-label="Cadastrar novo produto"
+                        style="align-self:flex-start; margin-top:6px;">
+                  <mat-icon>add</mat-icon> Novo
+                </button>
 
                 <mat-form-field appearance="outline">
                   <mat-label>Tipo de Commodity *</mat-label>
@@ -98,7 +104,7 @@
               </div>
 
               <div class="tab-actions">
-                <button type="button" mat-raised-button color="primary" (click)="selectedTabIndex = 1">
+                <button type="button" mat-raised-button color="primary" (click)="proximaAba()">
                   Próximo: Classificação Fiscal
                   <mat-icon>arrow_forward</mat-icon>
                 </button>
@@ -151,6 +157,9 @@
                 </mat-form-field>
               </div>
 
+              <p class="ncm-notes" *ngIf="ncmValidationNotes"
+                 style="white-space:pre-wrap; background:#f7f7f9; border:1px solid #e0e0e0; border-radius:8px; padding:10px; font-size:0.85rem;">{{ ncmValidationNotes }}</p>
+
               <div class="form-row">
                 <mat-form-field appearance="outline" class="description-field">
                   <mat-label>Descrição NCM *</mat-label>
@@ -178,11 +187,11 @@
               </div>
 
               <div class="tab-actions">
-                <button type="button" mat-button (click)="selectedTabIndex = 0">
+                <button type="button" mat-button (click)="abaAnterior()">
                   <mat-icon>arrow_back</mat-icon>
                   Voltar
                 </button>
-                <button type="button" mat-raised-button color="primary" (click)="selectedTabIndex = 2">
+                <button type="button" mat-raised-button color="primary" (click)="proximaAba()">
                   Próximo: Compliance
                   <mat-icon>arrow_forward</mat-icon>
                 </button>
@@ -267,11 +276,11 @@
               </div>
 
               <div class="tab-actions">
-                <button type="button" mat-button (click)="selectedTabIndex = 1">
+                <button type="button" mat-button (click)="abaAnterior()">
                   <mat-icon>arrow_back</mat-icon>
                   Voltar
                 </button>
-                <button type="button" mat-raised-button color="primary" (click)="selectedTabIndex = 3">
+                <button type="button" mat-raised-button color="primary" (click)="proximaAba()">
                   Próximo: IA e Automação
                   <mat-icon>arrow_forward</mat-icon>
                 </button>
@@ -347,11 +356,11 @@
               </div>
 
               <div class="tab-actions">
-                <button type="button" mat-button (click)="selectedTabIndex = 2">
+                <button type="button" mat-button (click)="abaAnterior()">
                   <mat-icon>arrow_back</mat-icon>
                   Voltar
                 </button>
-                <button type="button" mat-raised-button color="primary" (click)="selectedTabIndex = 4">
+                <button type="button" mat-raised-button color="primary" (click)="proximaAba()">
                   Próximo: Histórico
                   <mat-icon>arrow_forward</mat-icon>
                 </button>
@@ -388,7 +397,7 @@
               </div>
 
               <div class="tab-actions">
-                <button type="button" mat-button (click)="selectedTabIndex = 3">
+                <button type="button" mat-button (click)="abaAnterior()">
                   <mat-icon>arrow_back</mat-icon>
                   Voltar
                 </button>

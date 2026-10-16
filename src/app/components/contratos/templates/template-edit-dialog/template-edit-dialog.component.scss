@@ -280,3 +280,43 @@
     }
   }
 }
+
+// Ações de IA (agentes reais Vertex/GCP)
+.ai-actions {
+  margin-top: 16px;
+
+  h4 {
+    margin: 0 0 4px 0;
+    font-size: 15px;
+    font-weight: 500;
+    color: #333;
+  }
+
+  .ai-actions-note {
+    margin: 0 0 8px 0;
+    font-size: 0.8rem;
+    color: #666;
+  }
+}
+
+.ai-action {
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-result {
+  white-space: pre-wrap;
+  background: #f7f7f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 0.9rem;
+}
+
+.ai-text {
+  white-space: pre-wrap;
+  font-family: inherit;
+  margin: 0;
+}

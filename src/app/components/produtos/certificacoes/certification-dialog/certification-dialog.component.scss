@@ -6,7 +6,7 @@ Design System Premium - Padrão ERP Inteligente
 
 /* CONTAINER DO MODAL */
 ::ng-deep .certification-dialog-container {
-  .mat-dialog-container {
+  .mat-mdc-dialog-container {
     padding: 0 !important;
     border-radius: 16px !important;
     box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2) !important;
@@ -14,6 +14,14 @@ Design System Premium - Padrão ERP Inteligente
     max-width: 1200px !important;
     max-height: 90vh !important;
     overflow: hidden !important;
+  }
+
+  .mat-mdc-dialog-surface {
+    padding: 0 !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    display: flex;
+    flex-direction: column;
   }
 }
 
@@ -83,43 +91,44 @@ Design System Premium - Padrão ERP Inteligente
   padding: 0 !important;
   overflow: hidden;
   height: 65vh;
+  display: flex;            /* let the tab group fill */
+  flex-direction: column;
   
   /* TABS PREMIUM */
   .certification-tab-group,
   .details-tab-group {
-    height: 100%;
+    flex: 1 1 auto;
+    min-height: 0;          /* allow children to scroll instead of overflow */
+    display: flex;
+    flex-direction: column;
     
-    ::ng-deep .mat-tab-group {
+    ::ng-deep .mat-mdc-tab-group {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    ::ng-deep .mat-mdc-tab-body-wrapper {
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    ::ng-deep .mat-mdc-tab-body-content {
       height: 100%;
+      overflow-y: auto;
+    }
+    ::ng-deep .mat-mdc-tab-header {
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    ::ng-deep .mat-mdc-tab {
+      padding: 0 2rem;
+      min-width: 140px;
+      font-weight: 500;
+      font-size: 0.95rem;
       
-      .mat-tab-header {
-        border-bottom: 1px solid #e0e0e0;
-        
-        .mat-tab-label {
-          padding: 0 2rem;
-          min-width: 140px;
-          font-weight: 500;
-          font-size: 0.95rem;
-          
-          &.mat-tab-label-active {
-            background: rgba(25, 118, 210, 0.1);
-            color: #1976d2;
-          }
-        }
-      }
-      
-      .mat-tab-body-wrapper {
-        height: calc(100% - 48px);
-        
-        .mat-tab-body {
-          height: 100%;
-          
-          .mat-tab-body-content {
-            height: 100%;
-            overflow-y: auto;
-            padding: 0;
-          }
-        }
+      &.mdc-tab--active {
+        background: rgba(25, 118, 210, 0.1);
+        color: #1976d2;
       }
     }
   }
@@ -127,8 +136,6 @@ Design System Premium - Padrão ERP Inteligente
   /* CONTEÚDO DAS TABS */
   .tab-content {
     padding: 2rem;
-    height: 100%;
-    overflow-y: auto;
     
     &.identification-content,
     &.certificate-content,
@@ -152,10 +159,10 @@ Design System Premium - Padrão ERP Inteligente
             transform: translateY(-2px);
           }
           
-          .mat-card-header {
+          .mat-mdc-card-header {
             padding: 1.5rem 1.5rem 0;
             
-            .mat-card-title {
+            .mat-mdc-card-title {
               display: flex;
               align-items: center;
               gap: 0.75rem;
@@ -171,7 +178,7 @@ Design System Premium - Padrão ERP Inteligente
               }
             }
             
-            .mat-card-subtitle {
+            .mat-mdc-card-subtitle {
               font-size: 0.95rem;
               color: #666;
               margin-bottom: 0;
@@ -179,7 +186,7 @@ Design System Premium - Padrão ERP Inteligente
             }
           }
           
-          .mat-card-content {
+          .mat-mdc-card-content {
             padding: 1.5rem;
             
             .form-grid {
@@ -385,8 +392,8 @@ Design System Premium - Padrão ERP Inteligente
         margin-bottom: 2rem;
         border-radius: 16px;
         
-        .mat-card-header {
-          .mat-card-title {
+        .mat-mdc-card-header {
+          .mat-mdc-card-title {
             display: flex;
             align-items: center;
             gap: 0.75rem;
@@ -462,7 +469,7 @@ Design System Premium - Padrão ERP Inteligente
               color: #666;
             }
             
-            .mat-progress-bar {
+            .mat-mdc-progress-bar {
               flex: 1;
               height: 8px;
               border-radius: 4px;
@@ -522,7 +529,7 @@ Design System Premium - Padrão ERP Inteligente
         }
       }
       
-      .mat-progress-bar {
+      .mat-mdc-progress-bar {
         flex: 1;
         height: 8px;
         border-radius: 4px;
@@ -586,7 +593,7 @@ Design System Premium - Padrão ERP Inteligente
 
 /* CUSTOMIZAÇÕES DOS FORM FIELDS */
 ::ng-deep .certification-dialog-content {
-  .mat-form-field-appearance-outline {
+  .mat-mdc-form-field {
     .mat-form-field-outline {
       border-radius: 8px;
       color: rgba(0, 0, 0, 0.12);
@@ -601,12 +608,12 @@ Design System Premium - Padrão ERP Inteligente
     }
   }
   
-  .mat-select-panel {
+  .mat-mdc-select-panel {
     border-radius: 8px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   }
   
-  .mat-progress-bar {
+  .mat-mdc-progress-bar {
     .mat-progress-bar-fill::after {
       border-radius: 4px;
     }
@@ -621,7 +628,7 @@ Design System Premium - Padrão ERP Inteligente
 /* RESPONSIVIDADE PREMIUM */
 @media (max-width: 768px) {
   ::ng-deep .certification-dialog-container {
-    .mat-dialog-container {
+    .mat-mdc-dialog-container {
       width: 95vw !important;
       max-width: 95vw !important;
       height: 90vh !important;
@@ -662,11 +669,11 @@ Design System Premium - Padrão ERP Inteligente
         gap: 1.5rem;
         
         .form-card {
-          .mat-card-header {
+          .mat-mdc-card-header {
             padding: 1rem 1rem 0;
           }
           
-          .mat-card-content {
+          .mat-mdc-card-content {
             padding: 1rem;
             
             .form-grid {
@@ -705,16 +712,16 @@ Design System Premium - Padrão ERP Inteligente
 }
 
 /* SCROLLBAR PREMIUM */
-.tab-content::-webkit-scrollbar {
+::ng-deep .mat-mdc-tab-body-content::-webkit-scrollbar {
   width: 6px;
 }
 
-.tab-content::-webkit-scrollbar-track {
+::ng-deep .mat-mdc-tab-body-content::-webkit-scrollbar-track {
   background: #f1f1f1;
   border-radius: 3px;
 }
 
-.tab-content::-webkit-scrollbar-thumb {
+::ng-deep .mat-mdc-tab-body-content::-webkit-scrollbar-thumb {
   background: #c1c1c1;
   border-radius: 3px;
   
@@ -751,3 +758,91 @@ Design System Premium - Padrão ERP Inteligente
 .mb-2 { margin-bottom: 1rem; }
 .mt-1 { margin-top: 0.5rem; }
 .mt-2 { margin-top: 1rem; }
+
+.audit-content {
+  .audit-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+    gap: 1rem;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .audit-item {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 1rem 1.1rem;
+    background: #f8fafc;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 12px;
+
+    .audit-icon {
+      width: 2.4rem;
+      height: 2.4rem;
+      border-radius: 50%;
+      background: rgba(25, 118, 210, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+
+      mat-icon {
+        color: #1976d2;
+        font-size: 1.3rem;
+        width: 1.3rem;
+        height: 1.3rem;
+      }
+    }
+
+    .audit-text {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      min-width: 0;
+
+      .audit-label {
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        color: #789;
+      }
+
+      .audit-value {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #243;
+        word-break: break-word;
+      }
+    }
+  }
+
+  .audit-note {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1.25rem 0 0;
+    font-size: 0.8rem;
+    color: #8a94a6;
+
+    mat-icon {
+      font-size: 1rem;
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+}
+
+/* INDICADOR DE CARREGAMENTO DO MODAL */
+.dialog-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 4rem 2rem;
+  color: #667;
+}

@@ -5,6 +5,9 @@ export interface Exportacao {
   contract_number?: string;
   exporter_id: string;
   exporter_name: string;
+  // Importador reutilizável selecionado (id do cliente/comprador). Mapeado
+  // para customerId no backend. Opcional pois nem toda origem o fornece.
+  customer_id?: string;
   importer_name: string;
   importer_country: string;
   destination_country: string;
@@ -22,6 +25,9 @@ export interface Exportacao {
   currency: 'USD' | 'EUR' | 'BRL' | 'CNY';
   unit_price: number;
   total_value: number;
+  // Custo total da exportação (Custo_Exportacao). Opcional/nullable — quando
+  // ausente, o backend trata como zero no cálculo de lucro/margem (Req 5.5/5.6).
+  total_cost?: number;
   payment_method: 'T/T' | 'L/C' | 'D/P' | 'D/A' | 'O/A';
   payment_terms: string;
   
@@ -84,6 +90,11 @@ export interface Exportacao {
   ai_document_generation: boolean;
   ai_compliance_check: boolean;
   
+  // Embarque (Flag_Embarque — Req 6.4). Ortogonal ao export_status; indica se
+  // a exportação já embarcou fisicamente e quando.
+  shipped?: boolean;
+  shipped_at?: Date;
+
   // Siscomex Integration
   siscomex_status?: 'Not Sent' | 'Sent' | 'Processing' | 'Approved' | 'Rejected';
   siscomex_sent_date?: Date;

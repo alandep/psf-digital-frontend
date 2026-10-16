@@ -4,7 +4,10 @@ export interface AiAgent {
   module: string;
   requests24h: number;
   avgResponseTime: number;
-  accuracy: number;
+  // Pode ser null quando a capacidade não expõe sinal real de acurácia
+  // (apenas NCM_CLASSIFICATION/OCR_DOCUMENT derivam acurácia no backend).
+  // A UI renderiza "n/a" nesse caso.
+  accuracy: number | null;
   cost: number;
   status: 'ACTIVE' | 'DEGRADED' | 'OFFLINE' | 'MAINTENANCE';
   lastError: string | null;

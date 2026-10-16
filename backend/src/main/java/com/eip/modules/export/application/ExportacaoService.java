@@ -1,10 +1,7 @@
 package com.eip.modules.export.application;
 
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -12,9 +9,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.eip.modules.export.domain.model.Exportacao;
 import com.eip.modules.export.domain.model.ItemExportacao;
+import com.eip.modules.export.domain.port.in.AtualizarExportacaoUseCase;
+import com.eip.modules.export.domain.port.in.AtualizarExportacaoUseCase.AtualizarExportacaoCommand;
+import com.eip.modules.export.domain.port.in.CancelarExportacaoUseCase;
 import com.eip.modules.export.domain.port.in.ConfirmarExportacaoUseCase;
 import com.eip.modules.export.domain.port.in.CriarExportacaoUseCase;
 import com.eip.modules.export.domain.port.in.ListarExportacoesUseCase;
+import com.eip.modules.export.domain.port.in.MarcarEmbarqueUseCase;
+import com.eip.modules.export.domain.port.out.DashboardAnalyticsPort;
+import com.eip.modules.export.domain.port.out.DashboardAnalyticsPort.StatusCount;
+import com.eip.modules.export.domain.port.out.ExportReferenceGenerator;
 import com.eip.modules.export.domain.port.out.ExportacaoRepositoryPort;
 import com.eip.modules.export.domain.port.out.PageResult;
 import com.eip.platform.error.ResourceNotFoundException;
@@ -29,10 +33,13 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class ExportacaoService
-        implements CriarExportacaoUseCase, ConfirmarExportacaoUseCase, ListarExportacoesUseCase {
+        implements CriarExportacaoUseCase, ConfirmarExportacaoUseCase, ListarExportacoesUseCase,
+        MarcarEmbarqueUseCase, AtualizarExportacaoUseCase, CancelarExportacaoUseCase {
 
     private final ExportacaoRepositoryPort repo;
+    private final DashboardAnalyticsPort analytics;
     private final OutboxPublisher outbox;
+    private final ExportReferenceGenerator referenceGenerator;
 
     private static UUID currentOrg() {
         return OrganizationContextHolder.current().organizationId().value();
@@ -49,6 +56,10 @@ public class ExportacaoService
         Exportacao exportacao = Exportacao.novaRascunho(
                 org, cmd.customerId(), cmd.destinationCountry(),
                 cmd.incoterm(), cmd.currency(), itens);
+        if (cmd.totalCost() != null) {
+            exportacao.definirCusto(cmd.totalCost());
+        }
+        exportacao.atribuirReferencia(referenceGenerator.next(org));
         Exportacao salvo = repo.salvar(exportacao);
         outbox.record("Exportacao", salvo.id().asString(), org, "ExportacaoCriada",
                 payload(salvo.id().value(), org));
@@ -67,6 +78,51 @@ public class ExportacaoService
         outbox.record("Exportacao", salvo.id().asString(), org, "ExportacaoConfirmada",
                 payload(salvo.id().value(), org));
         return ExportacaoView.from(salvo);
+    }
+
+    @Override
+    @Transactional
+    public ExportacaoView marcarEmbarcado(UUID id, OffsetDateTime quando) {
+        UUID org = currentOrg();
+        Exportacao exportacao = repo.porId(id, org)
+                .orElseThrow(() -> new ResourceNotFoundException("Exportacao nao encontrada: " + id));
+        exportacao.marcarEmbarcado(quando == null ? OffsetDateTime.now() : quando);
+        Exportacao salvo = repo.salvar(exportacao);
+        outbox.record("Exportacao", salvo.id().asString(), org, "ExportacaoEmbarcada",
+                payload(salvo.id().value(), org));
+        return ExportacaoView.from(salvo);
+    }
+
+    @Override
+    @Transactional
+    public ExportacaoView atualizar(UUID id, AtualizarExportacaoCommand cmd) {
+        UUID org = currentOrg();
+        Exportacao exportacao = repo.porId(id, org)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Exportacao nao encontrada: " + id));
+        List<ItemExportacao> itens = cmd.itens() == null ? List.of() : cmd.itens().stream()
+                .map(i -> new ItemExportacao(
+                        null, i.productId(), i.description(), i.quantity(), i.unitPrice()))
+                .toList();
+        exportacao.editarRascunho(cmd.destinationCountry(), cmd.incoterm(),
+                cmd.currency(), itens, cmd.totalCost());
+        Exportacao salvo = repo.salvar(exportacao);
+        outbox.record("Exportacao", salvo.id().asString(), org, "ExportacaoAtualizada",
+                payload(salvo.id().value(), org));
+        return ExportacaoView.from(salvo);
+    }
+
+    @Override
+    @Transactional
+    public void cancelar(UUID id) {
+        UUID org = currentOrg();
+        Exportacao exportacao = repo.porId(id, org)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Exportacao nao encontrada: " + id));
+        exportacao.cancelar();
+        Exportacao salvo = repo.salvar(exportacao);
+        outbox.record("Exportacao", salvo.id().asString(), org, "ExportacaoCancelada",
+                payload(salvo.id().value(), org));
     }
 
     @Override
@@ -96,29 +152,35 @@ public class ExportacaoService
         return ExportacaoView.from(exportacao);
     }
 
+    /**
+     * Dashboard agregado legado do módulo de exportações.
+     *
+     * @deprecated O dashboard rico do produto é o novo
+     *             {@code GET /bff/dashboards/principal}
+     *             ({@code DashboardAnalyticsUseCase}). Este endpoint legado é
+     *             mantido apenas por compatibilidade. A implementação foi
+     *             corrigida para usar <strong>agregação pushdown</strong> no
+     *             banco ({@link DashboardAnalyticsPort#aggregateStatusCounts()},
+     *             {@code SUM}/{@code COUNT} + {@code GROUP BY} sob RLS) em vez do
+     *             antigo {@code repo.listar(org, null, 0, 10000)} seguido de
+     *             contagem em loop Java, que materializava até 10.000 linhas de
+     *             exportação só para contá-las — o gargalo de performance.
+     */
+    @Deprecated
     @Override
     @Transactional(readOnly = true)
     public ExportacoesDashboard dashboard() {
-        UUID org = currentOrg();
-        PageResult result = repo.listar(org, null, 0, 10000);
-        Map<String, Long> counts = new LinkedHashMap<>();
-        BigDecimal valorTotal = BigDecimal.ZERO;
-        for (Exportacao e : result.content()) {
-            String status = e.status().name();
-            counts.merge(status, 1L, Long::sum);
-            if (e.totalAmount() != null) {
-                valorTotal = valorTotal.add(e.totalAmount());
-            }
-        }
-        List<ContagemPorStatus> porStatus = counts.entrySet().stream()
-                .map(en -> new ContagemPorStatus(en.getKey(), en.getValue()))
-                .toList();
+        StatusCount c = analytics.aggregateStatusCounts();
+        List<ContagemPorStatus> porStatus = List.of(
+                new ContagemPorStatus("RASCUNHO", c.rascunho()),
+                new ContagemPorStatus("CONFIRMADA", c.confirmadas()),
+                new ContagemPorStatus("CANCELADA", c.canceladas()));
         return new ExportacoesDashboard(
-                result.total(),
-                counts.getOrDefault("RASCUNHO", 0L),
-                counts.getOrDefault("CONFIRMADA", 0L),
-                counts.getOrDefault("CANCELADA", 0L),
-                valorTotal,
+                c.total(),
+                c.rascunho(),
+                c.confirmadas(),
+                c.canceladas(),
+                c.valorTotal(),
                 porStatus);
     }
 

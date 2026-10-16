@@ -19,7 +19,7 @@ public interface IntelligenceItemJpaRepository extends JpaRepository<Intelligenc
             select i from IntelligenceItemEntity i
             where i.publicationStatus = 'PUBLISHED'
               and i.reviewStatus = 'APPROVED'
-              and (:type is null or i.type = :type)
+              and (cast(:type as string) is null or i.type = :type)
             order by i.publishedAt desc nulls last
             """)
     List<IntelligenceItemEntity> findFeed(@Param("type") String type);

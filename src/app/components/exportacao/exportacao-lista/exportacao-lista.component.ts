@@ -29,6 +29,13 @@ import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 
 import { EXPORTACAO_SERVICE } from '../../../services/exportacao/exportacao-service.token';
 import { IExportacaoService } from '../../../services/exportacao/exportacao-service.interface';
+import { AI_SERVICE } from '../../../services/ai/ai-service.token';
+import { IAiService } from '../../../services/ai/ai-service.interface';
+import { DOCUMENTS_SERVICE } from '../../../services/documents/documents-service.token';
+import { IDocumentsService } from '../../../services/documents/documents-service.interface';
+import { ExportDraft, OcrExtractionResult } from '../../../../types/ai-hub';
+import { HttpClient } from '@angular/common/http';
+import { switchMap } from 'rxjs/operators';
 import {
   ConfirmarAcaoDialogComponent,
   ConfirmDialogData
@@ -120,8 +127,26 @@ export class ExportacaoListaComponent implements OnInit, AfterViewInit {
   nlpCommand = '';
   nlpProcessing = false;
 
+  // OCR Upload (Req 17) — estado para exibição do resultado da extração.
+  ocrProcessing = false;
+  ocrResult: OcrExtractionResult | null = null;
+  // Limiar de completude: abaixo dele a extração requer revisão humana (Req 17.6).
+  readonly ocrCompletenessThreshold = 70;
+  // Allowlist de formatos aceitos pelo OCR real (Req 17.8). Validado no front
+  // ANTES de qualquer upload/chamada ao provedor.
+  private readonly ocrAllowedMediaTypes = [
+    'application/pdf',
+    'image/png',
+    'image/jpeg',
+    'image/webp',
+    'image/tiff'
+  ];
+
   constructor(
     @Inject(EXPORTACAO_SERVICE) private exportacaoService: IExportacaoService,
+    @Inject(AI_SERVICE) private ai: IAiService,
+    @Inject(DOCUMENTS_SERVICE) private documentsService: IDocumentsService,
+    private http: HttpClient,
     private fb: FormBuilder,
     private router: Router,
     private snackBar: MatSnackBar,
@@ -314,47 +339,150 @@ export class ExportacaoListaComponent implements OnInit, AfterViewInit {
     });
   }
 
-  // Funcionalidades IA
+  // === Funcionalidades IA (Escopo B) ===
+
+  // Criação por linguagem natural (Req 16). A IA SUGERE um rascunho estruturado;
+  // a pessoa CONFIRMA — nada é persistido direto (Humano_No_Circuito, Req 16.5/16.6).
   processNLPCommand(): void {
-    if (!this.nlpCommand.trim()) return;
-    
+    // Bloqueia comando vazio (Req 16.6).
+    if (!this.nlpCommand.trim()) {
+      this.showSnack('Digite um comando para criar com IA.', true);
+      return;
+    }
+
     this.nlpProcessing = true;
-    this.exportacaoService.createExportacaoByNLP(this.nlpCommand).subscribe({
-      next: (exportacao: Exportacao) => {
-        this.nlpCommand = '';
+    // Chama o serviço de IA real (sem fallback mock). Retorna um ExportDraft.
+    this.ai.criarPorLinguagemNatural({ command: this.nlpCommand.trim() }).subscribe({
+      next: (draft: ExportDraft) => {
         this.nlpProcessing = false;
-        this.loadExportacoes();
-        this.showSnack('Exportação criada com sucesso via IA');
-        // Navegar para edição
-        this.editExportacao(exportacao);
+        this.nlpCommand = '';
+        // HUMANO NO CIRCUITO: NÃO cria a exportação automaticamente. Navega para
+        // a tela de nova exportação levando o rascunho como estado de navegação,
+        // onde o usuário revisa/ajusta e só então confirma a persistência.
+        this.showSnack('Rascunho gerado pela IA. Revise e confirme para criar a exportação.');
+        this.router.navigate(['/home-logged/exportacao/novo'], { state: { draft } });
       },
-      error: (error: any) => {
+      error: (error: unknown) => {
         console.error('Erro no processamento NLP:', error);
         this.nlpProcessing = false;
-        this.showSnack('Erro ao criar exportação via IA', true);
+        // Mapeia o Erro_IA para mensagem pt-BR, sem conteúdo mockado (Req 16.9).
+        this.showSnack(this.mensagemErroIa(error), true);
       }
     });
   }
 
-  processOCRUpload(event: any): void {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    this.loading = true;
-    this.exportacaoService.processOCRDocument(file).subscribe({
-      next: (exportacao: Exportacao) => {
-        this.loading = false;
-        this.loadExportacoes();
-        this.showSnack('Exportação criada com sucesso via OCR');
-        // Navegar para edição
-        this.editExportacao(exportacao);
-      },
-      error: (error: any) => {
-        console.error('Erro no processamento OCR:', error);
-        this.loading = false;
-        this.showSnack('Erro ao processar o documento via OCR', true);
-      }
-    });
+  // OCR Upload real (Req 17). O binário é enviado ao object storage por URL
+  // assinada (serviço de documentos) e o endpoint de OCR recebe apenas a
+  // storageKey; o resultado é exibido para REVISÃO (Humano_No_Circuito, Req 17.10)
+  // — nenhuma exportação é criada automaticamente.
+  processOCRUpload(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input?.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    // Valida o formato no front ANTES de qualquer upload/chamada (Req 17.8).
+    if (!this.ocrAllowedMediaTypes.includes(file.type)) {
+      input.value = '';
+      this.showSnack(
+        'Formato não suportado. Envie PDF, PNG, JPEG, WEBP ou TIFF.',
+        true,
+        6000
+      );
+      return;
+    }
+
+    this.ocrProcessing = true;
+    this.ocrResult = null;
+
+    // Fluxo de upload por URL assinada já existente no serviço de documentos:
+    //   1) iniciarUpload -> UploadTicket { uploadUrl, storageKey }
+    //   2) PUT do binário direto no storage (uploadUrl)
+    //   3) chama o OCR referenciando a storageKey (binário NÃO vai no corpo)
+    this.documentsService
+      .iniciarUpload({
+        type: 'OCR_SOURCE',
+        title: file.name,
+        originalFilename: file.name,
+        mediaType: file.type
+      })
+      .pipe(
+        switchMap((ticket) =>
+          // Envia o binário ao storage por URL assinada e, ao concluir, chama o OCR.
+          this.http
+            .put(ticket.uploadUrl, file, { headers: { 'Content-Type': file.type } })
+            .pipe(
+              switchMap(() =>
+                this.ai.ocr({
+                  storageKey: ticket.storageKey,
+                  mediaType: file.type,
+                  docKind: 'COMMERCIAL_INVOICE'
+                })
+              )
+            )
+        )
+      )
+      .subscribe({
+        next: (result: OcrExtractionResult) => {
+          this.ocrProcessing = false;
+          input.value = '';
+          // Exibe a extração para revisão (não cria exportação automática).
+          this.ocrResult = result;
+          if (result.needsReview || result.completenessScore < this.ocrCompletenessThreshold) {
+            this.showSnack(
+              `OCR concluído — completude ${result.completenessScore}%. Requer revisão humana.`,
+              false,
+              6000
+            );
+          } else if (result.discrepancies?.length) {
+            this.showSnack(
+              `OCR concluído com ${result.discrepancies.length} discrepância(s). Verifique os destaques.`,
+              false,
+              6000
+            );
+          } else {
+            this.showSnack(`OCR concluído — completude ${result.completenessScore}%.`);
+          }
+        },
+        error: (error: unknown) => {
+          console.error('Erro no processamento OCR:', error);
+          this.ocrProcessing = false;
+          input.value = '';
+          // Mapeia o Erro_IA, sem conteúdo mockado (Req 17.12).
+          this.showSnack(this.mensagemErroIa(error), true);
+        }
+      });
+  }
+
+  /** Fecha/limpa o painel de resultado do OCR. */
+  clearOcrResult(): void {
+    this.ocrResult = null;
+  }
+
+  // Mapeia o Erro_IA (já normalizado pelo errorInterceptor) para uma mensagem
+  // simples pt-BR, sem fallback mock (reaproveita o padrão de
+  // ncm-classificacao.component.ts — Req 16.9 / 17.12).
+  private mensagemErroIa(err: unknown): string {
+    const e = err as { status?: number; code?: string; message?: string };
+    if (e?.status === 402 || e?.code === 'AI_QUOTA_EXCEEDED') {
+      return 'Seus créditos de IA acabaram. Compre créditos para continuar.';
+    }
+    switch (e?.status) {
+      case 403:
+        return 'Acesso negado: você não tem permissão para usar a IA.';
+      case 422:
+        return 'A resposta da IA foi inválida para a solicitação enviada.';
+      case 429:
+        return 'Limite de uso de IA atingido. Aguarde e tente novamente.';
+      case 502:
+      case 503:
+        return 'O serviço de IA está temporariamente indisponível. Tente novamente em instantes.';
+      case 504:
+        return 'O serviço de IA demorou para responder. Tente novamente.';
+      default:
+        return e?.message || 'Erro ao processar a solicitação com IA.';
+    }
   }
 
   // Assistente IA - abre o diálogo centralizado compartilhado
@@ -404,6 +532,61 @@ export class ExportacaoListaComponent implements OnInit, AfterViewInit {
         console.error('Erro ao enviar para o Siscomex:', error);
         this.loading = false;
         this.showSnack('Erro ao enviar para o Siscomex', true);
+      }
+    });
+  }
+
+  /**
+   * Marca a exportação como embarcada (Req 6.4). A operação passa pelo
+   * EXPORTACAO_SERVICE (adapter real/mock), que chama o endpoint idempotente
+   * POST /bff/exportacoes/{id}/embarcar; o estado embarcado é refletido na UI.
+   */
+  marcarEmbarque(exportacao: Exportacao): void {
+    if (exportacao.shipped) {
+      this.showSnack('Esta exportação já está embarcada');
+      return;
+    }
+
+    this.loading = true;
+    this.exportacaoService.marcarEmbarcado(exportacao.export_id).subscribe({
+      next: () => {
+        this.loadExportacoes();
+        this.showSnack('Exportação marcada como embarcada');
+      },
+      error: (error: any) => {
+        console.error('Erro ao marcar embarque:', error);
+        this.loading = false;
+        // 409: conflito de concorrência; como a operação é idempotente, orienta a retentar.
+        if (error?.status === 409) {
+          this.showSnack('A exportação foi atualizada em paralelo. Recarregue e tente novamente.', true);
+        } else {
+          this.showSnack('Erro ao marcar o embarque da exportação', true);
+        }
+      }
+    });
+  }
+
+  /**
+   * Confirma a exportação (RASCUNHO → CONFIRMADA). A operação passa pelo
+   * EXPORTACAO_SERVICE (adapter real/mock); a idempotência é garantida pelo
+   * domínio + optimistic locking (409 em conflito de concorrência).
+   */
+  confirmarExportacao(exportacao: Exportacao): void {
+    this.loading = true;
+    this.exportacaoService.confirmarExportacao(exportacao.export_id).subscribe({
+      next: () => {
+        this.loadExportacoes();
+        this.showSnack('Exportação confirmada com sucesso');
+      },
+      error: (error: any) => {
+        console.error('Erro ao confirmar exportação:', error);
+        this.loading = false;
+        // 409: conflito de concorrência; como a operação é idempotente, orienta a retentar.
+        if (error?.status === 409) {
+          this.showSnack('A exportação foi atualizada em paralelo. Recarregue e tente novamente.', true);
+        } else {
+          this.showSnack('Erro ao confirmar a exportação', true);
+        }
       }
     });
   }
@@ -477,6 +660,10 @@ export class ExportacaoListaComponent implements OnInit, AfterViewInit {
       case 'Cancelled': return 'status-cancelled';
       default: return 'status-default';
     }
+  }
+
+  getShipmentChipClass(shipped: boolean | undefined): string {
+    return shipped ? 'shipment-shipped' : 'shipment-pending';
   }
 
   getComplianceChipClass(status: string): string {

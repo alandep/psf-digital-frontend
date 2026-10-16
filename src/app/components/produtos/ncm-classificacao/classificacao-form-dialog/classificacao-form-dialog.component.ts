@@ -17,19 +17,28 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatStepperModule } from '@angular/material/stepper';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import {
   MAT_DIALOG_DATA,
+  MatDialog,
   MatDialogModule,
   MatDialogRef
 } from '@angular/material/dialog';
 
-import { NCMClassificationMockService } from '../../../../../services/ncm-classification-mock.service';
+import { AI_SERVICE } from '../../../../services/ai/ai-service.token';
+import { IAiService } from '../../../../services/ai/ai-service.interface';
+import { PRODUTO_SERVICE } from '../../../../services/produto/produto-service.token';
+import { IProdutoService } from '../../../../services/produto/produto-service.interface';
+import { CurrentUserService } from '../../../../services/user/current-user.service';
+import { NCM_CLASSIFICACAO_SERVICE } from '../../../../services/ncm-classificacao/ncm-classificacao-service.token';
+import { INcmClassificacaoService } from '../../../../services/ncm-classificacao/ncm-classificacao-service.interface';
+import { ProdutoFormDialogComponent } from '../../../exportacao/produto-form-dialog/produto-form-dialog.component';
+import { Produto } from '../../../../../types/produto';
+import { NcmValidacaoResult } from '../../../../../types/ncm-classificacao-api';
+import { NcmClassificationResult } from '../../../../../types/ai-hub';
 import {
   NCMClassification,
-  AIClassificationRequest,
-  AIClassificationResponse,
-  NCMValidation,
   CommodityType,
   ComplianceStatus,
   ExportLicenseType,
@@ -66,6 +75,7 @@ export interface ClassificacaoFormDialogData {
     MatDatepickerModule,
     MatNativeDateModule,
     MatStepperModule,
+    MatAutocompleteModule,
     MatSnackBarModule
   ],
   templateUrl: './classificacao-form-dialog.component.html',
@@ -74,7 +84,16 @@ export interface ClassificacaoFormDialogData {
 export class ClassificacaoFormDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly snackBar = inject(MatSnackBar);
-  private readonly clasificacaoService = inject(NCMClassificationMockService);
+  // A sugestão de NCM por IA passa a vir do backend real via AI_SERVICE.
+  private readonly ai = inject<IAiService>(AI_SERVICE);
+  // Catálogo de produtos reutilizável (combo e cadastro rápido).
+  private readonly produtoService = inject<IProdutoService>(PRODUTO_SERVICE);
+  // Usuário atual para preencher auditoria ("Criado por").
+  private readonly currentUserService = inject(CurrentUserService);
+  // Validação real de NCM (formato + orientação por IA) via backend.
+  private readonly ncmService = inject<INcmClassificacaoService>(NCM_CLASSIFICACAO_SERVICE);
+  // Diálogo para cadastro rápido de produto.
+  private readonly dialog = inject(MatDialog);
   public readonly dialogRef = inject(MatDialogRef<ClassificacaoFormDialogComponent>);
 
   public readonly editingClassification: NCMClassification | null;
@@ -83,6 +102,13 @@ export class ClassificacaoFormDialogComponent implements OnInit {
   public isClassifyingWithAI = false;
   public isValidatingNCM = false;
   public classificacaoForm: FormGroup;
+
+  // Catálogo de produtos carregado para o combo filtrável.
+  public produtos: Produto[] = [];
+  // Termo digitado no autocomplete de produtos.
+  public produtoFiltro = '';
+  // Notas da validação de NCM (orientação por IA) exibidas no template.
+  public ncmValidationNotes: string | null = null;
 
   // === CONSTANTES PARA TEMPLATE ===
   public readonly COMMODITY_TYPE_LABELS = COMMODITY_TYPE_LABELS_NCM;
@@ -141,6 +167,9 @@ export class ClassificacaoFormDialogComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Carregar catálogo de produtos para o combo filtrável.
+    this.produtoService.listar().subscribe(p => (this.produtos = p ?? []));
+
     if (this.editingClassification) {
       this.classificacaoForm.patchValue(this.editingClassification);
     } else {
@@ -158,6 +187,13 @@ export class ClassificacaoFormDialogComponent implements OnInit {
         ai_classification_status: 'PENDING',
         ai_confidence_score: 0,
         approval_status: 'PENDING'
+      });
+
+      // Preencher "Criado por" com o id do usuário atual (apenas em criação).
+      this.currentUserService.me().subscribe(u => {
+        if (u) {
+          this.classificacaoForm.patchValue({ created_by: u.userId });
+        }
       });
     }
 
@@ -177,6 +213,77 @@ export class ClassificacaoFormDialogComponent implements OnInit {
     this.dialogRef.close();
   }
 
+  // === COMBO DE PRODUTOS ===
+
+  /** Filtra o catálogo por nome ou NCM (case-insensitive). Termo vazio → todos. */
+  public filtrarProdutos(term: string): Produto[] {
+    const t = (term ?? '').trim().toLowerCase();
+    if (!t) {
+      return this.produtos;
+    }
+    return this.produtos.filter(p =>
+      (p.name ?? '').toLowerCase().includes(t) ||
+      (p.ncm ?? '').toLowerCase().includes(t)
+    );
+  }
+
+  /** Seleciona um produto do catálogo e reaproveita seus dados no formulário. */
+  public onProdutoSelecionado(produtoId: string): void {
+    const p = this.produtos.find(prod => prod.id === produtoId);
+    if (!p) {
+      return;
+    }
+
+    const patch: Record<string, unknown> = {
+      product_id: p.id,
+      product_name: p.name ?? '',
+      product_description: p.description ?? this.classificacaoForm.get('product_description')?.value,
+      origin_country: p.originCountry ?? 'Brasil'
+    };
+    if (p.ncm) {
+      patch['ncm_code'] = p.ncm;
+    }
+
+    this.classificacaoForm.patchValue(patch);
+    this.produtoFiltro = p.name ?? '';
+  }
+
+  /** Abre o diálogo de cadastro rápido e seleciona o produto criado. */
+  public abrirNovoProduto(): void {
+    const ref = this.dialog.open(ProdutoFormDialogComponent, {
+      width: '560px',
+      maxWidth: '92vw'
+    });
+
+    ref.afterClosed().subscribe((created: Produto | undefined) => {
+      if (created) {
+        this.produtos = [...this.produtos, created];
+        this.onProdutoSelecionado(created.id);
+      }
+    });
+  }
+
+  // === NAVEGAÇÃO ENTRE ABAS ===
+
+  /** Avança para a próxima aba (limite superior: 4). */
+  public proximaAba(): void {
+    if (this.selectedTabIndex < 4) {
+      this.selectedTabIndex = this.selectedTabIndex + 1;
+    }
+  }
+
+  /** Volta para a aba anterior (limite inferior: 0). */
+  public abaAnterior(): void {
+    if (this.selectedTabIndex > 0) {
+      this.selectedTabIndex = this.selectedTabIndex - 1;
+    }
+  }
+
+  /** Navega diretamente para a aba informada. */
+  public irParaAba(i: number): void {
+    this.selectedTabIndex = i;
+  }
+
   public saveClassification(): void {
     if (this.classificacaoForm.invalid) {
       this.snackBar.open('Por favor, preencha todos os campos obrigatórios', 'Fechar', { duration: 3000 });
@@ -186,68 +293,106 @@ export class ClassificacaoFormDialogComponent implements OnInit {
     this.isSaving = true;
     const formData = this.classificacaoForm.value;
 
-    // Preencher campos automáticos (derivação mantida no dialog antes de fechar)
-    formData.created_by = formData.created_by || 'user_current';
-    formData.classification_source = formData.ai_confidence_score > 0 ? 'IA' : 'MANUAL';
-    formData.compliance_status = this.calculateComplianceStatus(formData);
-    formData.status = formData.approval_status === 'APPROVED' ? 'ACTIVE' : 'PENDING';
+    // "Criado por": usa o valor do formulário; se vazio, resolve o usuário atual.
+    this.currentUserService.me().subscribe(u => {
+      formData.created_by = formData.created_by || u?.userId || '';
+      formData.classification_source = formData.ai_confidence_score > 0 ? 'IA' : 'MANUAL';
+      formData.compliance_status = this.calculateComplianceStatus(formData);
+      formData.status = formData.approval_status === 'APPROVED' ? 'ACTIVE' : 'PENDING';
 
-    // O componente pai persiste (create/update) e recarrega a lista.
-    this.dialogRef.close(formData);
+      // O componente pai persiste (create/update) e recarrega a lista.
+      this.dialogRef.close(formData);
+    });
   }
 
   // === MÉTODOS DE IA ===
 
+  // Limiar de confiança (fração 0..1) abaixo do qual a sugestão de IA exige
+  // revisão humana explícita. O backend devolve confidence em 0..1.
+  private static readonly AI_REVIEW_THRESHOLD = 0.9;
+
   public classifyCurrentFormWithAI(): void {
     const productDescription = this.classificacaoForm.get('product_description')?.value;
 
+    // Bloquear envio sem descrição (Req 14.5).
     if (!productDescription?.trim()) {
       this.snackBar.open('Preencha a descrição do produto primeiro', 'Fechar', { duration: 3000 });
       return;
     }
 
     this.isClassifyingWithAI = true;
-    const request: AIClassificationRequest = {
-      product_description: productDescription,
-      product_name: this.classificacaoForm.get('product_name')?.value,
-      scientific_name: this.classificacaoForm.get('scientific_name')?.value,
-      commodity_type: this.classificacaoForm.get('commodity_type')?.value,
-      origin_country: this.classificacaoForm.get('origin_country')?.value
-    };
 
-    this.clasificacaoService.classifyWithAI(request).subscribe({
-      next: (response: AIClassificationResponse) => {
-        this.applyAIResponseToForm(response);
-        this.isClassifyingWithAI = false;
-      },
-      error: () => {
-        this.snackBar.open('Erro na classificação com IA', 'Fechar', { duration: 3000 });
-        this.isClassifyingWithAI = false;
-      }
-    });
+    // Sugestão de NCM via backend real (não mais pelo mock de IA).
+    this.ai
+      .classificarNcm({
+        description: productDescription,
+        productName: this.classificacaoForm.get('product_name')?.value || undefined,
+        scientificName: this.classificacaoForm.get('scientific_name')?.value || undefined,
+        commodityType: this.classificacaoForm.get('commodity_type')?.value || undefined
+      })
+      .subscribe({
+        next: (result: NcmClassificationResult) => {
+          this.applyAIResponseToForm(result);
+          this.isClassifyingWithAI = false;
+        },
+        error: (err: unknown) => {
+          this.snackBar.open(this.mensagemErroIa(err), 'Fechar', { duration: 4000 });
+          this.isClassifyingWithAI = false;
+        }
+      });
   }
 
-  private applyAIResponseToForm(response: AIClassificationResponse): void {
-    const suggestion = response.primary_suggestion;
+  /**
+   * Aplica a sugestão TIPADA da IA (ncm/confidence/rationale/alternativas) nos
+   * campos do formulário para REVISÃO humana. A sugestão não é salva
+   * automaticamente: o usuário revisa e confirma com "Salvar" (humano no
+   * circuito, Req 14.8).
+   */
+  private applyAIResponseToForm(result: NcmClassificationResult): void {
+    // confidence vem como fração 0..1; o formulário usa percentual 0..100.
+    const confidencePercent = Math.round((result.confidence ?? 0) * 1000) / 10;
+    const needsReview = (result.confidence ?? 0) < ClassificacaoFormDialogComponent.AI_REVIEW_THRESHOLD;
 
     this.classificacaoForm.patchValue({
-      ncm_code: suggestion.ncm_code,
-      ncm_description: suggestion.ncm_description,
-      hs_code: suggestion.hs_code,
-      ai_suggested_ncm: suggestion.ncm_code,
-      ai_alternative_ncm_codes: response.alternative_suggestions.map((alt: any) => alt.ncm_code),
-      ai_confidence_score: response.confidence_score,
-      ai_classification_reason: response.classification_reason,
-      ai_data_sources: response.data_sources,
-      ai_requires_human_review: response.confidence_score < 90,
-      ai_classification_status: response.confidence_score >= 90 ? 'APPROVED' : 'PENDING'
+      ncm_code: result.ncm,
+      ai_suggested_ncm: result.ncm,
+      ai_alternative_ncm_codes: (result.alternatives ?? []).map(alt => alt.ncm),
+      ai_confidence_score: confidencePercent,
+      ai_classification_reason: result.rationale,
+      ai_requires_human_review: needsReview,
+      ai_classification_status: needsReview ? 'PENDING' : 'APPROVED'
     });
 
+    const reviewHint = needsReview ? ' — revisão humana recomendada' : '';
     this.snackBar.open(
-      `🤖 Classificação IA aplicada: ${suggestion.ncm_code} (${response.confidence_score.toFixed(1)}% confiança)`,
+      `🤖 NCM sugerido pela IA: ${result.ncm} (${confidencePercent.toFixed(1)}% confiança)${reviewHint}`,
       'Fechar',
       { duration: 4000 }
     );
+  }
+
+  // Mapeia o Erro_IA para uma mensagem simples pt-BR via snackBar, sem fallback
+  // mock (Req 14.11).
+  private mensagemErroIa(err: unknown): string {
+    const e = err as { status?: number; code?: string; message?: string };
+    if (e?.status === 402 || e?.code === 'AI_QUOTA_EXCEEDED') {
+      return 'Seus créditos de IA acabaram. Compre créditos para continuar.';
+    }
+    switch (e?.status) {
+      case 403:
+        return 'Acesso negado: você não tem permissão para usar a IA.';
+      case 422:
+        return 'A resposta da IA foi inválida para a solicitação enviada.';
+      case 429:
+        return 'Limite de uso de IA atingido. Aguarde e tente novamente.';
+      case 502:
+      case 503:
+        return 'O serviço de IA está temporariamente indisponível. Tente novamente em instantes.';
+      case 504:
+        return 'O serviço de IA demorou para responder. Tente novamente.';
+      default:
+        return e?.message || 'Erro na classificação com IA.';
+    }
   }
 
   // === MÉTODOS DE VALIDAÇÃO ===
@@ -259,27 +404,28 @@ export class ClassificacaoFormDialogComponent implements OnInit {
 
     this.isValidatingNCM = true;
 
-    this.clasificacaoService.validateNCMWithReceita(ncmCode).subscribe({
-      next: (validation: NCMValidation) => {
-        if (validation.is_valid) {
-          this.classificacaoForm.patchValue({
-            ncm_description: validation.official_description,
-            export_tax: validation.export_tax,
-            export_license_required: validation.requires_license
-          });
+    this.ncmService
+      .validarNcm(ncmCode, this.classificacaoForm.get('product_description')?.value)
+      .subscribe({
+        next: (res: NcmValidacaoResult) => {
+          this.ncmValidationNotes = res.notes;
 
-          this.snackBar.open(`✅ NCM validado: ${validation.official_description}`, 'Fechar', { duration: 3000 });
-        } else {
-          this.snackBar.open(`❌ NCM inválido: ${validation.official_description}`, 'Fechar', { duration: 4000 });
+          if (res.formatValid) {
+            this.classificacaoForm.patchValue({
+              ncm_description: this.classificacaoForm.get('ncm_description')?.value || res.notes
+            });
+            this.snackBar.open('NCM validado (orientação por IA). Veja as notas.', 'Fechar', { duration: 3500 });
+          } else {
+            this.snackBar.open('Formato de NCM inválido (0000.00.00).', 'Fechar', { duration: 4000 });
+          }
+
+          this.isValidatingNCM = false;
+        },
+        error: (err: unknown) => {
+          this.snackBar.open(this.mensagemErroIa(err), 'Fechar', { duration: 4000 });
+          this.isValidatingNCM = false;
         }
-
-        this.isValidatingNCM = false;
-      },
-      error: () => {
-        this.snackBar.open('Erro ao validar NCM com Receita Federal', 'Fechar', { duration: 3000 });
-        this.isValidatingNCM = false;
-      }
-    });
+      });
   }
 
   // === MÉTODOS AUXILIARES ===

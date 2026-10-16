@@ -46,4 +46,41 @@ public interface AiGatewayPort {
      * @return the AI result with telemetry
      */
     AiResult run(AiModel model, AiRequest request, AiExecutionPolicy policy, AiPromptSpec prompt);
+
+    /**
+     * Runs a multimodal (binary OCR) AI call from a file reference stored in the
+     * object storage. The provider reads the binary itself from the given
+     * {@link StorageRef} (e.g. {@code gs://bucket/key}) — the application layer
+     * never downloads the bytes nor forwards them inline. In the cloud profile
+     * this is served by Gemini multimodal via Vertex AI, which fetches the file
+     * from the storage URI and honours the policy and the structured prompt.
+     *
+     * <p>Executa a chamada multimodal (OCR de binário) a partir de uma referência
+     * de arquivo no object storage. O provedor lê o binário diretamente da
+     * {@link StorageRef} informada (ex.: {@code gs://bucket/key}); a camada de
+     * aplicação nunca baixa os bytes nem os envia inline. No profile {@code cloud}
+     * é atendida pelo Gemini multimodal via Vertex, honrando a política e o prompt
+     * estruturado como no overload {@code run}.
+     *
+     * @param model      the resolved model route to call (a multimodal-capable model)
+     * @param request    the originating AI request
+     * @param policy     the execution policy (model, thinking level, limits)
+     * @param prompt     the fully built prompt specification (carries the response schema)
+     * @param storageRef the reference to the binary file in the object storage
+     * @return the AI result with telemetry (e.g. {@code ocrPages > 0})
+     */
+    AiResult runMultimodal(AiModel model, AiRequest request, AiExecutionPolicy policy,
+                           AiPromptSpec prompt, StorageRef storageRef);
+
+    /**
+     * Reference to a binary object in the object storage, read by the provider
+     * during a multimodal call.
+     *
+     * <p>Referência a um objeto binário no object storage, lido pelo provedor
+     * durante uma chamada multimodal.
+     *
+     * @param uri       the storage object reference (e.g. {@code gs://bucket/key})
+     * @param mediaType the binary MIME type (e.g. {@code application/pdf})
+     */
+    record StorageRef(String uri, String mediaType) {}
 }

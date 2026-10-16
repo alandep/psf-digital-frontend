@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, OnInit, Inject, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -15,6 +15,9 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { ContractTemplate, TemplateFilterOptions } from '../../../../../types/contractTemplates';
+import { AI_SERVICE } from '../../../../services/ai/ai-service.token';
+import { IAiService } from '../../../../services/ai/ai-service.interface';
+import { AiAnalyzeRequest, AiAnalysisResult } from '../../../../../types/ai-hub';
 
 interface DialogData {
   template?: ContractTemplate;
@@ -50,6 +53,15 @@ export class TemplateEditDialogComponent implements OnInit {
   selectedTabIndex = 0;
   isEditMode: boolean;
   isSaving = false;
+
+  // Serviço de IA real (roteia para o BFF /bff/ai/analisar quando
+  // environment.realApis.ai === true; os agentes Vertex/GCP respondem).
+  private readonly ai = inject<IAiService>(AI_SERVICE);
+
+  // Estado por capacidade: controla spinner/disabled de cada ação de IA.
+  aiRunning: { [k: string]: boolean } = {};
+  // Resultados retornados pelos agentes de IA, exibidos na aba IA.
+  aiResults: { risco?: string; conformidade?: string; incoterm?: string; texto?: string } = {};
 
   constructor(
     private fb: FormBuilder,
@@ -214,6 +226,153 @@ export class TemplateEditDialogComponent implements OnInit {
 
   public onCancel(): void {
     this.dialogRef.close();
+  }
+
+  // === AÇÕES DE IA (agentes reais Vertex/GCP via AI_SERVICE) ===
+
+  // Monta um resumo pt-BR do template atual a partir do formulário. Esse texto
+  // é o contexto enviado como `input` aos agentes de IA. Apenas campos
+  // preenchidos entram no resumo.
+  private construirResumoTemplate(): string {
+    const form = this.templateForm.getRawValue();
+    const partes: string[] = [];
+
+    const add = (label: string, value: unknown): void => {
+      if (value !== null && value !== undefined && String(value).trim() !== '') {
+        partes.push(`${label}: ${value}`);
+      }
+    };
+
+    add('Tipo', form.contract_type);
+    add('Padrão', form.organization_standard);
+
+    const commodity = form.commodity_grade
+      ? `${form.commodity} (${form.commodity_grade})`
+      : form.commodity;
+    add('Commodity', commodity);
+
+    if (form.quantity_min || form.quantity_max) {
+      add('Quantidade', `${form.quantity_min ?? ''}-${form.quantity_max ?? ''}`);
+    }
+
+    if (form.default_price) {
+      add('Preço', `${form.default_price} ${form.currency ?? ''}`.trim());
+    }
+
+    add('Incoterm', form.incoterm);
+
+    if (form.payment_terms) {
+      const pagamento = form.payment_days
+        ? `${form.payment_terms} (${form.payment_days} dias)`
+        : `${form.payment_terms}`;
+      add('Pagamento', pagamento);
+    }
+
+    if (form.shipment_type || form.port_origin || form.port_destination) {
+      const rota = [form.port_origin, form.port_destination].filter(Boolean).join('→');
+      const embarque = [form.shipment_type, rota].filter(Boolean).join(' ');
+      add('Embarque', embarque);
+    }
+
+    const clausulas = [
+      form.contract_text_template,
+      form.quality_specification,
+      form.force_majeure_clause,
+      form.arbitration_clause
+    ]
+      .filter(c => c !== null && c !== undefined && String(c).trim() !== '')
+      .join(' | ');
+    add('Cláusulas', clausulas);
+
+    return partes.join('; ');
+  }
+
+  // Executa uma análise de IA genérica e direciona o resultado para o campo
+  // correspondente em aiResults. Centraliza o padrão loading/next/error.
+  private executarAcaoIa(
+    key: string,
+    campo: 'risco' | 'conformidade' | 'incoterm' | 'texto',
+    req: AiAnalyzeRequest
+  ): void {
+    this.aiRunning[key] = true;
+    this.aiResults[campo] = undefined;
+
+    this.ai.analisar(req).subscribe({
+      next: (res: AiAnalysisResult) => {
+        this.aiResults[campo] = res.output;
+        this.aiRunning[key] = false;
+      },
+      error: (err: unknown) => {
+        this.aiRunning[key] = false;
+        this.snackBar.open(this.mensagemErroIa(err), 'Fechar', { duration: 4000 });
+      }
+    });
+  }
+
+  public analisarRiscos(): void {
+    const input =
+      'Analise os riscos jurídicos e comerciais deste template de contrato de exportação e liste mitigações.\n\n' +
+      this.construirResumoTemplate();
+    this.executarAcaoIa('risco', 'risco', { task: 'RISK_ANALYSIS', input });
+  }
+
+  public verificarConformidade(): void {
+    const standard = this.templateForm.get('organization_standard')?.value;
+    const input =
+      'Verifique a conformidade deste template de contrato com padrões internacionais (' +
+      standard +
+      ', Incoterms, cláusulas de arbitragem) e aponte não conformidades.\n\n' +
+      this.construirResumoTemplate();
+    this.executarAcaoIa('conformidade', 'conformidade', { task: 'RISK_ANALYSIS', input });
+  }
+
+  public sugerirIncoterm(): void {
+    const input =
+      'Sugira o Incoterm mais adequado (e justifique em 2-3 linhas) para uma exportação com estas características. Responda em pt-BR.\n\n' +
+      this.construirResumoTemplate();
+    this.executarAcaoIa('incoterm', 'incoterm', { task: 'CHAT', input });
+  }
+
+  public gerarTextoContratual(): void {
+    const input =
+      'Gere um texto/cláusulas de contrato de exportação (em pt-BR) coerente com os parâmetros abaixo. Seja objetivo e use linguagem jurídica adequada.\n\n' +
+      this.construirResumoTemplate();
+    this.executarAcaoIa('texto', 'texto', { task: 'CHAT', input });
+  }
+
+  // Aplica o texto gerado pela IA ao campo de cláusulas do template.
+  public aplicarTextoGerado(): void {
+    if (!this.aiResults.texto) {
+      return;
+    }
+    this.templateForm.patchValue({ contract_text_template: this.aiResults.texto });
+    this.snackBar.open('Texto contratual aplicado às cláusulas do template.', 'Fechar', {
+      duration: 3000
+    });
+  }
+
+  // Mapeia o Erro_IA (já normalizado pelo errorInterceptor) para uma mensagem
+  // simples pt-BR exibida via snackBar, sem fallback mock (Req 14.11).
+  private mensagemErroIa(err: unknown): string {
+    const e = err as { status?: number; code?: string; message?: string };
+    if (e?.status === 402 || e?.code === 'AI_QUOTA_EXCEEDED') {
+      return 'Seus créditos de IA acabaram. Compre créditos para continuar.';
+    }
+    switch (e?.status) {
+      case 403:
+        return 'Acesso negado: você não tem permissão para usar a IA.';
+      case 422:
+        return 'A resposta da IA foi inválida para a solicitação enviada.';
+      case 429:
+        return 'Limite de uso de IA atingido. Aguarde e tente novamente.';
+      case 502:
+      case 503:
+        return 'O serviço de IA está temporariamente indisponível. Tente novamente em instantes.';
+      case 504:
+        return 'O serviço de IA demorou para responder. Tente novamente.';
+      default:
+        return e?.message || 'Erro na classificação com IA.';
+    }
   }
 
   private markFormGroupTouched(formGroup: FormGroup): void {

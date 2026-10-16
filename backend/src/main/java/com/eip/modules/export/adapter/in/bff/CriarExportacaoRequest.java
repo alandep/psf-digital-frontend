@@ -16,12 +16,13 @@ import jakarta.validation.constraints.Positive;
  * BFF request payload for creating an export.
  */
 public record CriarExportacaoRequest(
-        @NotNull UUID customerId,
+        UUID customerId,
         UUID legalEntityId,
         String destinationCountry,
         String incoterm,
         String currency,
-        @NotEmpty @Valid List<ItemRequest> itens) {
+        @NotEmpty @Valid List<ItemRequest> itens,
+        BigDecimal totalCost) {
 
     /** Single line item in the request. */
     public record ItemRequest(
@@ -38,6 +39,7 @@ public record CriarExportacaoRequest(
                         i.productId(), i.description(), i.quantity(), i.unitPrice()))
                 .toList();
         return new CriarExportacaoCommand(
-                customerId, legalEntityId, destinationCountry, incoterm, currency, itemCommands);
+                customerId, legalEntityId, destinationCountry, incoterm, currency,
+                itemCommands, totalCost);
     }
 }

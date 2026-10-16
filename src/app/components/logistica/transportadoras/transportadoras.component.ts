@@ -34,10 +34,14 @@ import {
   ModalType,
   CarrierStatus,
   TransportadoraFilters,
-  TransportadoraMetrics,
-  TransportSimulationResult
+  TransportadoraMetrics
 } from '../../../../types/transportadoras';
 import { HasPermissionDirective } from '../../../directives/has-permission.directive';
+
+// AI Hub: a SIMULAÇÃO passa a usar o backend real via AI_SERVICE (Req 15).
+// A listagem/CRUD de transportadoras continua no TransportadorasMockService.
+import { AI_SERVICE } from '../../../services/ai/ai-service.token';
+import { TransportSimResult } from '../../../../types/ai-hub';
 
 // Dialogs
 import { TransportadoraDetailDialogComponent } from './transportadora-detail-dialog/transportadora-detail-dialog.component';
@@ -83,6 +87,8 @@ export class TransportadorasComponent implements OnInit, OnDestroy {
   private formBuilder = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
+  // Serviço de IA (HTTP real quando realApis.ai === true; mock caso contrário).
+  private ai = inject(AI_SERVICE);
 
   // Destroy subject
   private destroy$ = new Subject<void>();
@@ -91,7 +97,8 @@ export class TransportadorasComponent implements OnInit, OnDestroy {
   transportadoras: Transportadora[] = [];
   filteredTransportadoras: Transportadora[] = [];
   metrics: TransportadoraMetrics | null = null;
-  simulationResult: TransportSimulationResult | null = null;
+  // Resultado da simulação de IA (shape do TransportSimResult devolvido pelo BFF).
+  simulationResult: TransportSimResult | null = null;
 
   // UI State
   isLoading = false;
@@ -251,26 +258,80 @@ export class TransportadorasComponent implements OnInit, OnDestroy {
   }
 
   simulate(): void {
+    // Validação dos campos obrigatórios da Entrada_Transporte (Req 15.4):
+    // bloqueia o envio enquanto o formulário estiver inválido.
     if (this.simulationForm.invalid) {
+      this.simulationForm.markAllAsTouched();
       this.snackBar.open('Preencha todos os campos da simulação', 'OK', { duration: 3000 });
       return;
     }
     this.isSimulating = true;
     this.simulationResult = null;
 
-    this.transportadorasService.simulateTransport(this.simulationForm.value)
+    const form = this.simulationForm.value;
+
+    // A simulação é apenas uma SUGESTÃO: nada é contratado automaticamente
+    // (humano no circuito — Req 15.7). O backend real (AI_SERVICE) devolve o
+    // TransportSimResult tipado; sem fallback mock no caminho real (Req 15.8).
+    this.ai.simularTransporte({
+      origin: form.origin,
+      destination: form.destination,
+      product: form.product,
+      quantityTons: Number(form.quantity),
+      preferredModal: form.modal || 'Qualquer',
+      incoterm: form.incoterm,
+      desiredDate: this.toIsoDate(form.desiredDate)
+    })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (result) => {
           this.simulationResult = result;
           this.isSimulating = false;
-          this.snackBar.open('Simulação concluída com sucesso!', 'OK', { duration: 3000 });
+          this.snackBar.open('Simulação concluída. Esta é uma sugestão da IA — nenhuma contratação foi feita.', 'OK', { duration: 4000 });
         },
-        error: () => {
+        error: (err: unknown) => {
           this.isSimulating = false;
-          this.snackBar.open('Erro na simulação', 'Fechar', { duration: 3000 });
+          // Erros de IA são exibidos de forma explícita, sem recorrer ao mock (Req 15.9).
+          this.snackBar.open(this.mensagemErroIa(err), 'Fechar', { duration: 4000 });
         }
       });
+  }
+
+  // Converte o valor do campo de data (Date ou string) para string ISO (yyyy-MM-dd),
+  // formato esperado por TransportSimRequest.desiredDate.
+  private toIsoDate(value: unknown): string {
+    if (!value) {
+      return '';
+    }
+    const date = value instanceof Date ? value : new Date(value as string);
+    if (isNaN(date.getTime())) {
+      return typeof value === 'string' ? value : '';
+    }
+    return date.toISOString().substring(0, 10);
+  }
+
+  // Mapeia o Erro_IA (já normalizado pelo errorInterceptor) para uma mensagem
+  // simples pt-BR exibida via snackBar, sem fallback mock (Req 15.9).
+  private mensagemErroIa(err: unknown): string {
+    const e = err as { status?: number; code?: string; message?: string };
+    if (e?.status === 402 || e?.code === 'AI_QUOTA_EXCEEDED') {
+      return 'Seus créditos de IA acabaram. Compre créditos para continuar.';
+    }
+    switch (e?.status) {
+      case 403:
+        return 'Acesso negado: você não tem permissão para usar a IA.';
+      case 422:
+        return 'A resposta da IA foi inválida para a solicitação enviada.';
+      case 429:
+        return 'Limite de uso de IA atingido. Aguarde e tente novamente.';
+      case 502:
+      case 503:
+        return 'O serviço de IA está temporariamente indisponível. Tente novamente em instantes.';
+      case 504:
+        return 'O serviço de IA demorou para responder. Tente novamente.';
+      default:
+        return e?.message || 'Erro na simulação com IA.';
+    }
   }
 
   exportPDF(): void {

@@ -17,6 +17,14 @@ export interface IExportacaoService {
   updateExportacao(id: string, exportacao: Partial<Exportacao>): Observable<Exportacao>;
   deleteExportacao(id: string): Observable<boolean>;
 
+  // Embarque (Req 6.4): marca a exportação como embarcada. Idempotente no
+  // backend (no-op quando já embarcada). Retorna a exportação atualizada.
+  marcarEmbarcado(id: string): Observable<Exportacao>;
+
+  // Confirma a exportação (RASCUNHO → CONFIRMADA) no backend. Idempotência
+  // garantida pelo domínio + optimistic locking (409 em conflito).
+  confirmarExportacao(id: string): Observable<Exportacao>;
+
   // Dashboard & Details
   getDashboardData(): Observable<ExportacaoDashboard>;
   getExportacaoDetails(exportId: string): Observable<any>;

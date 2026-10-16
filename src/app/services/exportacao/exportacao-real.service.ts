@@ -31,6 +31,9 @@ interface ExportacaoView {
   incoterm?: string;
   currency?: string;
   totalAmount?: number;
+  totalCost?: number;
+  shipped?: boolean;
+  shippedAt?: string;
   itens?: ExportacaoItemView[];
 }
 
@@ -51,9 +54,12 @@ interface ExportacoesDashboardResponse {
   porStatus?: { status: string; quantidade: number }[];
 }
 
-// PARTIAL: backend covers CRUD list/create/confirm; other methods use mock
-// until the backend exposes them. Only used when environment.realApis.export
-// is true; otherwise the mock adapter is provided.
+// PARTIAL: list/getById/create/update/delete/confirmar/embarcar + dashboard
+// counters are now backed by the real BFF. The remaining methods
+// (AI/OCR/NLP, validate, compliance, documents, Siscomex, master-data,
+// countries, products, ports) stay mock-sourced because the backend exposes
+// no endpoint for them yet (do NOT invent endpoints). Only used when
+// environment.realApis.export is true; otherwise the mock adapter is provided.
 @Injectable({
   providedIn: 'root'
 })
@@ -98,12 +104,15 @@ export class ExportacaoRealService implements IExportacaoService {
       currency: (v.currency as Exportacao['currency']) ?? 'USD',
       unit_price: 0,
       total_value: v.totalAmount ?? 0,
+      total_cost: v.totalCost ?? undefined,
       payment_method: 'T/T',
       payment_terms: '',
       port_origin: '',
       port_destination: '',
       transport_mode: 'Marítimo',
       export_status: this.mapStatus(v.status),
+      shipped: v.shipped ?? false,
+      shipped_at: v.shippedAt ? new Date(v.shippedAt) : undefined,
       compliance_status: 'Pending',
       export_license_required: false,
       mapa_approval: false,
@@ -147,6 +156,11 @@ export class ExportacaoRealService implements IExportacaoService {
       destinationCountry: exportacao.destination_country ?? '',
       incoterm: exportacao.incoterm ?? 'FOB',
       currency: exportacao.currency ?? 'USD',
+      // Importador selecionado (combo reutilizável) → customerId no backend.
+      customerId: exportacao.customer_id ?? null,
+      // Custo total (Custo_Exportacao, Req 5.5). Nullable: ausente ⇒ backend
+      // trata como zero no cálculo de lucro/margem.
+      totalCost: exportacao.total_cost ?? null,
       itens: (exportacao.items ?? []).map((it) => ({
         productId: it.product_id,
         description: it.product_name ?? it.product_description ?? '',
@@ -159,14 +173,53 @@ export class ExportacaoRealService implements IExportacaoService {
       .pipe(map((v) => this.toExportacao(v)));
   }
 
-  // No backend delete endpoint yet: delegate to the mock so screens keep working.
+  // Cancelamento (Req): DELETE /bff/exportacoes/{id} → 204. Mapeia sucesso a
+  // true; qualquer erro vira false para que a UI trate graciosamente.
   deleteExportacao(id: string): Observable<boolean> {
-    return this.mock.deleteExportacao(id);
+    return this.http.delete<void>(`${this.api}/${id}`).pipe(
+      map(() => true),
+      catchError(() => of(false))
+    );
   }
 
-  // No backend generic update yet: delegate to the mock.
+  // Marca a exportação como embarcada (Req 6.4): POST /bff/exportacoes/{id}/embarcar.
+  // O endpoint é idempotente (no-op quando já embarcada); a sessão e o CSRF são
+  // anexados pelos interceptors existentes. Mapeia a view do backend de volta
+  // ao tipo rico da UI para refletir shipped/shipped_at.
+  marcarEmbarcado(id: string): Observable<Exportacao> {
+    return this.http
+      .post<ExportacaoView>(`${this.api}/${id}/embarcar`, {})
+      .pipe(map((v) => this.toExportacao(v)));
+  }
+
+  // Confirma a exportação (RASCUNHO → CONFIRMADA): POST /bff/exportacoes/{id}/confirmar.
+  // Idempotência garantida pelo domínio + optimistic locking (409 em conflito).
+  confirmarExportacao(id: string): Observable<Exportacao> {
+    return this.http
+      .post<ExportacaoView>(`${this.api}/${id}/confirmar`, {})
+      .pipe(map((v) => this.toExportacao(v)));
+  }
+
+  // Atualização (Req): PUT /bff/exportacoes/{id}. Envia a mesma forma de corpo
+  // de createExportacao (destinationCountry, incoterm, currency, totalCost, itens[]).
   updateExportacao(id: string, exportacao: Partial<Exportacao>): Observable<Exportacao> {
-    return this.mock.updateExportacao(id, exportacao);
+    const body = {
+      destinationCountry: exportacao.destination_country ?? '',
+      incoterm: exportacao.incoterm ?? 'FOB',
+      currency: exportacao.currency ?? 'USD',
+      // Importador selecionado (combo reutilizável) → customerId no backend.
+      customerId: exportacao.customer_id ?? null,
+      totalCost: exportacao.total_cost ?? null,
+      itens: (exportacao.items ?? []).map((it) => ({
+        productId: it.product_id,
+        description: it.product_name ?? it.product_description ?? '',
+        quantity: it.quantity,
+        unitPrice: it.unit_price
+      }))
+    };
+    return this.http
+      .put<ExportacaoView>(`${this.api}/${id}`, body)
+      .pipe(map((v) => this.toExportacao(v)));
   }
 
   // PARTIAL: backend provides aggregate counters (total/status/valorTotal);

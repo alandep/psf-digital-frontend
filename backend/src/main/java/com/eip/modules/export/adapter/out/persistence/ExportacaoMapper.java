@@ -40,6 +40,9 @@ public class ExportacaoMapper {
         entity.setIncoterm(domain.incoterm());
         entity.setTotalAmount(domain.totalAmount());
         entity.setCurrency(domain.currency());
+        entity.setTotalCost(domain.totalCost());
+        entity.setShipped(domain.shipped());
+        entity.setShippedAt(domain.shippedAt());
         entity.setUpdatedAt(OffsetDateTime.now());
         syncItens(domain, entity);
         return entity;
@@ -85,6 +88,9 @@ public class ExportacaoMapper {
                 entity.getTotalAmount(),
                 entity.getCurrency(),
                 entity.getVersion(),
-                itens);
+                itens,
+                entity.getTotalCost(),
+                entity.isShipped(),
+                entity.getShippedAt());
     }
 }

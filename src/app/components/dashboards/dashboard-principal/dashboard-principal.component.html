@@ -9,6 +9,9 @@
     <p>Visão executiva geral das exportações</p>
   </div>
 
+  <!-- Região aria-live: anuncia atualizações de dados para tecnologias assistivas -->
+  <div class="sr-only" role="status" aria-live="polite">{{ statusMessage }}</div>
+
   <!-- Filtros -->
   <mat-card class="filtros-card">
     <mat-card-header>
@@ -19,6 +22,11 @@
     </mat-card-header>
     
     <mat-card-content>
+      <div *ngIf="filtersUnavailable" class="filtros-indisponivel" role="status">
+        <mat-icon>info</mat-icon>
+        <span>Opções de filtro indisponíveis no momento. Os demais dados continuam disponíveis.</span>
+      </div>
+
       <form [formGroup]="filtroForm" class="filtros-form">
         <div class="filtro-row">
           <mat-form-field appearance="outline">
@@ -206,8 +214,9 @@
           </mat-card-header>
           <mat-card-content>
             <div class="chart-container">
-              <canvas #chartExportacoesMes></canvas>
+              <canvas #chartExportacoesMes role="img" [attr.aria-label]="descricaoExportacoesPorMes"></canvas>
             </div>
+            <p class="sr-only">{{ descricaoExportacoesPorMes }}</p>
           </mat-card-content>
         </mat-card>
 
@@ -219,8 +228,9 @@
           </mat-card-header>
           <mat-card-content>
             <div class="chart-container">
-              <canvas #chartExportacoesPais></canvas>
+              <canvas #chartExportacoesPais role="img" [attr.aria-label]="descricaoExportacoesPorPais"></canvas>
             </div>
+            <p class="sr-only">{{ descricaoExportacoesPorPais }}</p>
           </mat-card-content>
         </mat-card>
 
@@ -232,19 +242,27 @@
           </mat-card-header>
           <mat-card-content>
             <div class="chart-container">
-              <canvas #chartExportacoesProduto></canvas>
+              <canvas #chartExportacoesProduto role="img" [attr.aria-label]="descricaoExportacoesPorProduto"></canvas>
             </div>
+            <p class="sr-only">{{ descricaoExportacoesPorProduto }}</p>
           </mat-card-content>
         </mat-card>
       </div>
     </div>
   </div>
 
-  <!-- Estado vazio -->
-  <div *ngIf="!isLoading && !dashboardData" class="empty-state">
+  <!-- Estado de erro honesto (sem fallback para mock) -->
+  <div *ngIf="!isLoading && !dashboardData && loadError" class="empty-state error-state" role="alert">
+    <mat-icon>error_outline</mat-icon>
+    <h3>Não foi possível carregar o dashboard</h3>
+    <p>Ocorreu um erro ao obter os dados do backend. Tente novamente mais tarde.</p>
+  </div>
+
+  <!-- Estado vazio (sem erro) -->
+  <div *ngIf="!isLoading && !dashboardData && !loadError" class="empty-state" role="status">
     <mat-icon>info</mat-icon>
     <h3>Nenhum dado encontrado</h3>
-    <p>Não foi possível carregar os dados do dashboard. Tente novamente.</p>
+    <p>Não há dados de dashboard disponíveis no momento.</p>
   </div>
 
 </div>

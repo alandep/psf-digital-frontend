@@ -112,6 +112,15 @@ public class GcsStorageAdapter implements StoragePort {
         return "organizations/" + org + "/documents/" + documentId + "/" + sanitize(filename);
     }
 
+    @Override
+    public String upload(String storageKey, byte[] content, String mediaType) {
+        BlobInfo blob = BlobInfo.newBuilder(BlobId.of(props.bucket(), storageKey))
+                .setContentType(mediaType)
+                .build();
+        storage.create(blob, content);
+        return "gs://" + props.bucket() + "/" + storageKey;
+    }
+
     private static String sanitize(String filename) {
         if (filename == null || filename.isBlank()) {
             return "file";

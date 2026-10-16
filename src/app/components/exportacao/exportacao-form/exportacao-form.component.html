@@ -42,14 +42,10 @@
             <div class="form-row">
               <mat-form-field appearance="outline">
                 <mat-label>Número da Exportação</mat-label>
-                <input matInput formControlName="export_number" placeholder="EXP-2026-0001">
-                <mat-hint>Formato: EXP-YYYY-NNNN</mat-hint>
-                <mat-error *ngIf="basicInfoForm.get('export_number')?.hasError('required')">
-                  Campo obrigatório
-                </mat-error>
-                <mat-error *ngIf="basicInfoForm.get('export_number')?.hasError('pattern')">
-                  Formato inválido (EXP-YYYY-NNNN)
-                </mat-error>
+                <input matInput formControlName="export_number"
+                       [placeholder]="!isEditMode ? 'Gerado automaticamente' : ''"
+                       readonly aria-label="Número da exportação (gerado pelo sistema)">
+                <mat-hint *ngIf="!isEditMode">Gerado automaticamente pelo sistema</mat-hint>
               </mat-form-field>
 
               <mat-form-field appearance="outline">
@@ -100,39 +96,47 @@
               </h4>
             </div>
 
-            <div class="form-row">
-              <mat-form-field appearance="outline">
-                <mat-label>Nome do Importador</mat-label>
-                <input matInput formControlName="importer_name" placeholder="Razão social completa">
-                <mat-error *ngIf="basicInfoForm.get('importer_name')?.hasError('required')">
+            <div class="form-row importador-row">
+              <mat-form-field appearance="outline" class="importador-field">
+                <mat-label>Importador</mat-label>
+                <mat-select formControlName="customer_id" aria-label="Importador">
+                  <mat-option *ngFor="let imp of importadores" [value]="imp.id">
+                    {{ imp.name }}<span *ngIf="imp.document"> — {{ imp.document }}</span>
+                  </mat-option>
+                </mat-select>
+                <mat-error *ngIf="basicInfoForm.get('customer_id')?.hasError('required')">
                   Campo obrigatório
                 </mat-error>
               </mat-form-field>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Documento</mat-label>
-                <input matInput formControlName="importer_document" placeholder="CNPJ ou Tax ID">
-                <mat-error *ngIf="basicInfoForm.get('importer_document')?.hasError('required')">
-                  Campo obrigatório
-                </mat-error>
-              </mat-form-field>
+              <button mat-stroked-button type="button" class="novo-importador-button"
+                      (click)="abrirNovoImportador()"
+                      aria-label="Cadastrar novo importador">
+                <mat-icon>add</mat-icon>
+                Novo
+              </button>
             </div>
 
-            <div class="form-row">
-              <mat-form-field appearance="outline" class="address-field">
-                <mat-label>Endereço Completo</mat-label>
-                <textarea matInput formControlName="importer_address" rows="3"
-                          placeholder="Endereço completo do importador"></textarea>
-                <mat-error *ngIf="basicInfoForm.get('importer_address')?.hasError('required')">
-                  Campo obrigatório
-                </mat-error>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Contato</mat-label>
-                <input matInput formControlName="importer_contact" 
-                       placeholder="Email e telefone">
-              </mat-form-field>
+            <!-- Detalhes somente leitura do importador selecionado -->
+            <div class="form-row" *ngIf="importadorSelecionado as imp">
+              <div class="importador-detalhes">
+                <div class="detalhe-item">
+                  <label>Documento:</label>
+                  <span>{{ imp.document || '—' }}</span>
+                </div>
+                <div class="detalhe-item">
+                  <label>País:</label>
+                  <span>{{ imp.country || '—' }}</span>
+                </div>
+                <div class="detalhe-item">
+                  <label>Endereço:</label>
+                  <span>{{ imp.address || '—' }}</span>
+                </div>
+                <div class="detalhe-item">
+                  <label>Contato:</label>
+                  <span>{{ imp.contact || '—' }}</span>
+                </div>
+              </div>
             </div>
 
             <mat-divider></mat-divider>
@@ -146,22 +150,7 @@
             </div>
 
             <div class="form-row">
-              <mat-form-field appearance="outline">
-                <mat-label>País de Destino</mat-label>
-                <input matInput formControlName="destination_country" 
-                       [matAutocomplete]="countryAuto"
-                       placeholder="Digite para buscar">
-                <mat-error *ngIf="basicInfoForm.get('destination_country')?.hasError('required')">
-                  Campo obrigatório
-                </mat-error>
-                
-                <mat-autocomplete #countryAuto="matAutocomplete">
-                  <mat-option *ngFor="let country of filteredCountries | async" [value]="country">
-                    <mat-icon>flag</mat-icon>
-                    {{ country }}
-                  </mat-option>
-                </mat-autocomplete>
-              </mat-form-field>
+              <app-pais-combo formControlName="destination_country" label="País de Destino" [required]="true"></app-pais-combo>
 
               <mat-form-field appearance="outline">
                 <mat-label>Porto de Destino</mat-label>
@@ -301,25 +290,53 @@
 
                 <mat-card-content>
                   <div class="product-form">
+                    <!-- Seletor de produto reutilizável (combo com filtro) + "Novo" -->
+                    <div class="form-row produto-row">
+                      <mat-form-field appearance="outline" class="produto-field">
+                        <mat-label>Produto (buscar por nome ou NCM)</mat-label>
+                        <input matInput
+                               [matAutocomplete]="autoP"
+                               [value]="item.product_name"
+                               (input)="produtoFiltro = $any($event.target).value"
+                               (focus)="produtoFiltro = ''"
+                               placeholder="Digite para buscar"
+                               aria-label="Buscar produto por nome ou NCM">
+                        <mat-autocomplete #autoP="matAutocomplete"
+                                          (optionSelected)="onProdutoSelecionado(item, $event.option.value)">
+                          <mat-option *ngFor="let p of filtrarProdutos(produtoFiltro)" [value]="p.id">
+                            {{ p.name }}<span *ngIf="p.ncm"> — NCM {{ p.ncm }}</span>
+                          </mat-option>
+                        </mat-autocomplete>
+                      </mat-form-field>
+
+                      <button mat-stroked-button type="button" class="novo-produto-button"
+                              (click)="abrirNovoProduto(item)"
+                              aria-label="Cadastrar novo produto">
+                        <mat-icon>add</mat-icon>
+                        Novo
+                      </button>
+                    </div>
+
+                    <!-- Dados reutilizados do produto (somente leitura) -->
                     <div class="form-row">
                       <mat-form-field appearance="outline">
-                        <mat-label>Nome do Produto</mat-label>
-                        <input matInput [(ngModel)]="item.product_name" 
-                               placeholder="Nome comercial">
+                        <mat-label>Código NCM</mat-label>
+                        <input matInput [value]="item.ncm_code" readonly
+                               aria-label="Código NCM do produto selecionado">
                       </mat-form-field>
 
                       <mat-form-field appearance="outline">
-                        <mat-label>Código NCM</mat-label>
-                        <input matInput [(ngModel)]="item.ncm_code" 
-                               placeholder="0000.00.00">
+                        <mat-label>Unidade</mat-label>
+                        <input matInput [value]="item.unit" readonly
+                               aria-label="Unidade do produto selecionado">
                       </mat-form-field>
                     </div>
 
                     <div class="form-row">
                       <mat-form-field appearance="outline" class="full-width">
                         <mat-label>Descrição do Produto</mat-label>
-                        <textarea matInput [(ngModel)]="item.product_description" 
-                                  rows="2" placeholder="Descrição detalhada"></textarea>
+                        <textarea matInput [value]="item.product_description" rows="2" readonly
+                                  aria-label="Descrição do produto selecionado"></textarea>
                       </mat-form-field>
                     </div>
 
@@ -328,31 +345,20 @@
                         <mat-label>Quantidade</mat-label>
                         <input matInput type="number" [(ngModel)]="item.quantity" 
                                (ngModelChange)="updateProductValue(item)"
-                               min="0" step="0.01">
-                      </mat-form-field>
-
-                      <mat-form-field appearance="outline">
-                        <mat-label>Unidade</mat-label>
-                        <mat-select [(ngModel)]="item.unit">
-                          <mat-option value="kg">Quilogramas (kg)</mat-option>
-                          <mat-option value="ton">Toneladas (ton)</mat-option>
-                          <mat-option value="pcs">Peças (pcs)</mat-option>
-                          <mat-option value="ltr">Litros (ltr)</mat-option>
-                          <mat-option value="m3">Metros Cúbicos (m³)</mat-option>
-                        </mat-select>
+                               min="0" step="0.01"
+                               aria-label="Quantidade exportada">
                       </mat-form-field>
 
                       <mat-form-field appearance="outline">
                         <mat-label>Preço Unitário</mat-label>
-                        <input matInput type="number" [(ngModel)]="item.unit_price" 
-                               (ngModelChange)="updateProductValue(item)"
-                               min="0" step="0.01">
+                        <input matInput type="number" [value]="item.unit_price" readonly
+                               aria-label="Preço unitário do produto selecionado">
                       </mat-form-field>
 
                       <mat-form-field appearance="outline">
                         <mat-label>Valor Total</mat-label>
                         <input matInput type="number" [value]="item.total_value" 
-                               readonly>
+                               readonly aria-label="Valor total calculado">
                       </mat-form-field>
                     </div>
 
@@ -371,11 +377,8 @@
 
                       <mat-form-field appearance="outline">
                         <mat-label>País de Origem</mat-label>
-                        <mat-select [(ngModel)]="item.country_of_origin">
-                          <mat-option *ngFor="let country of countries" [value]="country">
-                            {{ country }}
-                          </mat-option>
-                        </mat-select>
+                        <input matInput [value]="item.country_of_origin" readonly
+                               aria-label="País de origem do produto selecionado">
                       </mat-form-field>
                     </div>
                   </div>
@@ -831,7 +834,7 @@
 
                   <div class="summary-item">
                     <label>Importador:</label>
-                    <span>{{ basicInfoForm.get('importer_name')?.value }}</span>
+                    <span>{{ importadorSelecionado?.name }}</span>
                   </div>
 
                   <div class="summary-item">
@@ -870,6 +873,33 @@
 
           <!-- Opções Finais -->
           <form [formGroup]="reviewForm" class="step-form">
+            <div class="section-header">
+              <h4>
+                <mat-icon>payments</mat-icon>
+                Custo da Exportação
+              </h4>
+            </div>
+
+            <div class="review-cost">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Custo total da exportação</mat-label>
+                <span matTextPrefix *ngIf="basicInfoForm.get('currency')?.value as cur">{{ cur }}&nbsp;</span>
+                <input
+                  matInput
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  inputmode="decimal"
+                  formControlName="total_cost"
+                  placeholder="0,00"
+                  aria-label="Custo total da exportação em moeda selecionada" />
+                <mat-hint>Opcional. Usado para calcular lucro e margem. Deixe em branco para custo zero.</mat-hint>
+                <mat-error *ngIf="reviewForm.get('total_cost')?.hasError('min')">
+                  O custo não pode ser negativo
+                </mat-error>
+              </mat-form-field>
+            </div>
+
             <div class="section-header">
               <h4>
                 <mat-icon>settings</mat-icon>

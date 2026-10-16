@@ -10,6 +10,8 @@ export interface RealApiFlags {
   finance: boolean;
   crm: boolean;
   ai: boolean;
+  compliance: boolean;
+  dashboard: boolean;
 }
 
 export interface Environment {
@@ -29,13 +31,17 @@ export const environment: Environment = {
   realApis: {
     // AI Hub now calls the real BFF (needs authenticated session + CSRF cookie), so identity must use the backend too for the E2E UI test
     auth: true,
-    export: false,
+    export: true,
     subscription: false,
     documents: false,
     logistics: false,
     finance: false,
     crm: false,
     // Enabled for cloud-profile integration testing
-    ai: true
+    ai: true,
+    // Tela de Certificações usa o backend real de compliance (BFF)
+    compliance: true,
+    // Roteia o Dashboard Principal ao BFF real; use false só p/ demo local com mock
+    dashboard: true
   }
 };

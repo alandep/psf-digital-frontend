@@ -28,7 +28,8 @@ public class ModelRouterAdapter implements ModelRouterPort {
     private static AiPriority defaultPriority(AiTask task) {
         return switch (task) {
             case NCM_CLASSIFICATION, DOCUMENT_SUMMARY, TRANSLATION -> AiPriority.FAST;
-            case DOCUMENT_EXTRACTION, CHAT -> AiPriority.STANDARD;
+            case DOCUMENT_EXTRACTION, CHAT,
+                    TRANSPORT_SIMULATION, EXPORT_NL_CREATION, OCR_DOCUMENT -> AiPriority.STANDARD;
             case RISK_ANALYSIS -> AiPriority.DEEP;
         };
     }

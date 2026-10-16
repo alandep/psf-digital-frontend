@@ -4,12 +4,22 @@ import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dial
 import { MatStepper } from '@angular/material/stepper';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Observable, of, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
-import { ExportacaoMockService } from '@services/exportacaoMockService';
+import { EXPORTACAO_SERVICE } from '../../../services/exportacao/exportacao-service.token';
+import { IExportacaoService } from '../../../services/exportacao/exportacao-service.interface';
 import { Exportacao, ExportacaoDocumento, ExportacaoItem, AIAssistantMessage } from '../../../../types/exportacao';
 import {
   AiAssistantDialogComponent,
   AiAssistantDialogData
 } from '../ai-assistant-dialog/ai-assistant-dialog.component';
+import { ImportadorFormDialogComponent } from '../importador-form-dialog/importador-form-dialog.component';
+import { IMPORTADOR_SERVICE } from '../../../services/importador/importador-service.token';
+import { IImportadorService } from '../../../services/importador/importador-service.interface';
+import { Importador } from '../../../../types/importador';
+import { ProdutoFormDialogComponent } from '../produto-form-dialog/produto-form-dialog.component';
+import { PRODUTO_SERVICE } from '../../../services/produto/produto-service.token';
+import { IProdutoService } from '../../../services/produto/produto-service.interface';
+import { Produto } from '../../../../types/produto';
+import { PaisComboComponent } from '../../shared/pais-combo/pais-combo.component';
 
 // Imports Angular Material
 import { CommonModule } from '@angular/common';
@@ -59,7 +69,8 @@ import { MatDividerModule } from '@angular/material/divider';
     MatTableModule,
     MatTooltipModule,
     MatSnackBarModule,
-    MatDividerModule
+    MatDividerModule,
+    PaisComboComponent
   ],
   templateUrl: './exportacao-form.component.html',
   styleUrls: ['./exportacao-form.component.scss']
@@ -81,7 +92,6 @@ export class ExportacaoFormComponent implements OnInit {
   isEditMode = false;
 
   // Dados para autocompletes e selects
-  countries: string[] = [];
   currencies: string[] = [];
   incoterms: string[] = [];
   paymentTerms: string[] = [];
@@ -89,6 +99,16 @@ export class ExportacaoFormComponent implements OnInit {
   transportModes: string[] = [];
   ports: string[] = [];
   ncmCodes: any[] = [];
+
+  // Importadores reutilizáveis (combo + modal de cadastro)
+  importadores: Importador[] = [];
+  importadoresLoading = false;
+
+  // Produtos reutilizáveis do catálogo (combo com filtro + modal de cadastro)
+  produtos: Produto[] = [];
+  produtosLoading = false;
+  // Termo digitado no autocomplete de produto (filtra por nome ou NCM).
+  produtoFiltro = '';
 
   // Produtos da exportação
   exportItems: ExportacaoItem[] = [];
@@ -113,7 +133,6 @@ export class ExportacaoFormComponent implements OnInit {
   aiMessages: AIAssistantMessage[] = [];
 
   // Observables para autocompletes
-  filteredCountries: Observable<string[]> = of([]);
   filteredNcmCodes: Observable<any[]> = of([]);
 
   // Controla se está sendo usado como dialog ou página
@@ -126,7 +145,9 @@ export class ExportacaoFormComponent implements OnInit {
 
   constructor(
     private formBuilder: FormBuilder,
-    private exportacaoService: ExportacaoMockService,
+    @Inject(EXPORTACAO_SERVICE) private exportacaoService: IExportacaoService,
+    @Inject(IMPORTADOR_SERVICE) private importadorService: IImportadorService,
+    @Inject(PRODUTO_SERVICE) private produtoService: IProdutoService,
     private snackBar: MatSnackBar,
     private router: Router,
     private route: ActivatedRoute,
@@ -135,7 +156,7 @@ export class ExportacaoFormComponent implements OnInit {
     @Optional() @Inject(MAT_DIALOG_DATA) public data?: { exportacao?: Exportacao, mode: 'create' | 'edit' }
   ) {
     this.isDialog = !!dialogRef;
-    
+
     if (this.isDialog && this.data) {
       this.isEditMode = this.data.mode === 'edit';
     } else {
@@ -143,12 +164,14 @@ export class ExportacaoFormComponent implements OnInit {
       this.exportacaoId = this.route.snapshot.params['id'];
       this.isEditMode = !!this.exportacaoId;
     }
-    
+
     this.initializeForms();
   }
 
   ngOnInit(): void {
     this.loadFormData();
+    this.carregarImportadores();
+    this.carregarProdutos();
     this.setupAutocompletes();
 
     if (this.isEditMode) {
@@ -169,15 +192,17 @@ export class ExportacaoFormComponent implements OnInit {
   private initializeForms(): void {
     // Step 1: Informações Básicas
     this.basicInfoForm = this.formBuilder.group({
-      export_number: ['', [Validators.required, Validators.pattern(/^EXP-\d{4}-\d{4}$/)]],
+      // Número da exportação é gerado/gerenciado pelo backend: campo somente
+      // leitura (disabled), sem validadores. Em edição é preenchido com o valor
+      // existente; na criação permanece vazio e o backend o atribui.
+      export_number: [{ value: '', disabled: true }],
       export_type: ['Regular', Validators.required],
       priority: ['Normal', Validators.required],
       is_urgent: [false],
       created_by: ['', Validators.required],
-      importer_name: ['', Validators.required],
-      importer_document: ['', Validators.required],
-      importer_address: ['', Validators.required],
-      importer_contact: [''],
+      // Importador reutilizável selecionado via combo (substitui os antigos
+      // campos de texto livre importer_name/document/address/contact).
+      customer_id: ['', Validators.required],
       destination_country: ['', Validators.required],
       destination_port: [''],
       origin_port: [''],
@@ -235,6 +260,9 @@ export class ExportacaoFormComponent implements OnInit {
 
     // Step 5: Revisão
     this.reviewForm = this.formBuilder.group({
+      // Custo total da exportação (Custo_Exportacao, Req 5.5). Opcional e, quando
+      // informado, não-negativo (ausente ⇒ zero no backend).
+      total_cost: [null, [Validators.min(0)]],
       final_review: [false, Validators.requiredTrue],
       terms_accepted: [false, Validators.requiredTrue],
       submit_to_siscomex: [true],
@@ -247,12 +275,11 @@ export class ExportacaoFormComponent implements OnInit {
     if (this.isEditMode) {
       this.loading = true;
     }
-    
+
     try {
       // Carregar dados para dropdowns
       const masterData = await this.exportacaoService.getMasterData().toPromise();
-      
-      this.countries = masterData?.countries || ['Brazil', 'United States', 'China', 'Germany', 'Japan'];
+
       this.currencies = masterData?.currencies || ['USD', 'EUR', 'BRL', 'CNY', 'JPY'];
       this.incoterms = masterData?.incoterms || ['FOB', 'CIF', 'EXW', 'DDP', 'FCA'];
       this.paymentTerms = masterData?.payment_terms || ['Advance Payment', 'Letter of Credit', '30 days', '60 days'];
@@ -269,22 +296,123 @@ export class ExportacaoFormComponent implements OnInit {
     }
   }
 
-  private setupAutocompletes(): void {
-    // Filtro para países
-    this.filteredCountries = this.basicInfoForm.get('destination_country')!.valueChanges.pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      switchMap(value => {
-        if (value && typeof value === 'string' && value.length >= 2) {
-          const filtered = this.countries.filter(country =>
-            country.toLowerCase().includes(value.toLowerCase())
-          );
-          return of(filtered);
-        }
-        return of(this.countries.slice(0, 10));
-      })
-    );
+  /** Carrega a lista de importadores reutilizáveis para o combo. */
+  private carregarImportadores(): void {
+    this.importadoresLoading = true;
+    this.importadorService.listar().subscribe({
+      next: (importadores) => {
+        this.importadores = importadores ?? [];
+        this.importadoresLoading = false;
+      },
+      error: (error) => {
+        console.error('Erro ao carregar importadores:', error);
+        this.showError('Erro ao carregar importadores');
+        this.importadoresLoading = false;
+      }
+    });
+  }
 
+  /** Importador atualmente selecionado no combo (para exibir detalhes). */
+  get importadorSelecionado(): Importador | undefined {
+    return this.importadores.find(
+      (i) => i.id === this.basicInfoForm.get('customer_id')?.value
+    );
+  }
+
+  /**
+   * Abre o diálogo de cadastro de novo importador. Ao retornar um importador
+   * criado, adiciona-o à lista e o seleciona automaticamente no combo.
+   */
+  abrirNovoImportador(): void {
+    const dialogRef = this.dialog.open(ImportadorFormDialogComponent, {
+      width: '520px',
+      maxWidth: '92vw',
+      autoFocus: true
+    });
+
+    dialogRef.afterClosed().subscribe((created?: Importador) => {
+      if (created) {
+        this.importadores = [...this.importadores, created];
+        this.basicInfoForm.patchValue({ customer_id: created.id });
+      }
+    });
+  }
+
+  /** Carrega a lista de produtos reutilizáveis do catálogo para o combo. */
+  private carregarProdutos(): void {
+    this.produtosLoading = true;
+    this.produtoService.listar().subscribe({
+      next: (produtos) => {
+        this.produtos = produtos ?? [];
+        this.produtosLoading = false;
+      },
+      error: (error) => {
+        console.error('Erro ao carregar produtos:', error);
+        this.showError('Erro ao carregar produtos');
+        this.produtosLoading = false;
+      }
+    });
+  }
+
+  /**
+   * Filtra os produtos do catálogo pelo termo digitado, comparando nome e NCM
+   * de forma case-insensitive. Sem termo, retorna a lista completa.
+   */
+  filtrarProdutos(term: string): Produto[] {
+    const t = (term ?? '').trim().toLowerCase();
+    if (!t) {
+      return this.produtos;
+    }
+    return this.produtos.filter((p) => {
+      const name = (p.name ?? '').toLowerCase();
+      const ncm = (p.ncm ?? '').toLowerCase();
+      return name.includes(t) || ncm.includes(t);
+    });
+  }
+
+  /**
+   * Ao selecionar um produto no combo, reutiliza seus dados cadastrais no item
+   * da exportação (nome, NCM, descrição, unidade, preço e origem). Apenas a
+   * quantidade continua editável pelo usuário.
+   */
+  onProdutoSelecionado(item: ExportacaoItem, produtoId: string): void {
+    const p = this.produtos.find((prod) => prod.id === produtoId);
+    if (!p) {
+      return;
+    }
+    item.product_id = p.id;
+    item.product_name = p.name ?? '';
+    item.ncm_code = p.ncm ?? '';
+    item.product_description = p.description ?? '';
+    item.unit = p.unit ?? item.unit;
+    item.unit_price = p.standardPrice ?? 0;
+    item.country_of_origin = p.originCountry ?? item.country_of_origin;
+    this.updateProductValue(item);
+  }
+
+  /**
+   * Abre o diálogo de cadastro de novo produto. Ao retornar um produto criado,
+   * adiciona-o à lista e, quando um item é informado, o seleciona
+   * automaticamente para aquele item da exportação.
+   */
+  abrirNovoProduto(item?: ExportacaoItem): void {
+    const dialogRef = this.dialog.open(ProdutoFormDialogComponent, {
+      width: '560px',
+      maxWidth: '92vw',
+      autoFocus: true
+    });
+
+    dialogRef.afterClosed().subscribe((created?: Produto) => {
+      if (created) {
+        this.produtos = [...this.produtos, created];
+        if (item) {
+          this.onProdutoSelecionado(item, created.id);
+        }
+      }
+    });
+  }
+
+  private setupAutocompletes(): void {
     // Filtro para NCM
     this.filteredNcmCodes = this.productInfoForm.valueChanges.pipe(
       debounceTime(300),
@@ -301,7 +429,7 @@ export class ExportacaoFormComponent implements OnInit {
       debounceTime(1000),
       distinctUntilChanged()
     ).subscribe(values => {
-      if (values.destination_country && values.importer_name) {
+      if (values.destination_country && values.customer_id) {
         this.getAISuggestions(values);
       }
     });
@@ -331,10 +459,10 @@ export class ExportacaoFormComponent implements OnInit {
       priority: exportacao.priority,
       is_urgent: exportacao.is_urgent,
       created_by: exportacao.created_by,
-      importer_name: exportacao.importer_name,
-      importer_document: exportacao.importer_document,
-      importer_address: exportacao.importer_address,
-      importer_contact: exportacao.importer_contact,
+      // Limitação conhecida: a ExportacaoView do backend ainda não retorna
+      // customer_id ao front, logo em edição o combo pode ficar vazio até que
+      // o usuário selecione novamente o importador.
+      customer_id: exportacao.customer_id ?? '',
       destination_country: exportacao.destination_country,
       destination_port: exportacao.destination_port,
       origin_port: exportacao.origin_port,
@@ -351,6 +479,11 @@ export class ExportacaoFormComponent implements OnInit {
       this.exportItems = [...exportacao.items];
       this.updateProductTotals();
     }
+
+    // Preencher o custo total (Req 5.5) no step de revisão.
+    this.reviewForm.patchValue({
+      total_cost: exportacao.total_cost ?? null
+    });
 
     // Preencher Step 3 (logística)
     this.logisticsForm.patchValue({
@@ -382,7 +515,7 @@ export class ExportacaoFormComponent implements OnInit {
       volume: 0,
       country_of_origin: 'Brasil'
     };
-    
+
     this.exportItems.push(newItem);
     this.updateProductTotals();
   }
@@ -401,12 +534,12 @@ export class ExportacaoFormComponent implements OnInit {
     const totalWeight = this.exportItems.reduce((sum, item) => sum + (item.weight || 0), 0);
     const totalVolume = this.exportItems.reduce((sum, item) => sum + (item.volume || 0), 0);
     const totalValue = this.exportItems.reduce((sum, item) => sum + item.total_value, 0);
-    
+
     this.productInfoForm.patchValue({
       total_weight: totalWeight,
       total_volume: totalVolume
     });
-    
+
     this.basicInfoForm.patchValue({
       estimated_value: totalValue
     });
@@ -422,7 +555,7 @@ export class ExportacaoFormComponent implements OnInit {
       generated_at: new Date(),
       status: 'Generated'
     };
-    
+
     this.documents.push(newDoc);
   }
 
@@ -434,7 +567,7 @@ export class ExportacaoFormComponent implements OnInit {
   sendAIMessage(): void {
     if (this.aiChat.trim()) {
       this.aiProcessing = true;
-      
+
       // Simular processamento IA
       setTimeout(() => {
         const response = this.generateAIResponse(this.aiChat);
@@ -491,8 +624,8 @@ export class ExportacaoFormComponent implements OnInit {
 
   // Auto-fill com IA
   async autoFillWithAI(): Promise<void> {
-    const basicData = this.basicInfoForm.value;
-    if (!basicData.destination_country || !basicData.importer_name) {
+    const basicData = this.basicInfoForm.getRawValue();
+    if (!basicData.destination_country || !basicData.customer_id) {
       this.showError('Informe pelo menos o país de destino e importador para usar a IA');
       return;
     }
@@ -500,7 +633,7 @@ export class ExportacaoFormComponent implements OnInit {
     this.aiProcessing = true;
     try {
       const aiData = await this.exportacaoService.generateExportWithAI(basicData).toPromise();
-      
+
       if (aiData) {
         // Aplicar sugestões nos forms
         this.applyAISuggestions(aiData);
@@ -571,7 +704,7 @@ export class ExportacaoFormComponent implements OnInit {
     this.saving = true;
     try {
       const exportacaoData = this.buildExportacaoData();
-      
+
       if (this.isEditMode) {
         await this.exportacaoService.updateExportacao(exportacaoData.export_id!, exportacaoData).toPromise();
         this.showSuccess('Exportação atualizada com sucesso');
@@ -579,13 +712,13 @@ export class ExportacaoFormComponent implements OnInit {
         await this.exportacaoService.createExportacao(exportacaoData).toPromise();
         this.showSuccess('Exportação criada com sucesso');
       }
-      
+
       if (this.isDialog && this.dialogRef) {
         this.dialogRef.close(true);
       } else {
         this.router.navigate(['/home-logged/exportacoes/gerenciar']);
       }
-      
+
     } catch (error) {
       console.error('Erro ao salvar exportação:', error);
       this.showError('Erro ao salvar exportação');
@@ -595,16 +728,17 @@ export class ExportacaoFormComponent implements OnInit {
   }
 
   private isAllFormsValid(): boolean {
-    return this.basicInfoForm.valid && 
-           this.productInfoForm.valid && 
-           this.logisticsForm.valid && 
-           this.documentsForm.valid && 
+    return this.basicInfoForm.valid &&
+           this.productInfoForm.valid &&
+           this.logisticsForm.valid &&
+           this.documentsForm.valid &&
            this.reviewForm.valid &&
            this.exportItems.length > 0;
   }
 
   private buildExportacaoData(): Exportacao {
-    const basicInfo = this.basicInfoForm.value;
+    // getRawValue inclui controles desabilitados (ex.: export_number).
+    const basicInfo = this.basicInfoForm.getRawValue();
     const productInfo = this.productInfoForm.value;
     const logistics = this.logisticsForm.value;
     const review = this.reviewForm.value;
@@ -616,14 +750,19 @@ export class ExportacaoFormComponent implements OnInit {
 
     return {
       export_id: editing ? editing.export_id : this.generateId(),
-      export_number: basicInfo.export_number,
+      // Número gerenciado pelo backend: em edição preserva o número existente;
+      // na criação envia vazio para que o backend o gere.
+      export_number: editing ? editing.export_number : (basicInfo.export_number || ''),
+      // Importador selecionado (mapeado para customerId no serviço real).
+      customer_id: basicInfo.customer_id,
       contract_id: 'cnt_' + this.generateId(), // Required field
-      exporter_id: 'exp_' + this.generateId(), // Required field  
+      exporter_id: 'exp_' + this.generateId(), // Required field
       exporter_name: basicInfo.exporter_name || 'Exportadora Padrão', // Required field
-      importer_name: basicInfo.importer_name,
+      // Nome legível derivado do importador selecionado (campo de texto livre removido).
+      importer_name: this.importadorSelecionado?.name ?? '',
       importer_country: basicInfo.destination_country || '', // Required field
       destination_country: basicInfo.destination_country,
-      
+
       // Product required fields
       product_id: this.exportItems.length > 0 ? this.exportItems[0].product_id : 'prod_' + this.generateId(),
       product_name: this.exportItems.length > 0 ? this.exportItems[0].product_name : '',
@@ -631,33 +770,39 @@ export class ExportacaoFormComponent implements OnInit {
       quantity: this.exportItems.reduce((sum, item) => sum + item.quantity, 0),
       unit: this.exportItems.length > 0 ? (this.exportItems[0].unit as 'MT' | 'KG' | 'TON') : 'MT',
       packaging_type: productInfo.packaging_type || 'Container',
-      
-      // Commercial required fields  
+
+      // Commercial required fields
       incoterm: basicInfo.incoterm || 'FOB',
       currency: basicInfo.currency || 'USD',
       unit_price: this.exportItems.length > 0 ? this.exportItems[0].unit_price : 0,
       total_value: this.exportItems.reduce((sum, item) => sum + item.total_value, 0),
+      // Custo total (Custo_Exportacao, Req 5.5): número não-negativo e opcional.
+      // Vazio/none ⇒ undefined (backend trata como zero).
+      total_cost:
+        review.total_cost === null || review.total_cost === undefined || review.total_cost === ''
+          ? undefined
+          : Number(review.total_cost),
       payment_method: basicInfo.payment_method || 'L/C',
       payment_terms: basicInfo.payment_terms || '30 days',
-      
+
       // Logistics required fields
       port_origin: basicInfo.origin_port || 'Santos',
       port_destination: basicInfo.destination_port || '',
       transport_mode: logistics.transport_mode || 'Marítimo',
-      
+
       // Status fields
       export_status: editing ? editing.export_status : 'Draft',
       export_date: editing ? editing.export_date : undefined,
       export_type: basicInfo.export_type,
       priority: basicInfo.priority,
       description: basicInfo.description,
-      
+
       // Compliance required fields
       compliance_status: 'Pending',
       export_license_required: false,
-      mapa_approval: false,  
+      mapa_approval: false,
       vigiagro_status: 'Not Required',
-      
+
       // AI fields
       ai_generated: false,
       ai_confidence_score: 0,
@@ -667,7 +812,7 @@ export class ExportacaoFormComponent implements OnInit {
       ai_auto_fill_enabled: true,
       ai_document_generation: true,
       ai_compliance_check: true,
-      
+
       // Audit fields
       created_at: editing ? editing.created_at : new Date(),
       updated_at: new Date(),
@@ -675,7 +820,7 @@ export class ExportacaoFormComponent implements OnInit {
       created_by_name: basicInfo.created_by_name || 'Usuário Atual',
       updated_by: 'current_user',
       updated_by_name: 'Usuário Atual',
-      
+
       // Optional fields that may exist
       is_urgent: basicInfo.is_urgent,
       completion_percentage: 25,

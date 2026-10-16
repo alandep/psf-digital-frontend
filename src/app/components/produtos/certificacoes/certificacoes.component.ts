@@ -38,18 +38,17 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 
 // Services e Types
-import { CertificationsMockService } from '../../../../services/certificationsMockService';
+import { CERTIFICACAO_SERVICE } from '../../../services/certificacao/certificacao-service.token';
+import { ICertificacaoService } from '../../../services/certificacao/certificacao-service.interface';
+import { CertificacaoApi, SalvarCertificacao } from '../../../../types/certificacao-api';
 import { CertificationDialogComponent } from './certification-dialog/certification-dialog.component';
 import { ConfirmarAcaoDialogComponent, ConfirmDialogData } from '../../admin/usuarios/confirmar-acao-dialog/confirmar-acao-dialog.component';
 import { 
   CertificationData,
-  CertificationFilters,
   CertificationSearchResult,
-  CertificationFormData,
   AIAlert,
   AISuggestion,
   CertificationMetrics,
-  ComplianceCheck,
   CertificationType,
   CertificationCategory,
   CertificationStatus,
@@ -106,7 +105,7 @@ export class CertificacoesComponent implements OnInit, OnDestroy {
   @ViewChild(MatSort) sort!: MatSort;
 
   // Services
-  private certificationsService = inject(CertificationsMockService);
+  private certificacaoService = inject<ICertificacaoService>(CERTIFICACAO_SERVICE);
   private formBuilder = inject(FormBuilder);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
@@ -290,17 +289,181 @@ export class CertificacoesComponent implements OnInit, OnDestroy {
       });
   }
 
-  private async loadInitialData(): Promise<void> {
-    try {
-      this.isLoading = true;
-      
-      // Load filter options
-      this.certificationTypes = this.certificationsService.getCertificationTypes();
-      this.certificationCategories = ['SANITARIO', 'ORIGEM', 'LOGISTICO', 'COMERCIAL'];
-      this.certificationStatuses = ['VALID', 'EXPIRED', 'PENDING', 'INVALID', 'EXPIRING_SOON'];
-      this.complianceStatuses = ['OK', 'WARNING', 'ERROR', 'PENDING_VALIDATION'];
-      this.issuingAuthorities = this.certificationsService.getIssuingAuthorities();
-      this.productCategories = [
+  // === BACKEND MAPPERS ===
+
+  /** Converte 'yyyy-MM-dd' (ou ISO) -> Date; retorna undefined se vazio/invalido. */
+  private toIsoDate(d?: Date | string | null): string | null {
+    if (!d) return null;
+    const date = d instanceof Date ? d : new Date(d);
+    if (isNaN(date.getTime())) return null;
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  /** Deriva o status de UI a partir do ciclo de vida do backend + validade. */
+  private mapStatus(status?: string | null, validaAte?: string | null): CertificationStatus {
+    const uiStatuses: CertificationStatus[] = ['VALID', 'EXPIRED', 'EXPIRING_SOON', 'PENDING', 'INVALID'];
+    // Se o backend ja mandou um status compativel com a union de UI, usa direto.
+    if (status && uiStatuses.includes(status as CertificationStatus)) {
+      return status as CertificationStatus;
+    }
+
+    // Caso contrario, deriva pela data de validade quando disponivel.
+    if (validaAte) {
+      const expiry = new Date(validaAte);
+      if (!isNaN(expiry.getTime())) {
+        const now = new Date();
+        const diffDays = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) return 'EXPIRED';
+        if (diffDays <= 30) return 'EXPIRING_SOON';
+        // Dentro da validade: considera VALID se o ciclo backend indica ativo/valido.
+        const upper = (status || '').toUpperCase();
+        if (upper === 'ATIVA' || upper === 'VALIDA') return 'VALID';
+        return 'VALID';
+      }
+    }
+
+    return 'PENDING';
+  }
+
+  /** Normaliza o complianceStatus do backend para a union de UI. */
+  private mapComplianceStatus(compliance?: string | null): ComplianceStatus {
+    if (!compliance) return 'PENDING_VALIDATION';
+    const upper = compliance.toUpperCase();
+    if (upper === 'APROVADO') return 'OK';
+    if (upper === 'EM_ANALISE') return 'PENDING_VALIDATION';
+    const uiStatuses: ComplianceStatus[] = ['OK', 'WARNING', 'ERROR', 'PENDING_VALIDATION'];
+    if (uiStatuses.includes(upper as ComplianceStatus)) {
+      return upper as ComplianceStatus;
+    }
+    return 'PENDING_VALIDATION';
+  }
+
+  /** camelCase (backend) -> tipo rico do front (snake_case). */
+  private toCertificationData(api: CertificacaoApi): CertificationData {
+    return {
+      // Identificacao
+      certification_id: api.id,
+      product_id: api.productId ?? '',
+      product_name: api.productName ?? api.name,
+      certification_type: (api.tipo as CertificationType) ?? 'ORIGEM',
+      certification_category: (api.categoria as CertificationCategory) ?? 'ORIGEM',
+      description: api.descricao ?? '',
+
+      // Dados do Certificado
+      certification_number: api.numero ?? '',
+      issuing_authority: api.orgaoEmissor ?? '',
+      issuing_country: api.paisEmissor ?? 'Brasil',
+      issue_date: api.emitidaEm ? new Date(api.emitidaEm) : new Date(),
+      expiry_date: api.validaAte ? new Date(api.validaAte) : undefined,
+      digital_signature: api.assinaturaDigital ?? false,
+
+      // Status e Compliance
+      certification_status: this.mapStatus(api.status, api.validaAte),
+      compliance_status: this.mapComplianceStatus(api.complianceStatus),
+
+      // Integracao com Exportacao
+      export_id: api.exportId ?? undefined,
+      due_number: api.dueNumber ?? undefined,
+      auto_attach_to_export: false,
+
+      // IA e Automacao
+      ai_generated: api.aiGenerated ?? false,
+      ai_confidence_score: api.aiConfidenceScore ?? 0,
+      ai_document_extracted: false,
+      ai_compliance_check: true,
+      ai_risk_score: api.aiRiskScore ?? 0,
+      ai_risk_level: (api.aiRiskLevel as AIRiskLevel) ?? 'LOW',
+
+      // Auditoria
+      created_by: api.createdBy ?? '',
+      created_at: new Date(),
+      updated_at: new Date(),
+      updated_by: ''
+    };
+  }
+
+  /** Form do dialog (grupos aninhados OU plano) -> payload do backend. */
+  private toSalvar(formData: any): SalvarCertificacao {
+    const id = formData?.identification ?? formData ?? {};
+    const cert = formData?.certificate ?? formData?.certificate_data ?? formData ?? {};
+    const exp = formData?.export_integration ?? formData ?? {};
+    const ai = formData?.ai_automation ?? formData ?? {};
+
+    const productName = id.product_name ?? formData?.product_name ?? 'Certificação';
+
+    return {
+      name: productName,
+      tipo: id.certification_type ?? formData?.certification_type ?? null,
+      orgaoEmissor: cert.issuing_authority ?? formData?.issuing_authority ?? null,
+      numero: cert.certification_number ?? formData?.certification_number ?? null,
+      status: null,
+      emitidaEm: this.toIsoDate(cert.issue_date ?? formData?.issue_date),
+      validaAte: this.toIsoDate(cert.expiry_date ?? formData?.expiry_date),
+      productId: id.product_id ?? formData?.product_id ?? null,
+      productName: id.product_name ?? formData?.product_name ?? null,
+      categoria: id.certification_category ?? formData?.certification_category ?? null,
+      descricao: id.description ?? formData?.description ?? null,
+      paisEmissor: cert.issuing_country ?? formData?.issuing_country ?? null,
+      paisDestino: null,
+      assinaturaDigital: (cert.digital_signature ?? formData?.digital_signature) ?? false,
+      complianceStatus: null,
+      exportId: exp.export_id ?? formData?.export_id ?? null,
+      dueNumber: exp.due_number ?? formData?.due_number ?? null,
+      aiGenerated: (ai.ai_generated ?? formData?.ai_generated) ?? false,
+      aiConfidenceScore: ai.ai_confidence_score ?? formData?.ai_confidence_score ?? null,
+      aiRiskScore: ai.ai_risk_score ?? formData?.ai_risk_score ?? null,
+      aiRiskLevel: ai.ai_risk_level ?? formData?.ai_risk_level ?? null
+    };
+  }
+
+  /** Deriva metricas localmente a partir da lista mapeada. */
+  private computeMetrics(list: CertificationData[]): CertificationMetrics {
+    const total = list.length;
+    const valid = list.filter(c => c.certification_status === 'VALID').length;
+    const expired = list.filter(c => c.certification_status === 'EXPIRED').length;
+    const expiringSoon = list.filter(c => c.certification_status === 'EXPIRING_SOON').length;
+    const pending = list.filter(c => c.certification_status === 'PENDING').length;
+    const invalid = list.filter(c => c.certification_status === 'INVALID').length;
+    const complianceOk = list.filter(c => c.compliance_status === 'OK').length;
+
+    return {
+      total_certifications: total,
+      valid_certifications: valid,
+      expired_certifications: expired,
+      expiring_soon_certifications: expiringSoon,
+      pending_certifications: pending,
+      invalid_certifications: invalid,
+      compliance_rate: total > 0 ? complianceOk / total : 0,
+      ai_accuracy_rate: 0,
+      ai_predictions_count: 0,
+      compliance_ok_count: complianceOk,
+      countries_covered_count: new Set(list.map(c => c.issuing_country).filter(Boolean)).size,
+      compliance_score: total > 0 ? complianceOk / total : 0,
+      average_processing_time_days: 0,
+      cost_savings_usd: 0,
+      error_reduction_percentage: 0
+    };
+  }
+
+  private loadInitialData(): void {
+    this.isLoading = true;
+
+    // Load filter options (static UI options)
+    this.certificationTypes = [
+      'SANITARIO', 'FITOSSANITARIO', 'ORIGEM', 'QUALIDADE', 'HALAL',
+      'KOSHER', 'ORGANICO', 'NON_GMO', 'BRC', 'SIF', 'HACCP'
+    ];
+    this.certificationCategories = ['SANITARIO', 'ORIGEM', 'LOGISTICO', 'COMERCIAL'];
+    this.certificationStatuses = ['VALID', 'EXPIRED', 'PENDING', 'INVALID', 'EXPIRING_SOON'];
+    this.complianceStatuses = ['OK', 'WARNING', 'ERROR', 'PENDING_VALIDATION'];
+    this.issuingAuthorities = [
+      'MAPA', 'ANVISA', 'INMETRO', 'IBAMA', 'Receita Federal',
+      'FIESP', 'IBD Certificações', 'SGS', 'Intertek'
+    ];
+    this.productCategories = [
         'ALIMENTOS',
         'BEBIDAS', 
         'COSMÉTICOS',
@@ -312,115 +475,30 @@ export class CertificacoesComponent implements OnInit, OnDestroy {
         'METALÚRGICOS',
         'OUTROS'
       ];
-      this.destinationCountries = [
-        { code: 'USA', name: 'Estados Unidos', flag: '🇺🇸' },
-        { code: 'CHN', name: 'China', flag: '🇨🇳' },
-        { code: 'DEU', name: 'Alemanha', flag: '🇩🇪' },
-        { code: 'JPN', name: 'Japão', flag: '🇯🇵' },
-        { code: 'GBR', name: 'Reino Unido', flag: '🇬🇧' },
-        { code: 'FRA', name: 'França', flag: '🇫🇷' },
-        { code: 'ITA', name: 'Itália', flag: '🇮🇹' },
-        { code: 'ESP', name: 'Espanha', flag: '🇪🇸' },
-        { code: 'CAN', name: 'Canadá', flag: '🇨🇦' },
-        { code: 'AUS', name: 'Austrália', flag: '🇦🇺' }
-      ];
-      
-      // Load certifications
-      const result = await this.certificationsService.getCertifications().toPromise();
-      if (result) {
-        this.searchResult = result;
-        this.certifications = result.certifications;
-        this.filteredCertifications = [...this.certifications];
-        this.metrics = result.metrics;
-      }
-      
-      // Load AI Alerts
-      const alerts = await this.certificationsService.getAIAlerts().toPromise();
-      if (alerts) {
-        this.aiAlerts = alerts;
-        this.hasAlerts = alerts.length > 0;
-        this.criticalAlertsCount = alerts.filter(a => a.severity === 'CRITICAL').length;
-        this.highAlertsCount = alerts.filter(a => a.severity === 'HIGH').length;
-      }
-      
-      // Initialize AI suggestions and compliance data
-      this.aiSuggestions = [
-        {
-          id: '1',
-          certification_type: 'SANITARIO',
-          reason: 'Considere renovar certificação próxima ao vencimento',
-          confidence_score: 0.85,
-          required_for_countries: ['USA'],
-          issuing_authorities: ['FDA'],
-          estimated_processing_time_days: 30,
-          priority: 'HIGH'
-        },
-        {
-          id: '2',
-          certification_type: 'SANITARIO',
-          reason: 'Documentação adicional pode ser necessária para EUA',
-          confidence_score: 0.75,
-          required_for_countries: ['USA'],
-          issuing_authorities: ['FDA', 'USDA'],
-          estimated_processing_time_days: 45,
-          priority: 'MEDIUM'
-        },
-        {
-          id: '3',
-          certification_type: 'ORIGEM',
-          reason: 'OCR disponível para extração automática',
-          confidence_score: 0.92,
-          required_for_countries: ['CHN', 'EUR'],
-          issuing_authorities: ['Receita Federal'],
-          estimated_processing_time_days: 15,
-          priority: 'LOW'
-        }
-      ];
-      
-      this.countryCompliances = [
-        {
-          id: '1',
-          certification_id: '',
-          destination_country: 'Estados Unidos',
-          country_code: 'USA',
-          mandatory: true,
-          regulatory_requirement: 'FDA Approval',
-          issuing_agency_required: 'FDA',
-          compliance_status: 'OK',
-          created_at: new Date(),
-          updated_at: new Date()
-        },
-        {
-          id: '2',
-          certification_id: '',
-          destination_country: 'União Europeia',
-          country_code: 'EUR',
-          mandatory: true,
-          regulatory_requirement: 'CE Marking',
-          issuing_agency_required: 'Notified Body',
-          compliance_status: 'WARNING',
-          created_at: new Date(),
-          updated_at: new Date()
-        },
-        {
-          id: '3',
-          certification_id: '',
-          destination_country: 'China',
-          country_code: 'CHN',
-          mandatory: false,
-          regulatory_requirement: 'CCC',
-          issuing_agency_required: 'CNCA',
-          compliance_status: 'ERROR',
-          created_at: new Date(),
-          updated_at: new Date()
-        }
-      ];
-      
-    } catch {
-      this.showMessage('Erro ao carregar dados iniciais', 'error');
-    } finally {
-      this.isLoading = false;
-    }
+    this.destinationCountries = [
+      { code: 'USA', name: 'Estados Unidos', flag: '🇺🇸' },
+      { code: 'CHN', name: 'China', flag: '🇨🇳' },
+      { code: 'DEU', name: 'Alemanha', flag: '🇩🇪' },
+      { code: 'JPN', name: 'Japão', flag: '🇯🇵' },
+      { code: 'GBR', name: 'Reino Unido', flag: '🇬🇧' },
+      { code: 'FRA', name: 'França', flag: '🇫🇷' },
+      { code: 'ITA', name: 'Itália', flag: '🇮🇹' },
+      { code: 'ESP', name: 'Espanha', flag: '🇪🇸' },
+      { code: 'CAN', name: 'Canadá', flag: '🇨🇦' },
+      { code: 'AUS', name: 'Austrália', flag: '🇦🇺' }
+    ];
+
+    // AI alerts/suggestions/compliance eram fabricados no mock; honestamente vazios.
+    // A analise de IA real e disparada a partir do dialog (verificarCompliance).
+    this.aiAlerts = [];
+    this.aiSuggestions = [];
+    this.countryCompliances = [];
+    this.hasAlerts = false;
+    this.criticalAlertsCount = 0;
+    this.highAlertsCount = 0;
+
+    // Load certifications from the real backend service
+    this.loadCertifications();
   }
 
   // === PREMIUM UI METHODS ===
@@ -478,15 +556,32 @@ export class CertificacoesComponent implements OnInit, OnDestroy {
   }
 
   applyFilters(): void {
-    const filters: CertificationFilters = this.searchForm.value;
-    
+    const filters = this.searchForm.value;
+
     this.isLoading = true;
-    this.certificationsService.getCertifications(filters)
+    this.certificacaoService.listar()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (result) => {
-          this.searchResult = result;
-          this.filteredCertifications = result.certifications;
+        next: (apis: CertificacaoApi[]) => {
+          const list = apis.map(api => this.toCertificationData(api));
+          this.certifications = list;
+          this.metrics = this.computeMetrics(list);
+
+          const searchText = (filters.search_text || '').toString().trim().toLowerCase();
+          const type = filters.certification_type || '';
+          const status = filters.certification_status || '';
+
+          this.filteredCertifications = list.filter(cert => {
+            const matchesSearch = !searchText || [
+              cert.product_name,
+              cert.certification_number,
+              cert.issuing_authority
+            ].some(field => (field || '').toLowerCase().includes(searchText));
+            const matchesType = !type || cert.certification_type === type;
+            const matchesStatus = !status || cert.certification_status === status;
+            return matchesSearch && matchesType && matchesStatus;
+          });
+
           this.isLoading = false;
         },
         error: () => {
@@ -585,13 +680,13 @@ export class CertificacoesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const formData: CertificationFormData = this.certificationForm.value;
-    
+    const formData = this.certificationForm.value;
+
     if (this.isCreating) {
-      this.certificationsService.createCertification(formData)
+      this.certificacaoService.criar(this.toSalvar(formData))
         .pipe(takeUntil(this.destroy$))
         .subscribe({
-          next: (result) => {
+          next: () => {
             this.showMessage('Certificação criada com sucesso', 'success');
             this.closeDetailPanel();
             this.loadInitialData();
@@ -601,10 +696,10 @@ export class CertificacoesComponent implements OnInit, OnDestroy {
           }
         });
     } else if (this.isEditing && this.selectedCertification) {
-      this.certificationsService.updateCertification(this.selectedCertification.certification_id, formData)
+      this.certificacaoService.atualizar(this.selectedCertification.certification_id, this.toSalvar(formData))
         .pipe(takeUntil(this.destroy$))
         .subscribe({
-          next: (result) => {
+          next: () => {
             this.showMessage('Certificação atualizada com sucesso', 'success');
             this.closeDetailPanel();
             this.loadInitialData();
@@ -636,7 +731,7 @@ export class CertificacoesComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(confirmed => {
         if (confirmed === true) {
-          this.certificationsService.deleteCertification(certification.certification_id)
+          this.certificacaoService.excluir(certification.certification_id)
             .pipe(takeUntil(this.destroy$))
             .subscribe({
               next: () => {
@@ -749,10 +844,10 @@ export class CertificacoesComponent implements OnInit, OnDestroy {
 
   // Manipular certificação criada pelo diálogo
   handleCertificationCreated(certificationData: any): void {
-    this.certificationsService.createCertification(certificationData)
+    this.certificacaoService.criar(this.toSalvar(certificationData))
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (created) => {
+        next: () => {
           this.showMessage('Certificação criada com sucesso!', 'success');
           this.loadCertifications();
         },
@@ -765,13 +860,13 @@ export class CertificacoesComponent implements OnInit, OnDestroy {
   // Manipular certificação atualizada pelo diálogo  
   handleCertificationUpdated(certificationData: any): void {
     if (this.selectedCertification) {
-      this.certificationsService.updateCertification(
+      this.certificacaoService.atualizar(
         this.selectedCertification.certification_id,
-        certificationData
+        this.toSalvar(certificationData)
       )
         .pipe(takeUntil(this.destroy$))
         .subscribe({
-          next: (updated) => {
+          next: () => {
             this.showMessage('Certificação atualizada com sucesso!', 'success');
             this.loadCertifications();
           },
@@ -785,13 +880,13 @@ export class CertificacoesComponent implements OnInit, OnDestroy {
   // Carregar certificações
   loadCertifications(): void {
     this.isLoading = true;
-    this.certificationsService.getCertifications()
+    this.certificacaoService.listar()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (result: CertificationSearchResult) => {
-          this.certifications = result.certifications;
-          this.searchResult = result;
-          this.metrics = result.metrics;
+        next: (apis: CertificacaoApi[]) => {
+          const list = apis.map(api => this.toCertificationData(api));
+          this.certifications = list;
+          this.metrics = this.computeMetrics(list);
           this.updateFilteredCertifications();
           this.isLoading = false;
         },

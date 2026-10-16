@@ -12,13 +12,13 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatGridListModule } from '@angular/material/grid-list';
-import { Observable, combineLatest, startWith, debounceTime } from 'rxjs';
-import { DashboardMockService } from '@services/dashboardMockService';
+import { startWith, debounceTime } from 'rxjs';
+import { DASHBOARD_SERVICE } from '../../../services/dashboard/dashboard-service.token';
+import { IDashboardService } from '../../../services/dashboard/dashboard-service.interface';
 import { 
   DashboardCompleto, 
   FiltrosDashboard, 
-  OptionsFilters,
-  DashboardData
+  OptionsFilters
 } from '../../../../types/dashboard';
 
 // Chart.js será importado dinamicamente apenas no cliente
@@ -47,7 +47,7 @@ let registerables: any;
   styleUrl: './dashboard-principal.component.scss'
 })
 export class DashboardPrincipalComponent implements OnInit, AfterViewInit, OnDestroy {
-  private readonly dashboardService = inject(DashboardMockService);
+  private readonly dashboardService = inject<IDashboardService>(DASHBOARD_SERVICE);
   private readonly fb = inject(FormBuilder);
 
   @ViewChild('chartExportacoesMes', { static: false }) chartExportacoesMes!: ElementRef<HTMLCanvasElement>;
@@ -57,6 +57,9 @@ export class DashboardPrincipalComponent implements OnInit, AfterViewInit, OnDes
   public dashboardData: DashboardCompleto | null = null;
   public optionsFilters: OptionsFilters | null = null;
   public isLoading = false;
+  public loadError = false;
+  public filtersUnavailable = false;
+  public statusMessage = '';
   public filtroForm: FormGroup;
 
   private charts: { [key: string]: any } = {};
@@ -73,34 +76,11 @@ export class DashboardPrincipalComponent implements OnInit, AfterViewInit, OnDes
   }
 
   ngOnInit(): void {
-    console.log('📊 Dashboard Principal iniciando...');
     this.loadInitialData();
     this.setupFormSubscription();
-    
-    // Debug: verificar dados do serviço separadamente
-    this.debugService();
-  }
-
-  private debugService(): void {
-    console.log('🔍 [DEBUG] Testando serviço separadamente...');
-    this.dashboardService.getDashboardData().subscribe({
-      next: (data) => {
-        console.log('🔍 [DEBUG] Dados recebidos do serviço:', {
-          kpis: data?.kpis,
-          exportacoesPorMes: data?.exportacoesPorMes,
-          exportacoesPorPais: data?.exportacoesPorPais,
-          exportacoesPorProduto: data?.exportacoesPorProduto,
-          jsonCompleto: JSON.stringify(data, null, 2)
-        });
-      },
-      error: (error) => {
-        console.error('🔍 [DEBUG] Erro no serviço:', error);
-      }
-    });
   }
 
   ngAfterViewInit(): void {
-    console.log('📐 ViewChild elementos disponíveis');
     // Carregar Chart.js quando os elementos estão prontos
     if (isPlatformBrowser(this.platformId)) {
       // Aguarda um frame para garantir que os elementos estão prontos
@@ -122,66 +102,70 @@ export class DashboardPrincipalComponent implements OnInit, AfterViewInit, OnDes
   }
 
   private loadInitialData(): void {
-    console.log('📊 Carregando dados iniciais...');
     this.isLoading = true;
-    
-    combineLatest([
-      this.dashboardService.getDashboardData(),
-      this.dashboardService.getOptionsFilters()
-    ]).subscribe({
-      next: ([dashboardData, optionsFilters]) => {
-        console.log('✅ Dados carregados:', {
-          dashboardData: !!dashboardData,
-          exportacoesPorMes: dashboardData?.exportacoesPorMes?.length,
-          exportacoesPorPais: dashboardData?.exportacoesPorPais?.length,
-          exportacoesPorProduto: dashboardData?.exportacoesPorProduto?.length,
-          optionsFilters: !!optionsFilters,
-          isBrowser: isPlatformBrowser(this.platformId),
-          chartLibraryLoaded: this.chartLibraryLoaded
-        });
-        
+    this.loadError = false;
+
+    // Dados principais do dashboard (KPIs + séries). Um erro aqui mostra o
+    // estado de erro honesto, sem fallback para mock.
+    this.dashboardService.getDashboardData().subscribe({
+      next: (dashboardData) => {
         this.dashboardData = dashboardData;
-        this.optionsFilters = optionsFilters;
+        this.loadError = false;
         this.isLoading = false;
-        
+        this.announceUpdate();
+
         // Só cria gráficos no lado cliente
-        if (isPlatformBrowser(this.platformId)) {
-          // Se Chart.js já foi carregado, cria os gráficos imediatamente
-          if (this.chartLibraryLoaded) {
-            console.log('📈 Chart.js já carregado, criando gráficos...');
-            this.waitForCanvasAndCreateCharts();
-          } else {
-            console.log('⏳ Chart.js não carregado ainda, aguardando...');
-          }
+        if (isPlatformBrowser(this.platformId) && this.chartLibraryLoaded) {
+          this.waitForCanvasAndCreateCharts();
         }
       },
-      error: (error) => {
-        console.error('❌ Erro ao carregar dados iniciais:', error);
+      error: () => {
+        this.dashboardData = null;
+        this.loadError = true;
         this.isLoading = false;
+      }
+    });
+
+    // Catálogos de filtro: um erro aqui NÃO bloqueia o restante da tela
+    // (Req 8.3) — apenas sinaliza que os filtros estão indisponíveis.
+    this.loadOptionsFilters();
+  }
+
+  private loadOptionsFilters(): void {
+    this.dashboardService.getOptionsFilters().subscribe({
+      next: (optionsFilters) => {
+        this.optionsFilters = optionsFilters;
+        this.filtersUnavailable = false;
+      },
+      error: () => {
+        this.optionsFilters = null;
+        this.filtersUnavailable = true;
       }
     });
   }
 
+  private announceUpdate(): void {
+    this.statusMessage = 'Dashboard atualizado';
+  }
+
   private async loadChartLibrary(): Promise<void> {
     try {
-      console.log('📈 Carregando Chart.js...');
       // Importa Chart.js dinamicamente apenas no cliente
       const chartModule = await import('chart.js');
       Chart = chartModule.Chart;
       registerables = chartModule.registerables;
-      
+
       // Registra os componentes do Chart.js
       Chart.register(...registerables);
       this.chartLibraryLoaded = true;
-      
-      console.log('✅ Chart.js carregado com sucesso!');
-      
+
       // Se os dados já estão disponíveis, cria os gráficos
       if (this.dashboardData) {
         this.waitForCanvasAndCreateCharts();
       }
-    } catch (error) {
-      console.error('❌ Erro ao carregar Chart.js:', error);
+    } catch {
+      // Falha ao carregar a biblioteca de gráficos é tratada silenciosamente;
+      // a tela continua exibindo KPIs e alternativas textuais.
     }
   }
 
@@ -210,80 +194,52 @@ export class DashboardPrincipalComponent implements OnInit, AfterViewInit, OnDes
     };
 
     this.isLoading = true;
+    this.loadError = false;
     this.dashboardService.getDashboardData(filtros).subscribe({
       next: (data) => {
         this.dashboardData = data;
+        this.loadError = false;
         // Só atualiza gráficos no lado cliente
         if (isPlatformBrowser(this.platformId)) {
           this.updateCharts();
         }
         this.isLoading = false;
+        this.announceUpdate();
       },
-      error: (error) => {
-        console.error('Erro ao aplicar filtros:', error);
+      error: () => {
+        this.dashboardData = null;
+        this.loadError = true;
         this.isLoading = false;
       }
     });
   }
 
-  private async loadChartLibraryAndCreateCharts(): Promise<void> {
-    try {
-      // Importa Chart.js dinamicamente apenas no cliente
-      const chartModule = await import('chart.js');
-      Chart = chartModule.Chart;
-      registerables = chartModule.registerables;
-      
-      // Registra os componentes do Chart.js
-      Chart.register(...registerables);
-      
-      // Agora cria os gráficos
-      this.createCharts();
-    } catch (error) {
-      console.error('Erro ao carregar Chart.js:', error);
-    }
-  }
-
   private waitForCanvasAndCreateCharts(): void {
     let attempts = 0;
     const maxAttempts = 10;
-    
+
     const checkAndCreate = () => {
       attempts++;
-      console.log(`🔍 Tentativa ${attempts}/${maxAttempts} - Verificando canvas elements...`);
-      
-      if (this.chartExportacoesMes?.nativeElement && 
+
+      if (this.chartExportacoesMes?.nativeElement &&
           this.chartExportacoesPais?.nativeElement &&
           this.chartExportacoesProduto?.nativeElement) {
-        console.log('✅ Todos os canvas elements prontos!');
         this.createCharts();
         return;
       }
-      
+
       if (attempts < maxAttempts) {
-        console.log('⏳ Canvas elements não prontos, tentando novamente em 100ms...');
         setTimeout(checkAndCreate, 100);
-      } else {
-        console.error('❌ Timeout: Canvas elements não ficaram prontos a tempo');
       }
     };
-    
+
     checkAndCreate();
   }
 
   private createCharts(): void {
     if (!this.dashboardData || !Chart) {
-      console.log('⚠️ Não é possível criar gráficos:', {
-        temDados: !!this.dashboardData,
-        chartCarregado: !!Chart
-      });
       return;
     }
-
-    console.log('📊 Criando gráficos...', {
-      chartExportacoesMes: !!this.chartExportacoesMes?.nativeElement,
-      chartExportacoesPais: !!this.chartExportacoesPais?.nativeElement,
-      chartExportacoesProduto: !!this.chartExportacoesProduto?.nativeElement
-    });
 
     // Pequeno delay para garantir que o DOM está pronto
     setTimeout(() => {
@@ -294,44 +250,27 @@ export class DashboardPrincipalComponent implements OnInit, AfterViewInit, OnDes
   }
 
   private createLineChart(): void {
-    console.log('📈 [Line Chart] Tentando criar gráfico de linha...');
-    
     const canvasElement = this.chartExportacoesMes?.nativeElement;
     if (!canvasElement) {
-      console.error('❌ [Line Chart] Canvas não encontrado!');
-      return;
-    }
-    
-    if (!this.dashboardData?.exportacoesPorMes || this.dashboardData.exportacoesPorMes.length === 0) {
-      console.error('❌ [Line Chart] Dados de exportações por mês não encontrados!', this.dashboardData?.exportacoesPorMes);
       return;
     }
 
-    console.log('✅ [Line Chart] Canvas e dados encontrados, criando contexto...', {
-      canvasWidth: canvasElement.width,
-      canvasHeight: canvasElement.height,
-      dadosLength: this.dashboardData.exportacoesPorMes.length
-    });
-    
+    if (!this.dashboardData?.exportacoesPorMes || this.dashboardData.exportacoesPorMes.length === 0) {
+      return;
+    }
+
     const ctx = canvasElement.getContext('2d');
     if (!ctx) {
-      console.error('❌ [Line Chart] Falha ao obter contexto 2D!');
       return;
     }
 
     // Destroi gráfico existente se houver
     if (this.charts['line']) {
-      console.log('🔄 [Line Chart] Destruindo gráfico anterior...');
       this.charts['line'].destroy();
     }
 
     try {
       const dados = this.dashboardData.exportacoesPorMes;
-      console.log('📊 [Line Chart] Dados processados:', {
-        primeiroItem: dados[0],
-        ultimoItem: dados[dados.length - 1],
-        totalItens: dados.length
-      });
 
       this.charts['line'] = new Chart(ctx, {
         type: 'line',
@@ -387,52 +326,33 @@ export class DashboardPrincipalComponent implements OnInit, AfterViewInit, OnDes
           }
         }
       });
-      
-      console.log('🎉 [Line Chart] Gráfico criado com sucesso!');
-    } catch (error) {
-      console.error('💥 [Line Chart] Erro ao criar gráfico:', error);
+    } catch {
+      // Falha isolada na criação do gráfico não impede os demais.
     }
   }
 
   private createPieChart(): void {
-    console.log('🥧 [Pie Chart] Tentando criar gráfico de pizza...');
-    
     const canvasElement = this.chartExportacoesPais?.nativeElement;
     if (!canvasElement) {
-      console.error('❌ [Pie Chart] Canvas não encontrado!');
-      return;
-    }
-    
-    if (!this.dashboardData?.exportacoesPorPais || this.dashboardData.exportacoesPorPais.length === 0) {
-      console.error('❌ [Pie Chart] Dados de exportações por país não encontrados!', this.dashboardData?.exportacoesPorPais);
       return;
     }
 
-    console.log('✅ [Pie Chart] Canvas e dados encontrados, criando contexto...', {
-      canvasWidth: canvasElement.width,
-      canvasHeight: canvasElement.height,
-      dadosLength: this.dashboardData.exportacoesPorPais.length
-    });
-    
+    if (!this.dashboardData?.exportacoesPorPais || this.dashboardData.exportacoesPorPais.length === 0) {
+      return;
+    }
+
     const ctx = canvasElement.getContext('2d');
     if (!ctx) {
-      console.error('❌ [Pie Chart] Falha ao obter contexto 2D!');
       return;
     }
 
     // Destroi gráfico existente se houver
     if (this.charts['pie']) {
-      console.log('🔄 [Pie Chart] Destruindo gráfico anterior...');
       this.charts['pie'].destroy();
     }
 
     try {
       const dados = this.dashboardData.exportacoesPorPais;
-      console.log('🥧 [Pie Chart] Dados processados:', {
-        primeiroItem: dados[0],
-        totalItens: dados.length,
-        somaValores: dados.reduce((acc, item) => acc + item.valor, 0)
-      });
 
       this.charts['pie'] = new Chart(ctx, {
         type: 'pie',
@@ -483,52 +403,33 @@ export class DashboardPrincipalComponent implements OnInit, AfterViewInit, OnDes
           }
         }
       });
-      
-      console.log('🎉 [Pie Chart] Gráfico criado com sucesso!');
-    } catch (error) {
-      console.error('💥 [Pie Chart] Erro ao criar gráfico:', error);
+    } catch {
+      // Falha isolada na criação do gráfico não impede os demais.
     }
   }
 
   private createBarChart(): void {
-    console.log('📊 [Bar Chart] Tentando criar gráfico de barras...');
-    
     const canvasElement = this.chartExportacoesProduto?.nativeElement;
     if (!canvasElement) {
-      console.error('❌ [Bar Chart] Canvas não encontrado!');
-      return;
-    }
-    
-    if (!this.dashboardData?.exportacoesPorProduto || this.dashboardData.exportacoesPorProduto.length === 0) {
-      console.error('❌ [Bar Chart] Dados de exportações por produto não encontrados!', this.dashboardData?.exportacoesPorProduto);
       return;
     }
 
-    console.log('✅ [Bar Chart] Canvas e dados encontrados, criando contexto...', {
-      canvasWidth: canvasElement.width,
-      canvasHeight: canvasElement.height,
-      dadosLength: this.dashboardData.exportacoesPorProduto.length
-    });
-    
+    if (!this.dashboardData?.exportacoesPorProduto || this.dashboardData.exportacoesPorProduto.length === 0) {
+      return;
+    }
+
     const ctx = canvasElement.getContext('2d');
     if (!ctx) {
-      console.error('❌ [Bar Chart] Falha ao obter contexto 2D!');
       return;
     }
 
     // Destroi gráfico existente se houver
     if (this.charts['bar']) {
-      console.log('🔄 [Bar Chart] Destruindo gráfico anterior...');
       this.charts['bar'].destroy();
     }
 
     try {
       const dados = this.dashboardData.exportacoesPorProduto;
-      console.log('📊 [Bar Chart] Dados processados:', {
-        primeiroItem: dados[0],
-        totalItens: dados.length,
-        maiorValor: Math.max(...dados.map(item => item.valor))
-      });
 
       this.charts['bar'] = new Chart(ctx, {
         type: 'bar',
@@ -600,21 +501,13 @@ export class DashboardPrincipalComponent implements OnInit, AfterViewInit, OnDes
           }
         }
       });
-      
-      console.log('🎉 [Bar Chart] Gráfico criado com sucesso!');
-    } catch (error) {
-      console.error('💥 [Bar Chart] Erro ao criar gráfico:', error);
+    } catch {
+      // Falha isolada na criação do gráfico não impede os demais.
     }
   }
 
   private updateCharts(): void {
     // Só atualiza gráficos se estiver no cliente e Chart.js estiver carregado
-    console.log('🔄 Atualizando gráficos...', {
-      isBrowser: isPlatformBrowser(this.platformId),
-      chartLoaded: !!Chart,
-      hasData: !!this.dashboardData
-    });
-    
     if (isPlatformBrowser(this.platformId) && Chart && this.dashboardData) {
       this.waitForCanvasAndCreateCharts();
     }
@@ -641,5 +534,44 @@ export class DashboardPrincipalComponent implements OnInit, AfterViewInit, OnDes
 
   public formatNumber(value: number): string {
     return new Intl.NumberFormat('pt-BR').format(value);
+  }
+
+  // Alternativas textuais acessíveis para os gráficos (Req 10.1): descrevem,
+  // em pt-BR, os dados representados em cada gráfico a partir das séries reais.
+  public get descricaoExportacoesPorMes(): string {
+    const serie = this.dashboardData?.exportacoesPorMes ?? [];
+    if (serie.length === 0) {
+      return 'Exportações por mês: nenhum dado disponível para o período selecionado.';
+    }
+    const itens = serie
+      .map(item => {
+        const data = new Date(item.mes + '-01');
+        const rotulo = data.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
+        return `${rotulo}: ${this.formatCurrency(item.valor)}`;
+      })
+      .join('; ');
+    return `Exportações por mês: ${itens}.`;
+  }
+
+  public get descricaoExportacoesPorPais(): string {
+    const serie = this.dashboardData?.exportacoesPorPais ?? [];
+    if (serie.length === 0) {
+      return 'Distribuição por país: nenhum dado disponível para o período selecionado.';
+    }
+    const itens = serie
+      .map(item => `${item.pais}: ${this.formatCurrency(item.valor)} (${this.formatPercentage(item.percentual)})`)
+      .join('; ');
+    return `Distribuição por país: ${itens}.`;
+  }
+
+  public get descricaoExportacoesPorProduto(): string {
+    const serie = this.dashboardData?.exportacoesPorProduto ?? [];
+    if (serie.length === 0) {
+      return 'Exportações por produto: nenhum dado disponível para o período selecionado.';
+    }
+    const itens = serie
+      .map(item => `${item.produto}: ${this.formatCurrency(item.valor)}`)
+      .join('; ');
+    return `Exportações por produto: ${itens}.`;
   }
 }

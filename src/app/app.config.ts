@@ -11,12 +11,19 @@ import { BffService } from './services/bff.service';
 import { NotificationService } from './services/notification.service';
 import { NCMClassificationMockService } from '../services/ncm-classification-mock.service';
 import { exportacaoServiceProvider } from './services/exportacao/exportacao-service.token';
+import { importadorServiceProvider } from './services/importador/importador-service.token';
+import { produtoServiceProvider } from './services/produto/produto-service.token';
+import { paisServiceProvider } from './services/pais/pais-service.token';
+import { certificacaoServiceProvider } from './services/certificacao/certificacao-service.token';
+import { ncmClassificacaoServiceProvider } from './services/ncm-classificacao/ncm-classificacao-service.token';
 import { authFlowServiceProvider } from './services/auth-flow/auth-flow.token';
 import { subscriptionServiceProvider } from './services/subscription/subscription-service.token';
 import { documentsServiceProvider } from './services/documents/documents-service.token';
 import { logisticsServiceProvider } from './services/logistics/logistics-service.token';
 import { crmServiceProvider } from './services/crm/crm-service.token';
 import { aiServiceProvider } from './services/ai/ai-service.token';
+import { aiOperationsServiceProvider } from './services/ai/ai-operations-service.token';
+import { dashboardServiceProvider } from './services/dashboard/dashboard-service.token';
 import { pagamentosServiceProvider } from './services/finance/pagamentos-service.token';
 import { cambioServiceProvider } from './services/finance/cambio-service.token';
 import { hedgeServiceProvider } from './services/finance/hedge-service.token';
@@ -44,12 +51,19 @@ export const appConfig: ApplicationConfig = {
     NotificationService,
     NCMClassificationMockService,
     exportacaoServiceProvider,
+    importadorServiceProvider,
+    produtoServiceProvider,
+    paisServiceProvider,
+    certificacaoServiceProvider,
+    ncmClassificacaoServiceProvider,
     authFlowServiceProvider,
     subscriptionServiceProvider,
     documentsServiceProvider,
     logisticsServiceProvider,
     crmServiceProvider,
     aiServiceProvider,
+    aiOperationsServiceProvider,
+    dashboardServiceProvider,
     pagamentosServiceProvider,
     cambioServiceProvider,
     hedgeServiceProvider,

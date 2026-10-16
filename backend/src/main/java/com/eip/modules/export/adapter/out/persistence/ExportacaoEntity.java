@@ -53,7 +53,16 @@ public class ExportacaoEntity {
     @Column(name = "total_amount", precision = 18, scale = 2)
     private BigDecimal totalAmount;
 
+    @Column(name = "total_cost", precision = 18, scale = 2)
+    private BigDecimal totalCost;
+
     private String currency;
+
+    @Column(name = "shipped", nullable = false)
+    private boolean shipped;
+
+    @Column(name = "shipped_at")
+    private OffsetDateTime shippedAt;
 
     @Version
     private long version;

@@ -172,13 +172,16 @@
           <ng-container matColumnDef="accuracy">
             <th mat-header-cell *matHeaderCellDef mat-sort-header>Acurácia</th>
             <td mat-cell *matCellDef="let row">
-              <div class="accuracy-cell">
+              <div class="accuracy-cell" *ngIf="row.accuracy != null; else accuracyNa">
                 <mat-progress-bar mode="determinate" [value]="row.accuracy"
                   [ngClass]="{ 'accuracy-bar-low': isLowAccuracy(row), 'accuracy-bar-ok': !isLowAccuracy(row) }">
                 </mat-progress-bar>
                 <span class="accuracy-text" [style.color]="getAccuracyColor(row.accuracy)">{{ row.accuracy }}%</span>
                 <mat-icon class="warning-accuracy-icon" *ngIf="isLowAccuracy(row)" matTooltip="Acurácia abaixo de 85%">warning</mat-icon>
               </div>
+              <ng-template #accuracyNa>
+                <span class="accuracy-na" matTooltip="Acurácia não disponível para esta capacidade">n/a</span>
+              </ng-template>
             </td>
           </ng-container>
 

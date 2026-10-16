@@ -2,6 +2,7 @@ package com.eip.modules.compliance.adapter.out.persistence;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;
@@ -39,6 +40,22 @@ public class CertificacaoJpaAdapter implements CertificacaoRepositoryPort {
         entity.setStatus(c.status().name());
         entity.setEmitidaEm(c.emitidaEm());
         entity.setValidaAte(c.validaAte());
+        entity.setProductId(c.productId());
+        entity.setProductName(c.productName());
+        entity.setCategoria(c.categoria());
+        entity.setDescricao(c.descricao());
+        entity.setPaisEmissor(c.paisEmissor());
+        entity.setPaisDestino(c.paisDestino());
+        entity.setAssinaturaDigital(c.assinaturaDigital());
+        entity.setComplianceStatus(c.complianceStatus());
+        entity.setExportId(c.exportId());
+        entity.setDueNumber(c.dueNumber());
+        entity.setAiGenerated(c.aiGenerated());
+        entity.setAiConfidenceScore(c.aiConfidenceScore());
+        entity.setAiRiskScore(c.aiRiskScore());
+        entity.setAiRiskLevel(c.aiRiskLevel());
+        entity.setCreatedBy(c.createdBy());
+        entity.setUpdatedAt(OffsetDateTime.now());
         return toDomain(jpa.saveAndFlush(entity));
     }
 
@@ -48,6 +65,16 @@ public class CertificacaoJpaAdapter implements CertificacaoRepositoryPort {
                 ? jpa.findByOrganizationId(org)
                 : jpa.findByOrganizationIdAndStatus(org, status);
         return rows.stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public Optional<Certificacao> porId(UUID id, UUID org) {
+        return jpa.findByIdAndOrganizationId(id, org).map(this::toDomain);
+    }
+
+    @Override
+    public void remover(UUID id, UUID org) {
+        jpa.deleteByIdAndOrganizationId(id, org);
     }
 
     private Certificacao toDomain(CertificacaoEntity entity) {
@@ -60,6 +87,21 @@ public class CertificacaoJpaAdapter implements CertificacaoRepositoryPort {
                 entity.getNumero(),
                 CertificacaoStatus.valueOf(entity.getStatus()),
                 entity.getEmitidaEm(),
-                entity.getValidaAte());
+                entity.getValidaAte(),
+                entity.getProductId(),
+                entity.getProductName(),
+                entity.getCategoria(),
+                entity.getDescricao(),
+                entity.getPaisEmissor(),
+                entity.getPaisDestino(),
+                entity.isAssinaturaDigital(),
+                entity.getComplianceStatus(),
+                entity.getExportId(),
+                entity.getDueNumber(),
+                entity.isAiGenerated(),
+                entity.getAiConfidenceScore(),
+                entity.getAiRiskScore(),
+                entity.getAiRiskLevel(),
+                entity.getCreatedBy());
     }
 }
