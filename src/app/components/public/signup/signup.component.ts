@@ -15,7 +15,10 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { SignupMockService } from '../../../../services/signupMockService';
+import { SIGNUP_SERVICE } from '../../../services/signup/signup-service.token';
+import { ISignupService } from '../../../services/signup/signup-service.interface';
+import { cpfValidator, cnpjValidator, telefoneValidator } from '../../../shared/validators/br-document.validators';
+import { InputMaskDirective } from '../../../shared/directives/input-mask.directive';
 
 interface GoalOption {
   key: string;
@@ -37,6 +40,7 @@ interface GoalOption {
     MatCheckboxModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
+    InputMaskDirective,
   ],
   templateUrl: './signup.component.html',
   styleUrls: ['./signup.component.scss'],
@@ -44,7 +48,7 @@ interface GoalOption {
 export class SignupComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
-  private signupService = inject(SignupMockService);
+  private signupService = inject<ISignupService>(SIGNUP_SERVICE);
   private snackBar = inject(MatSnackBar);
 
   step = 1;
@@ -80,14 +84,14 @@ export class SignupComponent implements OnInit {
   ngOnInit(): void {
     this.accountForm = this.fb.group({
       name: ['', Validators.required],
-      cpf: ['', Validators.required],
+      cpf: ['', [Validators.required, cpfValidator()]],
       email: ['', [Validators.required, Validators.email]],
-      phone: [''],
+      phone: ['', telefoneValidator()],
       password: ['', [Validators.required, Validators.minLength(8)]],
     });
 
     this.companyForm = this.fb.group({
-      cnpj: ['', Validators.required],
+      cnpj: ['', [Validators.required, cnpjValidator()]],
       razaoSocial: ['', Validators.required],
       nomeFantasia: [''],
       segmento: [''],
@@ -140,20 +144,26 @@ export class SignupComponent implements OnInit {
     const cnpj = this.companyForm.value.cnpj as string;
     this.cnpjChecking = true;
     this.cnpjTaken = false;
-    this.signupService.checkCnpj(cnpj).subscribe((res) => {
-      this.cnpjChecking = false;
-      if (res.available) {
-        this.cnpjTaken = false;
-        this.step = 3;
-      } else {
-        this.cnpjTaken = true;
+    this.signupService.checkCnpj(cnpj).subscribe({
+      next: (res) => {
+        this.cnpjChecking = false;
+        if (res.available) {
+          this.cnpjTaken = false;
+          this.step = 3;
+        } else {
+          this.cnpjTaken = true;
+        }
+      },
+      error: (err) => {
+        this.cnpjChecking = false;
+        this.snackBar.open(this.backendMessage(err, 'Não foi possível verificar o CNPJ. Tente novamente.'), 'Fechar', { duration: 5000 });
       }
     });
   }
 
   requestAccess(): void {
     this.snackBar.open(
-      'Solicitação de acesso enviada ao administrador (mock)',
+      'Solicitação de acesso enviada ao administrador responsável.',
       'Fechar',
       { duration: 4000 }
     );
@@ -181,9 +191,21 @@ export class SignupComponent implements OnInit {
         this.companyForm.value,
         this.selectedGoals
       )
-      .subscribe(() => {
-        this.submitting = false;
-        this.router.navigate(['/trial']);
+      .subscribe({
+        next: () => {
+          this.submitting = false;
+          this.router.navigate(['/trial']);
+        },
+        error: (err) => {
+          this.submitting = false;
+          this.snackBar.open(this.backendMessage(err, 'Não foi possível concluir o cadastro. Verifique os dados e tente novamente.'), 'Fechar', { duration: 6000 });
+        }
       });
+  }
+
+  /** Extracts a human-readable message from a backend error response. */
+  private backendMessage(err: unknown, fallback: string): string {
+    const e = err as { error?: { message?: string; detail?: string } };
+    return e?.error?.message || e?.error?.detail || fallback;
   }
 }

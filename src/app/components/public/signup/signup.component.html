@@ -26,13 +26,15 @@
 
         <mat-form-field appearance="outline">
           <mat-label>CPF</mat-label>
-          <input matInput formControlName="cpf" placeholder="000.000.000-00" />
-          <mat-error>Informe seu CPF.</mat-error>
+          <input matInput formControlName="cpf" appMask="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" />
+          <mat-error *ngIf="accountForm.get('cpf')?.hasError('required')">Informe seu CPF.</mat-error>
+          <mat-error *ngIf="accountForm.get('cpf')?.hasError('cpf')">CPF inválido.</mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Telefone</mat-label>
-          <input matInput formControlName="phone" placeholder="(00) 00000-0000" />
+          <input matInput formControlName="phone" appMask="telefone" inputmode="numeric" maxlength="16" placeholder="(00) 00000-0000" />
+          <mat-error *ngIf="accountForm.get('phone')?.hasError('telefone')">Telefone inválido.</mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full">
@@ -65,8 +67,9 @@
       <form [formGroup]="companyForm" class="form-grid">
         <mat-form-field appearance="outline">
           <mat-label>CNPJ</mat-label>
-          <input matInput formControlName="cnpj" placeholder="00.000.000/0000-00" (input)="cnpjTaken = false" />
-          <mat-error>Informe o CNPJ.</mat-error>
+          <input matInput formControlName="cnpj" appMask="cnpj" inputmode="numeric" maxlength="18" placeholder="00.000.000/0000-00" (input)="cnpjTaken = false" />
+          <mat-error *ngIf="companyForm.get('cnpj')?.hasError('required')">Informe o CNPJ.</mat-error>
+          <mat-error *ngIf="companyForm.get('cnpj')?.hasError('cnpj')">CNPJ inválido.</mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline">

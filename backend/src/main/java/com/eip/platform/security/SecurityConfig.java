@@ -138,7 +138,7 @@ public class SecurityConfig {
                         // cannot carry a CSRF token yet; exempt them. All other
                         // /bff/** endpoints keep cookie-based CSRF protection.
                         // Webhooks are server-to-server and cannot carry a CSRF token.
-                        .ignoringRequestMatchers("/bff/auth/**", "/webhooks/**"))
+                        .ignoringRequestMatchers("/bff/auth/**", "/bff/public/signup/**", "/webhooks/**"))
                 .addFilterBefore(sessionOrganizationContextFilter, AuthorizationFilter.class)
                 // Materialize the CSRF token on every request so the cookie is emitted
                 // (see CsrfCookieFilter below for the full rationale).

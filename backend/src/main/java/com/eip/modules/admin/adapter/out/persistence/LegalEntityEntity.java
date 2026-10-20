@@ -48,6 +48,8 @@ public class LegalEntityEntity {
 
     private String telefone;
 
+    private String segmento;
+
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
 }
