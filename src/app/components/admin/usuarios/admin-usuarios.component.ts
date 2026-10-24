@@ -20,7 +20,8 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 
 // Services and Types
-import { AdminUsuariosMockService } from '../../../../services/adminUsuariosMockService';
+import { ADMIN_USUARIO_SERVICE } from '../../../services/admin-usuario/admin-usuario-service.token';
+import { IAdminUsuarioService } from '../../../services/admin-usuario/admin-usuario-service.interface';
 import { AdminUser, UserMetrics, UserRole, UserStatus } from '../../../../types/admin-usuarios';
 import { NovoUsuarioDialogComponent } from './novo-usuario-dialog/novo-usuario-dialog.component';
 import { EditarUsuarioDialogComponent } from './editar-usuario-dialog/editar-usuario-dialog.component';
@@ -54,7 +55,7 @@ import { HasPermissionDirective } from '../../../directives/has-permission.direc
 })
 export class AdminUsuariosComponent implements OnInit, OnDestroy {
 
-  private usuariosService = inject(AdminUsuariosMockService);
+  private usuariosService = inject<IAdminUsuarioService>(ADMIN_USUARIO_SERVICE);
   private fb = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
@@ -164,12 +165,14 @@ export class AdminUsuariosComponent implements OnInit, OnDestroy {
   }
 
   novoUsuario(): void {
+    const empresas = this.getUniqueEmpresas();
     const dialogRef = this.dialog.open(NovoUsuarioDialogComponent, {
       width: '780px',
       maxWidth: '92vw',
       maxHeight: '85vh',
       autoFocus: 'first-tabbable',
-      panelClass: 'novo-usuario-panel'
+      panelClass: 'novo-usuario-panel',
+      data: { empresas, empresaAtual: empresas[0] ?? '' }
     });
 
     dialogRef.afterClosed()
@@ -193,9 +196,12 @@ export class AdminUsuariosComponent implements OnInit, OnDestroy {
 
           this.usuariosService.addUser(newUser)
             .pipe(takeUntil(this.destroy$))
-            .subscribe(() => {
-              this.loadData();
-              this.snackBar.open(`Usuário "${result.name}" criado com sucesso!`, 'OK', { duration: 3000 });
+            .subscribe({
+              next: () => {
+                this.loadData();
+                this.snackBar.open(`Usuário "${result.name}" criado com sucesso!`, 'OK', { duration: 3000 });
+              },
+              error: (err) => this.snackBar.open(this.backendMessage(err, 'Não foi possível criar o usuário.'), 'Fechar', { duration: 5000 })
             });
         }
       });
@@ -300,15 +306,18 @@ export class AdminUsuariosComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(confirmed => {
         if (confirmed) {
-          const updatedUser = { ...user, status: (isBlocked ? 'ATIVO' : 'BLOQUEADO') as UserStatus };
-          this.usuariosService.updateUser(updatedUser)
+          const newStatus = isBlocked ? 'ATIVO' : 'BLOQUEADO';
+          this.usuariosService.changeStatus(user.id, newStatus)
             .pipe(takeUntil(this.destroy$))
-            .subscribe(() => {
-              this.loadData();
-              this.snackBar.open(
-                isBlocked ? `Usuário "${user.name}" desbloqueado!` : `Usuário "${user.name}" bloqueado!`,
-                'OK', { duration: 3000 }
-              );
+            .subscribe({
+              next: () => {
+                this.loadData();
+                this.snackBar.open(
+                  isBlocked ? `Usuário "${user.name}" desbloqueado!` : `Usuário "${user.name}" bloqueado!`,
+                  'OK', { duration: 3000 }
+                );
+              },
+              error: (err) => this.snackBar.open(this.backendMessage(err, 'Não foi possível alterar o status do usuário.'), 'Fechar', { duration: 5000 })
             });
         }
       });
@@ -334,9 +343,19 @@ export class AdminUsuariosComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(confirmed => {
         if (confirmed) {
-          this.snackBar.open(`Link de reset de senha enviado para ${user.email}`, 'OK', { duration: 4000 });
+          this.usuariosService.resetPassword(user.id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: () => this.snackBar.open(`Link de reset de senha enviado para ${user.email}`, 'OK', { duration: 4000 }),
+              error: (err) => this.snackBar.open(this.backendMessage(err, 'Não foi possível solicitar o reset de senha.'), 'Fechar', { duration: 5000 })
+            });
         }
       });
+  }
+
+  private backendMessage(err: unknown, fallback: string): string {
+    const e = err as { error?: { message?: string; detail?: string } };
+    return e?.error?.message || e?.error?.detail || fallback;
   }
 
   getStatusClass(status: UserStatus): string {

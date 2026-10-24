@@ -12,5 +12,7 @@ public interface AppUserJpaRepository extends JpaRepository<AppUserEntity, UUID>
 
     Optional<AppUserEntity> findByEmail(String email);
 
-    Optional<AppUserEntity> findByCpfLookupHash(String cpfLookupHash);
+    // May match more than one user (a CPF can belong to more than one account/org);
+    // return the most recent to avoid NonUniqueResult and land on the just-created account.
+    Optional<AppUserEntity> findFirstByCpfLookupHashOrderByCreatedAtDesc(String cpfLookupHash);
 }

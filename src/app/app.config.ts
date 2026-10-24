@@ -30,6 +30,8 @@ import { hedgeServiceProvider } from './services/finance/hedge-service.token';
 import { empresaServiceProvider } from './services/empresa/empresa-service.token';
 import { localidadeServiceProvider } from './services/localidade/localidade-service.token';
 import { signupServiceProvider } from './services/signup/signup-service.token';
+import { onboardingServiceProvider } from './services/onboarding/onboarding-service.token';
+import { adminUsuarioServiceProvider } from './services/admin-usuario/admin-usuario-service.token';
 import { credentialsInterceptor } from './http/credentials.interceptor';
 import { csrfInterceptor } from './http/csrf.interceptor';
 import { traceInterceptor } from './http/trace.interceptor';
@@ -73,5 +75,7 @@ export const appConfig: ApplicationConfig = {
     empresaServiceProvider,
     localidadeServiceProvider,
     signupServiceProvider,
+    onboardingServiceProvider,
+    adminUsuarioServiceProvider,
   ],
 };

@@ -39,4 +39,10 @@ public class AdminAppUserEntity {
 
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
+
+    @Column(name = "last_login_at")
+    private OffsetDateTime lastLoginAt;
+
+    @Column(name = "login_count")
+    private int loginCount;
 }

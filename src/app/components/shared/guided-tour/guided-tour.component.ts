@@ -10,7 +10,8 @@ import { ProductTourService, TourStep } from '../../../../services/productTourSe
   imports: [CommonModule, MatButtonModule, MatIconModule],
   template: `
     <div class="tour-backdrop" *ngIf="tour.active$ | async">
-      <div class="tour-card" *ngIf="(tour.current$ | async) as _i">
+      <!-- Subscribe to current$ so the card re-renders on step changes; render whenever the tour is active (step index 0 is a valid falsy value). -->
+      <div class="tour-card" *ngIf="(tour.current$ | async) !== null">
         <ng-container>
           <div class="tour-head">
             <span class="tour-wave">👋 Bem-vindo ao EIP</span>

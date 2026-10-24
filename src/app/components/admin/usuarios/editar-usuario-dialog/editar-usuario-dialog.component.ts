@@ -203,15 +203,16 @@ export class EditarUsuarioDialogComponent {
   form: FormGroup;
   roles = ['ADMIN', 'GERENTE', 'ANALISTA', 'OPERADOR', 'VISUALIZADOR', 'COMPLIANCE', 'FINANCEIRO'];
   statuses = ['ATIVO', 'INATIVO', 'BLOQUEADO', 'PENDENTE'];
-  empresas = ['PSF Exportações', 'Trade Solutions', 'Global Commodities', 'AgroTrade Brasil'];
+  empresas: string[] = [];
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: AdminUser) {
+    this.empresas = data.empresa ? [data.empresa] : [];
     this.form = this.fb.group({
       name: [data.name, Validators.required],
       email: [data.email, [Validators.required, Validators.email]],
       role: [data.role, Validators.required],
       status: [data.status, Validators.required],
-      empresa: [data.empresa, Validators.required],
+      empresa: [{ value: data.empresa, disabled: true }, Validators.required],
       departamento: [data.departamento],
       phone: [data.phone],
       mfaEnabled: [data.mfaEnabled]
@@ -222,7 +223,7 @@ export class EditarUsuarioDialogComponent {
 
   save(): void {
     if (this.form.valid) {
-      this.dialogRef.close({ ...this.data, ...this.form.value });
+      this.dialogRef.close({ ...this.data, ...this.form.getRawValue() });
     }
   }
 }

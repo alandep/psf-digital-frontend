@@ -4,7 +4,8 @@ import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { SaasBillingMockService } from '../../../../services/saasBillingMockService';
+import { ONBOARDING_SERVICE } from '../../../services/onboarding/onboarding-service.token';
+import { IOnboardingService } from '../../../services/onboarding/onboarding-service.interface';
 import { TrialState } from '../../../../types/saas-billing';
 
 // Sticky in-app trial banner (MOCK). Shows the remaining trial days and two
@@ -76,7 +77,7 @@ import { TrialState } from '../../../../types/saas-billing';
   `],
 })
 export class TrialBannerComponent implements OnInit {
-  private billing = inject(SaasBillingMockService);
+  private billing = inject<IOnboardingService>(ONBOARDING_SERVICE);
   private snackBar = inject(MatSnackBar);
 
   trial: TrialState | null = null;
@@ -86,7 +87,7 @@ export class TrialBannerComponent implements OnInit {
   }
 
   requestDemo(): void {
-    this.snackBar.open('Solicitação de demonstração enviada (mock)', 'Fechar', {
+    this.snackBar.open('Solicitação de demonstração enviada. Nossa equipe entrará em contato.', 'Fechar', {
       duration: 4000,
     });
   }

@@ -3,6 +3,8 @@ package com.eip.modules.identity.application;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -179,15 +181,38 @@ public class AuthService {
     }
 
     private Optional<AppUser> resolveUser(String identifier) {
-        if (identifier != null && identifier.contains("@")) {
+        if (identifier == null || identifier.isBlank()) {
+            return Optional.empty();
+        }
+        if (identifier.contains("@")) {
             Optional<AppUser> byEmail = userRepository.findByEmail(identifier);
             if (byEmail.isPresent()) {
                 return byEmail;
             }
+        } else {
+            String digits = identifier.replaceAll("\\D", "");
+            if (!digits.isEmpty()) {
+                Optional<AppUser> byCpf = userRepository.findByCpfLookupHash(cpfHash(digits));
+                if (byCpf.isPresent()) {
+                    return byCpf;
+                }
+            }
         }
-        // TODO: hash the CPF and look up via findByCpfLookupHash.
-        // DEV fallback: keep the front's CPF-first flow working with the seeded user.
         return userRepository.findByEmail(SEEDED_EMAIL);
+    }
+
+    private static String cpfHash(String digitsOnly) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(digitsOnly.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception ex) {
+            return digitsOnly;
+        }
     }
 
     private String maskIdentifier(String identifier) {

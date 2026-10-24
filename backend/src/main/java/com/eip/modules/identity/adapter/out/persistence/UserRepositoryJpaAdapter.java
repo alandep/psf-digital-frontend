@@ -26,7 +26,7 @@ public class UserRepositoryJpaAdapter implements UserRepositoryPort {
 
     @Override
     public Optional<AppUser> findByCpfLookupHash(String hash) {
-        return jpa.findByCpfLookupHash(hash).map(this::toDomain);
+        return jpa.findFirstByCpfLookupHashOrderByCreatedAtDesc(hash).map(this::toDomain);
     }
 
     private AppUser toDomain(AppUserEntity entity) {

@@ -1,7 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, Inject, Optional } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
+import { MatDialogRef, MatDialogModule, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -239,14 +239,16 @@ export class NovoUsuarioDialogComponent {
 
   form: FormGroup;
   roles = ['ADMIN', 'GERENTE', 'ANALISTA', 'OPERADOR', 'VISUALIZADOR', 'COMPLIANCE', 'FINANCEIRO'];
-  empresas = ['PSF Exportações', 'Trade Solutions', 'Global Commodities', 'AgroTrade Brasil'];
+  empresas: string[] = [];
 
-  constructor() {
+  constructor(@Optional() @Inject(MAT_DIALOG_DATA) public data?: { empresas?: string[]; empresaAtual?: string }) {
+    this.empresas = this.data?.empresas?.length ? this.data.empresas : (this.data?.empresaAtual ? [this.data.empresaAtual] : []);
     this.form = this.fb.group({
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       role: ['ANALISTA', Validators.required],
-      empresa: ['', Validators.required],
+      // New users join the current organization; prefill and lock to it.
+      empresa: [{ value: this.data?.empresaAtual ?? (this.empresas[0] ?? ''), disabled: true }, Validators.required],
       departamento: [''],
       phone: [''],
       mfaEnabled: [false]
@@ -259,7 +261,7 @@ export class NovoUsuarioDialogComponent {
 
   save(): void {
     if (this.form.valid) {
-      this.dialogRef.close(this.form.value);
+      this.dialogRef.close(this.form.getRawValue());
     }
   }
 }

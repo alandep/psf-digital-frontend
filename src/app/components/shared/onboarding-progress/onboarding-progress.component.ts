@@ -2,7 +2,8 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { SaasBillingMockService } from '../../../../services/saasBillingMockService';
+import { ONBOARDING_SERVICE } from '../../../services/onboarding/onboarding-service.token';
+import { IOnboardingService } from '../../../services/onboarding/onboarding-service.interface';
 import { OnboardingProgress, OnboardingStep } from '../../../../types/saas-billing';
 
 // Onboarding progress strip (MOCK). Shows the setup checklist and completion
@@ -97,7 +98,7 @@ import { OnboardingProgress, OnboardingStep } from '../../../../types/saas-billi
   `],
 })
 export class OnboardingProgressComponent implements OnInit {
-  private billing = inject(SaasBillingMockService);
+  private billing = inject<IOnboardingService>(ONBOARDING_SERVICE);
 
   progress: OnboardingProgress | null = null;
 

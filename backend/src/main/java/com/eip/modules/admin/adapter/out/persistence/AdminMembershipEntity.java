@@ -12,7 +12,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/** Admin-module view of the {@code organization_membership} table for public signup. */
+/** Admin-module view of the {@code organization_membership} table for user management + signup. */
 @Entity(name = "AdminMembership")
 @Table(name = "organization_membership")
 @Getter
@@ -35,4 +35,9 @@ public class AdminMembershipEntity {
 
     @Column(name = "joined_at")
     private OffsetDateTime joinedAt;
+
+    private String department;
+
+    @Column(name = "mfa_enabled")
+    private boolean mfaEnabled;
 }
