@@ -9,7 +9,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import {
   AbstractControl, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators
 } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { AUTH_FLOW_SERVICE } from '../../../services/auth-flow/auth-flow.token';
 
 // Group validator: the two password fields must match.
@@ -38,8 +38,11 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
 })
 export class ResetPasswordComponent {
   private authFlow = inject(AUTH_FLOW_SERVICE);
+  private route = inject(ActivatedRoute);
 
   isLoading = false;
+  errorMessage = '';
+  private token = this.route.snapshot.queryParamMap.get('token') ?? '';
   success = false;
   hidePassword = true;
   hideConfirm = true;
@@ -54,16 +57,21 @@ export class ResetPasswordComponent {
       this.form.markAllAsTouched();
       return;
     }
+    if (!this.token) {
+      this.errorMessage = 'Link inválido. Solicite um novo link de definição de senha.';
+      return;
+    }
+    this.errorMessage = '';
     this.isLoading = true;
     const password = this.form.value.password ?? '';
-    this.authFlow.resetPassword('mock-token', password).subscribe({
+    this.authFlow.resetPassword(this.token, password).subscribe({
       next: () => {
         this.isLoading = false;
         this.success = true;
       },
-      error: () => {
+      error: (err) => {
         this.isLoading = false;
-        this.success = true;
+        this.errorMessage = err?.error?.message || 'Não foi possível definir a senha. O link pode ter expirado.';
       }
     });
   }

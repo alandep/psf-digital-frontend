@@ -53,7 +53,8 @@
 
         <mat-form-field appearance="outline">
           <mat-label>Taxa de Câmbio</mat-label>
-          <input matInput type="number" step="0.0001" formControlName="exchangeRate" placeholder="5.1800">
+          <input matInput type="number" step="0.0001" formControlName="exchangeRate" placeholder="Cotação do dia">
+          <mat-hint *ngIf="taxaInfo">{{ taxaInfo }}</mat-hint>
         </mat-form-field>
 
         <mat-form-field appearance="outline">

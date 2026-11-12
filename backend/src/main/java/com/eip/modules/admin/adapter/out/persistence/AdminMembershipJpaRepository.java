@@ -12,4 +12,6 @@ public interface AdminMembershipJpaRepository extends JpaRepository<AdminMembers
     List<AdminMembershipEntity> findByOrganizationId(UUID organizationId);
 
     Optional<AdminMembershipEntity> findByOrganizationIdAndUserId(UUID organizationId, UUID userId);
+
+    List<AdminMembershipEntity> findByUserId(UUID userId);
 }

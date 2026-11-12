@@ -64,13 +64,13 @@ export class AdminUsuarioHttpService implements IAdminUsuarioService {
     return this.http.put<UsuarioViewDto>(`${this.api}/${userId}/status`, { status }).pipe(map(d => this.toUser(d)));
   }
 
-  resetPassword(userId: string): Observable<{ ok: boolean }> {
-    return this.http.post<{ ok: boolean }>(`${this.api}/${userId}/reset-senha`, {});
+  resetPassword(userId: string): Observable<{ activationLink?: string }> {
+    return this.http.post<{ activationLink?: string }>(`${this.api}/${userId}/reset-senha`, {});
   }
 
   private toRequest(u: AdminUser): Record<string, unknown> {
     return {
-      name: u.name, email: u.email, role: u.role, status: u.status,
+      name: u.name, cpf: u.cpf ?? '', email: u.email, role: u.role, status: u.status,
       departamento: u.departamento, phone: u.phone, mfaEnabled: u.mfaEnabled
     };
   }

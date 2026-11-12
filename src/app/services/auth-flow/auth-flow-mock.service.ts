@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { IAuthFlowService } from './auth-flow.interface';
 import { AuthChallenge, AuthOrganization } from '../../../types/auth-flow';
 import { AuthFlowMockService } from '../../../services/authFlowMockService';
@@ -60,11 +61,16 @@ export class AuthFlowMockAdapter implements IAuthFlowService {
     return this.mock.selectOrganization(orgId);
   }
 
-  requestPasswordReset(identifier: string): Observable<void> {
-    return this.mock.requestPasswordReset(identifier);
+  requestPasswordReset(identifier: string): Observable<{ message?: string; activationLink?: string }> {
+    // Mock: expose a fake activation link so the UI flow can be exercised offline.
+    return this.mock.requestPasswordReset(identifier).pipe(
+      map(() => ({ message: 'Se o identificador existir, enviaremos instruções.', activationLink: '/definir-senha?token=mock-token' }))
+    );
   }
 
-  resetPassword(token: string, newPassword: string): Observable<void> {
-    return this.mock.resetPassword(token, newPassword);
+  resetPassword(token: string, newPassword: string): Observable<{ ok?: boolean; message?: string }> {
+    return this.mock.resetPassword(token, newPassword).pipe(
+      map(() => ({ ok: true, message: 'Senha definida com sucesso.' }))
+    );
   }
 }

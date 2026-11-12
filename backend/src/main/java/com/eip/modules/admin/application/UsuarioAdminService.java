@@ -1,5 +1,7 @@
 package com.eip.modules.admin.application;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +45,7 @@ public class UsuarioAdminService implements GerenciarUsuariosUseCase {
     private final AdminMembershipJpaRepository membershipRepo;
     private final LegalEntityJpaRepository legalRepo;
     private final PasswordEncoder passwordEncoder;
+    private final PasswordResetService passwordResetService;
 
     @Override
     @Transactional(readOnly = true)
@@ -87,6 +90,7 @@ public class UsuarioAdminService implements GerenciarUsuariosUseCase {
             user.setId(UUID.randomUUID());
             user.setName(c.name());
             user.setEmail(email);
+            user.setCpfLookupHash(cpfHash(digits(c.cpf())));
             user.setPhone(digits(c.phone()));
             user.setStatus("ACTIVE");
             user.setCreatedAt(now);
@@ -102,10 +106,14 @@ public class UsuarioAdminService implements GerenciarUsuariosUseCase {
             cred.setUpdatedAt(now);
             credentialRepo.save(cred);
         } else {
-            // Existing user being added to this org: keep name/phone in sync.
+            // Existing user being added to this org: keep name/phone/CPF in sync.
             user.setName(c.name());
             if (c.phone() != null && !c.phone().isBlank()) {
                 user.setPhone(digits(c.phone()));
+            }
+            if ((user.getCpfLookupHash() == null || user.getCpfLookupHash().isBlank())
+                    && c.cpf() != null && !digits(c.cpf()).isEmpty()) {
+                user.setCpfLookupHash(cpfHash(digits(c.cpf())));
             }
             userRepo.save(user);
         }
@@ -187,24 +195,16 @@ public class UsuarioAdminService implements GerenciarUsuariosUseCase {
 
     @Override
     @Transactional
-    public boolean resetarSenha(UUID userId) {
+    public String resetarSenha(UUID userId) {
         UUID org = requireOrg();
         // Ensure the user belongs to the admin's org before issuing a reset.
         membershipRepo.findByOrganizationIdAndUserId(org, userId)
                 .orElseThrow(() -> new BusinessRuleException("Usuario nao encontrado nesta empresa."));
-        AdminUserCredentialEntity cred = credentialRepo.findById(userId)
-                .orElseGet(() -> {
-                    AdminUserCredentialEntity c = new AdminUserCredentialEntity();
-                    c.setUserId(userId);
-                    c.setFailedAttempts(0);
-                    return c;
-                });
-        // Force a password change on next login; a real impl also emails a token.
-        cred.setMustChangePassword(true);
-        cred.setUpdatedAt(OffsetDateTime.now());
-        credentialRepo.save(cred);
+        // Issue a real one-time activation/reset token and return the link so the
+        // admin can hand it to the user (email delivery is a future integration).
+        String token = passwordResetService.issueTokenForUser(userId);
         log.info("Reset de senha solicitado para user={} (org={})", userId, org);
-        return true;
+        return "/definir-senha?token=" + token;
     }
 
     // --- helpers -----------------------------------------------------------
@@ -233,6 +233,47 @@ public class UsuarioAdminService implements GerenciarUsuariosUseCase {
         if (c.email() == null || !c.email().matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
             throw new BusinessRuleException("E-mail invalido.");
         }
+        if (!isValidCpf(c.cpf())) {
+            throw new BusinessRuleException("CPF invalido.");
+        }
+    }
+
+    /** Deterministic SHA-256 hex hash of the CPF digits (matches signup/login). */
+    private static String cpfHash(String digitsOnly) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(digitsOnly.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception ex) {
+            return digitsOnly;
+        }
+    }
+
+    /** Validates a Brazilian CPF (11 digits + check digits). */
+    private static boolean isValidCpf(String raw) {
+        String cpf = raw == null ? "" : raw.replaceAll("\\D", "");
+        if (cpf.length() != 11 || cpf.chars().distinct().count() == 1) {
+            return false;
+        }
+        int[] d = cpf.chars().map(ch -> ch - '0').toArray();
+        for (int t = 9; t < 11; t++) {
+            int sum = 0;
+            for (int i = 0; i < t; i++) {
+                sum += d[i] * ((t + 1) - i);
+            }
+            int check = (sum * 10) % 11;
+            if (check == 10) {
+                check = 0;
+            }
+            if (check != d[t]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static String digits(String s) {

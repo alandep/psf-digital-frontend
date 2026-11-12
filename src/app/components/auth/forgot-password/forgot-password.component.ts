@@ -32,6 +32,7 @@ export class ForgotPasswordComponent {
 
   isLoading = false;
   submitted = false;
+  activationLink = '';
 
   form = new FormGroup({
     identifier: new FormControl('', [Validators.required])
@@ -45,9 +46,11 @@ export class ForgotPasswordComponent {
     this.isLoading = true;
     const identifier = this.form.value.identifier ?? '';
     this.authFlow.requestPasswordReset(identifier).subscribe({
-      next: () => {
+      next: (res) => {
         this.isLoading = false;
-        // Anti-enumeration: always show the same neutral message.
+        // Anti-enumeration: always show the same neutral message. In dev (no
+        // email yet) the backend returns the activation link so it can be used.
+        this.activationLink = res?.activationLink ?? '';
         this.submitted = true;
       },
       error: () => {

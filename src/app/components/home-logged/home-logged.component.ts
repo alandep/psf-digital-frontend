@@ -173,7 +173,7 @@ interface LoggedUser {
           <div class="toolbar-actions">
             
             <!-- Exchange Rate -->
-            <button mat-button class="exchange-rate-btn" *ngIf="exchangeRate$ | async as rate">
+            <button mat-button class="exchange-rate-btn" *ngIf="exchangeRate$ | async as rate" [class.rate-stale]="rate.stale" [attr.title]="'Dólar comercial (USD/BRL) • Fonte: ' + (rate.sourceLabel || '—') + ' • Cotação de ' + (rate.lastUpdated | date:'dd/MM HH:mm:ss') + (rate.pctChange != null ? ' • Variação do dia: ' + (rate.pctChange | number:'1.2-2') + '%' : '') + (rate.stale ? ' • Atenção: fonte indisponível, exibindo último valor' : '')">
               <mat-icon>currency_exchange</mat-icon>
               {{ rate.currency }}: R$ {{ rate.rate | number:'1.2-2' }}
               <mat-icon [class]="rate.trend === 'up' ? 'trend-up' : rate.trend === 'down' ? 'trend-down' : 'trend-stable'">
@@ -522,6 +522,8 @@ interface LoggedUser {
       background: rgba(255,255,255,0.1);
       transition: all 0.3s ease;
     }
+
+    .exchange-rate-btn.rate-stale { opacity: 0.65; }
 
     .exchange-rate-btn:hover,
     .ai-status-btn:hover {

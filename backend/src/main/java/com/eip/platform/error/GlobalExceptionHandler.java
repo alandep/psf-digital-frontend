@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -60,6 +61,20 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex) {
         ApiError body = ApiError.of("ACCESS_DENIED", "Acesso negado", correlationId());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiError> handleResponseStatus(ResponseStatusException ex) {
+        HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
+        if (status == null) {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        if (status.is5xxServerError()) {
+            log.warn("Falha de servico [{}]: {}", status.value(), ex.getReason());
+        }
+        String reason = ex.getReason() != null ? ex.getReason() : status.getReasonPhrase();
+        ApiError body = ApiError.of(status.name(), reason, correlationId());
+        return ResponseEntity.status(status).body(body);
     }
 
     @ExceptionHandler(Exception.class)

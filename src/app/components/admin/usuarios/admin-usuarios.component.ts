@@ -191,7 +191,8 @@ export class AdminUsuariosComponent implements OnInit, OnDestroy {
             dataCriacao: new Date(),
             mfaEnabled: result.mfaEnabled,
             loginCount: 0,
-            phone: result.phone || ''
+            phone: result.phone || '',
+            cpf: result.cpf || ''
           };
 
           this.usuariosService.addUser(newUser)
@@ -346,7 +347,16 @@ export class AdminUsuariosComponent implements OnInit, OnDestroy {
           this.usuariosService.resetPassword(user.id)
             .pipe(takeUntil(this.destroy$))
             .subscribe({
-              next: () => this.snackBar.open(`Link de reset de senha enviado para ${user.email}`, 'OK', { duration: 4000 }),
+              next: (res) => {
+                const link = res?.activationLink ? `${location.origin}${res.activationLink}` : '';
+                if (link) {
+                  // No email delivery yet: copy the link so the admin can share it.
+                  navigator.clipboard?.writeText(link).catch(() => {});
+                  this.snackBar.open(`Link de definição de senha de ${user.name} copiado para a área de transferência.`, 'OK', { duration: 6000 });
+                } else {
+                  this.snackBar.open(`Solicitação de reset enviada para ${user.email}.`, 'OK', { duration: 4000 });
+                }
+              },
               error: (err) => this.snackBar.open(this.backendMessage(err, 'Não foi possível solicitar o reset de senha.'), 'Fechar', { duration: 5000 })
             });
         }

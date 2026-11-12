@@ -27,5 +27,5 @@ export class AdminUsuarioMockAdapter implements IAdminUsuarioService {
       });
     });
   }
-  resetPassword(): Observable<{ ok: boolean }> { return of({ ok: true }); }
+  resetPassword(): Observable<{ activationLink?: string }> { return of({ activationLink: '/definir-senha?token=mock-token' }); }
 }

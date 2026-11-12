@@ -1,7 +1,7 @@
-import { Component, OnInit, OnDestroy, ViewChild, inject, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, inject, AfterViewInit, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, startWith } from 'rxjs';
 
 // Angular Material
 import { MatCardModule } from '@angular/material/card';
@@ -20,6 +20,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 
 // Services and Types
 import { SimuladorMockService } from '../../../../services/simuladorMockService';
+import { MarketQuoteService } from '../../../services/market/market-quote.service';
+import { bindLiveRate } from '../../../services/market/live-rate';
 import { SimulacaoInput, SimulacaoResult, SimulacaoHistorico } from '../../../../types/simulador-rentabilidade';
 
 @Component({
@@ -48,6 +50,9 @@ import { SimulacaoInput, SimulacaoResult, SimulacaoHistorico } from '../../../..
 export class SimuladorComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private simuladorService = inject(SimuladorMockService);
+  private market = inject(MarketQuoteService);
+  private destroyRef = inject(DestroyRef);
+  taxaInfo = '';
   private fb = inject(FormBuilder);
   private destroy$ = new Subject<void>();
 
@@ -79,8 +84,13 @@ export class SimuladorComponent implements OnInit, OnDestroy, AfterViewInit {
       incoterm: ['FOB', Validators.required],
       originPort: ['Santos', Validators.required],
       destinationCountry: ['', Validators.required],
-      exchangeRate: [5.05, [Validators.required, Validators.min(0.01)]]
+      exchangeRate: [null, [Validators.required, Validators.min(0.01)]]
     });
+
+    // Taxa sugerida = cotação real da moeda escolhida (editável).
+    bindLiveRate(this.market, this.simulacaoForm.get('exchangeRate')!,
+      this.simulacaoForm.get('currency')!.valueChanges.pipe(startWith(this.simulacaoForm.get('currency')!.value)),
+      this.destroyRef, (m) => (this.taxaInfo = m));
 
     this.loadHistorico();
   }

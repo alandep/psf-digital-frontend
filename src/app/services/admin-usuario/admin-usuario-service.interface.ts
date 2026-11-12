@@ -9,5 +9,5 @@ export interface IAdminUsuarioService {
   addUsers(users: AdminUser[]): Observable<AdminUser[]>;
   updateUser(user: AdminUser): Observable<AdminUser>;
   changeStatus(userId: string, status: string): Observable<AdminUser>;
-  resetPassword(userId: string): Observable<{ ok: boolean }>;
+  resetPassword(userId: string): Observable<{ activationLink?: string }>;
 }

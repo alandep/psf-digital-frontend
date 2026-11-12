@@ -22,6 +22,6 @@ export interface IAuthFlowService {
   selectOrganization(orgId: string): Observable<AuthChallenge>;
 
   // Password recovery.
-  requestPasswordReset(identifier: string): Observable<void>;
-  resetPassword(token: string, newPassword: string): Observable<void>;
+  requestPasswordReset(identifier: string): Observable<{ message?: string; activationLink?: string }>;
+  resetPassword(token: string, newPassword: string): Observable<{ ok?: boolean; message?: string }>;
 }

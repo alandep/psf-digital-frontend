@@ -3,6 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ICambioService } from './cambio-service.interface';
+import { MarketQuoteService } from '../market/market-quote.service';
+import { toQuotationData, COTACOES_MOEDAS } from './quotation.mapper';
 import { CambioContratsMockService } from '../../../services/cambioContratsMockService';
 import { environment } from '../../../environments/environment';
 import {
@@ -50,6 +52,7 @@ interface CriarCambioRequest {
 export class CambioHttpService implements ICambioService {
   private readonly http = inject(HttpClient);
   private readonly mock = inject(CambioContratsMockService);
+  private readonly market = inject(MarketQuoteService);
   private readonly api = `${environment.bffBaseUrl}/bff/financeiro/cambio`;
 
   // Maps backend status to the front ContractStatus union, falling back to
@@ -122,9 +125,9 @@ export class CambioHttpService implements ICambioService {
       .pipe(map((v) => this.toContrato(v)));
   }
 
-  // PARTIAL: FX quotations have no backend endpoint.
+  // FX quotations are REAL market data (BFF /bff/mercado/cotacoes).
   getQuotations(): Observable<QuotationData[]> {
-    return this.mock.getQuotations();
+    return this.market.getQuotes(COTACOES_MOEDAS).pipe(map((qs) => qs.map(toQuotationData)));
   }
 
   // PARTIAL: simulation engine is front-only.

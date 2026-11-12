@@ -14,6 +14,7 @@ export interface AdminUser {
   mfaEnabled: boolean;
   loginCount: number;
   phone: string;
+  cpf?: string;
 }
 
 export interface UserMetrics {

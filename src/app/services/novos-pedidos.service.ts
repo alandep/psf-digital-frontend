@@ -1,7 +1,9 @@
 // STUB - Serviço movido para inline no componente principal
 export class StubNovosPedidosService { }
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, of, delay, throwError } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
+import { MarketQuoteService } from './market/market-quote.service';
 import { Exportacao } from '../../types/exportacao';
 
 export interface NovosPedidosInitialData {
@@ -22,6 +24,7 @@ export interface NovosPedidosInitialData {
 export class NovosPedidosService {
 
   private readonly MOCK_DELAY = 1000;
+  private readonly market = inject(MarketQuoteService);
 
   constructor() { }
 
@@ -177,20 +180,21 @@ export class NovosPedidosService {
 
   calculateTotalValue(unitPrice: number, quantity: number, currency: string): Observable<any> {
     const total = unitPrice * quantity;
-    const exchangeRate = currency === 'USD' ? 5.2 : currency === 'EUR' ? 5.8 : 1;
-    
-    const mockCalculation = {
-      totalValue: total,
-      totalInBRL: total * exchangeRate,
-      exchangeRate,
-      taxes: {
-        icms: total * 0.18,
-        pis: total * 0.0165,
-        cofins: total * 0.076
-      }
-    };
 
-    return of(mockCalculation).pipe(delay(400));
+    // A taxa de conversao vem da cotacao REAL (BFF); se indisponivel, o
+    // total em BRL fica nulo em vez de usar uma taxa presumida.
+    return this.market.getRate(currency).pipe(
+      map((exchangeRate) => ({
+        totalValue: total,
+        totalInBRL: exchangeRate === null ? null : total * exchangeRate,
+        exchangeRate,
+        taxes: {
+          icms: total * 0.18,
+          pis: total * 0.0165,
+          cofins: total * 0.076
+        }
+      }))
+    );
   }
 
   // ========== PERSISTÊNCIA ==========

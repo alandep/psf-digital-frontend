@@ -1,6 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ICambioService } from './cambio-service.interface';
+import { MarketQuoteService } from '../market/market-quote.service';
+import { toQuotationData, COTACOES_MOEDAS } from './quotation.mapper';
+import { map } from 'rxjs/operators';
 import { CambioContratsMockService } from '../../../services/cambioContratsMockService';
 import {
   ContratoCambio,
@@ -23,6 +26,7 @@ import {
 })
 export class CambioMockAdapter implements ICambioService {
   private readonly mock = inject(CambioContratsMockService);
+  private readonly market = inject(MarketQuoteService);
 
   getContracts(filters?: CambioFilters): Observable<ContratoCambio[]> {
     return this.mock.getContracts(filters);
@@ -37,7 +41,8 @@ export class CambioMockAdapter implements ICambioService {
   }
 
   getQuotations(): Observable<QuotationData[]> {
-    return this.mock.getQuotations();
+    // Quotations are REAL market data (BFF), independent of the contracts mock.
+    return this.market.getQuotes(COTACOES_MOEDAS).pipe(map((qs) => qs.map(toQuotationData)));
   }
 
   simulate(request: SimulationRequest): Observable<SimulationResult> {

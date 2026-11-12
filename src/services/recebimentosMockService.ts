@@ -1,5 +1,6 @@
-import { Injectable } from '@angular/core';
-import { Observable, of, delay, map } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { Observable, of, delay, map, catchError } from 'rxjs';
+import { MarketQuoteService } from '../app/services/market/market-quote.service';
 import { 
   Recebimento, 
   ContractBasic, 
@@ -131,13 +132,9 @@ export class RecebimentosMockService {
     { id: 'ACC-EUR-001', bank_code: '033', bank_name: 'Santander', account_number: '22222-2', account_type: 'checking', currency: 'EUR', active: true }
   ];
 
-  private taxasCambio: ExchangeRate[] = [
-    { from_currency: 'USD', to_currency: 'BRL', rate: 5.15, date: '2024-02-23', source: 'Banco Central' },
-    { from_currency: 'EUR', to_currency: 'BRL', rate: 5.58, date: '2024-02-23', source: 'Banco Central' },
-    { from_currency: 'GBP', to_currency: 'BRL', rate: 6.45, date: '2024-02-23', source: 'Banco Central' },
-    { from_currency: 'JPY', to_currency: 'BRL', rate: 0.034, date: '2024-02-23', source: 'Banco Central' },
-    { from_currency: 'CAD', to_currency: 'BRL', rate: 3.78, date: '2024-02-23', source: 'Banco Central' }
-  ];
+  // Cotacoes de cambio: REAIS, via MarketQuoteService (BFF). Sem tabela estatica.
+  private readonly market = inject(MarketQuoteService);
+  private static readonly MOEDAS_COTADAS = ['USD', 'EUR', 'GBP', 'JPY', 'CNY', 'ARS', 'CAD', 'AUD', 'CHF'];
 
   getRecebimentos(filtros?: RecebimentoFilters): Observable<Recebimento[]> {
     let result = [...this.recebimentos];
@@ -222,14 +219,33 @@ export class RecebimentosMockService {
   }
 
   getTaxasCambio(): Observable<ExchangeRate[]> {
-    return of([...this.taxasCambio]).pipe(delay(200));
+    return this.market.getQuotes(RecebimentosMockService.MOEDAS_COTADAS).pipe(
+      map((qs) => qs.map((q) => ({
+        from_currency: q.currency,
+        to_currency: 'BRL',
+        rate: q.rate,
+        date: q.quotedAt.toISOString().slice(0, 10),
+        source: q.sourceLabel
+      }))),
+      catchError(() => of([]))
+    );
   }
 
   getTaxaCambio(fromCurrency: string, toCurrency: string = 'BRL'): Observable<ExchangeRate | null> {
-    const taxa = this.taxasCambio.find(t => 
-      t.from_currency === fromCurrency && t.to_currency === toCurrency
+    // Apenas conversao para BRL e suportada pelas fontes de mercado.
+    if (toCurrency !== 'BRL') {
+      return of(null);
+    }
+    return this.market.getQuote(fromCurrency).pipe(
+      map((q) => ({
+        from_currency: q.currency,
+        to_currency: 'BRL',
+        rate: q.rate,
+        date: q.quotedAt.toISOString().slice(0, 10),
+        source: q.sourceLabel
+      } as ExchangeRate)),
+      catchError(() => of(null))
     );
-    return of(taxa || null).pipe(delay(150));
   }
 
   getFiltroOptions(): Observable<FiltroOptions> {

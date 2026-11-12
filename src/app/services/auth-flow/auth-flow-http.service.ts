@@ -104,22 +104,17 @@ export class AuthFlowHttpService implements IAuthFlowService {
       .pipe(map((res) => this.toChallenge(res)));
   }
 
-  // Anti-enumeration: resolve success even if the endpoint is unavailable.
-  requestPasswordReset(identifier: string): Observable<void> {
+  // Anti-enumeration: the backend always answers 200 with a neutral message;
+  // in dev it also returns the activation link (no email delivery yet).
+  requestPasswordReset(identifier: string): Observable<{ message?: string; activationLink?: string }> {
     return this.http
-      .post<void>(`${this.base}/password/forgot`, { identifier })
-      .pipe(
-        map(() => void 0),
-        catchError(() => of(void 0))
-      );
+      .post<{ message?: string; activationLink?: string }>(`${this.base}/password/forgot`, { identifier })
+      .pipe(catchError(() => of({})));
   }
 
-  resetPassword(token: string, newPassword: string): Observable<void> {
-    return this.http
-      .post<void>(`${this.base}/password/reset`, { token, newPassword })
-      .pipe(
-        map(() => void 0),
-        tap({ error: () => void 0 })
-      );
+  // Redeems the token and sets the new password. Errors propagate so the UI can
+  // show invalid/expired/used token messages.
+  resetPassword(token: string, newPassword: string): Observable<{ ok?: boolean; message?: string }> {
+    return this.http.post<{ ok?: boolean; message?: string }>(`${this.base}/password/reset`, { token, newPassword });
   }
 }

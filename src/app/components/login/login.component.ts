@@ -11,6 +11,8 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterModule } from '@angular/router';
 import { AuthProfileService } from '../../../services/authProfileService';
 import { AUTH_FLOW_SERVICE } from '../../services/auth-flow/auth-flow.token';
+import { InputMaskDirective } from '../../shared/directives/input-mask.directive';
+import { cpfValidator } from '../../shared/validators/br-document.validators';
 
 @Component({
   selector: 'app-login',
@@ -25,7 +27,8 @@ import { AUTH_FLOW_SERVICE } from '../../services/auth-flow/auth-flow.token';
     MatCheckboxModule,
     MatProgressSpinnerModule,
     ReactiveFormsModule,
-    RouterModule
+    RouterModule,
+    InputMaskDirective
   ],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
@@ -47,7 +50,7 @@ export class LoginComponent {
   cpfMasked = '';
 
   cpfForm = new FormGroup({
-    cpf: new FormControl('', [Validators.required, Validators.minLength(11)])
+    cpf: new FormControl('', [Validators.required, Validators.minLength(11), cpfValidator()])
   });
 
   passwordForm = new FormGroup({

@@ -111,7 +111,8 @@
     <mat-card-header>
       <mat-icon mat-card-avatar class="quotation-header-icon">show_chart</mat-icon>
       <mat-card-title>Cotações em Tempo Real</mat-card-title>
-      <mat-card-subtitle>Fonte: BCB/PTAX — Atualizado {{ quotations.length > 0 ? (quotations[0].lastUpdated | date:'dd/MM HH:mm') : '' }}</mat-card-subtitle>
+      <mat-card-subtitle *ngIf="quotations.length > 0; else semCotacao">Fonte: {{ quotations[0].source }} — Atualizado {{ quotations[0].lastUpdated | date:'dd/MM HH:mm:ss' }}</mat-card-subtitle>
+      <ng-template #semCotacao><mat-card-subtitle>Cotações indisponíveis no momento. Tente atualizar.</mat-card-subtitle></ng-template>
     </mat-card-header>
     <mat-card-content>
       <div class="quotations-grid">
@@ -122,11 +123,7 @@
             <mat-icon>{{ getTrendIcon(q.trend) }}</mat-icon>
             <span>{{ q.dailyChange >= 0 ? '+' : '' }}{{ q.dailyChange | number:'1.2-2' }}%</span>
           </div>
-          <div class="quotation-best">
-            <span class="best-label">Melhor:</span>
-            <span class="best-value">{{ q.bestAvailable | number:'1.4-4' }}</span>
-          </div>
-        </div>
+</div>
       </div>
     </mat-card-content>
   </mat-card>

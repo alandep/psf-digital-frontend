@@ -29,9 +29,9 @@ export interface QuotationData {
   currentRate: number;
   previousClose: number;
   dailyChange: number;
-  weeklyChange: number;
+  weeklyChange?: number;
   trend: 'UP' | 'DOWN' | 'STABLE';
-  bestAvailable: number;
+  bestAvailable?: number;
   lastUpdated: Date;
   source: string;
 }

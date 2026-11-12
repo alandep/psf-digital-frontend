@@ -1,4 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { startWith } from 'rxjs';
+import { MarketQuoteService } from '../../../../services/market/market-quote.service';
+import { bindLiveRate } from '../../../../services/market/live-rate';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -41,6 +44,9 @@ export class CambioFormDialogComponent implements OnInit {
 
   private formBuilder = inject(FormBuilder);
   private dialogRef = inject(MatDialogRef<CambioFormDialogComponent>);
+  private market = inject(MarketQuoteService);
+  private destroyRef = inject(DestroyRef);
+  taxaInfo = '';
   readonly data = inject<CambioFormDialogData>(MAT_DIALOG_DATA);
 
   banks: string[] = this.data.banks || [];
@@ -56,7 +62,7 @@ export class CambioFormDialogComponent implements OnInit {
       exporterName: ['', Validators.required],
       currency: ['USD', Validators.required],
       foreignValue: [100000, [Validators.required, Validators.min(1)]],
-      exchangeRate: [5.18, [Validators.required, Validators.min(0.0001)]],
+      exchangeRate: [null, [Validators.required, Validators.min(0.0001)]],
       status: ['ABERTO', Validators.required],
       closingDate: [new Date(), Validators.required],
       liquidationDate: [new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), Validators.required],
@@ -64,6 +70,11 @@ export class CambioFormDialogComponent implements OnInit {
       linkedInvoiceNumber: [''],
       linkedDueNumber: ['']
     });
+
+    // Taxa sugerida = cotação real da moeda do contrato (editável: taxa negociada).
+    const currency = this.form.get('currency')!;
+    bindLiveRate(this.market, this.form.get('exchangeRate')!,
+      currency.valueChanges.pipe(startWith(currency.value)), this.destroyRef, (m) => (this.taxaInfo = m));
   }
 
   submit(): void {

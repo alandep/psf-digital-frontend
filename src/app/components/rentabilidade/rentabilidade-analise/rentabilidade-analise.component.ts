@@ -1,4 +1,7 @@
-import { Component, inject, OnInit, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, inject, OnInit, ViewChild, AfterViewInit, DestroyRef } from '@angular/core';
+import { of } from 'rxjs';
+import { MarketQuoteService } from '../../../services/market/market-quote.service';
+import { bindLiveRate } from '../../../services/market/live-rate';
 import { CommonModule } from '@angular/common';
 import { FormControl, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
@@ -165,7 +168,8 @@ export interface ScenarioSimulation {
                       <mat-form-field appearance="outline">
                         <mat-label>Taxa Câmbio Atual</mat-label>
                         <mat-icon matPrefix>currency_exchange</mat-icon>
-                        <input matInput type="number" step="0.0001" formControlName="taxaCambioAtual">
+                        <input matInput type="number" step="0.0001" formControlName="taxaCambioAtual" placeholder="Cotação do dia">
+                        <mat-hint *ngIf="taxaInfo">{{ taxaInfo }}</mat-hint>
                       </mat-form-field>
                     </div>
                   </div>
@@ -834,6 +838,9 @@ export class RentabilidadeAnaliseComponent implements OnInit, AfterViewInit {
   @ViewChild(MatSort) sort!: MatSort;
 
   private fb = inject(FormBuilder);
+  private market = inject(MarketQuoteService);
+  private destroyRef = inject(DestroyRef);
+  taxaInfo = '';
   private notificationService = inject(NotificationService);
 
   analysisForm!: FormGroup;
@@ -899,8 +906,11 @@ export class RentabilidadeAnaliseComponent implements OnInit, AfterViewInit {
       taxasPortuarias: [0, Validators.min(0)],
       taxasGovernamentais: [0, Validators.min(0)],
       custoArmazenagem: [0, Validators.min(0)],
-      taxaCambioAtual: [5.18, [Validators.required, Validators.min(0)]]
+      taxaCambioAtual: [null, [Validators.required, Validators.min(0.0001)]]
     });
+
+    // Preços da análise são em USD: sugere a cotação real (editável).
+    bindLiveRate(this.market, this.analysisForm.get('taxaCambioAtual')!, of('USD'), this.destroyRef, (m) => (this.taxaInfo = m));
   }
 
   executarAnalise(): void {

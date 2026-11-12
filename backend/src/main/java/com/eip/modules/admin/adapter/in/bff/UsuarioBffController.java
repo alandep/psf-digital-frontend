@@ -80,13 +80,13 @@ public class UsuarioBffController {
 
     @PostMapping("/{id}/reset-senha")
     @PreAuthorize("@rbac.can('admin/usuarios','edit')")
-    public Map<String, Boolean> resetarSenha(@PathVariable UUID id) {
-        return Map.of("ok", useCase.resetarSenha(id));
+    public Map<String, String> resetarSenha(@PathVariable UUID id) {
+        return Map.of("activationLink", useCase.resetarSenha(id));
     }
 
     private static CriarUsuarioCommand toCreate(UsuarioRequest req) {
         return new CriarUsuarioCommand(
-                req.name(), req.email(), req.role(),
+                req.name(), req.cpf(), req.email(), req.role(),
                 req.departamento(), req.phone(), req.mfaEnabled());
     }
 }

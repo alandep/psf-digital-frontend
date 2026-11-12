@@ -25,7 +25,7 @@ public interface GerenciarUsuariosUseCase {
     UsuarioView alterarStatus(UUID userId, String status);
 
     /** Issues a password-reset token for the user (returns true when created). */
-    boolean resetarSenha(UUID userId);
+    String resetarSenha(UUID userId);
 
     /** Read view mirroring the frontend AdminUser shape (UI status/role vocab). */
     record UsuarioView(
@@ -49,9 +49,9 @@ public interface GerenciarUsuariosUseCase {
             long bloqueados, long pendentes, long mfaHabilitado) {
     }
 
-    /** Create/invite command. role/status use the UI vocabulary. */
+    /** Create/invite command. CPF is required (login is CPF-based). */
     record CriarUsuarioCommand(
-            String name, String email, String role,
+            String name, String cpf, String email, String role,
             String departamento, String phone, boolean mfaEnabled) {
     }
 

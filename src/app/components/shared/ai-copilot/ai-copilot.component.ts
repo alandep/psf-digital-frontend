@@ -10,6 +10,9 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
 import { trigger, transition, style, animate, state } from '@angular/animations';
+import { Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
+import { MarketQuote, MarketQuoteService } from '../../../services/market/market-quote.service';
 
 interface ChatMessage {
   id: string;
@@ -402,6 +405,8 @@ interface QuickAction {
   ]
 })
 export class AiCopilotComponent implements OnInit, AfterViewInit {
+  private readonly market = inject(MarketQuoteService);
+
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
   @ViewChild('messageInput') messageInput!: ElementRef;
 
@@ -513,24 +518,60 @@ export class AiCopilotComponent implements OnInit, AfterViewInit {
   private processAiResponse(userMessage: string): void {
     // Simulate AI processing time
     setTimeout(() => {
-      const response = this.generateAiResponse(userMessage);
-      
-      const aiMessage: ChatMessage = {
-        id: this.generateId(),
-        content: response,
-        type: 'ai',
-        timestamp: new Date()
-      };
+      this.resolveAiResponse(userMessage).subscribe((response) => {
+        const aiMessage: ChatMessage = {
+          id: this.generateId(),
+          content: response,
+          type: 'ai',
+          timestamp: new Date()
+        };
 
-      this.messages.push(aiMessage);
-      this.isProcessing = false;
-      
-      setTimeout(() => {
-        this.scrollToBottom();
-      }, 100);
+        this.messages.push(aiMessage);
+        this.isProcessing = false;
+
+        setTimeout(() => {
+          this.scrollToBottom();
+        }, 100);
+      });
     }, 1500 + Math.random() * 2000); // 1.5-3.5 seconds
   }
 
+  /**
+   * Resolves the reply. The dollar answer is built from the REAL market quote;
+   * every other topic still uses the canned replies below.
+   */
+  private resolveAiResponse(userMessage: string): Observable<string> {
+    const canned = this.generateAiResponse(userMessage);
+    if (canned !== AiCopilotComponent.COTACAO_DOLAR) {
+      return of(canned);
+    }
+    return this.market.getQuote('USD').pipe(
+      map((q) => this.formatCambio(q)),
+      catchError(() => of(
+        '💰 Câmbio\n\nNão consegui obter a cotação do dólar agora. ' +
+        'A fonte de mercado está indisponível no momento; tente novamente em instantes ' +
+        'ou consulte a tela Financeiro > Câmbio.'
+      ))
+    );
+  }
+
+  private static readonly COTACAO_DOLAR = '__COTACAO_DOLAR__';
+
+  private formatCambio(q: MarketQuote): string {
+    const brl = (v: number | null | undefined) =>
+      v === null || v === undefined ? '—' : 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+    const pct = q.pctChange === null ? '—'
+      : (q.pctChange >= 0 ? '+' : '') + q.pctChange.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+    const seta = q.trend === 'up' ? '↗️' : q.trend === 'down' ? '↘️' : '➡️';
+    const hora = q.quotedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return '💰 Status do Câmbio\n\n' +
+      'Dólar comercial: ' + brl(q.rate) + '\n' +
+      '• Variação do dia: ' + pct + ' ' + seta + '\n' +
+      '• Máxima: ' + brl(q.high) + '\n' +
+      '• Mínima: ' + brl(q.low) + '\n\n' +
+      'Fonte: ' + q.sourceLabel + ' • cotação das ' + hora + (q.stale ? ' (desatualizada)' : '') + '\n' +
+      'Não faço previsões de câmbio; para decisões de hedge, consulte seu banco ou a tela Financeiro > Câmbio.';
+  }
   private generateAiResponse(userMessage: string): string {
     const message = userMessage.toLowerCase();
 
@@ -557,19 +598,7 @@ Deseja simular cenários alternativos?`;
 
     // Cotação do dólar
     if (message.includes('dólar') || message.includes('câmbio') || message.includes('cotação')) {
-      return `💰 Status do Câmbio
-
-Dólar hoje: R$ 5.18
-• Variação: +0.8% ↗️
-• Máxima: R$ 5.22
-• Mínima: R$ 5.14
-
-📈 Tendência IA:
-• Próximos 7 dias: Estável
-• Próximos 30 dias: Leve alta
-• Confiança: 78%
-
-Momento favorável para novos contratos!`;
+      return AiCopilotComponent.COTACAO_DOLAR;
     }
 
     // Criar exportação

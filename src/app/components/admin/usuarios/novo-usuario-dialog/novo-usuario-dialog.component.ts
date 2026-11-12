@@ -8,6 +8,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { InputMaskDirective } from '../../../../shared/directives/input-mask.directive';
+import { cpfValidator, telefoneValidator } from '../../../../shared/validators/br-document.validators';
 
 @Component({
   selector: 'app-novo-usuario-dialog',
@@ -21,7 +23,8 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
-    MatSlideToggleModule
+    MatSlideToggleModule,
+    InputMaskDirective
   ],
   template: `
     <div class="novo-usuario-dialog">
@@ -55,6 +58,14 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
           </mat-form-field>
 
           <mat-form-field appearance="outline">
+            <mat-label>CPF</mat-label>
+            <input matInput formControlName="cpf" appMask="cpf" maxlength="14" inputmode="numeric" placeholder="000.000.000-00">
+            <mat-icon matPrefix>badge</mat-icon>
+            <mat-error *ngIf="form.get('cpf')?.hasError('required')">CPF é obrigatório</mat-error>
+            <mat-error *ngIf="form.get('cpf')?.hasError('cpf')">CPF inválido</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
             <mat-label>Perfil de Acesso</mat-label>
             <mat-select formControlName="role">
               @for (r of roles; track r) {
@@ -83,7 +94,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
           <mat-form-field appearance="outline">
             <mat-label>Telefone</mat-label>
-            <input matInput formControlName="phone" placeholder="(11) 99999-9999">
+            <input matInput formControlName="phone" appMask="telefone" maxlength="16" inputmode="numeric" placeholder="(11) 99999-9999">
             <mat-icon matPrefix>phone</mat-icon>
           </mat-form-field>
 
@@ -246,11 +257,12 @@ export class NovoUsuarioDialogComponent {
     this.form = this.fb.group({
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
+      cpf: ['', [Validators.required, cpfValidator()]],
       role: ['ANALISTA', Validators.required],
       // New users join the current organization; prefill and lock to it.
       empresa: [{ value: this.data?.empresaAtual ?? (this.empresas[0] ?? ''), disabled: true }, Validators.required],
       departamento: [''],
-      phone: [''],
+      phone: ['', telefoneValidator()],
       mfaEnabled: [false]
     });
   }

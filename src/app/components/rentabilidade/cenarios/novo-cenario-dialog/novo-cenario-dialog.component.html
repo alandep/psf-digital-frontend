@@ -63,7 +63,8 @@
 
       <mat-form-field appearance="outline">
         <mat-label>Taxa de Câmbio (BRL)</mat-label>
-        <input matInput type="number" step="0.01" formControlName="exchangeRate" placeholder="5.00">
+        <input matInput type="number" step="0.0001" formControlName="exchangeRate" placeholder="Cotação do dia">
+        <mat-hint *ngIf="taxaInfo">{{ taxaInfo }}</mat-hint>
         <mat-icon matPrefix>currency_exchange</mat-icon>
       </mat-form-field>
 

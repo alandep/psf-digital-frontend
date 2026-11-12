@@ -18,11 +18,12 @@
       <form *ngIf="step === 'cpf'" [formGroup]="cpfForm" (ngSubmit)="onIdentify()">
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>CPF</mat-label>
-          <input matInput formControlName="cpf" placeholder="000.000.000-00" autocomplete="username" inputmode="numeric">
+          <input matInput formControlName="cpf" appMask="cpf" maxlength="14" placeholder="000.000.000-00" autocomplete="username" inputmode="numeric">
           <mat-icon matPrefix>badge</mat-icon>
-          <mat-hint>Informe seu CPF (somente números)</mat-hint>
+          <mat-hint>Informe seu CPF</mat-hint>
           <mat-error *ngIf="cpfForm.get('cpf')?.hasError('required')">CPF é obrigatório</mat-error>
           <mat-error *ngIf="cpfForm.get('cpf')?.hasError('minlength')">CPF incompleto</mat-error>
+          <mat-error *ngIf="cpfForm.get('cpf')?.hasError('cpf')">CPF inválido</mat-error>
         </mat-form-field>
 
         <div class="auth-actions">

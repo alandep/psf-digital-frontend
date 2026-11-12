@@ -9,4 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface AdminAppUserJpaRepository extends JpaRepository<AdminAppUserEntity, UUID> {
     Optional<AdminAppUserEntity> findByEmail(String email);
     Optional<AdminAppUserEntity> findByCpfLookupHash(String cpfLookupHash);
+    // Safe lookup when a CPF maps to more than one account: newest wins.
+    Optional<AdminAppUserEntity> findFirstByCpfLookupHashOrderByCreatedAtDesc(String cpfLookupHash);
 }
