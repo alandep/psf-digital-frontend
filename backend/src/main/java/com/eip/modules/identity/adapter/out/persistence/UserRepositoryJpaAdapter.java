@@ -1,6 +1,7 @@
 package com.eip.modules.identity.adapter.out.persistence;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
@@ -27,6 +28,11 @@ public class UserRepositoryJpaAdapter implements UserRepositoryPort {
     @Override
     public Optional<AppUser> findByCpfLookupHash(String hash) {
         return jpa.findFirstByCpfLookupHashOrderByCreatedAtDesc(hash).map(this::toDomain);
+    }
+
+    @Override
+    public Optional<AppUser> findById(UUID id) {
+        return id == null ? Optional.empty() : jpa.findById(id).map(this::toDomain);
     }
 
     private AppUser toDomain(AppUserEntity entity) {

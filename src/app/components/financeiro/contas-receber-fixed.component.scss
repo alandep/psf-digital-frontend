@@ -381,3 +381,14 @@ $danger: #f44336;
     justify-content: flex-start;
   }
 }
+
+// === ATRASADO / NOTAS ===
+.status-chip.status-overdue {
+  background: #c62828;
+}
+
+.rate-note {
+  margin: 0 0 16px;
+  color: #8a5a00;
+  font-size: 0.9rem;
+}

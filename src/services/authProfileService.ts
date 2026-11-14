@@ -1,7 +1,6 @@
-// MOCK: profile is loaded from assets JSON. To use a real backend, replace
-// loadProfile() body with an HTTP call to the real endpoint returning the same
-// AccessProfile shape (id/name/description/color/system/usersCount/permissions/
-// createdAt/updatedAt). No other file needs to change.
+// Perfil de acesso. Com environment.realApis.auth = true o perfil vem de
+// GET /bff/acesso/me e as regras de autorização do backend são espelhadas em
+// can(). Caso contrário (mock) o perfil é carregado do JSON em assets.
 
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
@@ -14,6 +13,32 @@ import {
 } from '../types/perfil-acesso';
 import { LicenseAccessMode } from '../types/saas-billing';
 import { PerfilAcessoMockService } from './perfilAcessoMockService';
+import { environment } from '../environments/environment';
+
+/** Resposta de GET /bff/acesso/me. */
+export interface AcessoMeDto {
+  userId: string;
+  organizationId: string;
+  name: string;
+  email: string;
+  role: string | null;
+  superAdmin: boolean;
+  licenseMode: LicenseAccessMode;
+  subscription: {
+    status: string;
+    planCode: string;
+    planName: string;
+    trialEndsAt: string | null;
+    currentPeriodEnd: string | null;
+  } | null;
+  modules: Record<string, boolean>;
+  limits: Record<string, number | null>;
+  modulePrefixes: Record<string, string>;
+  readOnlyRoles: string[];
+}
+
+const ACCESS_KEY = 'eip_access_me';
+const ALL_ACTIONS: PermissionAction[] = ['view', 'create', 'edit', 'delete', 'export'];
 
 // Path served by Angular CLI (assets input = public/). File lives at
 // public/mock/current-profile.json and is served from /mock/current-profile.json.
@@ -51,9 +76,30 @@ export class AuthProfileService {
   private licenseModeSubject = new BehaviorSubject<LicenseAccessMode>('FULL');
   readonly licenseMode$ = this.licenseModeSubject.asObservable();
 
+  // Modo real: perfil vindo do backend (GET /bff/acesso/me).
+  private readonly realMode = !!environment.realApis?.auth;
+  private access: AcessoMeDto | null = null;
+  private loadFailed = false;
+  private refreshed = false;
+
   constructor() {
     this.restoreFromStorage();
     this.restoreLicenseMode();
+  }
+
+  /** True quando a última carga do perfil real falhou (sem sessão válida). */
+  get sessionInvalid(): boolean {
+    return this.realMode && this.loadFailed;
+  }
+
+  /** No modo real, o perfil restaurado do storage só é confiável após uma carga nesta sessão do app. */
+  get isFresh(): boolean {
+    return !this.realMode || this.refreshed;
+  }
+
+  /** Dados brutos do acesso real (null no modo mock ou antes da carga). */
+  get currentAccess(): AcessoMeDto | null {
+    return this.access;
   }
 
   get currentProfile(): AccessProfile | null {
@@ -70,6 +116,9 @@ export class AuthProfileService {
    * full-access admin, fills permissions with the entire catalog.
    */
   loadProfile(): Observable<AccessProfile> {
+    if (this.realMode) {
+      return this.loadRealProfile();
+    }
     return this.http.get<RawProfile>(PROFILE_ASSET_PATH).pipe(
       map((raw) => this.materialize(raw)),
       tap((profile) => this.setProfile(profile)),
@@ -80,6 +129,110 @@ export class AuthProfileService {
         return of(fallback);
       })
     );
+  }
+
+  // ================================
+  // REAL MODE (GET /bff/acesso/me)
+  // ================================
+  private loadRealProfile(): Observable<AccessProfile> {
+    return this.http.get<AcessoMeDto>(`${environment.bffBaseUrl}/bff/acesso/me`).pipe(
+      map((me) => {
+        this.access = me;
+        this.loadFailed = false;
+        this.refreshed = true;
+        this.setLicenseMode(me.licenseMode ?? 'NONE');
+        const profile = this.buildRealProfile(me);
+        this.setProfile(profile);
+        this.persistAccess(me);
+        return profile;
+      }),
+      catchError(() => {
+        // Nunca cair para admin com acesso total: perfil que nega tudo.
+        this.access = null;
+        this.loadFailed = true;
+        this.refreshed = true;
+        this.clearStoredAccess();
+        const denied = this.buildDenyAllProfile();
+        this.fullAccess = false;
+        this.profileSubject.next(denied);
+        return of(denied);
+      })
+    );
+  }
+
+  private buildRealProfile(me: AcessoMeDto): AccessProfile {
+    const now = new Date();
+    const permissions: ProfilePermission[] = [];
+    for (const mod of this.catalogService.getModuleCatalog()) {
+      for (const sc of mod.screens) {
+        const actions = sc.actions.filter((a) => this.evaluate(me, this.currentLicenseMode, sc.screenId, a));
+        if (actions.length > 0) { permissions.push({ screenId: sc.screenId, actions }); }
+      }
+    }
+    return {
+      id: me.userId,
+      name: me.role ?? 'Sem perfil',
+      description: me.name,
+      color: '#1976d2',
+      system: true,
+      usersCount: 1,
+      permissions,
+      createdAt: now,
+      updatedAt: now
+    };
+  }
+
+  private buildDenyAllProfile(): AccessProfile {
+    const now = new Date();
+    return {
+      id: 'DENY-ALL',
+      name: 'Sem acesso',
+      description: 'Não foi possível carregar o perfil de acesso.',
+      color: '#9e9e9e',
+      system: false,
+      usersCount: 0,
+      permissions: [],
+      createdAt: now,
+      updatedAt: now
+    };
+  }
+
+  // Espelha as regras de autorização do backend.
+  private evaluate(me: AcessoMeDto, mode: LicenseAccessMode, screenId: string, action: PermissionAction): boolean {
+    const role = me.role;
+    if (!role) { return false; }
+    const screen = (screenId || '').replace(/_/g, '/').replace(/^\/+/, '');
+
+    if (screen.startsWith('super-admin')) { return me.superAdmin === true; }
+
+    const isAdmin = role === 'ADMINISTRADOR';
+    if (screen === 'admin/assinatura' || screen.startsWith('admin/assinatura/')) {
+      if (isAdmin) { return true; }
+    }
+
+    if (mode === 'NONE' || mode === 'BILLING_ONLY') { return false; }
+    if (mode === 'READ_ONLY' && action !== 'view') { return false; }
+
+    const withSlash = screen.endsWith('/') ? screen : screen + '/';
+    for (const [prefix, moduleKey] of Object.entries(me.modulePrefixes ?? {})) {
+      if (withSlash.startsWith(prefix) && me.modules?.[moduleKey] === false) { return false; }
+    }
+
+    if (isAdmin) { return true; }
+    if (screen.startsWith('admin/')) { return false; }
+    if ((me.readOnlyRoles ?? []).includes(role)) { return action === 'view'; }
+    return !screen.startsWith('admin/');
+  }
+
+  private persistAccess(me: AcessoMeDto): void {
+    try { localStorage.setItem(ACCESS_KEY, JSON.stringify(me)); } catch { /* ignore */ }
+  }
+
+  private clearStoredAccess(): void {
+    try {
+      localStorage.removeItem(ACCESS_KEY);
+      localStorage.removeItem(STORAGE_KEY);
+    } catch { /* ignore */ }
   }
 
   // Converts the raw JSON into an AccessProfile, expanding full-access profiles.
@@ -139,7 +292,7 @@ export class AuthProfileService {
   }
 
   private setProfile(profile: AccessProfile): void {
-    this.fullAccess = this.detectFullAccess(profile);
+    this.fullAccess = this.realMode ? false : this.detectFullAccess(profile);
     this.profileSubject.next(profile);
     this.persist(profile);
   }
@@ -152,6 +305,7 @@ export class AuthProfileService {
   }
 
   hasScreen(screenId: string): boolean {
+    if (this.realMode) { return this.can(screenId, 'view'); }
     if (this.fullAccess) { return true; }
     const profile = this.currentProfile;
     if (!profile) { return false; }
@@ -208,6 +362,9 @@ export class AuthProfileService {
   }
 
   can(screenId: string, action: PermissionAction): boolean {
+    if (this.realMode) {
+      return this.access ? this.evaluate(this.access, this.currentLicenseMode, screenId, action) : false;
+    }
     // --- License gate (applied on top of RBAC; can only remove access) ---
     const mode = this.currentLicenseMode;
     const isWrite = action === 'create' || action === 'edit' || action === 'delete';
@@ -244,6 +401,14 @@ export class AuthProfileService {
    * entries without a catalog screen keep working.
    */
   canAccessRoute(route: string): boolean {
+    if (this.realMode) {
+      if (!this.access) { return false; }
+      const normalized = this.normalizeRoute(route);
+      if (!normalized) { return !!this.access.role; }
+      if (normalized === 'acesso-negado') { return true; }
+      const screenId = this.resolveScreenId(route) ?? this.routeToScreenId(route);
+      return this.can(screenId, 'view');
+    }
     if (this.fullAccess) { return true; }
     const screenId = this.resolveScreenId(route);
     if (!screenId) {
@@ -292,8 +457,11 @@ export class AuthProfileService {
   // ================================
   clear(): void {
     this.fullAccess = false;
+    this.access = null;
+    this.loadFailed = false;
     this.profileSubject.next(null);
     try {
+      localStorage.removeItem(ACCESS_KEY);
       localStorage.removeItem(STORAGE_KEY);
     } catch {
       // localStorage may be unavailable (SSR / privacy mode) - ignore.
@@ -309,6 +477,20 @@ export class AuthProfileService {
   }
 
   private restoreFromStorage(): void {
+    if (this.realMode) {
+      try {
+        const rawAccess = localStorage.getItem(ACCESS_KEY);
+        if (!rawAccess) { return; }
+        const me = JSON.parse(rawAccess) as AcessoMeDto;
+        this.access = me;
+        const mode = localStorage.getItem(LICENSE_MODE_KEY) as LicenseAccessMode | null;
+        this.licenseModeSubject.next(mode ?? me.licenseMode ?? 'NONE');
+        this.profileSubject.next(this.buildRealProfile(me));
+      } catch {
+        this.access = null;
+      }
+      return;
+    }
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) { return; }

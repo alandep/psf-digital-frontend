@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.eip.modules.finance.domain.port.in.GerenciarCambioUseCase;
+import com.eip.modules.finance.domain.port.in.GerenciarCambioUseCase.BancoResumo;
+import com.eip.modules.finance.domain.port.in.GerenciarCambioUseCase.CambioMetricas;
 import com.eip.modules.finance.domain.port.in.GerenciarCambioUseCase.CambioView;
 
 import jakarta.validation.Valid;
@@ -32,6 +34,24 @@ public class CambioBffController {
     @PreAuthorize("@rbac.can('financeiro/cambio','view')")
     public List<CambioView> listar(@RequestParam(required = false) String status) {
         return useCase.listar(status);
+    }
+
+    @GetMapping("/metricas")
+    @PreAuthorize("@rbac.can('financeiro/cambio','view')")
+    public CambioMetricas metricas() {
+        return useCase.metricas();
+    }
+
+    @GetMapping("/bancos")
+    @PreAuthorize("@rbac.can('financeiro/cambio','view')")
+    public List<BancoResumo> bancos(@RequestParam(defaultValue = "USD") String moeda) {
+        return useCase.bancos(moeda);
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("@rbac.can('financeiro/cambio','view')")
+    public CambioView porId(@PathVariable UUID id) {
+        return useCase.porId(id);
     }
 
     @PostMapping

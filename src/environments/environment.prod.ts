@@ -26,7 +26,7 @@ export const environment = {
     subscription: false,
     documents: false,
     logistics: false,
-    finance: false,
+    finance: true,
     crm: false,
     ai: true,
     // Tela de Certificações usa o backend real de compliance (BFF)

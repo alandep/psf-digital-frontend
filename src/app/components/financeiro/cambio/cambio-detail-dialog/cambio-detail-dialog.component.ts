@@ -1,4 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 
 import { MatDialogModule, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -17,7 +18,7 @@ import {
   QuotationData,
   BankComparison,
   FinancialTimelineEvent,
-  CambioAIInsights
+  CambioAnalysis
 } from '../../../../../types/cambio';
 
 interface CambioDetailDialogData {
@@ -45,23 +46,37 @@ interface CambioDetailDialogData {
 export class CambioDetailDialogComponent implements OnInit {
 
   private cambioService = inject(CAMBIO_SERVICE);
+  private destroyRef = inject(DestroyRef);
   readonly data = inject<CambioDetailDialogData>(MAT_DIALOG_DATA);
 
   contract: ContratoCambio = this.data.contract;
   quotations: QuotationData[] = this.data.quotations || [];
   timeline: FinancialTimelineEvent[] = [];
-  aiInsights: CambioAIInsights | null = null;
+  analysis: CambioAnalysis | null = null;
   bankComparisons: BankComparison[] = [];
+  bankComparisonsLoaded = false;
 
   ngOnInit(): void {
     this.cambioService.getTimeline(this.contract.id)
-      .subscribe(tl => this.timeline = tl);
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: tl => this.timeline = tl, error: () => this.timeline = [] });
 
-    this.cambioService.getAIInsights(this.contract.id)
-      .subscribe(insights => this.aiInsights = insights);
+    this.cambioService.getAnalysis(this.contract.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: a => this.analysis = a, error: () => this.analysis = null });
 
     this.cambioService.compareBanks(this.contract.currency, this.contract.foreignValue)
-      .subscribe(comparisons => this.bankComparisons = comparisons);
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: comparisons => {
+          this.bankComparisons = comparisons;
+          this.bankComparisonsLoaded = true;
+        },
+        error: () => {
+          this.bankComparisons = [];
+          this.bankComparisonsLoaded = true;
+        }
+      });
   }
 
   // ================================
@@ -69,14 +84,7 @@ export class CambioDetailDialogComponent implements OnInit {
   // ================================
 
   formatCurrency(value: number, currency: string = 'BRL'): string {
-    if (currency === 'BRL') {
-      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-    }
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(value);
-  }
-
-  formatDate(date: Date): string {
-    return new Date(date).toLocaleDateString('pt-BR');
   }
 
   getStatusColor(status: ContractStatus): string {
@@ -91,60 +99,11 @@ export class CambioDetailDialogComponent implements OnInit {
     return map[status] || '';
   }
 
-  getRiskColor(risk: string): string {
-    const map: Record<string, string> = {
-      'BAIXO': 'risk-low',
-      'MÉDIO': 'risk-medium',
-      'ALTO': 'risk-high'
-    };
-    return map[risk] || '';
+  getFactClass(tone: string): string {
+    return tone === 'warning' ? 'alert-medium' : 'alert-low';
   }
 
-  getScoreColor(score: number): string {
-    if (score >= 85) return 'score-excellent';
-    if (score >= 70) return 'score-good';
-    if (score >= 50) return 'score-average';
-    return 'score-poor';
-  }
-
-  getTrendIcon(trend: string): string {
-    const map: Record<string, string> = {
-      'UP': 'trending_up',
-      'DOWN': 'trending_down',
-      'STABLE': 'trending_flat'
-    };
-    return map[trend] || 'trending_flat';
-  }
-
-  getTrendColor(trend: string): string {
-    const map: Record<string, string> = {
-      'UP': 'trend-up',
-      'DOWN': 'trend-down',
-      'STABLE': 'trend-stable'
-    };
-    return map[trend] || '';
-  }
-
-  getAlertIcon(severity: string): string {
-    const map: Record<string, string> = {
-      'LOW': 'info',
-      'MEDIUM': 'warning',
-      'HIGH': 'error',
-      'CRITICAL': 'dangerous'
-    };
-    return map[severity] || 'info';
-  }
-
-  getAlertClass(severity: string): string {
-    return `alert-${severity.toLowerCase()}`;
-  }
-
-  getScenarioClass(type: string): string {
-    const map: Record<string, string> = {
-      'OTIMISTA': 'scenario-optimistic',
-      'PROVÁVEL': 'scenario-probable',
-      'CONSERVADOR': 'scenario-conservative'
-    };
-    return map[type] || '';
+  getFactIcon(tone: string): string {
+    return tone === 'warning' ? 'warning' : 'info';
   }
 }

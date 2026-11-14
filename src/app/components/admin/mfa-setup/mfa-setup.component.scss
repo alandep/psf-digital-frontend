@@ -81,23 +81,30 @@
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
-.qr-placeholder {
-  width: 200px;
-  height: 200px;
+.qr-box {
+  min-height: 220px;
   margin: 8px auto 20px;
-  border: 2px dashed #90caf9;
-  border-radius: 12px;
-  background: #e3f2fd;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
 
-  mat-icon {
-    font-size: 120px;
-    width: 120px;
-    height: 120px;
-    color: #1565c0;
+  img {
+    display: block;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: #fff;
   }
+
+  .qr-fallback {
+    color: #d32f2f;
+    font-size: 14px;
+  }
+}
+
+.error-box {
+  border: 1px solid #ef9a9a;
+  background: #ffebee;
 }
 
 .manual-secret {

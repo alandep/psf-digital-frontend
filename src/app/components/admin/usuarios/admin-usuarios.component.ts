@@ -354,7 +354,7 @@ export class AdminUsuariosComponent implements OnInit, OnDestroy {
                   navigator.clipboard?.writeText(link).catch(() => {});
                   this.snackBar.open(`Link de definição de senha de ${user.name} copiado para a área de transferência.`, 'OK', { duration: 6000 });
                 } else {
-                  this.snackBar.open(`Solicitação de reset enviada para ${user.email}.`, 'OK', { duration: 4000 });
+                  this.snackBar.open(`Enviamos o link de definição de senha para ${user.email}.`, 'OK', { duration: 4000 });
                 }
               },
               error: (err) => this.snackBar.open(this.backendMessage(err, 'Não foi possível solicitar o reset de senha.'), 'Fechar', { duration: 5000 })

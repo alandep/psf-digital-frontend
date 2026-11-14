@@ -10,12 +10,13 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.eip.modules.identity.adapter.in.session.AuthSessionRegistry;
 import com.eip.modules.identity.application.AuthService;
 import com.eip.modules.identity.application.AuthService.AuthChallenge;
 import com.eip.modules.identity.domain.model.AuthState;
@@ -30,7 +31,8 @@ import lombok.RequiredArgsConstructor;
  * BFF endpoints backing the SPA's stepped authentication flow. These run
  * pre-authentication and are permitted in {@code SecurityConfig} under
  * {@code /bff/auth/**}. Once the flow reaches {@code AUTHENTICATED} the selected
- * organization and user are bound to the HTTP session.
+ * organization and user are bound to a fresh HTTP session (session fixation
+ * protection) which is tracked by {@link AuthSessionRegistry}.
  */
 @RestController
 @RequestMapping("/bff/auth")
@@ -43,6 +45,7 @@ public class AuthBffController {
     public static final String SESSION_USER = "EIP_USER";
 
     private final AuthService authService;
+    private final AuthSessionRegistry sessionRegistry;
 
     private final HttpSessionSecurityContextRepository securityContextRepository =
             new HttpSessionSecurityContextRepository();
@@ -55,7 +58,11 @@ public class AuthBffController {
     public record LoginRequest(String challengeId, String password) {
     }
 
-    public record MfaRequest(String challengeId, String code) {
+    /** {@code method}: optional {@code TOTP}, {@code EMAIL} or {@code RECOVERY}. */
+    public record MfaRequest(String challengeId, String code, String method) {
+    }
+
+    public record ChallengeRequest(String challengeId) {
     }
 
     public record SelectOrganizationRequest(String challengeId, UUID organizationId) {
@@ -67,7 +74,9 @@ public class AuthBffController {
     }
 
     public record AuthResponse(String authenticationState, String challengeId, String userName,
-                               String cpfMasked, List<OrgDto> organizations, String message) {
+                               String cpfMasked, List<OrgDto> organizations, String message,
+                               List<String> mfaMethods, String emailMasked,
+                               Integer resendAvailableInSeconds) {
     }
 
     public record MeResponse(String userId, String organizationId) {
@@ -79,10 +88,18 @@ public class AuthBffController {
         return toResponse(authService.identify(request.identifier()));
     }
 
-    /** Step 2 — verify password, returns {@code MFA_REQUIRED} or an error. */
+    /** Step 2 — verify password, returns {@code MFA_REQUIRED} or an error state. */
     @PostMapping("/login")
-    public AuthResponse login(@RequestBody LoginRequest request) {
-        return toResponse(authService.verifyPassword(request.challengeId(), request.password()));
+    public AuthResponse login(@RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        return toResponse(authService.verifyPassword(
+                request.challengeId(), request.password(), clientIp(httpRequest)));
+    }
+
+    /** Sends / resends the e-mail verification code for an {@code MFA_REQUIRED} challenge. */
+    @PostMapping("/mfa/email/send")
+    public AuthResponse sendEmailCode(@RequestBody ChallengeRequest request,
+                                      HttpServletRequest httpRequest) {
+        return toResponse(authService.sendEmailCode(request.challengeId(), clientIp(httpRequest)));
     }
 
     /** Step 3 — verify MFA. May reach {@code AUTHENTICATED} directly when the
@@ -91,7 +108,8 @@ public class AuthBffController {
     public AuthResponse verifyMfa(@RequestBody MfaRequest request,
                                   HttpServletRequest httpRequest,
                                   HttpServletResponse httpResponse) {
-        AuthChallenge challenge = authService.verifyMfa(request.challengeId(), request.code());
+        AuthChallenge challenge = authService.verifyMfa(
+                request.challengeId(), request.code(), request.method(), clientIp(httpRequest));
         if (challenge.state() == AuthState.AUTHENTICATED
                 && challenge.organizations() != null
                 && !challenge.organizations().isEmpty()) {
@@ -117,43 +135,24 @@ public class AuthBffController {
         return toResponse(challenge);
     }
 
-    /** Invalidates the current session (logout). */
+    /** Records a LOGOUT event and invalidates the current session. */
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest httpRequest) {
         HttpSession session = httpRequest.getSession(false);
         if (session != null) {
-            session.invalidate();
+            UUID userId = parseUuid(session.getAttribute(SESSION_USER));
+            UUID organizationId = parseUuid(session.getAttribute(SESSION_ORG));
+            if (userId != null) {
+                authService.auditLogout(userId, organizationId, clientIp(httpRequest));
+            }
+            try {
+                session.invalidate();
+            } catch (IllegalStateException ignored) {
+                // already invalidated
+            }
         }
+        SecurityContextHolder.clearContext();
         return ResponseEntity.noContent().build();
-    }
-
-    /**
-     * Binds the authenticated user + organization to a fresh HTTP session,
-     * establishes a Spring SecurityContext (persisted in the session so the
-     * standard SecurityContextHolderFilter restores it on later requests), and
-     * discards the in-flight challenge. Called on every path that reaches
-     * {@code AUTHENTICATED}.
-     */
-    private void bindSession(HttpServletRequest httpRequest, HttpServletResponse httpResponse,
-                             String challengeId, UUID organizationId) {
-        UUID userId = authService.userIdOf(challengeId).orElse(null);
-        HttpSession session = httpRequest.getSession(true);
-        session.setAttribute(SESSION_ORG, organizationId.toString());
-        if (userId != null) {
-            session.setAttribute(SESSION_USER, userId.toString());
-        }
-        // Establish a Spring SecurityContext and persist it in the session so
-        // authorization (.authenticated() / @PreAuthorize) recognizes the user
-        // on subsequent requests.
-        String principal = userId != null ? userId.toString() : organizationId.toString();
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(
-                        principal, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
-        SecurityContext context = SecurityContextHolder.createEmptyContext();
-        context.setAuthentication(authentication);
-        SecurityContextHolder.setContext(context);
-        securityContextRepository.saveContext(context, httpRequest, httpResponse);
-        authService.discard(challengeId);
     }
 
     /** @return the current session's user/org, or 401 when no session is bound. */
@@ -171,6 +170,56 @@ public class AuthBffController {
         return ResponseEntity.ok(new MeResponse(user.toString(), org.toString()));
     }
 
+    /** @return first {@code X-Forwarded-For} value, else the remote address. */
+    static String clientIp(HttpServletRequest request) {
+        return AuthSessionRegistry.clientIp(request);
+    }
+
+    /**
+     * Binds the authenticated user + organization to a NEW HTTP session (any
+     * pre-existing session is invalidated: session fixation protection),
+     * establishes a Spring SecurityContext persisted in the session, registers
+     * the session and discards the in-flight challenge.
+     */
+    private void bindSession(HttpServletRequest httpRequest, HttpServletResponse httpResponse,
+                             String challengeId, UUID organizationId) {
+        UUID userId = authService.userIdOf(challengeId).orElse(null);
+        HttpSession previous = httpRequest.getSession(false);
+        if (previous != null) {
+            try {
+                previous.invalidate();
+            } catch (IllegalStateException ignored) {
+                // already invalidated
+            }
+        }
+        HttpSession session = httpRequest.getSession(true);
+        session.setAttribute(SESSION_ORG, organizationId.toString());
+        if (userId != null) {
+            session.setAttribute(SESSION_USER, userId.toString());
+        }
+        String principal = userId != null ? userId.toString() : organizationId.toString();
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(
+                        principal, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        SecurityContextHolder.setContext(context);
+        securityContextRepository.saveContext(context, httpRequest, httpResponse);
+        sessionRegistry.register(session, userId, httpRequest);
+        authService.discard(challengeId);
+    }
+
+    private static UUID parseUuid(Object value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return UUID.fromString(value.toString());
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
     private AuthResponse toResponse(AuthChallenge challenge) {
         List<OrgDto> orgs = challenge.organizations() == null ? List.of()
                 : challenge.organizations().stream().map(this::toOrgDto).toList();
@@ -180,7 +229,10 @@ public class AuthBffController {
                 challenge.userName(),
                 challenge.cpfMasked(),
                 orgs,
-                challenge.message());
+                challenge.message(),
+                challenge.mfaMethods() == null ? List.of() : challenge.mfaMethods(),
+                challenge.emailMasked(),
+                challenge.resendAvailableInSeconds());
     }
 
     private OrgDto toOrgDto(OrganizationOption option) {

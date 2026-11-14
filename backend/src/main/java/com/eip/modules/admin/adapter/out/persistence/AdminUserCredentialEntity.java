@@ -33,6 +33,12 @@ public class AdminUserCredentialEntity {
     @Column(name = "failed_attempts")
     private int failedAttempts;
 
+    @Column(name = "locked_until")
+    private OffsetDateTime lockedUntil;
+
+    @Column(name = "password_changed_at")
+    private OffsetDateTime passwordChangedAt;
+
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
 }

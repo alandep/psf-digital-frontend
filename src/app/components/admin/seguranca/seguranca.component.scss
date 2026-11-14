@@ -179,6 +179,31 @@
   }
 }
 
+.empty-state {
+  color: #607d8b;
+  font-size: 14px;
+  margin: 8px 0;
+}
+
+.disable-form {
+  margin-top: 12px;
+
+  .disable-field {
+    width: 100%;
+  }
+
+  .disable-error {
+    color: #c62828;
+    font-size: 13px;
+    margin: 0 0 8px;
+  }
+
+  .disable-actions {
+    display: flex;
+    gap: 8px;
+  }
+}
+
 @media (max-width: 900px) {
   .cards-grid {
     grid-template-columns: 1fr;

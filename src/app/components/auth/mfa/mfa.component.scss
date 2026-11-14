@@ -1,5 +1,35 @@
 @use '../auth-shared' as *;
 
+.mfa-methods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+  justify-content: center;
+}
+
+.mfa-method-btn {
+  border: 1px solid #c5cae9;
+  background: #fff;
+  color: #1565c0;
+  border-radius: 16px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+
+  &.active {
+    background: #1976d2;
+    border-color: #1976d2;
+    color: #fff;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #1a237e;
+    outline-offset: 2px;
+  }
+}
+
 .auth-code-field ::ng-deep input {
   letter-spacing: 6px;
   font-size: 1.3rem;

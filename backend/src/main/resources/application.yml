@@ -24,6 +24,18 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+  mail:
+    # Only used when eip.mail.enabled=true. Brevo free: smtp-relay.brevo.com:587.
+    host: ${EIP_MAIL_HOST:}
+    port: ${EIP_MAIL_PORT:587}
+    username: ${EIP_MAIL_USER:}
+    password: ${EIP_MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${EIP_MAIL_AUTH:true}
+      mail.smtp.starttls.enable: ${EIP_MAIL_STARTTLS:true}
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
 
 server:
   port: ${PORT:8080}
@@ -33,6 +45,9 @@ management:
     web:
       exposure:
         include: health,info,prometheus
+  health:
+    mail:
+      enabled: false
   endpoint:
     health:
       probes:
@@ -50,6 +65,28 @@ springdoc:
     path: /swagger-ui.html
 
 eip:
+  # Transactional e-mail (MFA codes, invitations, password reset).
+  mail:
+    enabled: ${EIP_MAIL_ENABLED:false}
+    from: ${EIP_MAIL_FROM:no-reply@localhost}
+    from-name: ${EIP_MAIL_FROM_NAME:EIP}
+    # Logs the message body (codes/links). NEVER enable in production.
+    log-body: ${EIP_MAIL_LOG_BODY:false}
+  app:
+    # Public URL of the SPA, used to build links sent by e-mail.
+    base-url: ${EIP_APP_BASE_URL:http://localhost:4200}
+  auth:
+    # DEV ONLY: also return activation links in API responses (never in cloud).
+    expose-dev-links: ${EIP_EXPOSE_DEV_LINKS:false}
+    # DEV ONLY: unknown identifiers fall back to the seeded user.
+    dev-fallback-user: ${EIP_AUTH_DEV_FALLBACK:false}
+    max-password-attempts: 5
+    lock-minutes: 15
+    mfa:
+      code-ttl-minutes: 10
+      max-attempts: 5
+      resend-cooldown-seconds: 60
+      max-sends: 5
   # CORS / cookie security knobs for the browser BFF flow.
   #
   # Base defaults are LOCAL-SAFE: the Angular dev server runs same-origin behind
@@ -62,6 +99,15 @@ eip:
     # Comma-separated allowlist. NEVER "*": credentials require a specific origin.
     allowed-origins: ${EIP_CORS_ALLOWED_ORIGINS:http://localhost:4200}
   security:
+    # Comma-separated e-mails (case-insensitive) granted Super Admin screens.
+    super-admin-emails: ${EIP_SUPER_ADMIN_EMAILS:}
+    # DEV ONLY: any ADMINISTRADOR is Super Admin (true in the local profile).
+    super-admin-any-admin: false
+    # AES-256 key (base64, 32 bytes) protecting TOTP secrets at rest.
+    # REQUIRED in the cloud profile. Generate: openssl rand -base64 32
+    mfa-encryption-key: ${EIP_MFA_ENCRYPTION_KEY:}
+    # When true, a missing key aborts startup (no DEV fallback key). true in cloud.
+    mfa-key-required: ${EIP_MFA_KEY_REQUIRED:false}
     cookie:
       # When true (DEGUSTAÇÃO/cloud), the session + CSRF cookies are hardened with Secure and
       # SameSite=None for the cross-site HTTPS flow (frontend iaexport.com.br/Firebase and
@@ -108,6 +154,23 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
+  mail:
+    host: ${EIP_MAIL_HOST:mailpit}
+    port: ${EIP_MAIL_PORT:1025}
+    username: ${EIP_MAIL_USER:}
+    password: ${EIP_MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${EIP_MAIL_AUTH:false}
+      mail.smtp.starttls.enable: ${EIP_MAIL_STARTTLS:false}
+
+eip:
+  mail:
+    enabled: ${EIP_MAIL_ENABLED:true}
+    log-body: ${EIP_MAIL_LOG_BODY:true}
+  auth:
+    expose-dev-links: true
+  security:
+    super-admin-any-admin: true
 
 logging:
   level:

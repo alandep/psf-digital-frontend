@@ -11,8 +11,20 @@
     </div>
   </div>
 
+  <!-- Enrollment error -->
+  <mat-card class="info-card error-box" *ngIf="enrollmentError">
+    <mat-card-content>
+      <p class="error-text" role="alert"><mat-icon>error_outline</mat-icon> {{ enrollmentError }}</p>
+    </mat-card-content>
+    <mat-card-actions>
+      <button mat-raised-button color="primary" routerLink="/home-logged/admin/seguranca">
+        <mat-icon>arrow_back</mat-icon> Voltar para Segurança
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
   <!-- Stepper indicator -->
-  <div class="steps">
+  <div class="steps" *ngIf="!enrollmentError">
     <span class="step-dot" [class.active]="step >= 1">1</span>
     <span class="step-line" [class.active]="step >= 2"></span>
     <span class="step-dot" [class.active]="step >= 2">2</span>
@@ -21,18 +33,20 @@
   </div>
 
   <!-- Step 1: QR / secret -->
-  <mat-card class="info-card" *ngIf="step === 1">
+  <mat-card class="info-card" *ngIf="!enrollmentError && step === 1">
     <mat-card-header>
       <mat-card-title>Escaneie o QR Code</mat-card-title>
       <mat-card-subtitle>Escaneie o QR Code no seu aplicativo autenticador (Google Authenticator, Authy, etc.)</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
-      <div class="qr-placeholder" [attr.data-uri]="otpauthUri">
-        <mat-icon>qr_code_2</mat-icon>
+      <div class="qr-box">
+        <img *ngIf="qrDataUrl" [src]="qrDataUrl" width="220" height="220"
+             alt="QR Code para configurar o aplicativo autenticador">
+        <p class="qr-fallback" *ngIf="qrError">Não foi possível gerar o QR Code. Use a chave abaixo.</p>
       </div>
       <div class="manual-secret">
         <span class="manual-label">Ou informe manualmente:</span>
-        <code>{{ secret }}</code>
+        <code>{{ secretGrouped }}</code>
         <button mat-icon-button (click)="copySecret()" aria-label="Copiar chave">
           <mat-icon>content_copy</mat-icon>
         </button>
@@ -46,7 +60,7 @@
   </mat-card>
 
   <!-- Step 2: verify code -->
-  <mat-card class="info-card" *ngIf="step === 2">
+  <mat-card class="info-card" *ngIf="!enrollmentError && step === 2">
     <mat-card-header>
       <mat-card-title>Confirme o código</mat-card-title>
       <mat-card-subtitle>Digite o código de 6 dígitos gerado pelo aplicativo</mat-card-subtitle>
@@ -54,9 +68,10 @@
     <mat-card-content>
       <mat-form-field appearance="outline" class="code-field">
         <mat-label>Código de verificação</mat-label>
-        <input matInput [(ngModel)]="code" maxlength="6" inputmode="numeric" placeholder="000000">
+        <input matInput [value]="code" (input)="onCodeInput($event)" maxlength="6" inputmode="numeric"
+               autocomplete="one-time-code" placeholder="000000">
       </mat-form-field>
-      <p class="error-text" *ngIf="errorMessage">
+      <p class="error-text" role="alert" *ngIf="errorMessage">
         <mat-icon>error_outline</mat-icon> {{ errorMessage }}
       </p>
     </mat-card-content>
@@ -68,7 +83,7 @@
   </mat-card>
 
   <!-- Step 3: recovery codes -->
-  <mat-card class="info-card" *ngIf="step === 3">
+  <mat-card class="info-card" *ngIf="!enrollmentError && step === 3">
     <mat-card-header>
       <mat-card-title>Autenticação ativada</mat-card-title>
       <mat-card-subtitle>Salve seus códigos de recuperação</mat-card-subtitle>
@@ -83,6 +98,9 @@
       </div>
       <button mat-stroked-button (click)="copyRecoveryCodes()">
         <mat-icon>content_copy</mat-icon> Copiar códigos
+      </button>
+      <button mat-stroked-button (click)="downloadRecoveryCodes()">
+        <mat-icon>download</mat-icon> Baixar .txt
       </button>
     </mat-card-content>
     <mat-card-actions>

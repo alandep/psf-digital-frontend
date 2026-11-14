@@ -7,6 +7,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -16,7 +17,6 @@ import com.eip.modules.finance.domain.port.in.GerenciarPagamentosUseCase;
 import com.eip.modules.finance.domain.port.in.GerenciarPagamentosUseCase.PagamentoView;
 import com.eip.modules.finance.domain.port.in.GerenciarPagamentosUseCase.ResumoFinanceiro;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -31,14 +31,15 @@ public class PagamentoBffController {
 
     @GetMapping
     @PreAuthorize("@rbac.can('financeiro/pagamentos','view')")
-    public List<PagamentoView> listar(@RequestParam(required = false) String status) {
-        return useCase.listar(status);
+    public List<PagamentoView> listar(@RequestParam(required = false) String status,
+                                      @RequestParam(required = false) String tipo) {
+        return useCase.listar(status, tipo);
     }
 
     @GetMapping("/resumo")
     @PreAuthorize("@rbac.can('financeiro/pagamentos','view')")
-    public ResumoFinanceiro resumo() {
-        return useCase.resumo();
+    public ResumoFinanceiro resumo(@RequestParam(required = false) String tipo) {
+        return useCase.resumo(tipo);
     }
 
     @GetMapping("/{id}")
@@ -49,14 +50,22 @@ public class PagamentoBffController {
 
     @PostMapping
     @PreAuthorize("@rbac.can('financeiro/pagamentos','create')")
-    public PagamentoView criar(@Valid @RequestBody CriarPagamentoRequest request) {
+    public PagamentoView criar(@RequestBody CriarPagamentoRequest request) {
         return useCase.criar(request.toCommand());
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("@rbac.can('financeiro/pagamentos','edit')")
+    public PagamentoView atualizar(@PathVariable UUID id,
+                                   @RequestBody CriarPagamentoRequest request) {
+        return useCase.atualizar(id, request.toCommand());
     }
 
     @PostMapping("/{id}/pagar")
     @PreAuthorize("@rbac.can('financeiro/pagamentos','edit')")
-    public PagamentoView pagar(@PathVariable UUID id) {
-        return useCase.marcarPago(id);
+    public PagamentoView pagar(@PathVariable UUID id,
+                               @RequestBody(required = false) PagarRequest request) {
+        return useCase.marcarPago(id, request == null ? null : request.paidAt());
     }
 
     @PostMapping("/{id}/cancelar")

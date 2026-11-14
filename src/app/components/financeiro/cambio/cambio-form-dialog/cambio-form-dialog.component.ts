@@ -19,7 +19,7 @@ import { ContractStatus } from '../../../../../types/cambio';
 interface CambioFormDialogData {
   banks: string[];
   currencies: string[];
-  statuses: ContractStatus[];
+  statuses?: ContractStatus[];
 }
 
 @Component({
@@ -57,18 +57,13 @@ export class CambioFormDialogComponent implements OnInit {
 
   ngOnInit(): void {
     this.form = this.formBuilder.group({
-      contractNumber: ['', Validators.required],
-      bank: ['', Validators.required],
-      exporterName: ['', Validators.required],
+      side: ['VENDA', Validators.required],
+      bank: [''],
       currency: ['USD', Validators.required],
-      foreignValue: [100000, [Validators.required, Validators.min(1)]],
-      exchangeRate: [null, [Validators.required, Validators.min(0.0001)]],
-      status: ['ABERTO', Validators.required],
       closingDate: [new Date(), Validators.required],
-      liquidationDate: [new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), Validators.required],
-      linkedExportNumber: [''],
-      linkedInvoiceNumber: [''],
-      linkedDueNumber: ['']
+      liquidationDate: [null],
+      foreignValue: [null, [Validators.required, Validators.min(0.01)]],
+      exchangeRate: [null, [Validators.required, Validators.min(0.0001)]]
     });
 
     // Taxa sugerida = cotação real da moeda do contrato (editável: taxa negociada).
@@ -86,13 +81,14 @@ export class CambioFormDialogComponent implements OnInit {
     const foreignValue = Number(v.foreignValue) || 0;
     const exchangeRate = Number(v.exchangeRate) || 0;
     this.dialogRef.close({
-      ...v,
+      side: v.side,
+      bank: v.bank,
+      currency: v.currency,
       foreignValue,
       exchangeRate,
       brlValue: foreignValue * exchangeRate,
-      spread: 0,
-      aiFinancialScore: 0,
-      gainLoss: 0
+      closingDate: v.closingDate,
+      liquidationDate: v.liquidationDate ?? undefined
     });
   }
 

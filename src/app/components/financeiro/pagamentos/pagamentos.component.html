@@ -11,18 +11,12 @@
         <mat-icon class="header-icon">payments</mat-icon>
         <div class="title-content">
           <h1>Pagamentos</h1>
-          <p class="subtitle">Centro inteligente de gestão financeira de obrigações</p>
+          <p class="subtitle">Gestão de contas a pagar e obrigações financeiras</p>
         </div>
       </div>
       <div class="header-actions">
         <button mat-raised-button color="primary" *appHasPermission="'financeiro/pagamentos:create'" (click)="createPayment()">
           <mat-icon>add</mat-icon> Novo Pagamento
-        </button>
-        <button mat-raised-button color="primary" (click)="simulateCashFlow()">
-          <mat-icon>show_chart</mat-icon> Simular Fluxo
-        </button>
-        <button mat-raised-button color="primary" *appHasPermission="'financeiro/pagamentos:export'" (click)="exportPDF()">
-          <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
         </button>
       </div>
     </div>
@@ -90,25 +84,28 @@
       </mat-card-content>
     </mat-card>
 
-    <mat-card class="kpi-card kpi-score">
+    <mat-card class="kpi-card kpi-paid" *ngIf="metrics && metrics.totalPaidValue > 0">
       <mat-card-content>
         <div class="kpi-icon">
-          <mat-icon>psychology</mat-icon>
+          <mat-icon>paid</mat-icon>
         </div>
         <div class="kpi-info">
-          <div class="kpi-value">{{ metrics?.avgFinancialScore || 0 }}/100</div>
-          <div class="kpi-label">Score Financeiro Médio</div>
+          <div class="kpi-value">{{ formatCurrency(metrics.totalPaidValue) }}</div>
+          <div class="kpi-label">Valor Pago Total</div>
         </div>
       </mat-card-content>
     </mat-card>
   </div>
+  <p class="rate-note" *ngIf="metrics?.unconvertedCurrencies?.length" role="status">
+    Valores em {{ metrics?.unconvertedCurrencies?.join(', ') }} não entram nos totais em R$ porque não há cotação disponível no momento.
+  </p>
 
   <!-- Cash Flow Card -->
   <mat-card class="cash-flow-card" *ngIf="cashFlow">
     <mat-card-header>
       <mat-icon mat-card-avatar class="cashflow-header-icon">trending_up</mat-icon>
-      <mat-card-title>Projeção de Fluxo de Caixa</mat-card-title>
-      <mat-card-subtitle>Cenários de desembolso para os próximos 30 dias</mat-card-subtitle>
+      <mat-card-title>Fluxo de Caixa a Pagar</mat-card-title>
+      <mat-card-subtitle>Calculado a partir dos pagamentos cadastrados, em R$ pela cotação atual</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
       <div class="cashflow-summary">
@@ -129,29 +126,22 @@
           <span class="cashflow-value">{{ formatCurrency(cashFlow.upcomingMonth) }}</span>
         </div>
       </div>
-      <div class="scenario-bars">
-        <div class="scenario-bar scenario-optimistic">
+      <div class="scenario-bars" *ngIf="cashFlow.byMonth && cashFlow.byMonth.length > 0; else semFluxo">
+        <div class="scenario-bar scenario-probable" *ngFor="let m of cashFlow.byMonth">
           <div class="scenario-bar-header">
-            <span class="scenario-type">Otimista</span>
-            <span class="scenario-value">{{ formatCurrency(cashFlow.scenarioOptimistic) }}</span>
+            <span class="scenario-type">{{ m.label }}</span>
+            <span class="scenario-value">{{ formatCurrency(m.total) }}</span>
           </div>
-          <mat-progress-bar mode="determinate" [value]="(cashFlow.scenarioOptimistic / 5000000) * 100"></mat-progress-bar>
-        </div>
-        <div class="scenario-bar scenario-probable">
-          <div class="scenario-bar-header">
-            <span class="scenario-type">Provável</span>
-            <span class="scenario-value">{{ formatCurrency(cashFlow.scenarioProbable) }}</span>
-          </div>
-          <mat-progress-bar mode="determinate" [value]="(cashFlow.scenarioProbable / 5000000) * 100"></mat-progress-bar>
-        </div>
-        <div class="scenario-bar scenario-conservative">
-          <div class="scenario-bar-header">
-            <span class="scenario-type">Conservador</span>
-            <span class="scenario-value">{{ formatCurrency(cashFlow.scenarioConservative) }}</span>
-          </div>
-          <mat-progress-bar mode="determinate" [value]="(cashFlow.scenarioConservative / 5000000) * 100"></mat-progress-bar>
+          <mat-progress-bar mode="determinate" [value]="maxMonthTotal() > 0 ? (m.total / maxMonthTotal()) * 100 : 0"
+                            [attr.aria-label]="'Total a pagar em ' + m.label"></mat-progress-bar>
         </div>
       </div>
+      <ng-template #semFluxo>
+        <div class="empty-state" role="status">
+          <mat-icon aria-hidden="true">event_available</mat-icon>
+          <p>Nenhum pagamento em aberto para projetar.</p>
+        </div>
+      </ng-template>
     </mat-card-content>
   </mat-card>
 
@@ -162,7 +152,7 @@
         <div class="filter-row">
           <mat-form-field appearance="outline" class="filter-field">
             <mat-label>Buscar</mat-label>
-            <input matInput formControlName="searchText" placeholder="Pagamento, beneficiário, observação...">
+            <input matInput formControlName="searchText" placeholder="Referência, beneficiário, descrição...">
             <mat-icon matPrefix>search</mat-icon>
           </mat-form-field>
 
@@ -171,14 +161,6 @@
             <mat-select formControlName="status">
               <mat-option value="">Todos</mat-option>
               <mat-option *ngFor="let s of statuses" [value]="s">{{ s }}</mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="filter-field">
-            <mat-label>Categoria</mat-label>
-            <mat-select formControlName="category">
-              <mat-option value="">Todas</mat-option>
-              <mat-option *ngFor="let c of categories" [value]="c">{{ getCategoryLabel(c) }}</mat-option>
             </mat-select>
           </mat-form-field>
 
@@ -206,14 +188,6 @@
             <mat-select formControlName="currency">
               <mat-option value="">Todas</mat-option>
               <mat-option *ngFor="let c of currencies" [value]="c">{{ c }}</mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="filter-field">
-            <mat-label>Banco</mat-label>
-            <mat-select formControlName="bank">
-              <mat-option value="">Todos</mat-option>
-              <mat-option *ngFor="let b of banks" [value]="b">{{ b }}</mat-option>
             </mat-select>
           </mat-form-field>
 
@@ -263,14 +237,6 @@
           <td mat-cell *matCellDef="let p">{{ p.beneficiary }}</td>
         </ng-container>
 
-        <!-- Category Column -->
-        <ng-container matColumnDef="category">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Categoria</th>
-          <td mat-cell *matCellDef="let p">
-            <span class="category-chip" [ngClass]="getCategoryColor(p.category)">{{ getCategoryLabel(p.category) }}</span>
-          </td>
-        </ng-container>
-
         <!-- Amount Column -->
         <ng-container matColumnDef="amount">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>Valor</th>
@@ -315,29 +281,21 @@
           </td>
         </ng-container>
 
-        <!-- AI Score Column -->
-        <ng-container matColumnDef="aiFinancialScore">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Score IA</th>
-          <td mat-cell *matCellDef="let p">
-            <div class="score-indicator">
-              <mat-progress-bar mode="determinate" [value]="p.aiFinancialScore" [ngClass]="getScoreColor(p.aiFinancialScore)"></mat-progress-bar>
-              <span class="score-value">{{ p.aiFinancialScore }}</span>
-            </div>
-          </td>
-        </ng-container>
-
         <!-- Actions Column -->
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef>Ações</th>
           <td mat-cell *matCellDef="let p">
-            <button mat-icon-button color="primary" (click)="selectPayment(p); $event.stopPropagation()" matTooltip="Visualizar">
+            <button mat-icon-button color="primary" (click)="selectPayment(p); $event.stopPropagation()" matTooltip="Visualizar" aria-label="Visualizar pagamento">
               <mat-icon>visibility</mat-icon>
             </button>
-            <button mat-icon-button color="accent" *ngIf="p.status === 'PENDENTE'" (click)="approvePayment(p); $event.stopPropagation()" matTooltip="Aprovar">
-              <mat-icon>thumb_up</mat-icon>
+            <button mat-icon-button *ngIf="isOpen(p)" (click)="editPayment(p); $event.stopPropagation()" matTooltip="Editar" aria-label="Editar pagamento">
+              <mat-icon>edit</mat-icon>
             </button>
-            <button mat-icon-button *ngIf="p.status === 'PAGO'" (click)="reconcilePayment(p); $event.stopPropagation()" matTooltip="Conciliar">
-              <mat-icon>sync</mat-icon>
+            <button mat-icon-button color="accent" *ngIf="isOpen(p)" (click)="markAsPaid(p); $event.stopPropagation()" matTooltip="Marcar como pago" aria-label="Marcar como pago">
+              <mat-icon>task_alt</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" *ngIf="isOpen(p)" (click)="cancelPayment(p); $event.stopPropagation()" matTooltip="Cancelar" aria-label="Cancelar pagamento">
+              <mat-icon>cancel</mat-icon>
             </button>
           </td>
         </ng-container>
@@ -345,6 +303,11 @@
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="selectPayment(row)" class="clickable-row"></tr>
       </table>
+
+      <div class="empty-state" role="status" *ngIf="!isLoading && dataSource.data.length === 0">
+        <mat-icon aria-hidden="true">payments</mat-icon>
+        <p>Nenhum pagamento encontrado.</p>
+      </div>
 
       <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" showFirstLastButtons></mat-paginator>
     </mat-card-content>

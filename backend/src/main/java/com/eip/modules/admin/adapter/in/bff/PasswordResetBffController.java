@@ -3,6 +3,7 @@ package com.eip.modules.admin.adapter.in.bff;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,7 +13,6 @@ import com.eip.modules.admin.application.PasswordResetService;
 import com.eip.modules.admin.application.PasswordResetService.ResetRequestResult;
 
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 
 /**
  * Public password activation / reset endpoints under {@code /bff/auth/password}.
@@ -27,10 +27,16 @@ import lombok.RequiredArgsConstructor;
  */
 @RestController
 @RequestMapping("/bff/auth/password")
-@RequiredArgsConstructor
 public class PasswordResetBffController {
 
     private final PasswordResetService service;
+    private final boolean exposeDevLinks;
+
+    public PasswordResetBffController(PasswordResetService service,
+                                      @Value("${eip.auth.expose-dev-links:false}") boolean exposeDevLinks) {
+        this.service = service;
+        this.exposeDevLinks = exposeDevLinks;
+    }
 
     public record ForgotRequest(String identifier) {
     }
@@ -40,14 +46,13 @@ public class PasswordResetBffController {
 
     @PostMapping("/forgot")
     public Map<String, Object> forgot(@RequestBody ForgotRequest req, HttpServletRequest http) {
-        ResetRequestResult result = service.requestReset(req.identifier(), http.getRemoteAddr());
+        ResetRequestResult result = service.requestReset(req.identifier(), clientIp(http));
         Map<String, Object> body = new LinkedHashMap<>();
         // Neutral, anti-enumeration message regardless of whether a user exists.
-        body.put("message", "Se o identificador existir, enviaremos instrucoes para definir a senha.");
-        // DEV convenience (no email yet): expose the activation link when found.
-        if (result.userFound() && result.token() != null) {
+        body.put("message", "Se encontrarmos uma conta correspondente, enviaremos as instruções para o e-mail cadastrado.");
+        // DEV only: expose the activation link (never the raw token field).
+        if (exposeDevLinks && result.token() != null) {
             body.put("activationLink", "/definir-senha?token=" + result.token());
-            body.put("token", result.token());
         }
         return body;
     }
@@ -57,7 +62,15 @@ public class PasswordResetBffController {
         service.resetPassword(req.token(), req.newPassword());
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("ok", true);
-        body.put("message", "Senha definida com sucesso. Voce ja pode acessar com seu CPF e a nova senha.");
+        body.put("message", "Senha definida com sucesso. Você já pode acessar com seu CPF e a nova senha.");
         return body;
+    }
+
+    private static String clientIp(HttpServletRequest http) {
+        String forwarded = http.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+        return http.getRemoteAddr();
     }
 }

@@ -7,7 +7,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { InputMaskDirective } from '../../../../shared/directives/input-mask.directive';
 import { cpfValidator, telefoneValidator } from '../../../../shared/validators/br-document.validators';
 
@@ -23,7 +22,6 @@ import { cpfValidator, telefoneValidator } from '../../../../shared/validators/b
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
-    MatSlideToggleModule,
     InputMaskDirective
   ],
   template: `
@@ -98,12 +96,7 @@ import { cpfValidator, telefoneValidator } from '../../../../shared/validators/b
             <mat-icon matPrefix>phone</mat-icon>
           </mat-form-field>
 
-          <div class="toggle-row">
-            <mat-slide-toggle formControlName="mfaEnabled" color="primary">
-              Habilitar MFA (Autenticação Multifator)
-            </mat-slide-toggle>
-            <span class="toggle-hint">Recomendado para perfis administrativos</span>
-          </div>
+          <p class="toggle-hint">O usuário receberá um e-mail para definir a senha. A verificação em duas etapas por e-mail é obrigatória; o aplicativo autenticador pode ser ativado pelo próprio usuário em Segurança.</p>
         </form>
       </div>
 
@@ -201,7 +194,9 @@ import { cpfValidator, telefoneValidator } from '../../../../shared/validators/b
       padding: 8px 0 4px;
     }
 
-    .toggle-row .toggle-hint {
+    .toggle-hint {
+      grid-column: 1 / -1;
+      margin: 0;
       font-size: 0.8rem;
       color: #888;
       font-style: italic;

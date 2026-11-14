@@ -1,6 +1,13 @@
 import { Component, inject, OnInit, ViewChild, AfterViewInit, DestroyRef } from '@angular/core';
 import { of } from 'rxjs';
-import { MarketQuoteService } from '../../../services/market/market-quote.service';
+import { catchError } from 'rxjs/operators';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ExpectativaCambio, MarketQuoteService } from '../../../services/market/market-quote.service';
+import { AI_SERVICE } from '../../../services/ai/ai-service.token';
+import { RentabilidadeAnaliseService } from '../../../services/rentabilidade/rentabilidade-analise.service';
+import { AnaliseRentabilidade } from '../../../../types/rentabilidade-analise';
 import { bindLiveRate } from '../../../services/market/live-rate';
 import { CommonModule } from '@angular/common';
 import { FormControl, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -21,8 +28,10 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { NotificationService } from '../../../services/notification.service';
 import { trigger, transition, style, animate } from '@angular/animations';
 
-export interface AnaliseRentabilidade {
-  id: string;
+export type { AnaliseRentabilidade };
+
+/** Valores do formulário de análise. */
+interface FormValores {
   exportacaoId: string;
   produto: string;
   quantidade: number;
@@ -34,23 +43,6 @@ export interface AnaliseRentabilidade {
   taxasGovernamentais: number;
   custoArmazenagem: number;
   taxaCambioAtual: number;
-  taxaCambioPrevista: number;
-  
-  // Campos calculados
-  receitaTotalBrl: number;
-  custoTotalBrl: number;
-  lucroBrutoBrl: number;
-  margemLucro: number;
-  scoreRentabilidade: number;
-  scoreRisco: number;
-  confiabilidadePrevisao: number;
-  
-  // Análise qualitativa
-  pontosPositivos: string[];
-  pontosNegativos: string[];
-  recomendacao: string;
-  
-  dataAnalise: Date;
 }
 
 export interface ScenarioSimulation {
@@ -98,7 +90,7 @@ export interface ScenarioSimulation {
           <mat-icon>analytics</mat-icon>
           Análise de Rentabilidade
         </h1>
-        <p>Motor de IA para análise inteligente de exportações</p>
+        <p>Análise de rentabilidade das exportações com base em regras de negócio e dados de mercado</p>
       </div>
 
       <!-- Cards Container -->
@@ -220,8 +212,8 @@ export interface ScenarioSimulation {
                             (click)="executarAnalise()"
                             [disabled]="analysisForm.invalid || isAnalyzing"
                             class="analyze-btn">
-                      <mat-icon>psychology</mat-icon>
-                      {{isAnalyzing ? 'Analisando...' : 'Analisar com IA'}}
+                      <mat-icon>calculate</mat-icon>
+                      {{isAnalyzing ? 'Calculando...' : 'Calcular análise'}}
                     </button>
                     
                     <button mat-button 
@@ -250,7 +242,7 @@ export interface ScenarioSimulation {
                   <div class="main-score">
                     <div class="score-circle" [class]="getScoreClass(currentAnalysis.scoreRentabilidade)">
                       <span class="score-value">{{currentAnalysis.scoreRentabilidade}}%</span>
-                      <span class="score-label">Rentabilidade</span>
+                      <span class="score-label">Score calculado</span>
                     </div>
                     
                     <div class="score-details">
@@ -258,9 +250,20 @@ export interface ScenarioSimulation {
                         <mat-icon>trending_up</mat-icon>
                         <span>Margem: <strong>{{currentAnalysis.margemLucro | number:'1.1-1'}}%</strong></span>
                       </div>
-                      <div class="detail-item">
+                      <div class="detail-item" *ngIf="currentAnalysis.confiabilidadePrevisao != null">
                         <mat-icon>psychology</mat-icon>
-                        <span>Confiança: <strong>{{currentAnalysis.confiabilidadePrevisao}}%</strong></span>
+                        <span>Confiança: <strong>{{currentAnalysis.confiabilidadePrevisao | number:'1.0-0'}}%</strong></span>
+                      </div>
+                      <div class="detail-item">
+                        <mat-icon>currency_exchange</mat-icon>
+                        <span *ngIf="currentAnalysis.taxaCambioPrevista != null; else expectativaIndisponivel">
+                          Expectativa Focus/BCB fim de {{currentAnalysis.expectativaAno}}:
+                          <strong>R$ {{currentAnalysis.taxaCambioPrevista | number:'1.2-2'}}</strong>
+                          — pesquisa de {{formatarDataPesquisa(currentAnalysis.expectativaData)}}
+                        </span>
+                        <ng-template #expectativaIndisponivel>
+                          <span>Expectativa de mercado indisponível</span>
+                        </ng-template>
                       </div>
                       <div class="detail-item">
                         <mat-icon>warning</mat-icon>
@@ -331,11 +334,21 @@ export interface ScenarioSimulation {
                   <div class="recommendation-section">
                     <h4>
                       <mat-icon>lightbulb</mat-icon>
-                      Recomendação IA
+                      Recomendação
                     </h4>
                     <div class="recommendation-content">
                       {{currentAnalysis.recomendacao}}
                     </div>
+                  </div>
+
+                  <div class="ai-opinion-section" *ngIf="parecerIa || parecerErro || isLoadingParecer" aria-live="polite">
+                    <h4>
+                      <mat-icon>smart_toy</mat-icon>
+                      Parecer da IA
+                    </h4>
+                    <mat-progress-bar *ngIf="isLoadingParecer" mode="indeterminate"></mat-progress-bar>
+                    <div class="recommendation-content ai-text" *ngIf="parecerIa">{{parecerIa}}</div>
+                    <div class="recommendation-content error-text" *ngIf="parecerErro" role="alert">{{parecerErro}}</div>
                   </div>
                 </div>
 
@@ -349,9 +362,16 @@ export interface ScenarioSimulation {
                   </button>
                   
                   <button mat-raised-button 
+                          (click)="pedirParecerIa()"
+                          [disabled]="isLoadingParecer">
+                    <mat-icon>smart_toy</mat-icon>
+                    {{isLoadingParecer ? 'Consultando IA...' : 'Parecer da IA'}}
+                  </button>
+
+                  <button mat-raised-button 
                           (click)="exportarRelatorio()">
                     <mat-icon>file_download</mat-icon>
-                    Exportar PDF
+                    Exportar CSV
                   </button>
                   
                   <button mat-button 
@@ -436,8 +456,15 @@ export interface ScenarioSimulation {
                         </button>
                         <button mat-icon-button 
                                 matTooltip="Replicar análise"
-                                (click)="replicarAnalise(analise)">
+                                (click)="replicarAnalise(analise)"
+                                aria-label="Replicar análise">
                           <mat-icon>content_copy</mat-icon>
+                        </button>
+                        <button mat-icon-button 
+                                matTooltip="Excluir análise"
+                                (click)="excluirAnalise(analise)"
+                                aria-label="Excluir análise">
+                          <mat-icon>delete</mat-icon>
                         </button>
                       </td>
                     </ng-container>
@@ -735,6 +762,30 @@ export interface ScenarioSimulation {
       color: #555;
     }
 
+    .ai-opinion-section {
+      margin-top: 24px;
+      padding: 20px;
+      background: #f3e5f5;
+      border-radius: 12px;
+      border-left: 4px solid #8e24aa;
+    }
+
+    .ai-opinion-section h4 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 12px 0;
+      color: #6a1b9a;
+    }
+
+    .ai-text {
+      white-space: pre-wrap;
+    }
+
+    .error-text {
+      color: #c62828;
+    }
+
     .result-actions {
       display: flex;
       justify-content: center;
@@ -842,47 +893,52 @@ export class RentabilidadeAnaliseComponent implements OnInit, AfterViewInit {
   private destroyRef = inject(DestroyRef);
   taxaInfo = '';
   private notificationService = inject(NotificationService);
+  private router = inject(Router);
+  private analiseService = inject(RentabilidadeAnaliseService);
+  private ai = inject(AI_SERVICE);
 
   analysisForm!: FormGroup;
   isAnalyzing = false;
   currentAnalysis: AnaliseRentabilidade | null = null;
 
+  /** Expectativa Focus/BCB do ano corrente (undefined quando indisponível). */
+  private expectativa?: ExpectativaCambio;
+
+  // Parecer da IA (task RISK_ANALYSIS) para a análise atual.
+  parecerIa = '';
+  parecerErro = '';
+  isLoadingParecer = false;
+
   displayedColumns: string[] = ['produto', 'scoreRentabilidade', 'margemLucro', 'lucroBrutoBrl', 'dataAnalise', 'acoes'];
   historicoDataSource = new MatTableDataSource<AnaliseRentabilidade>([]);
 
-  // Mock data para histórico
-  historicoAnalises: AnaliseRentabilidade[] = [
-    {
-      id: '1',
-      exportacaoId: 'EXP-2024-001',
-      produto: 'soja',
-      quantidade: 1000,
-      precoVendaUsd: 450,
-      precoCompraBrl: 120,
-      freteInternacionalUsd: 25,
-      freteNacionalBrl: 15,
-      taxasPortuarias: 5000,
-      taxasGovernamentais: 3000,
-      custoArmazenagem: 2000,
-      taxaCambioAtual: 5.18,
-      taxaCambioPrevista: 5.25,
-      receitaTotalBrl: 2331000,
-      custoTotalBrl: 1967500,
-      lucroBrutoBrl: 363500,
-      margemLucro: 18.4,
-      scoreRentabilidade: 87,
-      scoreRisco: 23,
-      confiabilidadePrevisao: 92,
-      pontosPositivos: ['Preço internacional favorável: +12%', 'Taxa cambial positiva: +4%', 'Baixo custo logístico: +6%'],
-      pontosNegativos: ['Volatilidade cambial: -5%', 'Custo portuário elevado: -3%'],
-      recomendacao: 'Exportação altamente recomendada. Score excelente com baixo risco. Considere aumentar volume.',
-      dataAnalise: new Date('2024-03-15T10:30:00')
-    }
-  ];
-
   ngOnInit(): void {
     this.initializeForm();
-    this.historicoDataSource.data = this.historicoAnalises;
+    this.carregarHistorico();
+    this.carregarExpectativa();
+  }
+
+  private carregarHistorico(): void {
+    this.analiseService.listar()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (list) => (this.historicoDataSource.data = list),
+        error: () => this.notificationService.showError('Não foi possível carregar o histórico de análises.')
+      });
+  }
+
+  private carregarExpectativa(): void {
+    this.market.getExpectativasCambio()
+      .pipe(catchError(() => of([] as ExpectativaCambio[])), takeUntilDestroyed(this.destroyRef))
+      .subscribe((list) => {
+        const ano = String(new Date().getFullYear());
+        this.expectativa = list.find((e) => e.anoReferencia === ano) ?? list[0];
+      });
+  }
+
+  formatarDataPesquisa(iso: string | null | undefined): string {
+    const [y, m, d] = (iso ?? '').split('-');
+    return y && m && d ? `${d}/${m}/${y}` : (iso ?? '');
   }
 
   ngAfterViewInit(): void {
@@ -917,17 +973,25 @@ export class RentabilidadeAnaliseComponent implements OnInit, AfterViewInit {
     if (this.analysisForm.invalid) return;
 
     this.isAnalyzing = true;
-    this.notificationService.showInfo('Iniciando análise com IA...');
+    this.parecerIa = '';
+    this.parecerErro = '';
+    const analise = this.calcularAnalise(this.analysisForm.getRawValue() as FormValores);
+    this.currentAnalysis = analise;
+    this.isAnalyzing = false;
 
-    // Simular processamento IA
-    setTimeout(() => {
-      this.currentAnalysis = this.processAnaliseIA(this.analysisForm.value);
-      this.isAnalyzing = false;
-      this.notificationService.showSuccess('Análise concluída com sucesso!');
-    }, 3000);
+    this.analiseService.salvar(analise)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (salva) => {
+          this.currentAnalysis = salva;
+          this.historicoDataSource.data = [salva, ...this.historicoDataSource.data];
+          this.notificationService.showSuccess('Análise calculada e salva no histórico.');
+        },
+        error: () => this.notificationService.showError('Análise calculada, mas não foi possível salvá-la no histórico.')
+      });
   }
 
-  private processAnaliseIA(formData: any): AnaliseRentabilidade {
+  private calcularAnalise(formData: FormValores): AnaliseRentabilidade {
     // Cálculos base
     const receitaTotalBrl = formData.quantidade * formData.precoVendaUsd * formData.taxaCambioAtual;
     const custoProdutoBrl = formData.quantidade * formData.precoCompraBrl;
@@ -936,9 +1000,9 @@ export class RentabilidadeAnaliseComponent implements OnInit, AfterViewInit {
                          formData.taxasPortuarias + formData.taxasGovernamentais + formData.custoArmazenagem;
     
     const lucroBrutoBrl = receitaTotalBrl - custoTotalBrl;
-    const margemLucro = (lucroBrutoBrl / receitaTotalBrl) * 100;
+    const margemLucro = receitaTotalBrl > 0 ? (lucroBrutoBrl / receitaTotalBrl) * 100 : 0;
 
-    // IA Scoring
+    // Score calculado por regras
     let scoreRentabilidade = 50;
     let scoreRisco = 50;
     
@@ -985,14 +1049,16 @@ export class RentabilidadeAnaliseComponent implements OnInit, AfterViewInit {
       taxasGovernamentais: formData.taxasGovernamentais,
       custoArmazenagem: formData.custoArmazenagem,
       taxaCambioAtual: formData.taxaCambioAtual,
-      taxaCambioPrevista: formData.taxaCambioAtual * 1.02,
+      taxaCambioPrevista: this.expectativa?.mediana,
+      expectativaAno: this.expectativa?.anoReferencia,
+      expectativaData: this.expectativa?.dataPesquisa,
       receitaTotalBrl,
       custoTotalBrl,
       lucroBrutoBrl,
       margemLucro,
       scoreRentabilidade,
       scoreRisco,
-      confiabilidadePrevisao: 88 + Math.random() * 10,
+      confiabilidadePrevisao: null,
       pontosPositivos,
       pontosNegativos,
       recomendacao,
@@ -1009,6 +1075,8 @@ export class RentabilidadeAnaliseComponent implements OnInit, AfterViewInit {
   limparFormulario(): void {
     this.analysisForm.reset();
     this.currentAnalysis = null;
+    this.parecerIa = '';
+    this.parecerErro = '';
   }
 
   novaAnalise(): void {
@@ -1017,16 +1085,129 @@ export class RentabilidadeAnaliseComponent implements OnInit, AfterViewInit {
   }
 
   abrirSimulador(): void {
-    this.notificationService.showInfo('Abrindo simulador de cenários...');
-    // Implementar navegação para simulador
+    this.router.navigateByUrl('/home-logged/rentabilidade/simulador').catch(() => {
+      this.notificationService.showError('Não foi possível abrir o simulador.');
+    });
   }
 
   exportarRelatorio(): void {
-    this.notificationService.showSuccess('Relatório exportado com sucesso!');
-    // Implementar exportação PDF
+    const a = this.currentAnalysis;
+    if (!a) return;
+
+    const num = (v: number | null | undefined, digits = 2): string =>
+      v === null || v === undefined ? '' : v.toFixed(digits);
+    const esc = (v: string): string => `"${v.replace(/"/g, '""')}"`;
+    const rows: [string, string][] = [
+      ['Exportação', a.exportacaoId],
+      ['Produto', a.produto],
+      ['Data da análise', new Date(a.dataAnalise).toLocaleString('pt-BR')],
+      ['Quantidade (ton)', num(a.quantidade, 3)],
+      ['Preço de venda (USD/ton)', num(a.precoVendaUsd)],
+      ['Preço de compra (BRL/ton)', num(a.precoCompraBrl)],
+      ['Câmbio utilizado', num(a.taxaCambioAtual, 4)],
+      ['Expectativa Focus/BCB (mediana)', num(a.taxaCambioPrevista)],
+      ['Ano da expectativa', a.expectativaAno ?? ''],
+      ['Data da pesquisa Focus', a.expectativaData ?? ''],
+      ['Frete internacional (USD)', num(a.freteInternacionalUsd)],
+      ['Frete nacional (BRL)', num(a.freteNacionalBrl)],
+      ['Taxas portuárias (BRL)', num(a.taxasPortuarias)],
+      ['Taxas governamentais (BRL)', num(a.taxasGovernamentais)],
+      ['Custo de armazenagem (BRL)', num(a.custoArmazenagem)],
+      ['Receita total (BRL)', num(a.receitaTotalBrl)],
+      ['Custo total (BRL)', num(a.custoTotalBrl)],
+      ['Lucro bruto (BRL)', num(a.lucroBrutoBrl)],
+      ['Margem de lucro (%)', num(a.margemLucro)],
+      ['Score de rentabilidade (%)', num(a.scoreRentabilidade, 0)],
+      ['Score de risco (%)', num(a.scoreRisco, 0)],
+      ['Pontos positivos', a.pontosPositivos.join(' | ')],
+      ['Pontos de atenção', a.pontosNegativos.join(' | ')],
+      ['Recomendação', a.recomendacao]
+    ];
+    const csv = 'Campo;Valor\r\n' + rows.map(([k, v]) => `${esc(k)};${esc(v)}`).join('\r\n');
+    // BOM para o Excel reconhecer UTF-8 (acentos).
+    const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const nome = (a.exportacaoId || 'analise').replace(/[^\w.-]+/g, '_');
+    link.href = url;
+    link.download = `rentabilidade-${nome}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    this.notificationService.showSuccess('Relatório CSV gerado.');
+  }
+
+  pedirParecerIa(): void {
+    const a = this.currentAnalysis;
+    if (!a || this.isLoadingParecer) return;
+
+    const brl = (v: number): string => 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const focus = a.taxaCambioPrevista != null
+      ? `R$ ${a.taxaCambioPrevista.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ` +
+        `(mediana Focus/BCB para o fim de ${a.expectativaAno ?? ''}, pesquisa de ${this.formatarDataPesquisa(a.expectativaData)})`
+      : 'indisponível';
+    const input =
+      'Analise os riscos e dê recomendações, em português do Brasil, para a exportação abaixo. ' +
+      'Use somente os dados informados; não invente números nem fatos. Se faltar dado relevante, diga qual.\n\n' +
+      `Produto: ${a.produto}\n` +
+      `Quantidade: ${a.quantidade} t\n` +
+      `Preço de venda: US$ ${a.precoVendaUsd.toFixed(2)}/t\n` +
+      `Câmbio utilizado: ${a.taxaCambioAtual.toFixed(4)}\n` +
+      `Expectativa de câmbio: ${focus}\n` +
+      `Custos: produto ${brl(a.quantidade * a.precoCompraBrl)}, frete internacional US$ ${a.freteInternacionalUsd.toFixed(2)}, ` +
+      `frete nacional ${brl(a.freteNacionalBrl)}, taxas portuárias ${brl(a.taxasPortuarias)}, ` +
+      `taxas governamentais ${brl(a.taxasGovernamentais)}, armazenagem ${brl(a.custoArmazenagem)}\n` +
+      `Receita total: ${brl(a.receitaTotalBrl)}\n` +
+      `Custo total: ${brl(a.custoTotalBrl)}\n` +
+      `Lucro bruto: ${brl(a.lucroBrutoBrl)}\n` +
+      `Margem: ${a.margemLucro.toFixed(1)}%`;
+
+    this.isLoadingParecer = true;
+    this.parecerIa = '';
+    this.parecerErro = '';
+    this.ai.analisar({ task: 'RISK_ANALYSIS', input })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (r) => {
+          this.parecerIa = r.output;
+          this.isLoadingParecer = false;
+        },
+        error: (err: unknown) => {
+          this.parecerErro = this.mensagemErroIa(err);
+          this.isLoadingParecer = false;
+        }
+      });
+  }
+
+  private mensagemErroIa(err: unknown): string {
+    if (err instanceof HttpErrorResponse && (err.status === 429 || err.status === 402)) {
+      const body = err.error as { message?: string } | string | null;
+      const msg = typeof body === 'string' ? body : body?.message;
+      if (msg) { return msg; }
+    }
+    return 'Não consegui consultar a IA agora. Tente novamente em instantes.';
+  }
+
+  excluirAnalise(analise: AnaliseRentabilidade): void {
+    if (!window.confirm(`Excluir a análise da exportação ${analise.exportacaoId}? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+    this.analiseService.excluir(analise.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.historicoDataSource.data = this.historicoDataSource.data.filter((x) => x.id !== analise.id);
+          if (this.currentAnalysis?.id === analise.id) {
+            this.currentAnalysis = null;
+          }
+          this.notificationService.showSuccess('Análise excluída.');
+        },
+        error: () => this.notificationService.showError('Não foi possível excluir a análise.')
+      });
   }
 
   visualizarAnalise(analise: AnaliseRentabilidade): void {
+    this.parecerIa = '';
+    this.parecerErro = '';
     this.currentAnalysis = analise;
   }
 

@@ -33,12 +33,14 @@ import {
   ContratoCambio,
   ContractStatus,
   QuotationData,
+  SimulationRequest,
   SimulationResult,
   BankComparison,
   CambioFilters,
   CambioMetrics,
   FinancialKPIs
 } from '../../../../types/cambio';
+import { apiErrorMessage } from '../../../services/finance/finance-utils';
 import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
@@ -93,6 +95,7 @@ export class CambioComponent implements OnInit, OnDestroy {
   quotations: QuotationData[] = [];
   simulationResult: SimulationResult | null = null;
   bankComparisons: BankComparison[] = [];
+  bankComparisonsLoaded = false;
   metrics: CambioMetrics | null = null;
   financialKPIs: FinancialKPIs | null = null;
 
@@ -108,8 +111,7 @@ export class CambioComponent implements OnInit, OnDestroy {
   // Table columns
   displayedColumns: string[] = [
     'contractNumber', 'bank', 'currency', 'foreignValue',
-    'exchangeRate', 'brlValue', 'status', 'liquidationDate',
-    'aiFinancialScore', 'gainLoss', 'actions'
+    'exchangeRate', 'brlValue', 'status', 'liquidationDate', 'actions'
   ];
 
   // Dropdown data
@@ -150,10 +152,8 @@ export class CambioComponent implements OnInit, OnDestroy {
 
     this.simulationForm = this.formBuilder.group({
       currency: ['USD', Validators.required],
-      value: [100000, [Validators.required, Validators.min(1)]],
-      term: [30, [Validators.required, Validators.min(1)]],
-      bank: ['BTG Pactual', Validators.required],
-      expectedDate: [new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), Validators.required]
+      value: [null, [Validators.required, Validators.min(0.01)]],
+      rate: [null as number | null, [Validators.min(0.0001)]]
     });
   }
 
@@ -161,6 +161,13 @@ export class CambioComponent implements OnInit, OnDestroy {
     this.banks = this.cambioService.getBanks();
     this.currencies = this.cambioService.getCurrencies();
     this.statuses = this.cambioService.getStatuses();
+    this.cambioService.loadCurrencies()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(list => this.currencies = list);
+  }
+
+  private errorMessage(err: unknown, fallback: string): string {
+    return apiErrorMessage(err, fallback);
   }
 
   private setupFilterListeners(): void {
@@ -181,10 +188,11 @@ export class CambioComponent implements OnInit, OnDestroy {
         next: (data) => {
           this.contracts = data;
           this.dataSource.data = data;
+          this.banks = this.cambioService.getBanks();
           this.isLoading = false;
         },
-        error: () => {
-          this.snackBar.open('Erro ao carregar contratos de câmbio', 'Fechar', { duration: 3000 });
+        error: (err) => {
+          this.snackBar.open(this.errorMessage(err, 'Erro ao carregar contratos de câmbio'), 'Fechar', { duration: 4000 });
           this.isLoading = false;
         }
       });
@@ -193,28 +201,76 @@ export class CambioComponent implements OnInit, OnDestroy {
   loadMetrics(): void {
     this.cambioService.getMetrics()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(metrics => this.metrics = metrics);
+      .subscribe({
+        next: metrics => this.metrics = metrics,
+        error: () => this.metrics = null
+      });
   }
 
   loadQuotations(): void {
     this.cambioService.getQuotations()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(data => this.quotations = data);
+      .subscribe({
+        next: data => this.quotations = data,
+        error: () => this.quotations = []
+      });
   }
 
   loadFinancialKPIs(): void {
     this.cambioService.getFinancialKPIs()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(kpis => this.financialKPIs = kpis);
+      .subscribe({
+        next: kpis => this.financialKPIs = kpis,
+        error: () => this.financialKPIs = null
+      });
   }
 
   applyFilters(): void {
     const filters: CambioFilters = this.filterForm.value;
     this.cambioService.getContracts(filters)
       .pipe(takeUntil(this.destroy$))
-      .subscribe(data => {
-        this.contracts = data;
-        this.dataSource.data = data;
+      .subscribe({
+        next: data => {
+          this.contracts = data;
+          this.dataSource.data = data;
+        },
+        error: (err) => this.snackBar.open(this.errorMessage(err, 'Erro ao filtrar contratos'), 'Fechar', { duration: 4000 })
+      });
+  }
+
+  private reloadAll(): void {
+    this.loadContracts();
+    this.loadMetrics();
+    this.loadFinancialKPIs();
+  }
+
+  liquidar(contract: ContratoCambio): void {
+    if (!window.confirm(`Liquidar o contrato ${contract.contractNumber}?`)) {
+      return;
+    }
+    this.cambioService.liquidarContract(contract.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.snackBar.open('Contrato liquidado', 'OK', { duration: 3000 });
+          this.reloadAll();
+        },
+        error: (err) => this.snackBar.open(this.errorMessage(err, 'Erro ao liquidar contrato'), 'Fechar', { duration: 4000 })
+      });
+  }
+
+  cancelar(contract: ContratoCambio): void {
+    if (!window.confirm(`Cancelar o contrato ${contract.contractNumber}?`)) {
+      return;
+    }
+    this.cambioService.cancelarContract(contract.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.snackBar.open('Contrato cancelado', 'OK', { duration: 3000 });
+          this.reloadAll();
+        },
+        error: (err) => this.snackBar.open(this.errorMessage(err, 'Erro ao cancelar contrato'), 'Fechar', { duration: 4000 })
       });
   }
 
@@ -265,11 +321,10 @@ export class CambioComponent implements OnInit, OnDestroy {
           .subscribe({
             next: () => {
               this.snackBar.open('Contrato de câmbio criado com sucesso!', 'OK', { duration: 3000 });
-              this.loadContracts();
-              this.loadMetrics();
+              this.reloadAll();
             },
-            error: () => {
-              this.snackBar.open('Erro ao criar contrato de câmbio', 'Fechar', { duration: 3000 });
+            error: (err) => {
+              this.snackBar.open(this.errorMessage(err, 'Erro ao criar contrato de câmbio'), 'Fechar', { duration: 4000 });
             }
           });
       });
@@ -277,42 +332,57 @@ export class CambioComponent implements OnInit, OnDestroy {
 
   simulate(): void {
     if (this.simulationForm.invalid) {
-      this.snackBar.open('Preencha todos os campos da simulação', 'OK', { duration: 3000 });
+      this.simulationForm.markAllAsTouched();
+      this.snackBar.open('Informe moeda e valor para simular', 'OK', { duration: 3000 });
       return;
     }
+    const v = this.simulationForm.value;
+    const request: SimulationRequest = {
+      currency: v.currency,
+      value: Number(v.value),
+      term: 0,
+      bank: '',
+      expectedDate: new Date(),
+      rate: v.rate ? Number(v.rate) : undefined
+    };
     this.isSimulating = true;
     this.simulationResult = null;
 
-    this.cambioService.simulate(this.simulationForm.value)
+    this.cambioService.simulate(request)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (result) => {
           this.simulationResult = result;
           this.isSimulating = false;
-          this.snackBar.open('Simulação concluída com sucesso!', 'OK', { duration: 3000 });
         },
-        error: () => {
+        error: (err) => {
           this.isSimulating = false;
-          this.snackBar.open('Erro na simulação', 'Fechar', { duration: 3000 });
+          this.snackBar.open(this.errorMessage(err, 'Cotação indisponível para simular. Informe a taxa manualmente.'), 'Fechar', { duration: 4000 });
         }
       });
   }
 
   compareBanks(): void {
     const currency = this.simulationForm.get('currency')?.value || 'USD';
-    const value = this.simulationForm.get('value')?.value || 100000;
+    const value = Number(this.simulationForm.get('value')?.value) || 0;
     this.cambioService.compareBanks(currency, value)
       .pipe(takeUntil(this.destroy$))
-      .subscribe(comparisons => this.bankComparisons = comparisons);
+      .subscribe({
+        next: comparisons => {
+          this.bankComparisons = comparisons;
+          this.bankComparisonsLoaded = true;
+        },
+        error: (err) => {
+          this.bankComparisons = [];
+          this.bankComparisonsLoaded = false;
+          this.snackBar.open(this.errorMessage(err, 'Erro ao comparar bancos'), 'Fechar', { duration: 4000 });
+        }
+      });
   }
 
   refreshQuotations(): void {
     this.loadQuotations();
     this.snackBar.open('Cotações atualizadas', 'OK', { duration: 2000 });
-  }
-
-  exportPDF(): void {
-    this.snackBar.open('Exportando relatório em PDF...', 'OK', { duration: 2000 });
   }
 
   // ================================

@@ -32,6 +32,11 @@ public class PagamentoMapper {
         entity.setExportId(domain.exportId());
         entity.setTipo(domain.tipo() == null ? null : domain.tipo().name());
         entity.setDescricao(domain.descricao());
+        entity.setContraparte(domain.contraparte());
+        entity.setReferencia(domain.referencia());
+        entity.setContaBancaria(domain.contaBancaria());
+        entity.setContratoCambioId(domain.contratoCambioId());
+        entity.setObservacoes(domain.observacoes());
         entity.setAmount(domain.amount());
         entity.setCurrency(domain.currency());
         entity.setStatus(domain.status().name());
@@ -49,11 +54,17 @@ public class PagamentoMapper {
                 entity.getExportId(),
                 entity.getTipo() == null ? null : PagamentoTipo.valueOf(entity.getTipo()),
                 entity.getDescricao(),
+                entity.getContraparte(),
+                entity.getReferencia(),
+                entity.getContaBancaria(),
+                entity.getContratoCambioId(),
+                entity.getObservacoes(),
                 entity.getAmount(),
                 entity.getCurrency(),
                 PagamentoStatus.valueOf(entity.getStatus()),
                 entity.getDueDate(),
                 entity.getPaidAt(),
-                entity.getVersion());
+                entity.getVersion(),
+                entity.getCreatedAt());
     }
 }

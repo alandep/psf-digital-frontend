@@ -35,7 +35,7 @@ export const environment: Environment = {
     subscription: false,
     documents: false,
     logistics: false,
-    finance: false,
+    finance: true,
     crm: false,
     // Enabled for cloud-profile integration testing
     ai: true,

@@ -1,6 +1,7 @@
 package com.eip.modules.admin.adapter.in.bff;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -80,8 +81,15 @@ public class UsuarioBffController {
 
     @PostMapping("/{id}/reset-senha")
     @PreAuthorize("@rbac.can('admin/usuarios','edit')")
-    public Map<String, String> resetarSenha(@PathVariable UUID id) {
-        return Map.of("activationLink", useCase.resetarSenha(id));
+    public Map<String, Object> resetarSenha(@PathVariable UUID id) {
+        String link = useCase.resetarSenha(id);
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("emailSent", true);
+        body.put("message", "Enviamos o link de definição de senha para o e-mail do usuário.");
+        if (link != null) {
+            body.put("activationLink", link);
+        }
+        return body;
     }
 
     private static CriarUsuarioCommand toCreate(UsuarioRequest req) {

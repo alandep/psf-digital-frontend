@@ -1,12 +1,15 @@
 package com.eip.modules.admin.application;
 
 import java.nio.charset.StandardCharsets;
+import java.math.BigDecimal;
 import java.security.MessageDigest;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +23,7 @@ import com.eip.modules.admin.adapter.out.persistence.LegalEntityEntity;
 import com.eip.modules.admin.adapter.out.persistence.LegalEntityJpaRepository;
 import com.eip.modules.admin.domain.port.in.GerenciarUsuariosUseCase;
 import com.eip.platform.error.BusinessRuleException;
+import com.eip.platform.security.AccessPolicyService;
 import com.eip.platform.tenant.OrganizationContext;
 import com.eip.platform.tenant.OrganizationContextHolder;
 
@@ -46,6 +50,11 @@ public class UsuarioAdminService implements GerenciarUsuariosUseCase {
     private final LegalEntityJpaRepository legalRepo;
     private final PasswordEncoder passwordEncoder;
     private final PasswordResetService passwordResetService;
+    private final JdbcTemplate jdbc;
+    private final AccessPolicyService accessPolicyService;
+
+    @Value("${eip.auth.expose-dev-links:false}")
+    private boolean exposeDevLinks;
 
     @Override
     @Transactional(readOnly = true)
@@ -85,7 +94,8 @@ public class UsuarioAdminService implements GerenciarUsuariosUseCase {
 
         AdminAppUserEntity user = userRepo.findByEmail(email).orElse(null);
         OffsetDateTime now = OffsetDateTime.now();
-        if (user == null) {
+        boolean newUser = user == null;
+        if (newUser) {
             user = new AdminAppUserEntity();
             user.setId(UUID.randomUUID());
             user.setName(c.name());
@@ -122,6 +132,8 @@ public class UsuarioAdminService implements GerenciarUsuariosUseCase {
             throw new BusinessRuleException("Este usuario ja pertence a sua empresa.");
         }
 
+        enforceUserLimit(org);
+
         AdminMembershipEntity m = new AdminMembershipEntity();
         m.setId(UUID.randomUUID());
         m.setOrganizationId(org);
@@ -129,9 +141,16 @@ public class UsuarioAdminService implements GerenciarUsuariosUseCase {
         m.setRole(c.role() == null || c.role().isBlank() ? "ANALISTA" : c.role().trim().toUpperCase());
         m.setStatus("PENDING"); // invited; becomes ACTIVE on first login
         m.setDepartment(c.departamento());
-        m.setMfaEnabled(c.mfaEnabled());
+        // Real MFA state only: the command flag is ignored on creation.
+        m.setMfaEnabled(!newUser && hasActiveTotp(user.getId()));
         m.setJoinedAt(now);
         membershipRepo.save(m);
+        accessPolicyService.evict(org);
+
+        if (newUser) {
+            // Invitation e-mail. Existing users are activated at their next login.
+            passwordResetService.sendActivation(user.getId(), true);
+        }
 
         log.info("Usuario adicionado a org {}: user={} role={}", org, user.getId(), m.getRole());
         return toView(user, m, empresaName(org));
@@ -175,8 +194,17 @@ public class UsuarioAdminService implements GerenciarUsuariosUseCase {
             m.setStatus(uiToMembershipStatus(c.status()));
         }
         m.setDepartment(c.departamento());
-        m.setMfaEnabled(c.mfaEnabled());
+        if (m.isMfaEnabled() && !c.mfaEnabled()) {
+            // Admin MFA reset: the user must enroll a new authenticator.
+            jdbc.update("delete from mfa_recovery_code where user_id = ?", userId);
+            jdbc.update("delete from mfa_method where user_id = ?", userId);
+            jdbc.update("update organization_membership set mfa_enabled = false where user_id = ?", userId);
+            recordSecurityEvent(userId, org, "MFA_RESET_BY_ADMIN");
+            m.setMfaEnabled(false);
+        }
+        // Enabling MFA is never forced by an admin: the user enrolls on their own.
         membershipRepo.save(m);
+        accessPolicyService.evict(org);
 
         return toView(u, m, empresaName(org));
     }
@@ -189,6 +217,7 @@ public class UsuarioAdminService implements GerenciarUsuariosUseCase {
                 .orElseThrow(() -> new BusinessRuleException("Usuario nao encontrado nesta empresa."));
         m.setStatus(uiToMembershipStatus(status));
         membershipRepo.save(m);
+        accessPolicyService.evict(org);
         AdminAppUserEntity u = userRepo.findById(userId).orElseThrow();
         return toView(u, m, empresaName(org));
     }
@@ -200,14 +229,51 @@ public class UsuarioAdminService implements GerenciarUsuariosUseCase {
         // Ensure the user belongs to the admin's org before issuing a reset.
         membershipRepo.findByOrganizationIdAndUserId(org, userId)
                 .orElseThrow(() -> new BusinessRuleException("Usuario nao encontrado nesta empresa."));
-        // Issue a real one-time activation/reset token and return the link so the
-        // admin can hand it to the user (email delivery is a future integration).
-        String token = passwordResetService.issueTokenForUser(userId);
-        log.info("Reset de senha solicitado para user={} (org={})", userId, org);
-        return "/definir-senha?token=" + token;
+        String token = passwordResetService.sendActivation(userId, false);
+        log.info("Reset de senha enviado para user={} (org={})", userId, org);
+        return exposeDevLinks ? "/definir-senha?token=" + token : null;
     }
 
     // --- helpers -----------------------------------------------------------
+
+    /**
+     * Enforces the plan's {@code limit.users}: counts ACTIVE + PENDING memberships
+     * of the organization and rejects the creation when the limit is reached.
+     */
+    private void enforceUserLimit(UUID org) {
+        OrganizationContext ctx = OrganizationContextHolder.currentOrNull();
+        UUID actor = ctx == null ? null : ctx.userId();
+        BigDecimal limit = accessPolicyService.resolve(actor, org).limits().get("limit.users");
+        if (limit == null) {
+            return; // no limit (unlimited or legacy tenant without entitlements)
+        }
+        Integer count = jdbc.queryForObject(
+                "select count(*) from organization_membership "
+                        + "where organization_id = ? and status in ('ACTIVE','PENDING')",
+                Integer.class, org);
+        int n = limit.intValue();
+        if (count != null && count >= n) {
+            throw new BusinessRuleException("Limite de usuários do plano atingido (" + n
+                    + "). Faça upgrade em Administração > Assinatura.");
+        }
+    }
+
+    private boolean hasActiveTotp(UUID userId) {
+        Integer n = jdbc.queryForObject(
+                "select count(*) from mfa_method where user_id = ? and type = 'TOTP' and status = 'ACTIVE'",
+                Integer.class, userId);
+        return n != null && n > 0;
+    }
+
+    /** Best-effort audit insert; never fails the main flow. */
+    private void recordSecurityEvent(UUID userId, UUID org, String type) {
+        try {
+            jdbc.update("insert into security_event(id,user_id,organization_id,type,ip) values (?,?,?,?,?)",
+                    UUID.randomUUID(), userId, org, type, null);
+        } catch (RuntimeException ex) {
+            log.warn("Falha ao registrar security_event {}: {}", type, ex.getClass().getSimpleName());
+        }
+    }
 
     private UUID requireOrg() {
         OrganizationContext ctx = OrganizationContextHolder.currentOrNull();

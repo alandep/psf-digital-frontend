@@ -38,6 +38,12 @@ public class HedgeService implements GerenciarHedgeUseCase {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public HedgeMetricas metricas() {
+        return HedgeMetricas.from(repo.listar(currentOrg(), null));
+    }
+
+    @Override
     @Transactional
     public HedgeView criar(CriarHedgeCommand cmd) {
         UUID org = currentOrg();

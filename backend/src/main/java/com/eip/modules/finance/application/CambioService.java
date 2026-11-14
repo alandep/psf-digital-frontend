@@ -1,5 +1,7 @@
 package com.eip.modules.finance.application;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +25,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CambioService implements GerenciarCambioUseCase {
 
+    private static final ZoneId SP = ZoneId.of("America/Sao_Paulo");
+
     private final CambioRepositoryPort repo;
     private final OutboxPublisher outbox;
 
@@ -35,6 +39,28 @@ public class CambioService implements GerenciarCambioUseCase {
     public List<CambioView> listar(String status) {
         UUID org = currentOrg();
         return repo.listar(org, status).stream().map(CambioView::from).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CambioView porId(UUID id) {
+        UUID org = currentOrg();
+        return repo.porId(id, org)
+                .map(CambioView::from)
+                .orElseThrow(() -> new ResourceNotFoundException("Câmbio não encontrado: " + id));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CambioMetricas metricas() {
+        return CambioAnalytics.metricas(repo.listar(currentOrg(), null), LocalDate.now(SP));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BancoResumo> bancos(String moeda) {
+        String m = moeda == null || moeda.isBlank() ? "USD" : moeda.trim();
+        return CambioAnalytics.bancos(repo.listar(currentOrg(), null), m);
     }
 
     @Override

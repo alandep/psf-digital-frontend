@@ -13,59 +13,81 @@ import com.eip.modules.finance.domain.model.Pagamento;
  */
 public interface GerenciarPagamentosUseCase {
 
-    List<PagamentoView> listar(String status);
+    /** Lists entries; {@code status} (effective, ATRASADO computed) and {@code tipo} are optional filters. */
+    List<PagamentoView> listar(String status, String tipo);
 
     PagamentoView porId(UUID id);
 
-    PagamentoView criar(CriarPagamentoCommand cmd);
+    PagamentoView criar(PagamentoCommand cmd);
 
-    PagamentoView marcarPago(UUID id);
+    PagamentoView atualizar(UUID id, PagamentoCommand cmd);
+
+    /** Settles the entry; {@code paidAt} defaults to now when {@code null}. */
+    PagamentoView marcarPago(UUID id, OffsetDateTime paidAt);
 
     PagamentoView cancelar(UUID id);
 
-    ResumoFinanceiro resumo();
+    /** Summary of open entries, optionally restricted to one {@code tipo}. */
+    ResumoFinanceiro resumo(String tipo);
 
-    /** Command to create a payment. */
-    record CriarPagamentoCommand(
+    /** Command to create or fully update an entry. */
+    record PagamentoCommand(
             UUID exportId,
             String tipo,
             String descricao,
+            String contraparte,
+            String referencia,
+            String contaBancaria,
+            UUID contratoCambioId,
+            String observacoes,
             BigDecimal amount,
             String currency,
             LocalDate dueDate) {
     }
 
-    /** Read view of a single payment. */
+    /** Read view of a single payment. {@code status} is the effective one (ATRASADO computed). */
     record PagamentoView(
             UUID id,
-            UUID exportId,
             String tipo,
             String descricao,
+            String contraparte,
+            String referencia,
+            String contaBancaria,
+            UUID contratoCambioId,
+            String observacoes,
             BigDecimal amount,
             String currency,
             String status,
             LocalDate dueDate,
-            OffsetDateTime paidAt) {
+            OffsetDateTime paidAt,
+            UUID exportId,
+            OffsetDateTime createdAt) {
 
-        public static PagamentoView from(Pagamento p) {
+        public static PagamentoView from(Pagamento p, LocalDate hoje) {
             return new PagamentoView(
                     p.id().value(),
-                    p.exportId(),
                     p.tipo() == null ? null : p.tipo().name(),
                     p.descricao(),
+                    p.contraparte(),
+                    p.referencia(),
+                    p.contaBancaria(),
+                    p.contratoCambioId(),
+                    p.observacoes(),
                     p.amount(),
                     p.currency(),
-                    p.status().name(),
+                    p.statusEm(hoje).name(),
                     p.dueDate(),
-                    p.paidAt());
+                    p.paidAt(),
+                    p.exportId(),
+                    p.createdAt());
         }
     }
 
     /**
-     * Financial summary of pending payments.
+     * Financial summary of open (pending or overdue) entries.
      *
-     * @param totalReceber sum of pending receivables
-     * @param totalPagar   sum of pending payables
+     * @param totalReceber sum of open receivables
+     * @param totalPagar   sum of open payables
      * @param saldo        {@code totalReceber - totalPagar}
      */
     record ResumoFinanceiro(

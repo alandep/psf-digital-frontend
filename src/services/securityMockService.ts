@@ -11,16 +11,19 @@ import {
   SecurityEvent,
   SecurityOverview,
 } from '../types/security';
+import { ISecurityService } from '../app/services/security/security.interface';
 
 const LATENCY = 400;
 
 @Injectable({ providedIn: 'root' })
-export class SecurityMockService {
+export class SecurityMockService implements ISecurityService {
   private overview: SecurityOverview = {
     passwordChangedAt: this.daysAgo(90),
     mfaStatus: 'ENABLED',
     authenticatorConfigured: true,
     recoveryCodesRemaining: 6,
+    emailMfa: true,
+    emailMasked: 'a***@empresa.com.br',
   };
 
   private sessions: ActiveSession[] = [
@@ -100,7 +103,19 @@ export class SecurityMockService {
     }).pipe(delay(LATENCY));
   }
 
-  confirmMfaEnrollment(code: string): Observable<{ ok: boolean; recoveryCodes?: string[] }> {
+  disableMfa(_code: string): Observable<void> {
+    this.overview.mfaStatus = 'DISABLED';
+    this.overview.authenticatorConfigured = false;
+    this.overview.recoveryCodesRemaining = 0;
+    return of(void 0).pipe(delay(LATENCY));
+  }
+
+  changePassword(_current: string, _next: string): Observable<{ ok: boolean; message?: string }> {
+    this.overview.passwordChangedAt = new Date();
+    return of({ ok: true, message: 'Senha alterada com sucesso.' }).pipe(delay(LATENCY));
+  }
+
+  confirmMfaEnrollment(code: string): Observable<{ ok: boolean; recoveryCodes?: string[]; message?: string }> {
     const digits = (code || '').replace(/\D/g, '');
     if (digits.length === 6) {
       const recoveryCodes = this.buildCodes();

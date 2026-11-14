@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { IAuthFlowService } from './auth-flow.interface';
-import { AuthChallenge, AuthOrganization, AuthState } from '../../../types/auth-flow';
+import { AuthChallenge, AuthOrganization, AuthState, MfaMethod } from '../../../types/auth-flow';
 import { environment } from '../../../environments/environment';
 
 // Shape returned by AuthBffController. 'authenticationState' matches AuthState.
@@ -14,6 +14,9 @@ interface AuthBffResponse {
   cpfMasked?: string;
   organizations?: AuthOrganization[];
   message?: string;
+  mfaMethods?: MfaMethod[];
+  emailMasked?: string;
+  resendAvailableInSeconds?: number;
 }
 
 // HTTP gateway hitting the backend BFF /bff/auth/** endpoints. Maps responses
@@ -53,8 +56,12 @@ export class AuthFlowHttpService implements IAuthFlowService {
       cpfMasked: res.cpfMasked,
       userName: res.userName,
       organizations: res.organizations,
-      challengeId: res.challengeId,
-      message: res.message
+      challengeId: res.challengeId ?? this.lastChallenge?.challengeId,
+      message: res.message,
+      // Keep MFA metadata across steps (e.g. resend/verify answers may omit it).
+      mfaMethods: res.mfaMethods ?? this.lastChallenge?.mfaMethods,
+      emailMasked: res.emailMasked ?? this.lastChallenge?.emailMasked,
+      resendAvailableInSeconds: res.resendAvailableInSeconds
     };
     this.setLastChallenge(challenge);
     return challenge;
@@ -80,19 +87,25 @@ export class AuthFlowHttpService implements IAuthFlowService {
       .pipe(map((res) => this.toChallenge(res)));
   }
 
-  verifyMfa(code: string): Observable<AuthChallenge> {
+  verifyMfa(code: string, method?: MfaMethod): Observable<AuthChallenge> {
     return this.http
       .post<AuthBffResponse>(`${this.base}/mfa/verify`, {
         challengeId: this.currentChallengeId(),
-        code
+        code,
+        ...(method ? { method } : {})
       })
       .pipe(map((res) => this.toChallenge(res)));
   }
 
-  // The backend has no dedicated recovery-code step; reuse the MFA verify
-  // endpoint so recovery codes flow through the same challenge.
+  sendEmailCode(): Observable<AuthChallenge> {
+    return this.http
+      .post<AuthBffResponse>(`${this.base}/mfa/email/send`, { challengeId: this.currentChallengeId() })
+      .pipe(map((res) => this.toChallenge(res)));
+  }
+
+  // Recovery codes go through the same verify endpoint with method RECOVERY.
   verifyRecoveryCode(code: string): Observable<AuthChallenge> {
-    return this.verifyMfa(code);
+    return this.verifyMfa(code, 'RECOVERY');
   }
 
   selectOrganization(orgId: string): Observable<AuthChallenge> {

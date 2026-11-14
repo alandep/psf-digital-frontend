@@ -1,12 +1,15 @@
 package com.eip.modules.subscription.adapter.in;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import com.eip.modules.subscription.domain.model.Subscription;
+import com.eip.modules.subscription.domain.model.SubscriptionStatus;
 import com.eip.modules.subscription.domain.port.out.SubscriptionRepositoryPort;
+import com.eip.platform.security.AccessPolicyService;
 import com.eip.platform.security.LicenseGate;
 import com.eip.platform.tenant.OrganizationContext;
 import com.eip.platform.tenant.OrganizationContextHolder;
@@ -45,6 +48,12 @@ public class SubscriptionLicenseModeResolver extends LicenseGate {
     }
 
     private static LicenseMode map(Subscription sub) {
+        if (sub.status() == SubscriptionStatus.TRIALING
+                && AccessPolicyService.isTrialExpired(
+                        sub.trialEnd(), sub.currentPeriodEnd(), OffsetDateTime.now())) {
+            // Expired trial: only billing is reachable (consistent with AccessPolicyService).
+            return LicenseMode.BILLING_ONLY;
+        }
         return switch (sub.licenseMode()) {
             case FULL -> LicenseMode.FULL;
             case READ_ONLY -> LicenseMode.READ_ONLY;

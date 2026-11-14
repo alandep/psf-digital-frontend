@@ -41,7 +41,8 @@ export class HedgeDetailDialogComponent {
       'FORWARD': 'Forward',
       'OPTION_CALL': 'Opção Call',
       'OPTION_PUT': 'Opção Put',
-      'SWAP': 'Swap'
+      'SWAP': 'Swap',
+      'OPCAO': 'Opção'
     };
     return map[type] || type;
   }
@@ -49,6 +50,8 @@ export class HedgeDetailDialogComponent {
   getStatusColor(status: HedgeStatus): string {
     const map: Record<HedgeStatus, string> = {
       'ATIVO': 'status-ativo',
+      'EXERCIDO': 'status-liquidado',
+      'EXPIRADO': 'status-vencido',
       'LIQUIDADO': 'status-liquidado',
       'VENCIDO': 'status-vencido',
       'CANCELADO': 'status-cancelado',

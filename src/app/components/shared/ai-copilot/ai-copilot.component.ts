@@ -1,5 +1,7 @@
-import { Component, inject, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,9 +12,10 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
 import { trigger, transition, style, animate, state } from '@angular/animations';
-import { Observable, of } from 'rxjs';
+import { Observable, forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { MarketQuote, MarketQuoteService } from '../../../services/market/market-quote.service';
+import { ExpectativaCambio, MarketQuote, MarketQuoteService } from '../../../services/market/market-quote.service';
+import { AI_SERVICE } from '../../../services/ai/ai-service.token';
 
 interface ChatMessage {
   id: string;
@@ -51,6 +54,7 @@ interface QuickAction {
               color="primary"
               class="copilot-toggle"
               (click)="toggleCopilot()"
+              [attr.aria-label]="isExpanded ? 'Fechar Assistente IA' : 'Abrir Assistente IA'"
               [matTooltip]="isExpanded ? 'Fechar Assistente IA' : 'Abrir Assistente IA'">
         <mat-icon>{{isExpanded ? 'close' : 'smart_toy'}}</mat-icon>
       </button>
@@ -63,11 +67,11 @@ interface QuickAction {
             <div class="header-text">
               <h3>Export AI Assistant</h3>
               <span class="status" [class.online]="aiStatus === 'online'">
-                {{aiStatus === 'online' ? 'Online' : 'Conectando...'}}
+                {{aiStatus === 'online' ? 'Online' : 'Indisponível'}}
               </span>
             </div>
           </div>
-          <button mat-icon-button (click)="clearChat()">
+          <button mat-icon-button (click)="clearChat()" aria-label="Reiniciar conversa">
             <mat-icon>refresh</mat-icon>
           </button>
         </mat-card-header>
@@ -90,7 +94,7 @@ interface QuickAction {
           </div>
 
           <!-- Messages -->
-          <div class="messages-container" #messagesContainer>
+          <div class="messages-container" #messagesContainer aria-live="polite">
             <div class="message" 
                  *ngFor="let message of messages; trackBy: trackByMessage"
                  [class]="message.type">
@@ -144,6 +148,7 @@ interface QuickAction {
                   mini
                   (click)="sendMessage()"
                   [disabled]="!currentMessage.trim() || isProcessing"
+                  aria-label="Enviar mensagem"
                   matTooltip="Enviar mensagem">
             <mat-icon>send</mat-icon>
           </button>
@@ -299,6 +304,7 @@ interface QuickAction {
 
     .message-text {
       line-height: 1.4;
+      white-space: pre-wrap;
     }
 
     .message-time {
@@ -406,6 +412,8 @@ interface QuickAction {
 })
 export class AiCopilotComponent implements OnInit, AfterViewInit {
   private readonly market = inject(MarketQuoteService);
+  private readonly ai = inject(AI_SERVICE);
+  private readonly destroyRef = inject(DestroyRef);
 
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
   @ViewChild('messageInput') messageInput!: ElementRef;
@@ -413,7 +421,7 @@ export class AiCopilotComponent implements OnInit, AfterViewInit {
   isExpanded = false;
   currentMessage = '';
   isProcessing = false;
-  aiStatus: 'online' | 'connecting' = 'online';
+  aiStatus: 'online' | 'offline' = 'online';
 
   messages: ChatMessage[] = [];
 
@@ -456,6 +464,11 @@ export class AiCopilotComponent implements OnInit, AfterViewInit {
     }
   ];
 
+  private static readonly CONTEXTO_IA =
+    'Você é o copiloto do EIP, plataforma de exportação brasileira. Responda em português, de forma objetiva. ' +
+    'Não invente números; se faltar dado, diga qual dado é necessário e em qual tela do EIP encontrá-lo ' +
+    '(Rentabilidade > Análise, Financeiro > Câmbio, Exportações).';
+
   ngOnInit(): void {
     this.initializeWelcomeMessage();
   }
@@ -489,7 +502,6 @@ export class AiCopilotComponent implements OnInit, AfterViewInit {
   sendMessage(): void {
     if (!this.currentMessage.trim() || this.isProcessing) return;
 
-    // Add user message
     const userMessage: ChatMessage = {
       id: this.generateId(),
       content: this.currentMessage,
@@ -502,11 +514,8 @@ export class AiCopilotComponent implements OnInit, AfterViewInit {
     this.currentMessage = '';
     this.isProcessing = true;
 
-    setTimeout(() => {
-      this.scrollToBottom();
-    }, 100);
+    setTimeout(() => this.scrollToBottom(), 0);
 
-    // Simulate AI response
     this.processAiResponse(messageToProcess);
   }
 
@@ -516,143 +525,99 @@ export class AiCopilotComponent implements OnInit, AfterViewInit {
   }
 
   private processAiResponse(userMessage: string): void {
-    // Simulate AI processing time
-    setTimeout(() => {
-      this.resolveAiResponse(userMessage).subscribe((response) => {
-        const aiMessage: ChatMessage = {
+    this.resolveAiResponse(userMessage)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((response) => {
+        this.messages.push({
           id: this.generateId(),
           content: response,
           type: 'ai',
           timestamp: new Date()
-        };
-
-        this.messages.push(aiMessage);
+        });
         this.isProcessing = false;
-
-        setTimeout(() => {
-          this.scrollToBottom();
-        }, 100);
+        setTimeout(() => this.scrollToBottom(), 0);
       });
-    }, 1500 + Math.random() * 2000); // 1.5-3.5 seconds
   }
 
   /**
-   * Resolves the reply. The dollar answer is built from the REAL market quote;
-   * every other topic still uses the canned replies below.
+   * Resolve a resposta. Câmbio usa a cotação real (+ expectativa Focus quando
+   * disponível); criar exportação é apenas um guia de navegação; o restante vai
+   * para o AI Hub (task CHAT). Nunca emite erro: sempre devolve um texto.
    */
   private resolveAiResponse(userMessage: string): Observable<string> {
-    const canned = this.generateAiResponse(userMessage);
-    if (canned !== AiCopilotComponent.COTACAO_DOLAR) {
-      return of(canned);
+    const message = userMessage.toLowerCase();
+
+    if (/d[óo]lar|c[âa]mbio|cota[çc][ãa]o/.test(message)) {
+      return this.resolveCambio();
     }
-    return this.market.getQuote('USD').pipe(
-      map((q) => this.formatCambio(q)),
+
+    if (message.includes('criar') || message.includes('nova exportação')) {
+      return of(
+        'Para criar uma exportação, abra Exportações > Nova exportação e preencha produto, destino, ' +
+        'quantidade e prazo de embarque. Se tiver dúvida em algum campo, é só perguntar.'
+      );
+    }
+
+    const input = AiCopilotComponent.CONTEXTO_IA + '\n\nPergunta: ' + userMessage;
+    return this.ai.analisar({ task: 'CHAT', input }).pipe(
+      map((r) => {
+        this.aiStatus = 'online';
+        return r.output;
+      }),
+      catchError((err: unknown) => {
+        this.aiStatus = 'offline';
+        return of(this.aiErrorMessage(err));
+      })
+    );
+  }
+
+  private aiErrorMessage(err: unknown): string {
+    if (err instanceof HttpErrorResponse && (err.status === 429 || err.status === 402)) {
+      const body = err.error as { message?: string } | string | null;
+      const msg = typeof body === 'string' ? body : body?.message;
+      if (msg) { return msg; }
+    }
+    return 'Não consegui consultar a IA agora. Tente novamente em instantes.';
+  }
+
+  private resolveCambio(): Observable<string> {
+    const expectativas$ = this.market.getExpectativasCambio().pipe(
+      catchError(() => of([] as ExpectativaCambio[]))
+    );
+    return forkJoin([this.market.getQuote('USD'), expectativas$]).pipe(
+      map(([q, exp]) => {
+        const lines = exp.map((e) => this.formatExpectativa(e));
+        return this.formatCambio(q) + (lines.length ? '\n\n' + lines.join('\n') : '');
+      }),
       catchError(() => of(
-        '💰 Câmbio\n\nNão consegui obter a cotação do dólar agora. ' +
+        'Câmbio\n\nNão consegui obter a cotação do dólar agora. ' +
         'A fonte de mercado está indisponível no momento; tente novamente em instantes ' +
         'ou consulte a tela Financeiro > Câmbio.'
       ))
     );
   }
 
-  private static readonly COTACAO_DOLAR = '__COTACAO_DOLAR__';
+  private formatExpectativa(e: ExpectativaCambio): string {
+    const valor = 'R$ ' + e.mediana.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const [y, m, d] = (e.dataPesquisa ?? '').split('-');
+    const data = y && m && d ? `${d}/${m}/${y}` : e.dataPesquisa;
+    return `Expectativa Focus (BCB) para o fim de ${e.anoReferencia}: ${valor} (mediana, pesquisa de ${data})`;
+  }
 
   private formatCambio(q: MarketQuote): string {
     const brl = (v: number | null | undefined) =>
       v === null || v === undefined ? '—' : 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
     const pct = q.pctChange === null ? '—'
       : (q.pctChange >= 0 ? '+' : '') + q.pctChange.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
-    const seta = q.trend === 'up' ? '↗️' : q.trend === 'down' ? '↘️' : '➡️';
+    const seta = q.trend === 'up' ? '↗' : q.trend === 'down' ? '↘' : '→';
     const hora = q.quotedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    return '💰 Status do Câmbio\n\n' +
+    return 'Status do Câmbio\n\n' +
       'Dólar comercial: ' + brl(q.rate) + '\n' +
       '• Variação do dia: ' + pct + ' ' + seta + '\n' +
       '• Máxima: ' + brl(q.high) + '\n' +
       '• Mínima: ' + brl(q.low) + '\n\n' +
       'Fonte: ' + q.sourceLabel + ' • cotação das ' + hora + (q.stale ? ' (desatualizada)' : '') + '\n' +
       'Não faço previsões de câmbio; para decisões de hedge, consulte seu banco ou a tela Financeiro > Câmbio.';
-  }
-  private generateAiResponse(userMessage: string): string {
-    const message = userMessage.toLowerCase();
-
-    // Análise de rentabilidade
-    if (message.includes('rentável') || message.includes('lucro') || message.includes('rentabilidade')) {
-      return `📊 Análise de Rentabilidade Concluída
-
-Sua exportação atual tem:
-• Score de Rentabilidade: 87%
-• Margem de Lucro: 18.4%
-• Confiabilidade: 92%
-
-✅ Pontos Positivos:
-• Preço internacional favorável: +12%
-• Taxa cambial positiva: +4%
-• Baixo custo logístico: +6%
-
-⚠️ Pontos de Atenção:
-• Volatilidade cambial: -5%
-• Custo portuário elevado: -3%
-
-Deseja simular cenários alternativos?`;
-    }
-
-    // Cotação do dólar
-    if (message.includes('dólar') || message.includes('câmbio') || message.includes('cotação')) {
-      return AiCopilotComponent.COTACAO_DOLAR;
-    }
-
-    // Criar exportação
-    if (message.includes('criar') || message.includes('nova exportação')) {
-      return `🚀 Assistente de Nova Exportação
-
-Vou te ajudar! Preciso de algumas informações:
-
-1. Produto: Soja, Milho, Café, Açúcar?
-2. Destino: Qual país/região?
-3. Quantidade: Quantas toneladas?
-4. Prazo: Data prevista de embarque?
-
-Digite as informações ou clique em "Exportações → Novos Pedidos" no menu.`;
-    }
-
-    // Relatórios
-    if (message.includes('relatório') || message.includes('report')) {
-      return `📋 Relatórios Disponíveis
-
-Posso gerar:
-• Rentabilidade por Produto
-• Análise Cambial
-• Performance Logística
-• Compliance Status
-
-Qual relatório você gostaria? Ou acesse "Relatórios" no menu principal.`;
-    }
-
-    // Simulação
-    if (message.includes('simular') || message.includes('cenário')) {
-      return `🔮 Simulador de Cenários
-
-Cenários disponíveis:
-• Cambial: E se o dólar subir/descer?
-• Logístico: E se o frete aumentar?
-• Commodity: Variação de preços
-• Temporal: Impacto de atrasos
-
-Acesse "Rentabilidade → Simulador" para análise detalhada.`;
-    }
-
-    // Resposta genérica inteligente
-    return `🤖 Entendi sua questão sobre "${userMessage}".
-
-Como assistente especializado em exportações, posso ajudar com:
-
-• Análises de Rentabilidade
-• Simulações de Cenários
-• Status de Documentos
-• Cotações em Tempo Real
-• Geração de Relatórios
-
-Seja mais específico ou use uma das sugestões acima!`;
   }
 
   clearChat(): void {

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.eip.modules.identity.adapter.in.bff.AuthBffController;
+import com.eip.modules.identity.adapter.in.session.AuthSessionRegistry;
 import com.eip.platform.tenant.OrganizationContext;
 import com.eip.platform.tenant.OrganizationContextHolder;
 import com.eip.platform.tenant.OrganizationId;
@@ -27,10 +28,17 @@ import jakarta.servlet.http.HttpSession;
  * each request, reading the {@code EIP_ORG} / {@code EIP_USER} attributes set by
  * {@link AuthBffController} once the auth flow completes. Replaces the export
  * module's DEV filter as the source of tenant context for authenticated calls.
+ * Also refreshes the session's last-seen instant in {@link AuthSessionRegistry}.
  */
 @Component
 @Order(2)
 public class SessionOrganizationContextFilter extends OncePerRequestFilter {
+
+    private final AuthSessionRegistry sessionRegistry;
+
+    public SessionOrganizationContextFilter(AuthSessionRegistry sessionRegistry) {
+        this.sessionRegistry = sessionRegistry;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -42,6 +50,7 @@ public class SessionOrganizationContextFilter extends OncePerRequestFilter {
             Object org = session.getAttribute(AuthBffController.SESSION_ORG);
             Object user = session.getAttribute(AuthBffController.SESSION_USER);
             if (org != null && user != null) {
+                sessionRegistry.touch(session.getId());
                 if (OrganizationContextHolder.currentOrNull() == null) {
                     OrganizationContextHolder.set(new OrganizationContext(
                             OrganizationId.of(org.toString()),

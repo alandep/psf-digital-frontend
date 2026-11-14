@@ -38,6 +38,18 @@ public class PagamentoEntity {
 
     private String descricao;
 
+    private String contraparte;
+
+    private String referencia;
+
+    @Column(name = "conta_bancaria")
+    private String contaBancaria;
+
+    @Column(name = "contrato_cambio_id")
+    private UUID contratoCambioId;
+
+    private String observacoes;
+
     @Column(name = "amount", nullable = false, precision = 18, scale = 2)
     private BigDecimal amount;
 

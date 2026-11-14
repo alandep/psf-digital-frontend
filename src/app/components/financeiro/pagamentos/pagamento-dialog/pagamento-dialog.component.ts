@@ -9,19 +9,20 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatTabsModule } from '@angular/material/tabs';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 // Types
-import { PaymentCategory, PaymentType } from '../../../../../types/pagamentos';
+import { Pagamento } from '../../../../../types/pagamentos';
+import { ContratoCambio } from '../../../../../types/cambio';
 
 export interface PagamentoDialogData {
-  beneficiaries: string[];
-  categories: PaymentCategory[];
-  banks: string[];
   currencies: string[];
+  /** Contratos de câmbio reais (GET /bff/financeiro/cambio) para vincular. */
+  exchangeContracts: ContratoCambio[];
+  /** Presente quando o diálogo é de edição. */
+  payment?: Pagamento | null;
 }
 
 @Component({
@@ -36,7 +37,6 @@ export interface PagamentoDialogData {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatTabsModule,
     MatDatepickerModule,
     MatNativeDateModule,
     MatTooltipModule
@@ -49,59 +49,22 @@ export class PagamentoDialogComponent {
   public data: PagamentoDialogData = inject(MAT_DIALOG_DATA);
   private formBuilder = inject(FormBuilder);
 
-  // Form
+  readonly editing = !!this.data.payment;
   paymentForm!: FormGroup;
 
-  // Payment types for select
-  paymentTypes: { value: PaymentType; label: string }[] = [
-    { value: 'NACIONAL', label: 'Nacional' },
-    { value: 'INTERNACIONAL', label: 'Internacional' }
-  ];
-
   constructor() {
-    this.initializeForm();
-  }
-
-  private initializeForm(): void {
+    const p = this.data.payment;
     this.paymentForm = this.formBuilder.group({
-      // Dados Gerais
-      paymentNumber: [{ value: this.generatePaymentNumber(), disabled: true }],
-      company: ['PSF Exportadora Ltda'],
-      beneficiary: ['', Validators.required],
-      paymentType: ['NACIONAL'],
-      category: ['', Validators.required],
-      bank: ['', Validators.required],
-      bankAccount: [''],
-      currency: ['', Validators.required],
-      amount: [null, [Validators.required, Validators.min(0.01)]],
-      issueDate: [new Date()],
-      dueDate: [null, Validators.required],
-      costCenter: [''],
-      observations: [''],
-
-      // Internacional
-      swift: [''],
-      iban: [''],
-      beneficiaryBank: [''],
-      beneficiaryCountry: [''],
-
-      // Vinculações
-      linkedExportNumber: [''],
-      linkedContractNumber: [''],
-      linkedInvoiceNumber: [''],
-      linkedDueNumber: ['']
+      beneficiary: [p?.beneficiary ?? '', Validators.required],
+      description: [p?.description ?? '', Validators.required],
+      paymentNumber: [p?.paymentNumber ?? ''],
+      bankAccount: [p?.bankAccount ?? ''],
+      currency: [p?.currency ?? 'BRL', Validators.required],
+      amount: [p?.amount ?? null, [Validators.required, Validators.min(0.01)]],
+      dueDate: [p?.dueDate ?? null, Validators.required],
+      linkedExchangeContractId: [p?.linkedExchangeContractId ?? ''],
+      observations: [p?.observations ?? '']
     });
-  }
-
-  private generatePaymentNumber(): string {
-    const now = new Date();
-    const year = now.getFullYear();
-    const seq = String(Math.floor(Math.random() * 99999) + 1).padStart(5, '0');
-    return `PGT-${year}-${seq}`;
-  }
-
-  isInternational(): boolean {
-    return this.paymentForm.get('paymentType')?.value === 'INTERNACIONAL';
   }
 
   close(): void {
@@ -109,9 +72,23 @@ export class PagamentoDialogComponent {
   }
 
   save(): void {
-    if (this.paymentForm.invalid) return;
-
-    const formValue = this.paymentForm.getRawValue();
-    this.dialogRef.close(formValue);
+    if (this.paymentForm.invalid) {
+      this.paymentForm.markAllAsTouched();
+      return;
+    }
+    const v = this.paymentForm.getRawValue();
+    const result: Partial<Pagamento> = {
+      beneficiary: v.beneficiary,
+      description: v.description,
+      paymentNumber: v.paymentNumber,
+      bankAccount: v.bankAccount,
+      currency: v.currency,
+      amount: Number(v.amount),
+      dueDate: v.dueDate,
+      linkedExchangeContractId: v.linkedExchangeContractId || null,
+      linkedExportId: this.data.payment?.linkedExportId ?? null,
+      observations: v.observations
+    };
+    this.dialogRef.close(result);
   }
 }

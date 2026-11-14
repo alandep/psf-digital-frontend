@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, Inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -13,15 +14,25 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
-import { RecebimentosMockService } from '../../../../services/recebimentosMockService';
-import { 
-  Recebimento, 
-  FiltroOptions,
-  CURRENCY_LIST,
-  PAYMENT_METHOD_LABELS,
-  STATUS_LABELS,
-  ExchangeRate
-} from '../../../../types/recebimentos';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { startWith } from 'rxjs';
+import { MarketQuoteService } from '../../../services/market/market-quote.service';
+import {
+  RecebimentosHttpService,
+  RecebimentoInput,
+  RecebimentoItem
+} from '../../../services/finance/recebimentos-http.service';
+import { apiErrorMessage } from '../../../services/finance/finance-utils';
+import { CURRENCY_LIST } from '../../../../types/recebimentos';
+import { ContratoCambio } from '../../../../types/cambio';
+
+export interface RecebimentoEditDialogData {
+  /** Presente quando é edição. */
+  recebimento: RecebimentoItem | null;
+  /** Contratos de câmbio reais (GET /bff/financeiro/cambio). */
+  contracts: ContratoCambio[];
+  currencies?: string[];
+}
 
 @Component({
   selector: 'app-recebimento-edit-dialog',
@@ -40,7 +51,8 @@ import {
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatCardModule,
-    MatDividerModule
+    MatDividerModule,
+    MatTooltipModule
   ],
   templateUrl: './recebimento-edit-dialog.component.html',
   styleUrl: './recebimento-edit-dialog.component.scss'
@@ -48,202 +60,118 @@ import {
 export class RecebimentoEditDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly snackBar = inject(MatSnackBar);
-  private readonly recebimentosService = inject(RecebimentosMockService);
+  private readonly recebimentos = inject(RecebimentosHttpService);
+  private readonly market = inject(MarketQuoteService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly dialogRef = inject(MatDialogRef<RecebimentoEditDialogComponent>);
+  public readonly data = inject<RecebimentoEditDialogData>(MAT_DIALOG_DATA);
 
+  public readonly isEdit = !!this.data.recebimento;
   public recebimentoForm: FormGroup;
   public isSubmitting = false;
-  public currentExchangeRate: ExchangeRate | null = null;
+  /** Cotação real vigente da moeda (null = indisponível; BRL não precisa). */
+  public currentRate: number | null = null;
+  public rateUnavailable = false;
   public convertedAmount = 0;
 
-  public readonly currencyList = CURRENCY_LIST;
-  public readonly paymentMethods = Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => ({ value, label }));
-  public readonly statusList = Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }));
+  public readonly currencyList = this.data.currencies?.length ? this.data.currencies : CURRENCY_LIST;
 
-  constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { 
-      isEdit: boolean; 
-      recebimento?: Recebimento; 
-      filtroOptions: FiltroOptions 
-    }
-  ) {
+  constructor() {
+    const r = this.data.recebimento;
     this.recebimentoForm = this.fb.group({
-      amount: [null, [Validators.required, Validators.min(0.01)]],
-      currency: ['USD', [Validators.required]],
-      payment_date: [null, [Validators.required]],
-      contract: ['', [Validators.required]],
-      payment_method: ['wire_transfer', [Validators.required]],
-      status: ['pending', [Validators.required]],
-      bank_account: [''],
-      transaction_id: [''],
-      // Campos de controle cambial
-      exchange_rate: [null],
-      original_amount: [null],
-      original_currency: [''],
-      created_by: ['financeiro@psf.com']
+      cliente: [r?.cliente ?? '', [Validators.required]],
+      referencia: [r?.referencia ?? ''],
+      descricao: [r?.descricao ?? '', [Validators.required]],
+      amount: [r?.amount ?? null, [Validators.required, Validators.min(0.01)]],
+      currency: [r?.currency ?? 'USD', [Validators.required]],
+      dueDate: [r?.dueDate ?? null, [Validators.required]],
+      contratoCambioId: [r?.contratoCambioId ?? ''],
+      contaBancaria: [r?.contaBancaria ?? ''],
+      observacoes: [r?.observacoes ?? '']
     });
   }
 
   ngOnInit(): void {
-    if (this.data.isEdit && this.data.recebimento) {
-      this.populateForm(this.data.recebimento);
-    }
+    const currency = this.recebimentoForm.get('currency')!;
+    const amount = this.recebimentoForm.get('amount')!;
 
-    this.setupFormSubscriptions();
+    // Conversão informativa para BRL pela cotação real; sem cotação, avisa.
+    currency.valueChanges
+      .pipe(startWith(currency.value), takeUntilDestroyed(this.destroyRef))
+      .subscribe((c: string) => this.loadRate(c));
+
+    amount.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.calculateConversion());
   }
 
-  private populateForm(recebimento: Recebimento): void {
-    this.recebimentoForm.patchValue({
-      amount: recebimento.amount,
-      currency: recebimento.currency,
-      payment_date: new Date(recebimento.payment_date),
-      contract: recebimento.contract,
-      payment_method: recebimento.payment_method,
-      status: recebimento.status,
-      bank_account: recebimento.bank_account || '',
-      transaction_id: recebimento.transaction_id || '',
-      exchange_rate: recebimento.exchange_rate || null,
-      original_amount: recebimento.original_amount || null,
-      original_currency: recebimento.original_currency || '',
-      created_by: recebimento.created_by || 'financeiro@psf.com'
-    });
-
-    if (recebimento.currency !== 'BRL' && recebimento.exchange_rate) {
-      this.convertedAmount = recebimento.amount * recebimento.exchange_rate;
-    }
-  }
-
-  private setupFormSubscriptions(): void {
-    // Monitorar mudanças na moeda para buscar taxa de câmbio
-    this.recebimentoForm.get('currency')?.valueChanges.subscribe(currency => {
-      if (currency && currency !== 'BRL') {
-        this.loadExchangeRate(currency);
-      } else {
-        this.currentExchangeRate = null;
-        this.convertedAmount = 0;
-        this.recebimentoForm.patchValue({
-          exchange_rate: null,
-          original_amount: null,
-          original_currency: ''
-        });
-      }
-    });
-
-    // Monitorar mudanças no valor para calcular conversão
-    this.recebimentoForm.get('amount')?.valueChanges.subscribe(amount => {
+  private loadRate(currency: string): void {
+    this.currentRate = null;
+    this.rateUnavailable = false;
+    if (!currency || currency === 'BRL') {
       this.calculateConversion();
-    });
-
-    // Monitorar mudanças na taxa de câmbio
-    this.recebimentoForm.get('exchange_rate')?.valueChanges.subscribe(() => {
-      this.calculateConversion();
-    });
-  }
-
-  private loadExchangeRate(currency: string): void {
-    this.recebimentosService.getTaxaCambio(currency, 'BRL').subscribe({
-      next: (rate) => {
-        if (rate) {
-          this.currentExchangeRate = rate;
-          this.recebimentoForm.patchValue({
-            exchange_rate: rate.rate,
-            original_currency: currency
-          });
-          this.calculateConversion();
+      return;
+    }
+    this.market.getRate(currency)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((rate) => {
+        // ignora resposta atrasada de outra moeda
+        if (this.recebimentoForm.get('currency')?.value !== currency) {
+          return;
         }
-      },
-      error: (error) => {
-        console.error('Erro ao buscar taxa de câmbio:', error);
-        this.showSnackBar('Erro ao buscar taxa de câmbio', 'error');
-      }
-    });
+        this.currentRate = rate;
+        this.rateUnavailable = rate === null;
+        this.calculateConversion();
+      });
   }
 
   private calculateConversion(): void {
-    const amount = this.recebimentoForm.get('amount')?.value;
-    const exchangeRate = this.recebimentoForm.get('exchange_rate')?.value;
-
-    if (amount && exchangeRate) {
-      this.convertedAmount = amount * exchangeRate;
-      this.recebimentoForm.patchValue({
-        original_amount: amount
-      });
-    } else {
-      this.convertedAmount = 0;
-    }
-  }
-
-  public refreshExchangeRate(): void {
+    const amount = Number(this.recebimentoForm.get('amount')?.value) || 0;
     const currency = this.recebimentoForm.get('currency')?.value;
-    if (currency && currency !== 'BRL') {
-      this.loadExchangeRate(currency);
-      this.showSnackBar('Taxa de câmbio atualizada', 'success');
+    if (currency === 'BRL') {
+      this.convertedAmount = amount;
+    } else {
+      this.convertedAmount = this.currentRate ? amount * this.currentRate : 0;
     }
   }
 
   public onSubmit(): void {
-    if (this.recebimentoForm.valid) {
-      this.isSubmitting = true;
-      
-      const formData = { ...this.recebimentoForm.value };
-      
-      // Converter data para formato ISO
-      if (formData.payment_date) {
-        formData.payment_date = formData.payment_date.toISOString();
-      }
-
-      // Remove campos vazios
-      Object.keys(formData).forEach(key => {
-        if (formData[key] === '' || formData[key] === null) {
-          delete formData[key];
-        }
-      });
-
-      this.dialogRef.close(formData);
-    } else {
-      this.showSnackBar('Por favor, preencha todos os campos obrigatórios', 'error');
+    if (this.recebimentoForm.invalid) {
+      this.recebimentoForm.markAllAsTouched();
+      this.snackBar.open('Preencha todos os campos obrigatórios', 'Fechar', { duration: 3000 });
+      return;
     }
+    const v = this.recebimentoForm.getRawValue();
+    const input: RecebimentoInput = {
+      cliente: v.cliente,
+      referencia: v.referencia,
+      descricao: v.descricao,
+      contaBancaria: v.contaBancaria,
+      contratoCambioId: v.contratoCambioId || null,
+      observacoes: v.observacoes,
+      amount: Number(v.amount),
+      currency: v.currency,
+      dueDate: v.dueDate
+    };
+
+    this.isSubmitting = true;
+    const call = this.data.recebimento
+      ? this.recebimentos.update(this.data.recebimento.id, input)
+      : this.recebimentos.create(input);
+    call.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (saved) => this.dialogRef.close(saved),
+      error: (err) => {
+        this.isSubmitting = false;
+        this.snackBar.open(apiErrorMessage(err, 'Erro ao salvar recebimento'), 'Fechar', { duration: 5000 });
+      }
+    });
   }
 
   public onCancel(): void {
     this.dialogRef.close();
   }
 
-  public getFieldError(fieldName: string): string {
-    const field = this.recebimentoForm.get(fieldName);
-    if (field?.hasError('required')) {
-      return `${this.getFieldLabel(fieldName)} é obrigatório`;
-    }
-    if (field?.hasError('min')) {
-      return `${this.getFieldLabel(fieldName)} deve ser maior que zero`;
-    }
-    return '';
-  }
-
-  private getFieldLabel(fieldName: string): string {
-    const labels: { [key: string]: string } = {
-      amount: 'Valor',
-      currency: 'Moeda',
-      payment_date: 'Data de Pagamento',
-      contract: 'Contrato',
-      payment_method: 'Forma de Pagamento',
-      status: 'Status'
-    };
-    return labels[fieldName] || fieldName;
-  }
-
   public formatCurrency(value: number, currency: string): string {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: currency === 'BRL' ? 'BRL' : 'USD',
-      minimumFractionDigits: 2
-    }).format(value);
-  }
-
-  private showSnackBar(message: string, type: 'success' | 'error'): void {
-    this.snackBar.open(message, 'Fechar', {
-      duration: 3000,
-      panelClass: type === 'success' ? 'snackbar-success' : 'snackbar-error'
-    });
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(value);
   }
 }

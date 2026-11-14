@@ -14,8 +14,8 @@
         </div>
       </div>
       <div class="header-actions">
-        <button mat-raised-button *appHasPermission="'financeiro/hedge:create'" (click)="openNovoHedgeDialog()">
-          <mat-icon>add</mat-icon> Novo Hedge
+        <button mat-raised-button color="primary" (click)="novoHedge()">
+          <mat-icon>add</mat-icon> Novo hedge
         </button>
         <button mat-raised-button *appHasPermission="'financeiro/hedge:export'" (click)="exportCSV()">
           <mat-icon>download</mat-icon> CSV
@@ -32,22 +32,32 @@
     <mat-card class="exposure-card">
       <mat-card-content>
         <div class="exposure-grid">
+          @if (exposure.totalExposed > 0) {
+            <div class="exposure-item">
+              <span class="exposure-label">Exposição Total</span>
+              <span class="exposure-value">{{ formatCurrency(exposure.totalExposed) }}</span>
+            </div>
+          }
           <div class="exposure-item">
-            <span class="exposure-label">Exposição Total</span>
-            <span class="exposure-value">{{ formatCurrency(exposure.totalExposed) }}</span>
-          </div>
-          <div class="exposure-item">
-            <span class="exposure-label">Total Hedgeado</span>
+            <span class="exposure-label">Total Hedgeado (ativos)</span>
             <span class="exposure-value hedged">{{ formatCurrency(exposure.totalHedged) }}</span>
           </div>
-          <div class="exposure-item">
-            <span class="exposure-label">Hedge Ratio</span>
-            <span class="exposure-value ratio">{{ formatPercent(exposure.hedgeRatio) }}</span>
-          </div>
-          <div class="exposure-item">
-            <span class="exposure-label">Posição Aberta Líquida</span>
-            <span class="exposure-value open">{{ formatCurrency(exposure.netOpenPosition) }}</span>
-          </div>
+          @if (exposure.maturingIn30Days !== undefined) {
+            <div class="exposure-item">
+              <span class="exposure-label">Vencendo em 30 dias</span>
+              <span class="exposure-value open">{{ formatCurrency(exposure.maturingIn30Days) }}</span>
+            </div>
+          }
+          @if (exposure.hedgeRatio > 0) {
+            <div class="exposure-item">
+              <span class="exposure-label">Hedge Ratio</span>
+              <span class="exposure-value ratio">{{ formatPercent(exposure.hedgeRatio) }}</span>
+            </div>
+            <div class="exposure-item">
+              <span class="exposure-label">Posição Aberta Líquida</span>
+              <span class="exposure-value open">{{ formatCurrency(exposure.netOpenPosition) }}</span>
+            </div>
+          }
         </div>
       </mat-card-content>
     </mat-card>
@@ -70,28 +80,43 @@
           <div class="kpi-icon"><mat-icon>account_balance_wallet</mat-icon></div>
           <div class="kpi-info">
             <span class="kpi-value">{{ formatCurrency(kpis.valorNocionalTotal) }}</span>
-            <span class="kpi-label">Valor Nocional Total</span>
+            <span class="kpi-label">Valor Nocional Ativo</span>
           </div>
         </mat-card-content>
       </mat-card>
-      <mat-card class="kpi-card kpi-ratio">
-        <mat-card-content>
-          <div class="kpi-icon"><mat-icon>pie_chart</mat-icon></div>
-          <div class="kpi-info">
-            <span class="kpi-value">{{ formatPercent(kpis.hedgeRatioMedio) }}</span>
-            <span class="kpi-label">Hedge Ratio Médio</span>
-          </div>
-        </mat-card-content>
-      </mat-card>
-      <mat-card class="kpi-card" [ngClass]="kpis.pnlNaoRealizado >= 0 ? 'kpi-pnl-pos' : 'kpi-pnl-neg'">
-        <mat-card-content>
-          <div class="kpi-icon"><mat-icon>trending_up</mat-icon></div>
-          <div class="kpi-info">
-            <span class="kpi-value" [ngClass]="getMtmClass(kpis.pnlNaoRealizado)">{{ formatBRL(kpis.pnlNaoRealizado) }}</span>
-            <span class="kpi-label">P&L Não Realizado</span>
-          </div>
-        </mat-card-content>
-      </mat-card>
+      @if (kpis.totalContratos !== undefined) {
+        <mat-card class="kpi-card kpi-ratio">
+          <mat-card-content>
+            <div class="kpi-icon"><mat-icon>list_alt</mat-icon></div>
+            <div class="kpi-info">
+              <span class="kpi-value">{{ kpis.totalContratos }}</span>
+              <span class="kpi-label">Total de Contratos</span>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+      @if (kpis.hedgeRatioMedio > 0) {
+        <mat-card class="kpi-card kpi-ratio">
+          <mat-card-content>
+            <div class="kpi-icon"><mat-icon>pie_chart</mat-icon></div>
+            <div class="kpi-info">
+              <span class="kpi-value">{{ formatPercent(kpis.hedgeRatioMedio) }}</span>
+              <span class="kpi-label">Hedge Ratio Médio</span>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+      @if (kpis.pnlNaoRealizado !== 0) {
+        <mat-card class="kpi-card" [ngClass]="kpis.pnlNaoRealizado >= 0 ? 'kpi-pnl-pos' : 'kpi-pnl-neg'">
+          <mat-card-content>
+            <div class="kpi-icon"><mat-icon>trending_up</mat-icon></div>
+            <div class="kpi-info">
+              <span class="kpi-value" [ngClass]="getMtmClass(kpis.pnlNaoRealizado)">{{ formatBRL(kpis.pnlNaoRealizado) }}</span>
+              <span class="kpi-label">P&L Não Realizado</span>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
     </div>
   }
 
@@ -102,7 +127,7 @@
         <div class="filter-row">
           <mat-form-field appearance="outline" class="filter-field">
             <mat-label>Buscar</mat-label>
-            <input matInput formControlName="searchText" placeholder="Contrato, banco, contraparte...">
+            <input matInput formControlName="searchText" placeholder="Contrato ou banco">
             <mat-icon matSuffix>search</mat-icon>
           </mat-form-field>
           <mat-form-field appearance="outline" class="filter-field">
@@ -205,13 +230,6 @@
           </td>
         </ng-container>
 
-        <ng-container matColumnDef="markToMarket">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Mark-to-Market</th>
-          <td mat-cell *matCellDef="let row">
-            <span [ngClass]="getMtmClass(row.markToMarket)">{{ formatBRL(row.markToMarket) }}</span>
-          </td>
-        </ng-container>
-
         <ng-container matColumnDef="status">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
           <td mat-cell *matCellDef="let row">
@@ -222,9 +240,20 @@
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef>Ações</th>
           <td mat-cell *matCellDef="let row">
-            <button mat-icon-button matTooltip="Ver detalhes" (click)="selectContract(row); $event.stopPropagation()">
+            <button mat-icon-button matTooltip="Ver detalhes" aria-label="Ver detalhes" (click)="selectContract(row); $event.stopPropagation()">
               <mat-icon>visibility</mat-icon>
             </button>
+            @if (isActionable(row)) {
+              <button mat-icon-button matTooltip="Exercer" aria-label="Exercer hedge" (click)="exercer(row); $event.stopPropagation()">
+                <mat-icon>task_alt</mat-icon>
+              </button>
+              <button mat-icon-button matTooltip="Marcar como expirado" aria-label="Marcar hedge como expirado" (click)="expirar(row); $event.stopPropagation()">
+                <mat-icon>event_busy</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" matTooltip="Cancelar" aria-label="Cancelar hedge" (click)="cancelar(row); $event.stopPropagation()">
+                <mat-icon>cancel</mat-icon>
+              </button>
+            }
           </td>
         </ng-container>
 
@@ -234,6 +263,13 @@
             class="clickable-row"
             (click)="selectContract(row)"></tr>
       </table>
+
+      @if (!isLoading && dataSource.data.length === 0) {
+        <div class="empty-state" role="status">
+          <mat-icon aria-hidden="true">shield</mat-icon>
+          <p>Nenhum contrato de hedge encontrado.</p>
+        </div>
+      }
 
       <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" [pageSize]="10" showFirstLastButtons></mat-paginator>
     </mat-card-content>

@@ -3,6 +3,8 @@ export type AuthState =
   | 'ORGANIZATION_SELECTION_REQUIRED' | 'AUTHENTICATED'
   | 'ACCOUNT_LOCKED' | 'ACCOUNT_DISABLED';
 
+export type MfaMethod = 'TOTP' | 'EMAIL' | 'RECOVERY';
+
 export interface AuthOrganization {
   id: string;
   razaoSocial: string;
@@ -17,4 +19,7 @@ export interface AuthChallenge {
   organizations?: AuthOrganization[];
   challengeId?: string;
   message?: string;
+  mfaMethods?: MfaMethod[];
+  emailMasked?: string;
+  resendAvailableInSeconds?: number;
 }

@@ -86,8 +86,9 @@ import { AdminUser } from '../../../../../types/admin-usuarios';
 
           <div class="toggle-row">
             <mat-slide-toggle formControlName="mfaEnabled" color="primary">
-              MFA Habilitado
+              Aplicativo autenticador ativo
             </mat-slide-toggle>
+            <span class="toggle-hint">Desligue para redefinir o autenticador do usuário (ex.: celular perdido). Só o próprio usuário pode ativá-lo.</span>
           </div>
         </form>
       </div>
@@ -176,6 +177,14 @@ import { AdminUser } from '../../../../../types/admin-usuarios';
     .toggle-row {
       grid-column: 1 / -1;
       padding: 8px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .toggle-row .toggle-hint {
+      font-size: 0.8rem;
+      color: #888;
     }
 
     .dialog-footer {
@@ -215,7 +224,7 @@ export class EditarUsuarioDialogComponent {
       empresa: [{ value: data.empresa, disabled: true }, Validators.required],
       departamento: [data.departamento],
       phone: [data.phone],
-      mfaEnabled: [data.mfaEnabled]
+      mfaEnabled: [{ value: data.mfaEnabled, disabled: !data.mfaEnabled }]
     });
   }
 

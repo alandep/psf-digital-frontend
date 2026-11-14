@@ -8,9 +8,12 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/eip
       DB_USER: eip
       DB_PASSWORD: eip
+      EIP_APP_BASE_URL: http://localhost:4200
     depends_on:
       db:
         condition: service_healthy
+      mailpit:
+        condition: service_started
 
   db:
     image: postgres:16
@@ -25,6 +28,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # Local SMTP sink: every e-mail (MFA codes, invitations) shows up at
+  # http://localhost:8025. The local profile points spring.mail at mailpit:1025.
+  mailpit:
+    image: axllent/mailpit:v1.21.8
+    ports:
+      - "8025:8025"
+      - "1025:1025"
 
   # redis:
   #   image: redis:7

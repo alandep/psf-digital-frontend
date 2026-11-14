@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { IAuthFlowService } from './auth-flow.interface';
-import { AuthChallenge, AuthOrganization } from '../../../types/auth-flow';
+import { AuthChallenge, AuthOrganization, MfaMethod } from '../../../types/auth-flow';
 import { AuthFlowMockService } from '../../../services/authFlowMockService';
 
 // Adapter that delegates entirely to the existing in-memory mock service.
@@ -49,8 +49,13 @@ export class AuthFlowMockAdapter implements IAuthFlowService {
     return this.mock.verifyPassword(cpf, password);
   }
 
-  verifyMfa(code: string): Observable<AuthChallenge> {
+  verifyMfa(code: string, _method?: MfaMethod): Observable<AuthChallenge> {
     return this.mock.verifyMfa(code);
+  }
+
+  sendEmailCode(): Observable<AuthChallenge> {
+    const base: AuthChallenge = this.mock.lastChallenge ?? { state: 'MFA_REQUIRED' };
+    return of({ ...base, state: 'MFA_REQUIRED', message: 'Código reenviado (mock).', resendAvailableInSeconds: 60 });
   }
 
   verifyRecoveryCode(code: string): Observable<AuthChallenge> {

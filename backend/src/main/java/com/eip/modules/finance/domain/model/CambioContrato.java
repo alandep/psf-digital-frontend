@@ -2,6 +2,7 @@ package com.eip.modules.finance.domain.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import com.eip.platform.error.BusinessRuleException;
@@ -25,10 +26,12 @@ public final class CambioContrato {
     private final LocalDate dataContratacao;
     private LocalDate dataLiquidacao;
     private final long version;
+    private final OffsetDateTime createdAt;
 
     public CambioContrato(CambioId id, UUID organizationId, String banco, String moeda,
                           BigDecimal valor, BigDecimal taxa, CambioTipo tipo, CambioStatus status,
-                          LocalDate dataContratacao, LocalDate dataLiquidacao, long version) {
+                          LocalDate dataContratacao, LocalDate dataLiquidacao, long version,
+                          OffsetDateTime createdAt) {
         this.id = id;
         this.organizationId = organizationId;
         this.banco = banco;
@@ -40,6 +43,7 @@ public final class CambioContrato {
         this.dataContratacao = dataContratacao;
         this.dataLiquidacao = dataLiquidacao;
         this.version = version;
+        this.createdAt = createdAt;
     }
 
     /** Creates a new active FX contract. */
@@ -63,7 +67,8 @@ public final class CambioContrato {
                 CambioStatus.ATIVO,
                 dataContratacao,
                 dataLiquidacao,
-                0L);
+                0L,
+                null);
     }
 
     /**
@@ -133,5 +138,9 @@ public final class CambioContrato {
 
     public long version() {
         return version;
+    }
+
+    public OffsetDateTime createdAt() {
+        return createdAt;
     }
 }

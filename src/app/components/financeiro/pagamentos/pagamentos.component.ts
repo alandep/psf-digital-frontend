@@ -1,7 +1,7 @@
-import { Component, OnInit, OnDestroy, inject, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, inject, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, takeUntil, debounceTime, distinctUntilChanged, catchError, of } from 'rxjs';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 
 // Angular Material Components
@@ -27,6 +27,8 @@ import { MatNativeDateModule } from '@angular/material/core';
 
 // Services and Types
 import { PAGAMENTOS_SERVICE } from '../../../services/finance/pagamentos-service.token';
+import { CAMBIO_SERVICE } from '../../../services/finance/cambio-service.token';
+import { apiErrorMessage } from '../../../services/finance/finance-utils';
 import { PagamentoDialogComponent } from './pagamento-dialog/pagamento-dialog.component';
 import { PagamentoDetailDialogComponent } from './pagamento-detail-dialog/pagamento-detail-dialog.component';
 import {
@@ -34,9 +36,9 @@ import {
   PaymentMetrics,
   CashFlowProjection,
   PaymentFilters,
-  PaymentStatus,
-  PaymentCategory
+  PaymentStatus
 } from '../../../../types/pagamentos';
+import { ContratoCambio } from '../../../../types/cambio';
 import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 
 @Component({
@@ -70,10 +72,11 @@ import { HasPermissionDirective } from '../../../directives/has-permission.direc
   templateUrl: './pagamentos.component.html',
   styleUrls: ['./pagamentos.component.scss']
 })
-export class PagamentosComponent implements OnInit, OnDestroy {
+export class PagamentosComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Services
   private pagamentosService = inject(PAGAMENTOS_SERVICE);
+  private cambioService = inject(CAMBIO_SERVICE);
   private formBuilder = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
@@ -100,15 +103,12 @@ export class PagamentosComponent implements OnInit, OnDestroy {
 
   // Table columns
   displayedColumns: string[] = [
-    'paymentNumber', 'beneficiary', 'category', 'amount',
-    'currency', 'dueDate', 'status', 'paymentType',
-    'aiFinancialScore', 'actions'
+    'paymentNumber', 'beneficiary', 'amount',
+    'currency', 'dueDate', 'status', 'paymentType', 'actions'
   ];
 
   // Dropdown data
   beneficiaries: string[] = [];
-  categories: PaymentCategory[] = [];
-  banks: string[] = [];
   currencies: string[] = [];
   statuses: PaymentStatus[] = [];
 
@@ -135,11 +135,9 @@ export class PagamentosComponent implements OnInit, OnDestroy {
     this.filterForm = this.formBuilder.group({
       searchText: [''],
       status: [''],
-      category: [''],
       paymentType: [''],
       beneficiary: [''],
       currency: [''],
-      bank: [''],
       dateStart: [null],
       dateEnd: [null]
     });
@@ -147,10 +145,11 @@ export class PagamentosComponent implements OnInit, OnDestroy {
 
   private loadDropdownData(): void {
     this.beneficiaries = this.pagamentosService.getBeneficiaries();
-    this.categories = this.pagamentosService.getCategories();
-    this.banks = this.pagamentosService.getBanks();
     this.currencies = this.pagamentosService.getCurrencies();
     this.statuses = this.pagamentosService.getStatuses();
+    this.pagamentosService.loadCurrencies()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(list => this.currencies = list);
   }
 
   private setupFilterListeners(): void {
@@ -171,10 +170,11 @@ export class PagamentosComponent implements OnInit, OnDestroy {
         next: (data) => {
           this.payments = data;
           this.dataSource.data = data;
+          this.beneficiaries = this.pagamentosService.getBeneficiaries();
           this.isLoading = false;
         },
-        error: () => {
-          this.snackBar.open('Erro ao carregar pagamentos', 'Fechar', { duration: 3000 });
+        error: (err) => {
+          this.snackBar.open(apiErrorMessage(err, 'Erro ao carregar pagamentos'), 'Fechar', { duration: 4000 });
           this.isLoading = false;
         }
       });
@@ -183,22 +183,41 @@ export class PagamentosComponent implements OnInit, OnDestroy {
   loadMetrics(): void {
     this.pagamentosService.getMetrics()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(metrics => this.metrics = metrics);
+      .subscribe({ next: metrics => this.metrics = metrics, error: () => this.metrics = null });
   }
 
   loadCashFlow(): void {
     this.pagamentosService.getCashFlowProjection()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(cf => this.cashFlow = cf);
+      .subscribe({ next: cf => this.cashFlow = cf, error: () => this.cashFlow = null });
+  }
+
+  private reloadAll(): void {
+    this.loadPayments();
+    this.loadMetrics();
+    this.loadCashFlow();
   }
 
   applyFilters(): void {
-    const filters: PaymentFilters = this.filterForm.value;
+    const filters: PaymentFilters = {
+      searchText: this.filterForm.value.searchText ?? '',
+      status: this.filterForm.value.status ?? '',
+      category: '',
+      paymentType: this.filterForm.value.paymentType ?? '',
+      beneficiary: this.filterForm.value.beneficiary ?? '',
+      currency: this.filterForm.value.currency ?? '',
+      bank: '',
+      dateStart: this.filterForm.value.dateStart ?? null,
+      dateEnd: this.filterForm.value.dateEnd ?? null
+    };
     this.pagamentosService.getPayments(filters)
       .pipe(takeUntil(this.destroy$))
-      .subscribe(data => {
-        this.payments = data;
-        this.dataSource.data = data;
+      .subscribe({
+        next: data => {
+          this.payments = data;
+          this.dataSource.data = data;
+        },
+        error: (err) => this.snackBar.open(apiErrorMessage(err, 'Erro ao filtrar pagamentos'), 'Fechar', { duration: 4000 })
       });
   }
 
@@ -206,11 +225,9 @@ export class PagamentosComponent implements OnInit, OnDestroy {
     this.filterForm.reset({
       searchText: '',
       status: '',
-      category: '',
       paymentType: '',
       beneficiary: '',
       currency: '',
-      bank: '',
       dateStart: null,
       dateEnd: null
     });
@@ -218,99 +235,101 @@ export class PagamentosComponent implements OnInit, OnDestroy {
 
   selectPayment(payment: Pagamento): void {
     this.selectedPayment = payment;
-    const dialogRef = this.dialog.open(PagamentoDetailDialogComponent, {
+    this.dialog.open(PagamentoDetailDialogComponent, {
       data: { payment },
-      width: '1080px',
+      width: '900px',
       maxWidth: '95vw',
       maxHeight: '90vh',
       autoFocus: false,
       panelClass: 'pagamento-detail-dialog-panel'
     });
+  }
 
-    dialogRef.afterClosed()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(result => {
-        if (result === 'refresh') {
-          this.loadPayments();
-          this.loadMetrics();
-        }
+  // Abre o formulário (novo ou edição) já com os contratos de câmbio reais.
+  private openForm(payment?: Pagamento): void {
+    this.cambioService.getContracts()
+      .pipe(catchError(() => of([] as ContratoCambio[])), takeUntil(this.destroy$))
+      .subscribe(contracts => {
+        const dialogRef = this.dialog.open(PagamentoDialogComponent, {
+          width: '90vw',
+          maxWidth: '760px',
+          maxHeight: '90vh',
+          disableClose: false,
+          panelClass: 'pagamento-dialog-container',
+          data: {
+            currencies: this.currencies,
+            exchangeContracts: contracts.filter(c => c.status !== 'CANCELADO'),
+            payment: payment ?? null
+          }
+        });
+
+        dialogRef.afterClosed()
+          .pipe(takeUntil(this.destroy$))
+          .subscribe((result: Partial<Pagamento> | null) => {
+            if (!result) {
+              return;
+            }
+            this.isLoading = true;
+            const call = payment
+              ? this.pagamentosService.updatePayment(payment.id, result)
+              : this.pagamentosService.createPayment(result);
+            call.pipe(takeUntil(this.destroy$)).subscribe({
+              next: () => {
+                this.snackBar.open(payment ? 'Pagamento atualizado' : 'Pagamento criado com sucesso!', 'OK', { duration: 3000 });
+                this.isLoading = false;
+                this.reloadAll();
+              },
+              error: (err) => {
+                this.snackBar.open(apiErrorMessage(err, 'Erro ao salvar pagamento'), 'Fechar', { duration: 5000 });
+                this.isLoading = false;
+              }
+            });
+          });
       });
   }
 
   createPayment(): void {
-    const dialogRef = this.dialog.open(PagamentoDialogComponent, {
-      width: '90vw',
-      maxWidth: '900px',
-      height: '85vh',
-      maxHeight: '750px',
-      disableClose: false,
-      panelClass: 'pagamento-dialog-container',
-      data: {
-        beneficiaries: this.beneficiaries,
-        categories: this.categories,
-        banks: this.banks,
-        currencies: this.currencies
-      }
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.isLoading = true;
-        this.pagamentosService.createPayment(result)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: () => {
-              this.snackBar.open('Pagamento criado com sucesso!', 'OK', { duration: 3000 });
-              this.loadPayments();
-              this.loadMetrics();
-              this.loadCashFlow();
-              this.isLoading = false;
-            },
-            error: () => {
-              this.snackBar.open('Erro ao criar pagamento', 'Fechar', { duration: 5000 });
-              this.isLoading = false;
-            }
-          });
-      }
-    });
+    this.openForm();
   }
 
-  approvePayment(payment: Pagamento): void {
-    this.pagamentosService.approvePayment(payment.id)
+  editPayment(payment: Pagamento): void {
+    this.openForm(payment);
+  }
+
+  markAsPaid(payment: Pagamento): void {
+    this.pagamentosService.payPayment(payment.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.snackBar.open(`Pagamento ${payment.paymentNumber} aprovado com sucesso`, 'OK', { duration: 3000 });
-          this.loadPayments();
-          this.loadMetrics();
+          this.snackBar.open(`Pagamento ${payment.paymentNumber || payment.beneficiary} marcado como pago`, 'OK', { duration: 3000 });
+          this.reloadAll();
         },
-        error: () => {
-          this.snackBar.open('Erro ao aprovar pagamento', 'Fechar', { duration: 3000 });
-        }
+        error: (err) => this.snackBar.open(apiErrorMessage(err, 'Erro ao marcar pagamento como pago'), 'Fechar', { duration: 4000 })
       });
   }
 
-  reconcilePayment(payment: Pagamento): void {
-    this.pagamentosService.reconcilePayment(payment.id)
+  cancelPayment(payment: Pagamento): void {
+    if (!window.confirm('Cancelar este pagamento?')) {
+      return;
+    }
+    this.pagamentosService.cancelPayment(payment.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.snackBar.open(`Pagamento ${payment.paymentNumber} conciliado com sucesso`, 'OK', { duration: 3000 });
-          this.loadPayments();
-          this.loadMetrics();
+          this.snackBar.open('Pagamento cancelado', 'OK', { duration: 3000 });
+          this.reloadAll();
         },
-        error: () => {
-          this.snackBar.open('Erro ao conciliar pagamento', 'Fechar', { duration: 3000 });
-        }
+        error: (err) => this.snackBar.open(apiErrorMessage(err, 'Erro ao cancelar pagamento'), 'Fechar', { duration: 4000 })
       });
   }
 
-  exportPDF(): void {
-    this.snackBar.open('Exportando relatório de pagamentos em PDF...', 'OK', { duration: 2000 });
+  isOpen(payment: Pagamento): boolean {
+    return payment.status === 'PENDENTE' || payment.status === 'VENCIDO';
   }
 
-  simulateCashFlow(): void {
-    this.snackBar.open('Simulação de fluxo de caixa em desenvolvimento', 'OK', { duration: 3000 });
+  maxMonthTotal(): number {
+    const totals = (this.cashFlow?.byMonth ?? []).map(m => m.total);
+    return totals.length ? Math.max(...totals) : 0;
   }
 
   // ================================
@@ -333,58 +352,13 @@ export class PagamentosComponent implements OnInit, OnDestroy {
     return map[status] || '';
   }
 
-  getCategoryColor(category: PaymentCategory): string {
-    const map: Record<PaymentCategory, string> = {
-      'FRETE': 'cat-frete',
-      'ARMAZENAGEM': 'cat-armazenagem',
-      'DESPACHANTE': 'cat-despachante',
-      'SEGURO': 'cat-seguro',
-      'COMISSÃO': 'cat-comissao',
-      'TAXAS_PORTUÁRIAS': 'cat-portuarias',
-      'TAXAS_BANCÁRIAS': 'cat-bancarias',
-      'CERTIFICADOS': 'cat-certificados',
-      'TRANSPORTE': 'cat-transporte',
-      'TRIBUTOS': 'cat-tributos',
-      'FORNECEDORES': 'cat-fornecedores',
-      'OUTROS': 'cat-outros'
-    };
-    return map[category] || '';
-  }
-
-  getCategoryLabel(category: PaymentCategory): string {
-    const map: Record<PaymentCategory, string> = {
-      'FRETE': 'Frete',
-      'ARMAZENAGEM': 'Armazenagem',
-      'DESPACHANTE': 'Despachante',
-      'SEGURO': 'Seguro',
-      'COMISSÃO': 'Comissão',
-      'TAXAS_PORTUÁRIAS': 'Taxas Portuárias',
-      'TAXAS_BANCÁRIAS': 'Taxas Bancárias',
-      'CERTIFICADOS': 'Certificados',
-      'TRANSPORTE': 'Transporte',
-      'TRIBUTOS': 'Tributos',
-      'FORNECEDORES': 'Fornecedores',
-      'OUTROS': 'Outros'
-    };
-    return map[category] || category;
-  }
-
-  getScoreColor(score: number): string {
-    if (score >= 85) return 'score-excellent';
-    if (score >= 70) return 'score-good';
-    if (score >= 50) return 'score-average';
-    return 'score-poor';
-  }
-
   isOverdue(payment: Pagamento): boolean {
-    return payment.status === 'VENCIDO' || (payment.status === 'PENDENTE' && new Date(payment.dueDate) < new Date());
+    return payment.status === 'VENCIDO';
   }
 
   isDueSoon(payment: Pagamento): boolean {
-    if (payment.status !== 'PENDENTE' && payment.status !== 'APROVADO') return false;
-    const dueDate = new Date(payment.dueDate);
-    const now = new Date();
-    const diff = (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+    if (payment.status !== 'PENDENTE') return false;
+    const diff = (new Date(payment.dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
     return diff >= 0 && diff <= 7;
   }
 }

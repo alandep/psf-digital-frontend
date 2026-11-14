@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.eip.modules.finance.domain.port.in.GerenciarHedgeUseCase;
+import com.eip.modules.finance.domain.port.in.GerenciarHedgeUseCase.HedgeMetricas;
 import com.eip.modules.finance.domain.port.in.GerenciarHedgeUseCase.HedgeView;
 
 import jakarta.validation.Valid;
@@ -32,6 +33,12 @@ public class HedgeBffController {
     @PreAuthorize("@rbac.can('financeiro/hedge','view')")
     public List<HedgeView> listar(@RequestParam(required = false) String status) {
         return useCase.listar(status);
+    }
+
+    @GetMapping("/metricas")
+    @PreAuthorize("@rbac.can('financeiro/hedge','view')")
+    public HedgeMetricas metricas() {
+        return useCase.metricas();
     }
 
     @PostMapping

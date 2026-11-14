@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { AuthChallenge, AuthOrganization } from '../../../types/auth-flow';
+import { AuthChallenge, AuthOrganization, MfaMethod } from '../../../types/auth-flow';
 
 // Gateway contract for the stepped identity flow. Mirrors the methods and
 // state fields the auth components read on the existing mock service, so the
@@ -17,7 +17,8 @@ export interface IAuthFlowService {
   // Flow steps.
   identify(cpf: string): Observable<AuthChallenge>;
   verifyPassword(cpf: string, password: string): Observable<AuthChallenge>;
-  verifyMfa(code: string): Observable<AuthChallenge>;
+  verifyMfa(code: string, method?: MfaMethod): Observable<AuthChallenge>;
+  sendEmailCode(): Observable<AuthChallenge>;
   verifyRecoveryCode(code: string): Observable<AuthChallenge>;
   selectOrganization(orgId: string): Observable<AuthChallenge>;
 

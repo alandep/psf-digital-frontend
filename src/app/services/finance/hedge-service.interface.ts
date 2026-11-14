@@ -4,19 +4,23 @@ import {
   HedgeKPIs,
   ExposureSummary,
   HedgeFilters,
+  CriarHedgeInput,
   HedgeType,
   HedgeStatus
 } from '../../../types/hedge';
 
-// Gateway interface for the financeiro/hedge module. Method names and return
-// types mirror HedgeMockService EXACTLY (Observable vs sync) so the hedge screen
-// can swap the concrete service without any other change.
+// Gateway da tela financeiro/hedge. Implementação única: HedgeHttpService
+// (BFF /bff/financeiro/hedge).
 export interface IHedgeService {
   getContracts(filters?: HedgeFilters): Observable<HedgeContract[]>;
+  createContract(input: CriarHedgeInput): Observable<HedgeContract>;
+  exercer(id: string): Observable<HedgeContract>;
+  expirar(id: string): Observable<HedgeContract>;
+  cancelar(id: string): Observable<HedgeContract>;
   getKPIs(): Observable<HedgeKPIs>;
   getExposureSummary(): Observable<ExposureSummary>;
 
-  // Static dropdown catalog: SYNC in the mock (returns arrays).
+  // Catálogos síncronos (referência + dados vistos na organização).
   getBanks(): string[];
   getTypes(): HedgeType[];
   getStatuses(): HedgeStatus[];

@@ -16,8 +16,11 @@
     <form [formGroup]="form" class="cambio-form">
       <div class="form-grid">
         <mat-form-field appearance="outline">
-          <mat-label>Nº Contrato</mat-label>
-          <input matInput formControlName="contractNumber" placeholder="CC-2024-000">
+          <mat-label>Operação</mat-label>
+          <mat-select formControlName="side">
+            <mat-option value="VENDA">Venda (exportação)</mat-option>
+            <mat-option value="COMPRA">Compra</mat-option>
+          </mat-select>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
@@ -25,11 +28,6 @@
           <mat-select formControlName="bank">
             <mat-option *ngFor="let b of banks" [value]="b">{{ b }}</mat-option>
           </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="span-2">
-          <mat-label>Exportador</mat-label>
-          <input matInput formControlName="exporterName" placeholder="Nome do exportador">
         </mat-form-field>
 
         <mat-form-field appearance="outline">
@@ -40,15 +38,8 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>Status</mat-label>
-          <mat-select formControlName="status">
-            <mat-option *ngFor="let s of statuses" [value]="s">{{ s }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
           <mat-label>Valor ME</mat-label>
-          <input matInput type="number" formControlName="foreignValue" placeholder="100000">
+          <input matInput type="number" formControlName="foreignValue" placeholder="Valor na moeda estrangeira">
         </mat-form-field>
 
         <mat-form-field appearance="outline">
@@ -58,33 +49,19 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>Data Fechamento</mat-label>
-          <input matInput [matDatepicker]="closingPicker" formControlName="closingDate">
-          <mat-datepicker-toggle matIconSuffix [for]="closingPicker"></mat-datepicker-toggle>
-          <mat-datepicker #closingPicker></mat-datepicker>
+          <mat-label>Data de contratação</mat-label>
+          <input matInput [matDatepicker]="pickerClosing" formControlName="closingDate">
+          <mat-datepicker-toggle matIconSuffix [for]="pickerClosing"></mat-datepicker-toggle>
+          <mat-datepicker #pickerClosing></mat-datepicker>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>Data Liquidação</mat-label>
-          <input matInput [matDatepicker]="liquidationPicker" formControlName="liquidationDate">
-          <mat-datepicker-toggle matIconSuffix [for]="liquidationPicker"></mat-datepicker-toggle>
-          <mat-datepicker #liquidationPicker></mat-datepicker>
+          <mat-label>Data de liquidação</mat-label>
+          <input matInput [matDatepicker]="pickerLiq" formControlName="liquidationDate">
+          <mat-datepicker-toggle matIconSuffix [for]="pickerLiq"></mat-datepicker-toggle>
+          <mat-datepicker #pickerLiq></mat-datepicker>
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Exportação Vinculada</mat-label>
-          <input matInput formControlName="linkedExportNumber" placeholder="EXP-2024-000">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Invoice</mat-label>
-          <input matInput formControlName="linkedInvoiceNumber" placeholder="INV-2024-000">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>DU-E</mat-label>
-          <input matInput formControlName="linkedDueNumber" placeholder="DUE-2024-000">
-        </mat-form-field>
       </div>
     </form>
   </mat-dialog-content>

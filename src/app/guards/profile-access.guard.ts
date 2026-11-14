@@ -35,13 +35,17 @@ export const profileAccessGuard: CanActivateFn = (
     return router.createUrlTree(['/home-logged/acesso-negado']);
   };
 
-  if (auth.currentProfile) {
-    return decide();
+  // Modo real: se o perfil não pôde ser carregado (sem sessão), volta ao login.
+  const proceed = (): boolean | UrlTree =>
+    auth.sessionInvalid ? router.createUrlTree(['/login']) : decide();
+
+  if (auth.currentProfile && auth.isFresh) {
+    return proceed();
   }
 
-  // Profile not loaded yet: load, then decide. Never hard-block on error.
+  // Profile not loaded (or not yet refreshed from the backend): load, then decide.
   return auth.loadProfile().pipe(
-    map(() => decide()),
-    catchError(() => of(true))
+    map(() => proceed()),
+    catchError(() => of(router.createUrlTree(['/login'])))
   );
 };

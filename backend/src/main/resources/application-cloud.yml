@@ -20,6 +20,11 @@ spring:
       # Keep the pool small; Cloud Run scales horizontally with many instances,
       # so per-instance connections must respect the database connection budget.
       maximum-pool-size: ${DB_POOL_SIZE:5}
+  # Transactional e-mail relay (Brevo). Credentials come from Secret Manager via
+  # EIP_MAIL_USER / EIP_MAIL_PASSWORD (inherited from the base application.yml).
+  mail:
+    host: ${EIP_MAIL_HOST:smtp-relay.brevo.com}
+    port: ${EIP_MAIL_PORT:587}
 
 # Browser flow (DEGUSTAÇÃO / produção): the SPA is served from https://iaexport.com.br
 # (Firebase Hosting) and calls the BFF at the Cloud Run NATIVE URL
@@ -62,7 +67,13 @@ eip:
   # EIP_CORS_ALLOWED_ORIGINS pode sobrescrever a lista em runtime.
   cors:
     allowed-origins: ${EIP_CORS_ALLOWED_ORIGINS:https://iaexport.com.br,https://eip-ai-prod.web.app,https://eip-ai-prod.firebaseapp.com}
+  mail:
+    enabled: ${EIP_MAIL_ENABLED:true}
+  app:
+    base-url: ${EIP_APP_BASE_URL:https://iaexport.com.br}
   security:
+    # Startup fails when EIP_MFA_ENCRYPTION_KEY is missing (no DEV key in cloud).
+    mfa-key-required: true
     cookie:
       # Apply Secure + SameSite=None to the CSRF cookie (session cookie handled above) for
       # the DEGUSTAÇÃO flow. The frontend (iaexport.com.br / Firebase) and the backend
@@ -72,6 +83,11 @@ eip:
       # origin topology changes. FUTURO: ao migrar para api.iaexport.com.br (same-site), o
       # SecurityConfig volta a aplicar SameSite=Lax.
       cross-site: ${EIP_COOKIE_CROSS_SITE:true}
+  gcp:
+    # Identity Platform (multi-tenancy) project and provisioning switch.
+    identity-project: ${GCP_IDENTITY_PROJECT:${GOOGLE_CLOUD_PROJECT:}}
+    tenant-provisioning:
+      enabled: ${EIP_GCP_TENANT_PROVISIONING:true}
   ai:
     # Vertex AI gateway config (cloud profile only). project/location/endpoint/
     # api-version come from env vars with confirmed defaults. The model id

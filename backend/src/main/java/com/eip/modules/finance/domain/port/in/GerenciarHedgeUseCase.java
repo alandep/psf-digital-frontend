@@ -22,6 +22,52 @@ public interface GerenciarHedgeUseCase {
 
     HedgeView cancelar(UUID id);
 
+    /** Aggregated indicators over the organization's hedge contracts. */
+    HedgeMetricas metricas();
+
+    /**
+     * Hedge indicators. {@code notionalTotal} sums every non-cancelled contract;
+     * {@code notionalAtivo} only the ATIVO ones (raw sum, currencies not converted).
+     */
+    record HedgeMetricas(
+            long total,
+            long ativos,
+            long exercidos,
+            long expirados,
+            long cancelados,
+            BigDecimal notionalTotal,
+            BigDecimal notionalAtivo) {
+
+        public static HedgeMetricas from(List<HedgeContrato> contratos) {
+            long ativos = 0;
+            long exercidos = 0;
+            long expirados = 0;
+            long cancelados = 0;
+            BigDecimal total = BigDecimal.ZERO;
+            BigDecimal ativo = BigDecimal.ZERO;
+            for (HedgeContrato h : contratos) {
+                switch (h.status()) {
+                    case ATIVO -> {
+                        ativos++;
+                        ativo = ativo.add(h.notional());
+                        total = total.add(h.notional());
+                    }
+                    case EXERCIDO -> {
+                        exercidos++;
+                        total = total.add(h.notional());
+                    }
+                    case EXPIRADO -> {
+                        expirados++;
+                        total = total.add(h.notional());
+                    }
+                    case CANCELADO -> cancelados++;
+                }
+            }
+            return new HedgeMetricas(contratos.size(), ativos, exercidos, expirados, cancelados,
+                    total, ativo);
+        }
+    }
+
     /** Command to create a hedge contract. */
     record CriarHedgeCommand(
             String instrumento,

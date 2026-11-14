@@ -12,6 +12,8 @@ export interface ContratoCambio {
   exchangeRate: number;
   brlValue: number;
   status: ContractStatus;
+  /** Operação: COMPRA ou VENDA (exportador = VENDA). */
+  side?: 'COMPRA' | 'VENDA';
   closingDate: Date;
   liquidationDate: Date;
   linkedExportNumber: string;
@@ -42,6 +44,8 @@ export interface SimulationRequest {
   term: number;
   bank: string;
   expectedDate: Date;
+  /** Taxa negociada informada pelo usuário; se ausente usa a cotação real. */
+  rate?: number;
 }
 
 export interface SimulationResult {
@@ -51,6 +55,12 @@ export interface SimulationResult {
   spread: number;
   financialImpact: number;
   scenarios: ScenarioResult[];
+  /** Taxa usada no cálculo (informada ou cotação real). */
+  rate?: number;
+  /** Cotação comercial real no momento da simulação. */
+  marketRate?: number;
+  /** Texto factual sobre a fonte da cotação. */
+  note?: string;
 }
 
 export interface ScenarioResult {
@@ -68,6 +78,23 @@ export interface BankComparison {
   totalCost: number;
   netValue: number;
   recommendation: boolean;
+  /** Nº de contratos da organização com o banco (histórico real). */
+  contracts?: number;
+  /** Última taxa contratada com o banco. */
+  lastRate?: number;
+  lastOperation?: Date | null;
+}
+
+/** Fato determinístico calculado a partir do contrato (não é IA). */
+export interface CambioAnalysisFact {
+  tone: 'info' | 'warning';
+  message: string;
+}
+
+export interface CambioAnalysis {
+  contractId: string;
+  facts: CambioAnalysisFact[];
+  generatedAt: Date;
 }
 
 export interface FinancialTimelineEvent {
@@ -131,4 +158,8 @@ export interface FinancialKPIs {
   gainLoss: number;
   avgSpread: number;
   avgLiquidationDays: number;
+  /** Taxa média ponderada dos contratos em USD (null quando não há contratos). */
+  weightedAvgUsdRate?: number | null;
+  expiringIn30Days?: number;
+  overdueContracts?: number;
 }

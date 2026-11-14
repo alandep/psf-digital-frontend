@@ -21,7 +21,10 @@
         <mat-icon mat-card-avatar class="card-avatar">password</mat-icon>
         <mat-card-title>Senha</mat-card-title>
         <mat-card-subtitle *ngIf="overview">
-          Última alteração em {{ overview.passwordChangedAt | date:'dd/MM/yyyy' }}
+          <ng-container *ngIf="overview.passwordChangedAt; else semAlteracao">
+            Última alteração em {{ overview.passwordChangedAt | date:'dd/MM/yyyy' }}
+          </ng-container>
+          <ng-template #semAlteracao>Senha ainda não alterada pelo usuário</ng-template>
         </mat-card-subtitle>
       </mat-card-header>
       <mat-card-actions>
@@ -56,6 +59,25 @@
           <span class="row-value">{{ overview.recoveryCodesRemaining }} restantes</span>
         </div>
 
+        <div class="row" *ngIf="overview.emailMasked">
+          <span class="row-label">Código por e-mail</span>
+          <span class="row-value">Sempre ativo ({{ overview.emailMasked }})</span>
+        </div>
+
+        <form class="disable-form" *ngIf="showDisableForm" (ngSubmit)="confirmDisableMfa()">
+          <mat-form-field appearance="outline" class="disable-field">
+            <mat-label>Código do autenticador ou de recuperação</mat-label>
+            <input matInput name="disableCode" [(ngModel)]="disableCode" autocomplete="one-time-code" required />
+          </mat-form-field>
+          <p class="disable-error" role="alert" *ngIf="disableError">{{ disableError }}</p>
+          <div class="disable-actions">
+            <button mat-raised-button color="warn" type="submit" [disabled]="!disableCode.trim() || disabling">
+              Confirmar
+            </button>
+            <button mat-button type="button" (click)="toggleDisableForm()" [disabled]="disabling">Cancelar</button>
+          </div>
+        </form>
+
         <div class="recovery-panel" *ngIf="showRecoveryCodes">
           <div class="recovery-warning">
             <mat-icon>warning</mat-icon>
@@ -70,12 +92,18 @@
         </div>
       </mat-card-content>
       <mat-card-actions class="actions-wrap">
-        <button mat-raised-button color="primary" routerLink="/home-logged/admin/mfa-setup">
+        <button *ngIf="overview && !overview.authenticatorConfigured" mat-raised-button color="primary"
+                routerLink="/home-logged/admin/mfa-setup">
           <mat-icon>qr_code_2</mat-icon> Configurar autenticador
         </button>
-        <button mat-stroked-button (click)="generateRecoveryCodes()">
-          <mat-icon>autorenew</mat-icon> Gerar novos
-        </button>
+        <ng-container *ngIf="overview?.authenticatorConfigured">
+          <button mat-stroked-button (click)="generateRecoveryCodes()">
+            <mat-icon>autorenew</mat-icon> Gerar novos códigos
+          </button>
+          <button mat-stroked-button color="warn" (click)="toggleDisableForm()">
+            <mat-icon>phonelink_erase</mat-icon> Desativar autenticador
+          </button>
+        </ng-container>
       </mat-card-actions>
     </mat-card>
 
@@ -87,6 +115,7 @@
         <mat-card-subtitle>Dispositivos com acesso à sua conta</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
+        <p class="empty-state" *ngIf="sessions.length === 0">Nenhuma sessão ativa encontrada.</p>
         <div class="session-row" *ngFor="let s of sessions; trackBy: trackById">
           <mat-icon class="session-icon">{{ s.current ? 'laptop' : 'smartphone' }}</mat-icon>
           <div class="session-info">
@@ -113,6 +142,7 @@
         <mat-card-title>Histórico de segurança</mat-card-title>
       </mat-card-header>
       <mat-card-content>
+        <p class="empty-state" *ngIf="events.length === 0">Nenhum evento registrado.</p>
         <div class="event-row" *ngFor="let e of events; trackBy: trackById">
           <mat-icon class="event-icon">shield</mat-icon>
           <div class="event-info">

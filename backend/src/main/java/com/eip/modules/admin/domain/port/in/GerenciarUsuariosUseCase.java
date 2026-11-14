@@ -24,7 +24,11 @@ public interface GerenciarUsuariosUseCase {
 
     UsuarioView alterarStatus(UUID userId, String status);
 
-    /** Issues a password-reset token for the user (returns true when created). */
+    /**
+     * Issues a password-reset token and e-mails the link to the user. Returns the
+     * relative activation link ONLY in dev mode (eip.auth.expose-dev-links);
+     * otherwise returns {@code null}.
+     */
     String resetarSenha(UUID userId);
 
     /** Read view mirroring the frontend AdminUser shape (UI status/role vocab). */

@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, inject, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Observable, Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -21,7 +21,9 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { HEDGE_SERVICE } from '../../../services/finance/hedge-service.token';
 import { ExportService } from '../../../../services/exportService';
+import { apiErrorMessage } from '../../../services/finance/finance-utils';
 import { HedgeDetailDialogComponent } from './hedge-detail-dialog/hedge-detail-dialog.component';
+import { HedgeCreateDialogComponent } from './hedge-create-dialog/hedge-create-dialog.component';
 import { HasPermissionDirective } from '../../../directives/has-permission.directive';
 import {
   HedgeContract,
@@ -82,7 +84,7 @@ export class HedgeComponent implements OnInit, OnDestroy, AfterViewInit {
 
   displayedColumns: string[] = [
     'contractNumber', 'bank', 'type', 'notionalValue', 'currencyPair',
-    'strikeRate', 'maturityDate', 'markToMarket', 'status', 'actions'
+    'strikeRate', 'maturityDate', 'status', 'actions'
   ];
 
   banks: string[] = [];
@@ -144,10 +146,12 @@ export class HedgeComponent implements OnInit, OnDestroy, AfterViewInit {
         next: (data) => {
           this.contracts = data;
           this.dataSource.data = data;
+          this.banks = this.hedgeService.getBanks();
+          this.currencyPairs = this.hedgeService.getCurrencyPairs();
           this.isLoading = false;
         },
-        error: () => {
-          this.snackBar.open('Erro ao carregar contratos de hedge', 'Fechar', { duration: 3000 });
+        error: (err) => {
+          this.snackBar.open(apiErrorMessage(err, 'Erro ao carregar contratos de hedge'), 'Fechar', { duration: 4000 });
           this.isLoading = false;
         }
       });
@@ -156,22 +160,27 @@ export class HedgeComponent implements OnInit, OnDestroy, AfterViewInit {
   loadKPIs(): void {
     this.hedgeService.getKPIs()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(kpis => this.kpis = kpis);
+      .subscribe({ next: kpis => this.kpis = kpis, error: () => this.kpis = null });
   }
 
   loadExposure(): void {
     this.hedgeService.getExposureSummary()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(exp => this.exposure = exp);
+      .subscribe({ next: exp => this.exposure = exp, error: () => this.exposure = null });
   }
 
   applyFilters(): void {
     const filters: HedgeFilters = this.filterForm.value;
     this.hedgeService.getContracts(filters)
       .pipe(takeUntil(this.destroy$))
-      .subscribe(data => {
-        this.contracts = data;
-        this.dataSource.data = data;
+      .subscribe({
+        next: data => {
+          this.contracts = data;
+          this.dataSource.data = data;
+          this.banks = this.hedgeService.getBanks();
+          this.currencyPairs = this.hedgeService.getCurrencyPairs();
+        },
+        error: (err) => this.snackBar.open(apiErrorMessage(err, 'Erro ao filtrar contratos'), 'Fechar', { duration: 4000 })
       });
   }
 
@@ -179,20 +188,63 @@ export class HedgeComponent implements OnInit, OnDestroy, AfterViewInit {
     this.filterForm.reset({ searchText: '', type: '', status: '', bank: '', currencyPair: '' });
   }
 
-  openNovoHedgeDialog(): void {
-    import('../dialogs/novo-hedge-dialog.component').then(m => {
-      this.dialog.open(m.NovoHedgeDialogComponent, {
-        width: '700px',
-        panelClass: 'novo-usuario-panel'
-      }).afterClosed().subscribe(result => {
-        if (result) {
-          this.snackBar.open('Novo contrato de hedge registrado!', 'OK', { duration: 3000 });
-          this.loadContracts();
-          this.loadKPIs();
-          this.loadExposure();
+  private reloadAll(): void {
+    this.loadContracts();
+    this.loadKPIs();
+    this.loadExposure();
+  }
+
+  private runAction(
+    label: string,
+    confirmText: string,
+    contract: HedgeContract,
+    call: (id: string) => Observable<HedgeContract>
+  ): void {
+    if (!window.confirm(`${confirmText} ${contract.contractNumber}?`)) {
+      return;
+    }
+    call(contract.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.snackBar.open(`Contrato ${label}`, 'OK', { duration: 3000 });
+          this.reloadAll();
+        },
+        error: (err) => this.snackBar.open(apiErrorMessage(err, `Erro ao atualizar o contrato`), 'Fechar', { duration: 4000 })
+      });
+  }
+
+  exercer(contract: HedgeContract): void {
+    this.runAction('exercido', 'Exercer o hedge', contract, (id) => this.hedgeService.exercer(id));
+  }
+
+  expirar(contract: HedgeContract): void {
+    this.runAction('expirado', 'Marcar como expirado o hedge', contract, (id) => this.hedgeService.expirar(id));
+  }
+
+  cancelar(contract: HedgeContract): void {
+    this.runAction('cancelado', 'Cancelar o hedge', contract, (id) => this.hedgeService.cancelar(id));
+  }
+
+  isActionable(contract: HedgeContract): boolean {
+    return contract.status === 'ATIVO';
+  }
+
+  novoHedge(): void {
+    this.dialog
+      .open<HedgeCreateDialogComponent, void, HedgeContract>(HedgeCreateDialogComponent, {
+        width: '480px',
+        maxWidth: '92vw',
+        autoFocus: 'first-tabbable'
+      })
+      .afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((created) => {
+        if (created) {
+          this.snackBar.open('Hedge criado', 'OK', { duration: 3000 });
+          this.reloadAll();
         }
       });
-    });
   }
 
   selectContract(contract: HedgeContract): void {
@@ -215,7 +267,6 @@ export class HedgeComponent implements OnInit, OnDestroy, AfterViewInit {
       { key: 'currencyPair', label: 'Par' },
       { key: 'strikeRate', label: 'Taxa Strike' },
       { key: 'maturityDate', label: 'Vencimento' },
-      { key: 'markToMarket', label: 'MtM' },
       { key: 'status', label: 'Status' }
     ];
     this.exportService.exportToCSV(this.dataSource.filteredData, columns, 'hedge-contracts');
@@ -230,8 +281,7 @@ export class HedgeComponent implements OnInit, OnDestroy, AfterViewInit {
       { key: 'notionalValue', label: 'Valor Nocional' },
       { key: 'currencyPair', label: 'Par' },
       { key: 'strikeRate', label: 'Taxa Strike' },
-      { key: 'maturityDate', label: 'Vencimento' },
-      { key: 'markToMarket', label: 'MtM' }
+      { key: 'maturityDate', label: 'Vencimento' }
     ];
     this.exportService.exportToPDF('Relatório Hedge Cambial', this.dataSource.filteredData, columns, 'hedge-report');
   }
@@ -253,7 +303,8 @@ export class HedgeComponent implements OnInit, OnDestroy, AfterViewInit {
       'FORWARD': 'Forward',
       'OPTION_CALL': 'Opção Call',
       'OPTION_PUT': 'Opção Put',
-      'SWAP': 'Swap'
+      'SWAP': 'Swap',
+      'OPCAO': 'Opção'
     };
     return map[type] || type;
   }
@@ -261,6 +312,8 @@ export class HedgeComponent implements OnInit, OnDestroy, AfterViewInit {
   getStatusColor(status: HedgeStatus): string {
     const map: Record<HedgeStatus, string> = {
       'ATIVO': 'status-ativo',
+      'EXERCIDO': 'status-liquidado',
+      'EXPIRADO': 'status-vencido',
       'LIQUIDADO': 'status-liquidado',
       'VENCIDO': 'status-vencido',
       'CANCELADO': 'status-cancelado',

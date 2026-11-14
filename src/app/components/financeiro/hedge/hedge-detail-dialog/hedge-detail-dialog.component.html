@@ -35,11 +35,11 @@
           <span class="status-chip" [ngClass]="getStatusColor(contract.status)">{{ contract.status }}</span>
         </span>
       </div>
-      <div class="info-item">
+      <div class="info-item" *ngIf="false">
         <span class="info-label">Direção</span>
         <span class="info-value">{{ getDirectionLabel(contract.direction) }}</span>
       </div>
-      <div class="info-item">
+      <div class="info-item" *ngIf="contract.counterparty">
         <span class="info-label">Contraparte</span>
         <span class="info-value">{{ contract.counterparty }}</span>
       </div>
@@ -55,35 +55,27 @@
         <span class="info-label">Taxa Strike</span>
         <span class="info-value">{{ contract.strikeRate.toFixed(4) }}</span>
       </div>
-      <div class="info-item">
+      <div class="info-item" *ngIf="contract.spotRateAtClose">
         <span class="info-label">Spot no Fechamento</span>
         <span class="info-value">{{ contract.spotRateAtClose.toFixed(4) }}</span>
       </div>
-      <div class="info-item">
+      <div class="info-item" *ngIf="contract.markToMarket">
         <span class="info-label">Mark-to-Market</span>
         <span class="info-value" [ngClass]="getMtmClass(contract.markToMarket)">{{ formatBRL(contract.markToMarket) }}</span>
       </div>
-      <div class="info-item">
+      <div class="info-item" *ngIf="contract.premium">
         <span class="info-label">Prêmio</span>
         <span class="info-value">{{ formatBRL(contract.premium) }}</span>
       </div>
-      <div class="info-item">
+      <div class="info-item" *ngIf="contract.linkedExposure">
         <span class="info-label">Exposição Vinculada</span>
         <span class="info-value">{{ contract.linkedExposure }}</span>
-      </div>
-      <div class="info-item">
-        <span class="info-label">Data da Operação</span>
-        <span class="info-value">{{ formatDate(contract.tradeDate) }}</span>
       </div>
       <div class="info-item">
         <span class="info-label">Vencimento</span>
         <span class="info-value">{{ formatDate(contract.maturityDate) }}</span>
       </div>
-      <div class="info-item">
-        <span class="info-label">Liquidação</span>
-        <span class="info-value">{{ formatDate(contract.settlementDate) }}</span>
-      </div>
-      <div class="info-item notes-block">
+      <div class="info-item notes-block" *ngIf="contract.notes">
         <span class="info-label">Observações</span>
         <span class="info-value">{{ contract.notes }}</span>
       </div>

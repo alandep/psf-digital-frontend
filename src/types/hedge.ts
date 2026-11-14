@@ -1,5 +1,16 @@
-export type HedgeType = 'NDF' | 'FORWARD' | 'OPTION_CALL' | 'OPTION_PUT' | 'SWAP';
-export type HedgeStatus = 'ATIVO' | 'LIQUIDADO' | 'VENCIDO' | 'CANCELADO' | 'EM_NEGOCIACAO';
+export type HedgeType = 'NDF' | 'FORWARD' | 'OPTION_CALL' | 'OPTION_PUT' | 'SWAP' | 'OPCAO';
+
+/** Instrumentos aceitos pelo backend. */
+export type HedgeInstrumento = 'NDF' | 'SWAP' | 'OPCAO';
+
+export interface CriarHedgeInput {
+  instrumento: HedgeInstrumento;
+  moeda: string;
+  notional: number;
+  strike: number | null;
+  vencimento: Date | null;
+}
+export type HedgeStatus = 'ATIVO' | 'EXERCIDO' | 'EXPIRADO' | 'LIQUIDADO' | 'VENCIDO' | 'CANCELADO' | 'EM_NEGOCIACAO';
 
 export interface HedgeContract {
   id: string;
@@ -27,6 +38,8 @@ export interface HedgeKPIs {
   valorNocionalTotal: number;
   hedgeRatioMedio: number;
   pnlNaoRealizado: number;
+  /** Total de contratos de hedge cadastrados (qualquer status). */
+  totalContratos?: number;
 }
 
 export interface ExposureSummary {
@@ -34,6 +47,8 @@ export interface ExposureSummary {
   totalHedged: number;
   hedgeRatio: number;
   netOpenPosition: number;
+  /** Nocional ativo com vencimento nos próximos 30 dias. */
+  maturingIn30Days?: number;
 }
 
 export interface HedgeFilters {

@@ -25,6 +25,16 @@ export interface MarketQuote {
   stale: boolean;
 }
 
+/** Expectativa de mercado para o câmbio (GET /bff/mercado/expectativas/cambio). */
+export interface ExpectativaCambio {
+  anoReferencia: string;
+  mediana: number;
+  media: number;
+  /** yyyy-MM-dd */
+  dataPesquisa: string;
+  fonte: string;
+}
+
 interface MarketQuoteDto {
   currency: string;
   pair: string;
@@ -57,6 +67,16 @@ export class MarketQuoteService {
     return this.http
       .get<MarketQuoteDto>(this.api + '/cotacao/' + encodeURIComponent(currency))
       .pipe(map((d) => this.toQuote(d)));
+  }
+
+  /**
+   * Expectativas de câmbio do Boletim Focus (BCB) para o ano corrente e o
+   * seguinte. Erros (ex.: 503) propagam: quem chama decide como degradar.
+   */
+  getExpectativasCambio(): Observable<ExpectativaCambio[]> {
+    return this.http
+      .get<ExpectativaCambio[]>(this.api + '/expectativas/cambio')
+      .pipe(map((list) => list ?? []));
   }
 
   /** Several quotes at once, in request order; unavailable ones are omitted. */

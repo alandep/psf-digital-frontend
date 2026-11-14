@@ -1,6 +1,7 @@
 package com.eip.modules.identity.domain.port.out;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import com.eip.modules.identity.domain.model.AppUser;
 
@@ -12,4 +13,6 @@ public interface UserRepositoryPort {
     Optional<AppUser> findByEmail(String email);
 
     Optional<AppUser> findByCpfLookupHash(String hash);
+
+    Optional<AppUser> findById(UUID id);
 }

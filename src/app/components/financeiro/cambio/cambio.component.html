@@ -11,7 +11,7 @@
         <mat-icon class="header-icon">currency_exchange</mat-icon>
         <div class="title-content">
           <h1>Câmbio</h1>
-          <p class="subtitle">Plataforma inteligente de gestão cambial com IA</p>
+          <p class="subtitle">Gestão de contratos de câmbio com cotações de mercado em tempo real</p>
         </div>
       </div>
       <div class="header-actions">
@@ -24,16 +24,13 @@
         <button mat-raised-button color="primary" (click)="refreshQuotations()">
           <mat-icon>refresh</mat-icon> Atualizar Cotações
         </button>
-        <button mat-raised-button color="primary" (click)="exportPDF()" *appHasPermission="'financeiro/cambio:export'">
-          <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
-        </button>
       </div>
     </div>
   </div>
 
   <!-- Financial KPIs -->
   <div class="kpi-dashboard">
-    <mat-card class="kpi-card kpi-exported">
+    <mat-card class="kpi-card kpi-exported" *ngIf="(financialKPIs?.exportedValue || 0) > 0">
       <mat-card-content>
         <div class="kpi-icon">
           <mat-icon>attach_money</mat-icon>
@@ -64,12 +61,48 @@
         </div>
         <div class="kpi-info">
           <div class="kpi-value">{{ formatCurrency(financialKPIs?.pendingReceipts || 0) }}</div>
-          <div class="kpi-label">Recebimentos Pendentes</div>
+          <div class="kpi-label">Contratos em Aberto (BRL)</div>
         </div>
       </mat-card-content>
     </mat-card>
 
-    <mat-card class="kpi-card" [ngClass]="(financialKPIs?.gainLoss || 0) >= 0 ? 'kpi-gain' : 'kpi-loss'">
+    <mat-card class="kpi-card kpi-spread" *ngIf="financialKPIs?.weightedAvgUsdRate != null">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>currency_exchange</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ financialKPIs?.weightedAvgUsdRate | number:'1.4-4' }}</div>
+          <div class="kpi-label">Taxa Média Ponderada (USD)</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-days" *ngIf="financialKPIs">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>event_upcoming</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ financialKPIs.expiringIn30Days || 0 }}</div>
+          <div class="kpi-label">Vencendo em 30 dias</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-loss" *ngIf="(financialKPIs?.overdueContracts || 0) > 0">
+      <mat-card-content>
+        <div class="kpi-icon">
+          <mat-icon>warning</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ financialKPIs?.overdueContracts }}</div>
+          <div class="kpi-label">Contratos Vencidos</div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card" *ngIf="(financialKPIs?.gainLoss || 0) !== 0" [ngClass]="(financialKPIs?.gainLoss || 0) >= 0 ? 'kpi-gain' : 'kpi-loss'">
       <mat-card-content>
         <div class="kpi-icon">
           <mat-icon>{{ (financialKPIs?.gainLoss || 0) >= 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
@@ -81,7 +114,7 @@
       </mat-card-content>
     </mat-card>
 
-    <mat-card class="kpi-card kpi-spread">
+    <mat-card class="kpi-card kpi-spread" *ngIf="(financialKPIs?.avgSpread || 0) > 0">
       <mat-card-content>
         <div class="kpi-icon">
           <mat-icon>swap_horiz</mat-icon>
@@ -93,7 +126,7 @@
       </mat-card-content>
     </mat-card>
 
-    <mat-card class="kpi-card kpi-days">
+    <mat-card class="kpi-card kpi-days" *ngIf="(financialKPIs?.avgLiquidationDays || 0) > 0">
       <mat-card-content>
         <div class="kpi-icon">
           <mat-icon>event</mat-icon>
@@ -131,9 +164,9 @@
   <!-- Simulation Card (Hero Feature) -->
   <mat-card class="simulation-card" *ngIf="isSimulationExpanded">
     <mat-card-header>
-      <mat-icon mat-card-avatar class="simulation-icon">psychology</mat-icon>
-      <mat-card-title>Simulação de Câmbio com IA</mat-card-title>
-      <mat-card-subtitle>Calcule cenários e compare bancos para sua operação</mat-card-subtitle>
+      <mat-icon mat-card-avatar class="simulation-icon">calculate</mat-icon>
+      <mat-card-title>Simulação de Câmbio</mat-card-title>
+      <mat-card-subtitle>Converte pelo valor da cotação comercial atual ou pela taxa que você informar, sem tarifas estimadas</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
       <form [formGroup]="simulationForm" class="simulation-form">
@@ -147,77 +180,80 @@
 
           <mat-form-field appearance="outline">
             <mat-label>Valor</mat-label>
-            <input matInput type="number" formControlName="value" placeholder="100000">
+            <input matInput type="number" formControlName="value" placeholder="Valor na moeda estrangeira">
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Prazo (dias)</mat-label>
-            <input matInput type="number" formControlName="term" placeholder="30">
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Banco</mat-label>
-            <mat-select formControlName="bank">
-              <mat-option *ngFor="let b of banks" [value]="b">{{ b }}</mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Data Prevista</mat-label>
-            <input matInput [matDatepicker]="simPicker" formControlName="expectedDate">
-            <mat-datepicker-toggle matIconSuffix [for]="simPicker"></mat-datepicker-toggle>
-            <mat-datepicker #simPicker></mat-datepicker>
+            <mat-label>Taxa negociada (opcional)</mat-label>
+            <input matInput type="number" step="0.0001" formControlName="rate" placeholder="Vazio = cotação atual">
           </mat-form-field>
         </div>
 
         <div class="simulation-actions">
-          <button mat-raised-button color="primary" (click)="simulate()" [disabled]="isSimulating || simulationForm.invalid">
+          <button mat-raised-button color="primary" type="button" (click)="simulate()" [disabled]="isSimulating || simulationForm.invalid">
             <mat-icon>science</mat-icon>
             {{ isSimulating ? 'Simulando...' : 'Simular Câmbio' }}
+          </button>
+          <button mat-stroked-button color="primary" type="button" (click)="compareBanks()" [disabled]="!simulationForm.get('currency')?.value">
+            <mat-icon>account_balance</mat-icon> Comparar bancos
           </button>
           <mat-progress-spinner *ngIf="isSimulating" mode="indeterminate" diameter="24"></mat-progress-spinner>
         </div>
       </form>
 
+      <!-- Comparação por banco (histórico real da organização) -->
+      <div class="bank-comparison" *ngIf="bankComparisonsLoaded" aria-live="polite">
+        <mat-divider></mat-divider>
+        <h3><mat-icon>account_balance</mat-icon> Histórico por banco</h3>
+        <table class="bank-table" *ngIf="bankComparisons.length > 0; else semHistoricoBancos">
+          <thead>
+            <tr>
+              <th scope="col">Banco</th>
+              <th scope="col">Contratos</th>
+              <th scope="col">Taxa média ponderada</th>
+              <th scope="col">Valor em BRL</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let b of bankComparisons" [class.recommended-row]="b.recommendation">
+              <td>
+                {{ b.bank }}
+                <mat-icon *ngIf="b.recommendation" matTooltip="Maior taxa média no histórico" aria-label="Maior taxa média no histórico">star</mat-icon>
+              </td>
+              <td>{{ b.contracts }}</td>
+              <td>{{ b.rate | number:'1.4-4' }}</td>
+              <td>{{ formatCurrency(b.netValue) }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <ng-template #semHistoricoBancos>
+          <div class="empty-state" role="status">
+            <mat-icon aria-hidden="true">account_balance</mat-icon>
+            <p>Sem histórico de contratos por banco para esta moeda</p>
+          </div>
+        </ng-template>
+      </div>
+
       <!-- Simulation Result -->
       <div class="simulation-result" *ngIf="simulationResult">
         <mat-divider></mat-divider>
-        <h3><mat-icon>emoji_objects</mat-icon> Resultado da Simulação</h3>
-        <div class="result-grid">
+        <h3><mat-icon>calculate</mat-icon> Resultado da Simulação</h3>
+        <div class="result-grid" aria-live="polite">
           <div class="result-item result-best">
-            <span class="result-label">Valor Líquido (BRL)</span>
+            <span class="result-label">Valor em BRL</span>
             <span class="result-value">{{ formatCurrency(simulationResult.netValue) }}</span>
           </div>
-          <div class="result-item">
-            <span class="result-label">IOF (0,38%)</span>
-            <span class="result-value">{{ formatCurrency(simulationResult.iof) }}</span>
+          <div class="result-item" *ngIf="simulationResult.rate">
+            <span class="result-label">Taxa utilizada</span>
+            <span class="result-value">{{ simulationResult.rate | number:'1.4-4' }}</span>
           </div>
-          <div class="result-item">
-            <span class="result-label">Taxas Bancárias</span>
-            <span class="result-value">{{ formatCurrency(simulationResult.bankFees) }}</span>
-          </div>
-          <div class="result-item">
-            <span class="result-label">Spread</span>
-            <span class="result-value">{{ simulationResult.spread }}%</span>
-          </div>
-          <div class="result-item" [ngClass]="simulationResult.financialImpact >= 0 ? 'result-gain' : 'result-loss'">
-            <span class="result-label">Impacto Financeiro</span>
+          <div class="result-item" *ngIf="simulationResult.financialImpact !== 0"
+               [ngClass]="simulationResult.financialImpact >= 0 ? 'result-gain' : 'result-loss'">
+            <span class="result-label">Diferença vs. cotação atual</span>
             <span class="result-value">{{ formatCurrency(simulationResult.financialImpact) }}</span>
           </div>
         </div>
-
-        <!-- Scenarios -->
-        <h4>Cenários</h4>
-        <div class="scenario-cards">
-          <div class="scenario-card" *ngFor="let scenario of simulationResult.scenarios" [ngClass]="getScenarioClass(scenario.type)">
-            <div class="scenario-header">
-              <span class="scenario-type">{{ scenario.type }}</span>
-              <span class="scenario-probability">{{ scenario.probability }}%</span>
-            </div>
-            <div class="scenario-rate">{{ scenario.rate | number:'1.4-4' }}</div>
-            <div class="scenario-value">{{ formatCurrency(scenario.brlValue) }}</div>
-          </div>
-        </div>
+        <p class="simulation-note" *ngIf="simulationResult.note">{{ simulationResult.note }}</p>
       </div>
     </mat-card-content>
   </mat-card>
@@ -229,7 +265,7 @@
         <div class="filter-row">
           <mat-form-field appearance="outline" class="filter-field">
             <mat-label>Buscar</mat-label>
-            <input matInput formControlName="searchText" placeholder="Contrato, banco, exportador...">
+            <input matInput formControlName="searchText" placeholder="Contrato, banco ou moeda">
             <mat-icon matPrefix>search</mat-icon>
           </mat-form-field>
 
@@ -348,33 +384,20 @@
           <td mat-cell *matCellDef="let c">{{ c.liquidationDate | date:'dd/MM/yyyy' }}</td>
         </ng-container>
 
-        <!-- AI Score Column -->
-        <ng-container matColumnDef="aiFinancialScore">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Score IA</th>
-          <td mat-cell *matCellDef="let c">
-            <div class="score-indicator">
-              <mat-progress-bar mode="determinate" [value]="c.aiFinancialScore" [ngClass]="getScoreColor(c.aiFinancialScore)"></mat-progress-bar>
-              <span class="score-value">{{ c.aiFinancialScore }}</span>
-            </div>
-          </td>
-        </ng-container>
-
-        <!-- Gain/Loss Column -->
-        <ng-container matColumnDef="gainLoss">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Ganho/Perda</th>
-          <td mat-cell *matCellDef="let c">
-            <span [ngClass]="c.gainLoss >= 0 ? 'gain-positive' : 'loss-negative'">
-              {{ formatCurrency(c.gainLoss) }}
-            </span>
-          </td>
-        </ng-container>
-
         <!-- Actions Column -->
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef>Ações</th>
           <td mat-cell *matCellDef="let c">
-            <button mat-icon-button color="primary" (click)="selectContract(c); $event.stopPropagation()" matTooltip="Visualizar">
+            <button mat-icon-button color="primary" (click)="selectContract(c); $event.stopPropagation()" matTooltip="Visualizar" aria-label="Visualizar contrato">
               <mat-icon>visibility</mat-icon>
+            </button>
+            <button mat-icon-button color="primary" *ngIf="c.status === 'ABERTO' || c.status === 'VENCIDO'"
+                    (click)="liquidar(c); $event.stopPropagation()" matTooltip="Liquidar" aria-label="Liquidar contrato">
+              <mat-icon>task_alt</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" *ngIf="c.status === 'ABERTO' || c.status === 'VENCIDO'"
+                    (click)="cancelar(c); $event.stopPropagation()" matTooltip="Cancelar" aria-label="Cancelar contrato">
+              <mat-icon>cancel</mat-icon>
             </button>
           </td>
         </ng-container>
@@ -382,6 +405,11 @@
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="selectContract(row)" class="clickable-row"></tr>
       </table>
+
+      <div class="empty-state" role="status" *ngIf="!isLoading && dataSource.data.length === 0">
+        <mat-icon aria-hidden="true">currency_exchange</mat-icon>
+        <p>Nenhum contrato de câmbio encontrado.</p>
+      </div>
 
       <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" showFirstLastButtons></mat-paginator>
     </mat-card-content>

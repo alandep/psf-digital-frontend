@@ -53,6 +53,7 @@ public class CambioContratoMapper {
                 CambioStatus.valueOf(entity.getStatus()),
                 entity.getDataContratacao(),
                 entity.getDataLiquidacao(),
-                entity.getVersion());
+                entity.getVersion(),
+                entity.getCreatedAt());
     }
 }

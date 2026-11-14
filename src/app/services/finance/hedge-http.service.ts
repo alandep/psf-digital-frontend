@@ -1,118 +1,237 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, forkJoin } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
 import { IHedgeService } from './hedge-service.interface';
-import { HedgeMockService } from '../../../services/hedgeMockService';
+import { parseApiDate, toApiDate } from './finance-utils';
 import { environment } from '../../../environments/environment';
 import {
   HedgeContract,
   HedgeKPIs,
   ExposureSummary,
   HedgeFilters,
+  CriarHedgeInput,
   HedgeType,
   HedgeStatus
 } from '../../../types/hedge';
 
-// --- Backend BFF DTOs (/bff/financeiro/hedge) ---
+// --- DTOs do BFF (/bff/financeiro/hedge) ---
 interface HedgeView {
   id: string;
-  contractNumber?: string;
-  bank?: string;
-  type?: string;
-  status: string;
-  notionalValue?: number;
-  currencyPair?: string;
-  strikeRate?: number;
-  maturityDate?: string;
-  direction?: string;
+  instrumento: 'NDF' | 'SWAP' | 'OPCAO';
+  moeda: string;
+  notional: number;
+  strike: number | null;
+  vencimento: string | null;
+  status: 'ATIVO' | 'EXERCIDO' | 'EXPIRADO' | 'CANCELADO';
 }
 
-// HTTP gateway for the financeiro/hedge module. Only used when
-// environment.realApis.finance === true. The front mock is far richer than the
-// backend, so KPIs, exposure summary and dropdown catalogs DELEGATE to the
-// injected mock (marked PARTIAL).
+interface CriarHedgeRequest {
+  instrumento: 'NDF' | 'SWAP' | 'OPCAO';
+  moeda: string;
+  notional: number;
+  strike: number | null;
+  vencimento: string | null;
+}
+
+interface HedgeMetricasDto {
+  total: number;
+  ativos: number;
+  exercidos: number;
+  expirados: number;
+  cancelados: number;
+  notionalTotal: number;
+  notionalAtivo: number;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const REFERENCE_BANKS = [
+  'Banco do Brasil',
+  'Bradesco',
+  'Itaú Unibanco',
+  'Santander Brasil',
+  'BTG Pactual',
+  'Banco Safra',
+  'Citibank',
+  'J.P. Morgan',
+  'Goldman Sachs'
+];
+
+const HEDGE_TYPES: HedgeType[] = ['NDF', 'SWAP', 'OPCAO'];
+const HEDGE_STATUSES: HedgeStatus[] = ['ATIVO', 'EXERCIDO', 'EXPIRADO', 'CANCELADO'];
+const REFERENCE_PAIRS = ['USD/BRL', 'EUR/BRL', 'GBP/BRL'];
+
+/** Gateway HTTP do módulo financeiro/hedge, 100% sobre o BFF real. */
 @Injectable({
   providedIn: 'root'
 })
 export class HedgeHttpService implements IHedgeService {
   private readonly http = inject(HttpClient);
-  private readonly mock = inject(HedgeMockService);
   private readonly api = `${environment.bffBaseUrl}/bff/financeiro/hedge`;
 
+  private readonly seenBanks = new Set<string>();
+  private readonly seenPairs = new Set<string>();
+
   private mapStatus(status?: string): HedgeStatus {
-    const s = (status || '').toUpperCase();
-    const known: HedgeStatus[] = ['ATIVO', 'LIQUIDADO', 'VENCIDO', 'CANCELADO', 'EM_NEGOCIACAO'];
-    return (known as string[]).includes(s) ? (s as HedgeStatus) : 'ATIVO';
+    return (status || 'ATIVO').toUpperCase() as HedgeStatus;
   }
 
   private mapType(type?: string): HedgeType {
     const t = (type || '').toUpperCase();
-    const known: HedgeType[] = ['NDF', 'FORWARD', 'OPTION_CALL', 'OPTION_PUT', 'SWAP'];
-    return (known as string[]).includes(t) ? (t as HedgeType) : 'NDF';
+    return (HEDGE_TYPES as string[]).includes(t) ? (t as HedgeType) : 'NDF';
   }
 
-  // Maps HedgeView -> front HedgeContract, filling fields the backend does not
-  // provide with safe defaults so the UI always renders a valid row.
+  // HedgeView -> HedgeContract. Campos sem fonte no backend ficam zerados/vazios
+  // e são ocultados nos templates.
   private toContract(v: HedgeView): HedgeContract {
     const now = new Date();
+    const maturity = parseApiDate(v.vencimento) ?? now;
     return {
       id: v.id,
-      contractNumber: v.contractNumber ?? '',
-      bank: v.bank ?? '',
-      type: this.mapType(v.type),
+      contractNumber: 'HG-' + (v.id ?? '').substring(0, 8).toUpperCase(),
+      bank: '',
+      type: this.mapType(v.instrumento),
       status: this.mapStatus(v.status),
-      notionalValue: v.notionalValue ?? 0,
-      currencyPair: v.currencyPair ?? 'USD/BRL',
-      strikeRate: v.strikeRate ?? 0,
+      notionalValue: v.notional ?? 0,
+      currencyPair: `${v.moeda ?? 'USD'}/BRL`,
+      strikeRate: v.strike ?? 0,
       spotRateAtClose: 0,
-      maturityDate: v.maturityDate ? new Date(v.maturityDate) : now,
+      maturityDate: maturity,
       tradeDate: now,
-      settlementDate: now,
+      settlementDate: maturity,
       markToMarket: 0,
       counterparty: '',
       linkedExposure: '',
       premium: 0,
-      direction: (v.direction || '').toUpperCase() === 'BUY' ? 'BUY' : 'SELL',
+      direction: 'SELL',
       notes: ''
     };
   }
 
-  // --- Backed by the backend BFF ---
+  private remember(rows: HedgeContract[]): void {
+    rows.forEach((r) => {
+      if (r.bank) {
+        this.seenBanks.add(r.bank);
+      }
+      if (r.currencyPair) {
+        this.seenPairs.add(r.currencyPair);
+      }
+    });
+  }
+
+  private applyClientFilters(rows: HedgeContract[], f?: HedgeFilters): HedgeContract[] {
+    if (!f) {
+      return rows;
+    }
+    const text = (f.searchText || '').trim().toLowerCase();
+    return rows.filter((c) => {
+      if (text && !`${c.contractNumber} ${c.bank} ${c.counterparty}`.toLowerCase().includes(text)) {
+        return false;
+      }
+      if (f.type && c.type !== f.type) {
+        return false;
+      }
+      if (f.bank && c.bank !== f.bank) {
+        return false;
+      }
+      if (f.currencyPair && c.currencyPair !== f.currencyPair) {
+        return false;
+      }
+      return true;
+    });
+  }
+
   getContracts(filters?: HedgeFilters): Observable<HedgeContract[]> {
     let params = new HttpParams();
     if (filters?.status) {
       params = params.set('status', filters.status);
     }
+    return this.http.get<HedgeView[]>(this.api, { params }).pipe(
+      map((rows) => (rows ?? []).map((r) => this.toContract(r))),
+      tap((rows) => this.remember(rows)),
+      map((rows) => this.applyClientFilters(rows, filters))
+    );
+  }
+
+  createContract(input: CriarHedgeInput): Observable<HedgeContract> {
+    const body: CriarHedgeRequest = {
+      instrumento: input.instrumento,
+      moeda: input.moeda,
+      notional: input.notional,
+      strike: input.strike,
+      vencimento: toApiDate(input.vencimento) ?? null
+    };
+    return this.http.post<HedgeView>(this.api, body).pipe(map((v) => this.toContract(v)));
+  }
+
+  exercer(id: string): Observable<HedgeContract> {
     return this.http
-      .get<HedgeView[]>(this.api, { params })
-      .pipe(map((rows) => (rows ?? []).map((r) => this.toContract(r))));
+      .post<HedgeView>(`${this.api}/${encodeURIComponent(id)}/exercer`, {})
+      .pipe(map((v) => this.toContract(v)));
   }
 
-  // PARTIAL: aggregate hedge KPIs have no backend endpoint.
+  expirar(id: string): Observable<HedgeContract> {
+    return this.http
+      .post<HedgeView>(`${this.api}/${encodeURIComponent(id)}/expirar`, {})
+      .pipe(map((v) => this.toContract(v)));
+  }
+
+  cancelar(id: string): Observable<HedgeContract> {
+    return this.http
+      .post<HedgeView>(`${this.api}/${encodeURIComponent(id)}/cancelar`, {})
+      .pipe(map((v) => this.toContract(v)));
+  }
+
+  // KPIs reais a partir de /metricas. P&L e hedge ratio não têm fonte: 0 (ocultos na tela).
   getKPIs(): Observable<HedgeKPIs> {
-    return this.mock.getKPIs();
+    return this.http.get<HedgeMetricasDto>(`${this.api}/metricas`).pipe(
+      map((m) => ({
+        contratosAtivos: m.ativos,
+        valorNocionalTotal: m.notionalAtivo,
+        hedgeRatioMedio: 0,
+        pnlNaoRealizado: 0,
+        totalContratos: m.total
+      }))
+    );
   }
 
-  // PARTIAL: exposure summary has no backend endpoint.
+  // Posição protegida real (nocional ativo) + nocional vencendo em 30 dias, da lista.
   getExposureSummary(): Observable<ExposureSummary> {
-    return this.mock.getExposureSummary();
+    return forkJoin({
+      m: this.http.get<HedgeMetricasDto>(`${this.api}/metricas`),
+      ativos: this.getContracts({ searchText: '', type: '', status: 'ATIVO', bank: '', currencyPair: '' })
+    }).pipe(
+      map(({ m, ativos }) => {
+        const limit = Date.now() + 30 * DAY_MS;
+        const maturing = ativos
+          .filter((c) => c.maturityDate.getTime() <= limit)
+          .reduce((s, c) => s + (c.notionalValue || 0), 0);
+        return {
+          totalExposed: 0,
+          totalHedged: m.notionalAtivo,
+          hedgeRatio: 0,
+          netOpenPosition: 0,
+          maturingIn30Days: maturing
+        };
+      })
+    );
   }
 
-  // PARTIAL: dropdown catalogs are static/mock-only.
+  // --- Catálogos ---
   getBanks(): string[] {
-    return this.mock.getBanks();
+    return Array.from(new Set([...REFERENCE_BANKS, ...this.seenBanks])).sort((a, b) => a.localeCompare(b, 'pt-BR'));
   }
 
   getTypes(): HedgeType[] {
-    return this.mock.getTypes();
+    return [...HEDGE_TYPES];
   }
 
   getStatuses(): HedgeStatus[] {
-    return this.mock.getStatuses();
+    return [...HEDGE_STATUSES];
   }
 
   getCurrencyPairs(): string[] {
-    return this.mock.getCurrencyPairs();
+    return Array.from(new Set([...REFERENCE_PAIRS, ...this.seenPairs]));
   }
 }

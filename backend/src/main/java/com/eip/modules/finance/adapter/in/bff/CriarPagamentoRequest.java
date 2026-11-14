@@ -4,25 +4,28 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
-import com.eip.modules.finance.domain.port.in.GerenciarPagamentosUseCase.CriarPagamentoCommand;
-
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
+import com.eip.modules.finance.domain.port.in.GerenciarPagamentosUseCase.PagamentoCommand;
 
 /**
- * BFF request payload for creating a payment.
+ * BFF request payload for creating or updating a payment. Validation is done
+ * in the domain so errors come back as 422 with pt-BR messages.
  */
 public record CriarPagamentoRequest(
         UUID exportId,
-        @NotBlank String tipo,
+        String tipo,
         String descricao,
-        @NotNull @Positive BigDecimal amount,
+        String contraparte,
+        String referencia,
+        String contaBancaria,
+        UUID contratoCambioId,
+        String observacoes,
+        BigDecimal amount,
         String currency,
         LocalDate dueDate) {
 
     /** Maps this request to the use-case command. */
-    public CriarPagamentoCommand toCommand() {
-        return new CriarPagamentoCommand(exportId, tipo, descricao, amount, currency, dueDate);
+    public PagamentoCommand toCommand() {
+        return new PagamentoCommand(exportId, tipo, descricao, contraparte, referencia,
+                contaBancaria, contratoCambioId, observacoes, amount, currency, dueDate);
     }
 }

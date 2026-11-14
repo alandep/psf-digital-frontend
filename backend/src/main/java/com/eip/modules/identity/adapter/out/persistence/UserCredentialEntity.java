@@ -30,6 +30,9 @@ public class UserCredentialEntity {
     @Column(name = "password_hash")
     private String passwordHash;
 
+    @Column(name = "password_changed_at")
+    private OffsetDateTime passwordChangedAt;
+
     @Column(name = "must_change_password")
     private boolean mustChangePassword;
 

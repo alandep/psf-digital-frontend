@@ -31,6 +31,12 @@ export interface Pagamento {
   beneficiaryCountry: string | null;
   createdAt: Date;
   updatedAt: Date;
+  /** Descrição do lançamento (BFF: descricao). */
+  description?: string;
+  /** Contrato de câmbio vinculado (BFF: contratoCambioId). */
+  linkedExchangeContractId?: string | null;
+  /** Exportação vinculada (BFF: exportId). */
+  linkedExportId?: string | null;
 }
 
 export interface PaymentReconciliation {
@@ -96,6 +102,17 @@ export interface CashFlowProjection {
   scenarioOptimistic: number;
   scenarioProbable: number;
   scenarioConservative: number;
+  /** Valores em aberto (BRL) agrupados pelo mês de vencimento. */
+  byMonth?: CashFlowMonth[];
+  /** Moedas sem cotação real disponível (ficam fora dos totais em BRL). */
+  unconvertedCurrencies?: string[];
+}
+
+export interface CashFlowMonth {
+  /** 'yyyy-MM' */
+  month: string;
+  label: string;
+  total: number;
 }
 
 export interface PaymentFilters {
@@ -119,4 +136,6 @@ export interface PaymentMetrics {
   totalPaidValue: number;
   totalOverdueValue: number;
   avgFinancialScore: number;
+  /** Moedas sem cotação real disponível (ficam fora dos totais em BRL). */
+  unconvertedCurrencies?: string[];
 }

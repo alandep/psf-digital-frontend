@@ -6,32 +6,35 @@ import {
   SimulationResult,
   BankComparison,
   FinancialTimelineEvent,
-  CambioAIInsights,
+  CambioAnalysis,
   CambioMetrics,
   FinancialKPIs,
   CambioFilters,
   ContractStatus
 } from '../../../types/cambio';
 
-// Gateway interface for the financeiro/cambio module. Method names and return
-// types mirror CambioContratsMockService EXACTLY (Observable vs sync) so the
-// cambio screen + detail dialog can swap the concrete service without any
-// other change.
+// Gateway da tela financeiro/cambio. Implementação única: CambioHttpService
+// (BFF /bff/financeiro/cambio + cotações reais de /bff/mercado).
 export interface ICambioService {
   getContracts(filters?: CambioFilters): Observable<ContratoCambio[]>;
   getContractById(id: string): Observable<ContratoCambio | null>;
   createContract(data: Partial<ContratoCambio>): Observable<ContratoCambio>;
+  liquidarContract(id: string): Observable<ContratoCambio>;
+  cancelarContract(id: string): Observable<ContratoCambio>;
 
   getQuotations(): Observable<QuotationData[]>;
   simulate(request: SimulationRequest): Observable<SimulationResult>;
   compareBanks(currency: string, value: number): Observable<BankComparison[]>;
   getTimeline(contractId: string): Observable<FinancialTimelineEvent[]>;
-  getAIInsights(contractId: string): Observable<CambioAIInsights>;
+  /** Fatos determinísticos calculados do contrato (não é IA). */
+  getAnalysis(contractId: string): Observable<CambioAnalysis>;
   getMetrics(): Observable<CambioMetrics>;
   getFinancialKPIs(): Observable<FinancialKPIs>;
 
-  // Static dropdown catalog: SYNC in the mock (returns arrays).
+  // Catálogos síncronos (fallback estático + dados vistos na organização).
   getBanks(): string[];
   getCurrencies(): string[];
+  /** Moedas suportadas pelo backend (GET /bff/mercado/moedas). */
+  loadCurrencies(): Observable<string[]>;
   getStatuses(): ContractStatus[];
 }
