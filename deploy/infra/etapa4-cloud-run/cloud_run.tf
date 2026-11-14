@@ -139,6 +139,53 @@ resource "google_cloud_run_v2_service" "backend" {
         }
       }
 
+      # --- MFA / e-mail transacional (Brevo) ---
+      # ATENÇÃO: no profile cloud o backend se RECUSA a iniciar sem a chave MFA e as credenciais
+      # SMTP (fail-fast intencional). Os 3 secrets abaixo devem existir e ter versão antes do deploy.
+      env {
+        name = "EIP_MFA_ENCRYPTION_KEY"
+        value_source {
+          secret_key_ref {
+            secret  = var.mfa_encryption_key_secret_id # eip-mfa-encryption-key
+            version = "latest"
+          }
+        }
+      }
+      env {
+        name = "EIP_MAIL_USER"
+        value_source {
+          secret_key_ref {
+            secret  = var.mail_user_secret_id # eip-mail-user
+            version = "latest"
+          }
+        }
+      }
+      env {
+        name = "EIP_MAIL_PASSWORD"
+        value_source {
+          secret_key_ref {
+            secret  = var.mail_password_secret_id # eip-mail-password
+            version = "latest"
+          }
+        }
+      }
+      env {
+        name  = "EIP_MAIL_FROM"
+        value = var.mail_from
+      }
+      env {
+        name  = "EIP_APP_BASE_URL"
+        value = var.app_base_url
+      }
+      env {
+        name  = "EIP_SUPER_ADMIN_EMAILS"
+        value = var.super_admin_emails
+      }
+      env {
+        name  = "EIP_GCP_TENANT_PROVISIONING"
+        value = var.gcp_tenant_provisioning_enabled
+      }
+
       # --- Probes (os grupos de health já existem no backend / Actuator) ---
       # startup_probe generoso: cold start (scale-to-zero) + Flyway podem demorar no 1º boot.
       startup_probe {
@@ -166,5 +213,8 @@ resource "google_cloud_run_v2_service" "backend" {
     google_project_iam_member.run_roles,
     google_secret_manager_secret_iam_member.run_db_app_password,
     google_secret_manager_secret_iam_member.run_db_reporting_password,
+    google_secret_manager_secret_iam_member.run_mfa_encryption_key,
+    google_secret_manager_secret_iam_member.run_mail_user,
+    google_secret_manager_secret_iam_member.run_mail_password,
   ]
 }

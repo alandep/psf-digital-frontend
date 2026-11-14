@@ -85,3 +85,47 @@ variable "enable_domain_mapping" {
   type        = bool
   default     = false
 }
+
+# --- MFA (TOTP) e e-mail transacional (Brevo). Secrets: apenas os NOMES; valores no Secret Manager. ---
+
+variable "mfa_encryption_key_secret_id" {
+  description = "secret_id (nome) do Secret Manager com a chave AES-256 (base64, 32 bytes) que protege os segredos TOTP."
+  type        = string
+  default     = "eip-mfa-encryption-key"
+}
+
+variable "mail_user_secret_id" {
+  description = "secret_id (nome) do Secret Manager com o login SMTP do Brevo."
+  type        = string
+  default     = "eip-mail-user"
+}
+
+variable "mail_password_secret_id" {
+  description = "secret_id (nome) do Secret Manager com a chave SMTP do Brevo."
+  type        = string
+  default     = "eip-mail-password"
+}
+
+variable "mail_from" {
+  description = "Remetente verificado no Brevo, ex.: no-reply@iaexport.com.br."
+  type        = string
+  default     = ""
+}
+
+variable "app_base_url" {
+  description = "URL pública do SPA usada nos links enviados por e-mail."
+  type        = string
+  default     = "https://iaexport.com.br"
+}
+
+variable "super_admin_emails" {
+  description = "E-mails (separados por vírgula) com acesso às telas de super-admin."
+  type        = string
+  default     = ""
+}
+
+variable "gcp_tenant_provisioning_enabled" {
+  description = "\"false\" desliga a criação de tenant no Identity Platform."
+  type        = string
+  default     = "true"
+}

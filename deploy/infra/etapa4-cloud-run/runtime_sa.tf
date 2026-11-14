@@ -55,5 +55,27 @@ resource "google_secret_manager_secret_iam_member" "run_db_reporting_password" {
   member    = "serviceAccount:${google_service_account.run.email}"
 }
 
+# secretAccessor POR SECRET para MFA/e-mail (Brevo): chave de criptografia TOTP e credenciais SMTP.
+resource "google_secret_manager_secret_iam_member" "run_mfa_encryption_key" {
+  project   = var.project_id
+  secret_id = var.mfa_encryption_key_secret_id # eip-mfa-encryption-key
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.run.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "run_mail_user" {
+  project   = var.project_id
+  secret_id = var.mail_user_secret_id # eip-mail-user
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.run.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "run_mail_password" {
+  project   = var.project_id
+  secret_id = var.mail_password_secret_id # eip-mail-password
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.run.email}"
+}
+
 # NOTA: o binding roles/iam.serviceAccountTokenCreator do eip-run SOBRE o eip-signer
 # (para IAM signBlob das URLs V4) está em signer.tf, junto da definição do signer.
