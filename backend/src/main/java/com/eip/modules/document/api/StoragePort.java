@@ -1,4 +1,4 @@
-package com.eip.modules.document.domain.port.out;
+package com.eip.modules.document.api;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;

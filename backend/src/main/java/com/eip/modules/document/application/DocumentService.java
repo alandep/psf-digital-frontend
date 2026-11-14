@@ -14,7 +14,7 @@ import com.eip.modules.document.domain.port.in.ManageDocumentsUseCase;
 import com.eip.modules.document.domain.port.in.UploadDocumentUseCase;
 import com.eip.modules.document.domain.port.out.DocumentJobPort;
 import com.eip.modules.document.domain.port.out.DocumentRepositoryPort;
-import com.eip.modules.document.domain.port.out.StoragePort;
+import com.eip.modules.document.api.StoragePort;
 import com.eip.platform.error.ResourceNotFoundException;
 import com.eip.platform.outbox.OutboxPublisher;
 import com.eip.platform.tenant.OrganizationContextHolder;

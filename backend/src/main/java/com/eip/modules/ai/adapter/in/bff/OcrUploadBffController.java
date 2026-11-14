@@ -14,7 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.eip.modules.ai.domain.port.in.OcrExtractionUseCase;
 import com.eip.modules.ai.domain.port.in.OcrExtractionUseCase.OcrCommand;
 import com.eip.modules.ai.domain.port.in.OcrExtractionUseCase.OcrExtractionView;
-import com.eip.modules.document.domain.port.out.StoragePort;
+import com.eip.modules.document.api.StoragePort;
 import com.eip.platform.error.BusinessRuleException;
 import com.eip.platform.tenant.OrganizationContextHolder;
 

@@ -6,7 +6,7 @@ import java.util.UUID;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
-import com.eip.modules.document.domain.port.out.StoragePort;
+import com.eip.modules.document.api.StoragePort;
 
 /**
  * DEV / mock implementation of {@link StoragePort}. Returns fake signed URLs

@@ -1,0 +1,3 @@
+#
+#Sat Nov 14 03:02:34 UTC 2026
+no\ classes\ that\ reside\ in\ a\ package\ '..modules..application..'\ should\ depend\ on\ classes\ that\ reside\ in\ a\ package\ '..modules..adapter..',\ because\ adapters\ must\ not\ be\ referenced\ by\ the\ application\ layer=b6a35d39-c0ad-4d36-a46c-fc2ef6d51319

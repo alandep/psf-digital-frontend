@@ -7,7 +7,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.eip.modules.compliance.domain.port.in.ComplianceAlertCountPort;
+import com.eip.modules.compliance.api.ComplianceAlertCountPort;
 import com.eip.modules.export.domain.model.Margem;
 import com.eip.modules.export.domain.port.in.DashboardAnalyticsUseCase;
 import com.eip.modules.export.domain.port.out.DashboardAnalyticsPort;

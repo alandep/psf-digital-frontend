@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
-import com.eip.modules.document.domain.port.out.StoragePort;
+import com.eip.modules.document.api.StoragePort;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ImpersonatedCredentials;
 import com.google.cloud.storage.BlobId;

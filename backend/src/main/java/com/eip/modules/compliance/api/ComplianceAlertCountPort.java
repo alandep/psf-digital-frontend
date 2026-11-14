@@ -1,4 +1,4 @@
-package com.eip.modules.compliance.domain.port.in;
+package com.eip.modules.compliance.api;
 
 import java.time.OffsetDateTime;
 

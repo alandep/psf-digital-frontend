@@ -5,6 +5,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
+import com.tngtech.archunit.library.freeze.FreezingArchRule;
 
 /**
  * ArchUnit guardrails enforcing the hexagonal boundaries every module follows:
@@ -38,10 +39,16 @@ class ArchitectureTests {
      * Dependency direction: the application layer must not depend on adapters.
      * Application talks to the outside world through ports; adapters implement
      * or drive those ports, never the reverse.
+     *
+     * <p>Frozen ({@link FreezingArchRule}): violations that already existed when the
+     * rule was baselined are recorded in {@code src/test/resources/archunit_store}
+     * and tolerated as known technical debt; any NEW violation fails the build, and
+     * fixed ones are removed from the store automatically. Do not regenerate the
+     * store to silence a new violation; fix the dependency instead.
      */
     @ArchTest
-    static final ArchRule applicationDoesNotDependOnAdapters = noClasses()
+    static final ArchRule applicationDoesNotDependOnAdapters = FreezingArchRule.freeze(noClasses()
             .that().resideInAPackage("..modules..application..")
             .should().dependOnClassesThat().resideInAPackage("..modules..adapter..")
-            .because("adapters must not be referenced by the application layer");
+            .because("adapters must not be referenced by the application layer"));
 }

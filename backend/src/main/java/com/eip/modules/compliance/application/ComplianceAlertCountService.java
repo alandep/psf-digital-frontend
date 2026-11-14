@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.eip.modules.compliance.adapter.out.persistence.ScreeningJpaRepository;
-import com.eip.modules.compliance.domain.port.in.ComplianceAlertCountPort;
+import com.eip.modules.compliance.api.ComplianceAlertCountPort;
 import com.eip.platform.tenant.OrganizationContextHolder;
 
 import lombok.RequiredArgsConstructor;
