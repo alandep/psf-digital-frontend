@@ -170,6 +170,14 @@ resource "google_cloud_run_v2_service" "backend" {
         }
       }
       env {
+        name  = "EIP_MAIL_STARTTLS_REQUIRED"
+        value = "true"
+      }
+      env {
+        name  = "EIP_MAIL_FROM_NAME"
+        value = "EIP - Export Intelligence Platform"
+      }
+      env {
         name  = "EIP_MAIL_FROM"
         value = var.mail_from
       }

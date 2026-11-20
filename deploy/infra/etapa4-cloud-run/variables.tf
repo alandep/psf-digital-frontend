@@ -109,7 +109,7 @@ variable "mail_password_secret_id" {
 variable "mail_from" {
   description = "Remetente verificado no Brevo, ex.: no-reply@iaexport.com.br."
   type        = string
-  default     = ""
+  default     = "noreply@iaexport.com.br"
 }
 
 variable "app_base_url" {
@@ -127,5 +127,5 @@ variable "super_admin_emails" {
 variable "gcp_tenant_provisioning_enabled" {
   description = "\"false\" desliga a criação de tenant no Identity Platform."
   type        = string
-  default     = "true"
+  default     = "false" # desligado ate o multi-tenancy do Identity Platform ser ativado
 }
