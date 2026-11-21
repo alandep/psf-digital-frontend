@@ -1,5 +1,8 @@
 package com.eip.modules.reference.adapter.out.persistence;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -18,11 +21,11 @@ import lombok.Setter;
 public class PaisEntity {
 
     @Id
-    private String alpha2;
+    @JdbcTypeCode(SqlTypes.CHAR) @Column(length = 2) private String alpha2;
 
-    private String alpha3;
+    @JdbcTypeCode(SqlTypes.CHAR) @Column(length = 3) private String alpha3;
 
-    @Column(name = "numeric_code")
+    @JdbcTypeCode(SqlTypes.CHAR) @Column(name = "numeric_code", length = 3)
     private String numericCode;
 
     @Column(name = "name_pt")
