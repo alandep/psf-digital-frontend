@@ -29,9 +29,7 @@ import com.eip.modules.admin.adapter.out.persistence.LegalEntityEntity;
 import com.eip.modules.admin.adapter.out.persistence.LegalEntityJpaRepository;
 import com.eip.modules.admin.domain.port.out.TenantProvisioningPort;
 import com.eip.platform.error.BusinessRuleException;
-import com.eip.platform.tenant.OrganizationContext;
-import com.eip.platform.tenant.OrganizationContextHolder;
-import com.eip.platform.tenant.OrganizationId;
+import com.eip.platform.tenant.TenantScope;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -65,6 +63,7 @@ public class SignupService {
     private final AdminOrgEntitlementJpaRepository orgEntitlementRepo;
     private final TenantProvisioningPort tenantProvisioning;
     private final PasswordEncoder passwordEncoder;
+    private final TenantScope tenantScope;
 
     /** Input for a signup. */
     public record SignupCommand(
@@ -171,11 +170,7 @@ public class SignupService {
     }
 
     private void applyTenantScopedData(UUID orgId, OffsetDateTime now, OffsetDateTime trialEnd) {
-        OrganizationContext previous = OrganizationContextHolder.currentOrNull();
-        try {
-            OrganizationContextHolder.set(OrganizationContext.authenticated(
-                    OrganizationId.of(orgId.toString()), null));
-
+        tenantScope.runAs(orgId, null, () -> {
             AdminSubscriptionEntity sub = new AdminSubscriptionEntity();
             sub.setId(UUID.randomUUID());
             sub.setOrganizationId(orgId);
@@ -202,13 +197,7 @@ public class SignupService {
                 e.setUpdatedAt(now);
                 orgEntitlementRepo.save(e);
             }
-        } finally {
-            if (previous != null) {
-                OrganizationContextHolder.set(previous);
-            } else {
-                OrganizationContextHolder.clear();
-            }
-        }
+        });
     }
 
     private void validate(SignupCommand c) {

@@ -24,7 +24,7 @@ import com.eip.modules.admin.domain.port.in.GerenciarEmpresasUseCase;
 import com.eip.modules.admin.domain.port.out.TenantProvisioningPort;
 import com.eip.platform.tenant.OrganizationContext;
 import com.eip.platform.tenant.OrganizationContextHolder;
-import com.eip.platform.tenant.OrganizationId;
+import com.eip.platform.tenant.TenantScope;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +46,7 @@ public class EmpresaAdminService implements GerenciarEmpresasUseCase {
     private final AdminPlanFeatureJpaRepository planFeatureRepo;
     private final AdminOrgEntitlementJpaRepository orgEntitlementRepo;
     private final TenantProvisioningPort tenantProvisioning;
+    private final TenantScope tenantScope;
 
     private static final Map<String, String> PLAN_ALIASES = Map.ofEntries(
             Map.entry("STARTER", "START"),
@@ -172,11 +173,8 @@ public class EmpresaAdminService implements GerenciarEmpresasUseCase {
 
     private void applyTenantScopedData(UUID orgId, String planCode, OffsetDateTime now) {
         OrganizationContext previous = OrganizationContextHolder.currentOrNull();
-        try {
-            OrganizationContextHolder.set(OrganizationContext.authenticated(
-                    OrganizationId.of(orgId.toString()),
-                    previous != null ? previous.userId() : null));
-
+        UUID userId = previous != null ? previous.userId() : null;
+        tenantScope.runAs(orgId, userId, () -> {
             AdminSubscriptionEntity sub = subRepo.findFirstByOrganizationId(orgId)
                     .orElseGet(AdminSubscriptionEntity::new);
             if (sub.getId() == null) {
@@ -206,13 +204,7 @@ public class EmpresaAdminService implements GerenciarEmpresasUseCase {
                 e.setUpdatedAt(now);
                 orgEntitlementRepo.save(e);
             }
-        } finally {
-            if (previous != null) {
-                OrganizationContextHolder.set(previous);
-            } else {
-                OrganizationContextHolder.clear();
-            }
-        }
+        });
     }
 
     private EmpresaView toView(AdminOrganizationEntity org, LegalEntityEntity legal, String planCode) {
