@@ -45,7 +45,7 @@ public interface ExportAnalyticsJpaRepository extends Repository<ExportacaoEntit
               coalesce(sum(case when e.shipped = true then e.totalAmount else 0 end), 0) as shippedAmount,
               coalesce(sum(case when e.shipped = false then e.totalAmount else 0 end), 0) as pendingAmount,
               coalesce(sum(e.totalAmount - coalesce(e.totalCost, 0)), 0) as lucro,
-              sum(case when e.status = 'CONFIRMADA' then 1L else 0L end) as confirmedCount
+              coalesce(sum(case when e.status = 'CONFIRMADA' then 1L else 0L end), 0L) as confirmedCount
             from ExportacaoEntity e
             where (cast(:from as timestamp) is null or e.createdAt >= :from)
               and (cast(:to as timestamp) is null or e.createdAt < :to)
@@ -77,9 +77,9 @@ public interface ExportAnalyticsJpaRepository extends Repository<ExportacaoEntit
             select
               count(e) as total,
               coalesce(sum(e.totalAmount), 0) as valorTotal,
-              sum(case when e.status = 'RASCUNHO' then 1L else 0L end) as rascunho,
-              sum(case when e.status = 'CONFIRMADA' then 1L else 0L end) as confirmadas,
-              sum(case when e.status = 'CANCELADA' then 1L else 0L end) as canceladas
+              coalesce(sum(case when e.status = 'RASCUNHO' then 1L else 0L end), 0L) as rascunho,
+              coalesce(sum(case when e.status = 'CONFIRMADA' then 1L else 0L end), 0L) as confirmadas,
+              coalesce(sum(case when e.status = 'CANCELADA' then 1L else 0L end), 0L) as canceladas
             from ExportacaoEntity e
             """)
     StatusCountProjection aggregateStatusCounts();
