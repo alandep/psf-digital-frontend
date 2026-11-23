@@ -1,7 +1,7 @@
 <div class="checkout">
   <!-- Hero -->
   <header class="checkout-hero">
-    <a class="back" routerLink="/precos"><mat-icon>arrow_back</mat-icon> Voltar aos planos</a>
+    <a class="back" routerLink="/precos"><mat-icon aria-hidden="true">arrow_back</mat-icon> Voltar aos planos</a>
     <h1>Contratar EIP</h1>
     <p>Ative sua plataforma de comércio exterior em poucos passos.</p>
   </header>
@@ -9,22 +9,34 @@
   <!-- Estado de sucesso -->
   <section class="success" *ngIf="done">
     <mat-card class="success-card" appearance="outlined">
-      <div class="success-emoji">🎉</div>
-      <h2>Sua empresa agora está no EIP</h2>
-      <p class="success-sub">Sua assinatura <strong>{{ activatedPlanName }}</strong> está ativa.</p>
-      <p class="success-cta-text">Vamos configurar sua primeira operação?</p>
+      <div class="success-emoji" aria-hidden="true">🎉</div>
+      <h2>Sua empresa foi ativada no EIP</h2>
+      <p class="success-sub">Sua assinatura <strong>{{ successPlanName }}</strong> está ativa.</p>
+
+      <dl class="success-details">
+        <div><dt>Avaliação gratuita até</dt><dd>{{ successTrialEnd | date:'dd/MM/yyyy' }}</dd></div>
+        <div><dt>Próxima cobrança</dt><dd>{{ successNextDue | date:'dd/MM/yyyy' }}</dd></div>
+        <div><dt>Forma de pagamento</dt><dd>{{ successPaymentLabel }}</dd></div>
+      </dl>
+
+      <div class="inline-error" *ngIf="accessError" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        {{ accessError }}
+      </div>
+
       <div class="success-actions">
-        <button mat-flat-button color="primary" class="btn-primary" routerLink="/onboarding">
-          COMEÇAR CONFIGURAÇÃO
+        <button mat-flat-button color="primary" class="btn-primary" type="button"
+                (click)="accessEip()" [disabled]="accessing">
+          <mat-spinner *ngIf="accessing" diameter="20" class="btn-spinner"></mat-spinner>
+          <span>{{ accessing ? 'Carregando...' : 'Acessar o EIP' }}</span>
         </button>
-        <button mat-stroked-button routerLink="/home-logged">Ir para o sistema</button>
       </div>
     </mat-card>
   </section>
 
   <!-- Stepper -->
   <section class="stepper-wrap" *ngIf="!done">
-    <mat-stepper linear #stepper class="checkout-stepper">
+    <mat-stepper linear #stepper class="checkout-stepper" (selectionChange)="onStepChange($event)">
 
       <!-- STEP 1: Empresa -->
       <mat-step [stepControl]="empresa" label="Empresa">
@@ -33,14 +45,16 @@
           <div class="grid-2">
             <mat-form-field appearance="outline">
               <mat-label>CNPJ</mat-label>
-              <input matInput formControlName="cnpj" placeholder="00.000.000/0000-00" maxlength="18" />
+              <input matInput formControlName="cnpj" appMask="cnpj" inputmode="numeric"
+                     placeholder="00.000.000/0000-00" autocomplete="off" />
+              <mat-hint *ngIf="cnpjLookupLoading">Buscando dados da empresa...</mat-hint>
               <mat-error *ngIf="empresa.get('cnpj')?.hasError('required')">Informe o CNPJ.</mat-error>
-              <mat-error *ngIf="empresa.get('cnpj')?.hasError('cnpjInvalid')">CNPJ inválido.</mat-error>
+              <mat-error *ngIf="empresa.get('cnpj')?.hasError('cnpj')">CNPJ inválido.</mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Razão Social</mat-label>
-              <input matInput formControlName="razaoSocial" />
+              <input matInput formControlName="razaoSocial" autocomplete="organization" />
               <mat-error *ngIf="empresa.get('razaoSocial')?.hasError('required')">Informe a razão social.</mat-error>
             </mat-form-field>
 
@@ -51,20 +65,22 @@
 
             <mat-form-field appearance="outline">
               <mat-label>Telefone</mat-label>
-              <input matInput formControlName="telefone" placeholder="(00) 00000-0000" />
+              <input matInput formControlName="telefone" appMask="telefone" inputmode="numeric"
+                     placeholder="(00) 00000-0000" autocomplete="tel" />
               <mat-error *ngIf="empresa.get('telefone')?.hasError('required')">Informe o telefone.</mat-error>
+              <mat-error *ngIf="empresa.get('telefone')?.hasError('telefone')">Telefone inválido. Use DDD + número.</mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>E-mail corporativo</mat-label>
-              <input matInput formControlName="email" type="email" />
+              <input matInput formControlName="email" type="email" autocomplete="email" />
               <mat-error *ngIf="empresa.get('email')?.hasError('required')">Informe o e-mail.</mat-error>
               <mat-error *ngIf="empresa.get('email')?.hasError('email')">E-mail inválido.</mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Site</mat-label>
-              <input matInput formControlName="site" placeholder="https://" />
+              <input matInput formControlName="site" placeholder="https://" autocomplete="url" />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -76,14 +92,9 @@
             </mat-form-field>
           </div>
 
-          <div class="inline-error" *ngIf="cnpjDuplicate">
-            <mat-icon>error_outline</mat-icon>
-            Esta empresa já possui uma conta no EIP
-          </div>
-
           <div class="step-actions">
-            <button mat-flat-button color="primary" matStepperNext
-                    [disabled]="empresa.invalid || cnpjDuplicate">Continuar</button>
+            <button mat-flat-button color="primary" matStepperNext type="button"
+                    [disabled]="empresa.invalid">Continuar</button>
           </div>
         </form>
       </mat-step>
@@ -95,73 +106,102 @@
           <div class="grid-2">
             <mat-form-field appearance="outline">
               <mat-label>Nome</mat-label>
-              <input matInput formControlName="nome" />
+              <input matInput formControlName="nome" autocomplete="name" />
               <mat-error *ngIf="admin.get('nome')?.hasError('required')">Informe o nome.</mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
+              <mat-label>CPF</mat-label>
+              <input matInput formControlName="cpf" appMask="cpf" inputmode="numeric"
+                     placeholder="000.000.000-00" autocomplete="off" />
+              <mat-error *ngIf="admin.get('cpf')?.hasError('required')">Informe o CPF.</mat-error>
+              <mat-error *ngIf="admin.get('cpf')?.hasError('cpf')">CPF inválido.</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
               <mat-label>E-mail</mat-label>
-              <input matInput formControlName="email" type="email" />
+              <input matInput formControlName="email" type="email" autocomplete="email" />
               <mat-error *ngIf="admin.get('email')?.hasError('required')">Informe o e-mail.</mat-error>
               <mat-error *ngIf="admin.get('email')?.hasError('email')">E-mail inválido.</mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Telefone</mat-label>
-              <input matInput formControlName="telefone" placeholder="(00) 00000-0000" />
+              <input matInput formControlName="telefone" appMask="telefone" inputmode="numeric"
+                     placeholder="(00) 00000-0000" autocomplete="tel" />
               <mat-error *ngIf="admin.get('telefone')?.hasError('required')">Informe o telefone.</mat-error>
+              <mat-error *ngIf="admin.get('telefone')?.hasError('telefone')">Telefone inválido. Use DDD + número.</mat-error>
             </mat-form-field>
-
-            <div class="spacer-cell"></div>
 
             <mat-form-field appearance="outline">
               <mat-label>Senha</mat-label>
-              <input matInput formControlName="senha" type="password" />
+              <input matInput formControlName="senha" type="password" autocomplete="new-password" />
+              <mat-hint>Mínimo de 8 caracteres, com letras e números.</mat-hint>
               <mat-error *ngIf="admin.get('senha')?.hasError('required')">Informe a senha.</mat-error>
               <mat-error *ngIf="admin.get('senha')?.hasError('minlength')">Mínimo de 8 caracteres.</mat-error>
+              <mat-error *ngIf="!admin.get('senha')?.hasError('minlength') && admin.get('senha')?.hasError('weakPassword')">
+                A senha deve conter letras e números.
+              </mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Confirmar senha</mat-label>
-              <input matInput formControlName="confirmarSenha" type="password" />
+              <input matInput formControlName="confirmarSenha" type="password" autocomplete="new-password" />
               <mat-error *ngIf="admin.get('confirmarSenha')?.hasError('required')">Confirme a senha.</mat-error>
             </mat-form-field>
           </div>
 
-          <div class="inline-error" *ngIf="admin.hasError('passwordMismatch') && admin.get('confirmarSenha')?.touched">
-            <mat-icon>error_outline</mat-icon>
+          <div class="inline-error" role="alert"
+               *ngIf="admin.hasError('passwordMismatch') && admin.get('confirmarSenha')?.touched">
+            <mat-icon aria-hidden="true">error_outline</mat-icon>
             As senhas não coincidem.
           </div>
 
-          <mat-slide-toggle formControlName="mfa" color="primary" class="mfa-toggle">
-            Ativar MFA (autenticação em dois fatores)
-          </mat-slide-toggle>
+          <p class="info-note">
+            <mat-icon aria-hidden="true">verified_user</mat-icon>
+            Verificação em duas etapas por e-mail é obrigatória para todas as contas.
+          </p>
 
           <div class="step-actions">
-            <button mat-stroked-button matStepperPrevious>Voltar</button>
-            <button mat-flat-button color="primary" matStepperNext [disabled]="admin.invalid">Continuar</button>
+            <button mat-stroked-button matStepperPrevious type="button">Voltar</button>
+            <button mat-flat-button color="primary" matStepperNext type="button" [disabled]="admin.invalid">Continuar</button>
           </div>
         </form>
       </mat-step>
 
       <!-- STEP 3: Plano -->
       <mat-step [stepControl]="plano" label="Plano">
-        <form [formGroup]="plano" class="step-form">
+        <form [formGroup]="plano" class="step-form" (submit)="$event.preventDefault()">
           <h3 class="step-title">Escolha seu plano</h3>
 
           <div class="interval-row">
-            <mat-button-toggle-group [value]="interval" (change)="setInterval($event.value)" class="interval-toggle">
+            <mat-button-toggle-group [value]="interval" (change)="setInterval($event.value)"
+                                     class="interval-toggle" aria-label="Ciclo de cobrança">
               <mat-button-toggle value="MONTHLY">Mensal</mat-button-toggle>
               <mat-button-toggle value="ANNUAL">Anual <span class="save">2 meses grátis</span></mat-button-toggle>
             </mat-button-toggle-group>
           </div>
 
-          <p class="unlimited-note"><mat-icon>groups</mat-icon> Usuários ilimitados em todos os planos.</p>
+          <p class="unlimited-note"><mat-icon aria-hidden="true">groups</mat-icon> Usuários ilimitados em todos os planos.</p>
 
-          <div class="plan-cards">
+          <div class="plans-state" *ngIf="plansLoading" role="status" aria-live="polite">
+            <mat-spinner diameter="32"></mat-spinner>
+            <span>Carregando planos...</span>
+          </div>
+          <div class="inline-error" *ngIf="!plansLoading && plansError" role="alert">
+            <mat-icon aria-hidden="true">error_outline</mat-icon>
+            Não foi possível carregar os planos.
+            <button mat-button type="button" (click)="loadPlans()">Tentar novamente</button>
+          </div>
+
+          <div class="plan-cards" role="radiogroup" aria-label="Planos disponíveis" *ngIf="!plansLoading && !plansError">
             <div class="plan-card" *ngFor="let p of plans"
-                 [class.selected]="selectedPlan.code === p.code"
-                 (click)="selectPlan(p.code)">
+                 role="radio" tabindex="0"
+                 [attr.aria-checked]="planCode === p.code"
+                 [class.selected]="planCode === p.code"
+                 (click)="selectPlan(p.code)"
+                 (keydown.enter)="selectPlan(p.code)"
+                 (keydown.space)="selectPlan(p.code); $event.preventDefault()">
               <div class="badge" *ngIf="p.highlighted">Mais popular</div>
               <h4>{{ p.name }}</h4>
               <p class="desc">{{ p.description }}</p>
@@ -169,48 +209,77 @@
                 <span class="cur">R$</span>{{ (interval === 'ANNUAL' ? p.annualPrice : p.monthlyPrice) | number:'1.0-0' }}
                 <span class="per">{{ interval === 'ANNUAL' ? '/ano' : '/mês' }}</span>
               </div>
-              <mat-icon class="check" *ngIf="selectedPlan.code === p.code">check_circle</mat-icon>
+              <mat-icon class="check" aria-hidden="true" *ngIf="planCode === p.code">check_circle</mat-icon>
             </div>
           </div>
 
-          <mat-form-field appearance="outline" class="coupon-field">
-            <mat-label>Cupom (opcional)</mat-label>
-            <input matInput formControlName="coupon" placeholder="Ex.: FOUNDERS2026" />
-          </mat-form-field>
+          <p class="sales-link">
+            Precisa do Enterprise?
+            <button mat-button color="primary" type="button" (click)="openSalesDialog()">Fale com vendas</button>
+          </p>
 
-          <div class="founder-note" *ngIf="founderApplies">
-            <mat-icon>emoji_events</mat-icon>
-            Cliente Fundador: R$1.790/mês nos primeiros 12 meses
+          <div class="coupon-row">
+            <mat-form-field appearance="outline" class="coupon-field">
+              <mat-label>Cupom (opcional)</mat-label>
+              <input matInput formControlName="coupon" placeholder="Ex.: FOUNDERS2026" autocomplete="off"
+                     (blur)="applyCoupon()" (keydown.enter)="applyCoupon(); $event.preventDefault()" />
+            </mat-form-field>
+            <button mat-stroked-button type="button" (click)="applyCoupon()"
+                    [disabled]="!couponText || couponLoading">Aplicar</button>
+          </div>
+
+          <div class="coupon-feedback" role="status" aria-live="polite">
+            <span *ngIf="couponLoading" class="muted">Validando cupom...</span>
+            <div class="founder-note" *ngIf="coupon?.valid">
+              <mat-icon aria-hidden="true">emoji_events</mat-icon>
+              <span>
+                Cupom {{ coupon?.code }} aplicado: R$ {{ coupon?.price | number:'1.2-2' }}{{ priceSuffix }}
+                nas primeiras {{ coupon?.cycles }} cobranças.
+              </span>
+            </div>
+            <div class="inline-error" *ngIf="coupon && !coupon.valid">
+              <mat-icon aria-hidden="true">error_outline</mat-icon>
+              {{ coupon.message || 'Cupom inválido para este plano.' }}
+            </div>
+            <div class="inline-error" *ngIf="!coupon && !couponLoading && couponText">
+              <mat-icon aria-hidden="true">info</mat-icon>
+              Clique em "Aplicar" para validar o cupom, ou limpe o campo para continuar.
+            </div>
           </div>
 
           <div class="step-actions">
-            <button mat-stroked-button matStepperPrevious>Voltar</button>
-            <button mat-flat-button color="primary" matStepperNext [disabled]="plano.invalid">Continuar</button>
+            <button mat-stroked-button matStepperPrevious type="button">Voltar</button>
+            <button mat-flat-button color="primary" matStepperNext type="button"
+                    [disabled]="plano.invalid || !selectedPlan || couponBlocking">Continuar</button>
           </div>
         </form>
       </mat-step>
 
       <!-- STEP 4: Pagamento e Aceite -->
       <mat-step [stepControl]="pagamento" label="Pagamento e Aceite">
-        <form [formGroup]="pagamento" class="step-form">
+        <div class="step-form">
           <div class="pay-layout">
             <!-- Resumo do pedido -->
-            <mat-card class="summary-card" appearance="outlined">
+            <mat-card class="summary-card" appearance="outlined" *ngIf="selectedPlan as plan">
               <h3 class="step-title">Resumo do pedido</h3>
-              <div class="summary-row"><span>Plano</span><strong>{{ selectedPlan.name }}</strong></div>
+              <div class="summary-row"><span>Plano</span><strong>{{ plan.name }}</strong></div>
+              <div class="summary-row"><span>Ciclo</span><strong>{{ intervalLabel }}</strong></div>
               <div class="summary-row price-row">
                 <span>Valor</span>
-                <strong>R$ {{ effectivePrice | number:'1.0-0' }} <small>{{ priceSuffix }}</small></strong>
+                <strong>R$ {{ effectivePrice | number:'1.2-2' }} <small>{{ priceSuffix }}</small></strong>
               </div>
-              <div class="founder-note small" *ngIf="founderApplies">
-                <mat-icon>emoji_events</mat-icon> Preço de Cliente Fundador aplicado.
+              <div class="founder-note small" *ngIf="couponApplied">
+                <mat-icon aria-hidden="true">emoji_events</mat-icon>
+                Preço promocional por {{ coupon?.cycles }} cobranças; depois R$ {{ fullPrice | number:'1.2-2' }}{{ priceSuffix }}.
               </div>
+              <div class="summary-row"><span>Forma de pagamento</span><strong>{{ metodoLabel }}</strong></div>
               <ul class="summary-list">
-                <li><mat-icon>check</mat-icon> Usuários ilimitados</li>
-                <li><mat-icon>autorenew</mat-icon> Renovação automática</li>
-                <li><mat-icon>schedule</mat-icon> 14 dias grátis</li>
+                <li><mat-icon aria-hidden="true">check</mat-icon> Usuários ilimitados</li>
+                <li><mat-icon aria-hidden="true">autorenew</mat-icon> Renovação automática</li>
+                <li><mat-icon aria-hidden="true">schedule</mat-icon> {{ trialDays }} dias grátis</li>
               </ul>
               <p class="trial-note">
+                Primeira cobrança em <strong>{{ firstChargeDate | date:'dd/MM/yyyy' }}</strong>.
                 Você não será cobrado durante o período de avaliação. Cancele antes do término
                 para evitar a primeira cobrança.
               </p>
@@ -219,38 +288,15 @@
             <!-- Pagamento -->
             <div class="pay-form">
               <h3 class="step-title">Dados de pagamento</h3>
-              <mat-form-field appearance="outline" class="full">
-                <mat-label>Número do cartão</mat-label>
-                <input matInput formControlName="cardNumber" maxlength="16" inputmode="numeric" placeholder="0000000000000000" />
-                <mat-error *ngIf="pagamento.get('cardNumber')?.invalid">Informe 16 dígitos.</mat-error>
-              </mat-form-field>
-              <mat-form-field appearance="outline" class="full">
-                <mat-label>Nome no cartão</mat-label>
-                <input matInput formControlName="cardName" />
-                <mat-error *ngIf="pagamento.get('cardName')?.invalid">Informe o nome no cartão.</mat-error>
-              </mat-form-field>
-              <div class="grid-2">
-                <mat-form-field appearance="outline">
-                  <mat-label>Validade (MM/AA)</mat-label>
-                  <input matInput formControlName="cardExpiry" maxlength="5" placeholder="MM/AA" />
-                  <mat-error *ngIf="pagamento.get('cardExpiry')?.invalid">Formato MM/AA.</mat-error>
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                  <mat-label>CVV</mat-label>
-                  <input matInput formControlName="cardCvv" maxlength="4" inputmode="numeric" />
-                  <mat-error *ngIf="pagamento.get('cardCvv')?.invalid">3 ou 4 dígitos.</mat-error>
-                </mat-form-field>
-              </div>
-              <p class="secure-note">
-                <mat-icon>lock</mat-icon>
-                Seus dados de cartão são processados de forma segura e tokenizada. O EIP não
-                armazena o número do seu cartão.
-              </p>
+              <app-payment-method-form
+                [holderDefaults]="holderDefaults"
+                (methodChange)="onMethodChange($event)">
+              </app-payment-method-form>
             </div>
           </div>
 
           <!-- Aceites -->
-          <div class="acceptances">
+          <div class="acceptances" [formGroup]="pagamento">
             <mat-checkbox formControlName="aceiteTermos" color="primary">
               Li e aceito os
               <a href="/legal/termos" target="_blank" rel="noopener">Termos de Uso e Contrato de Licenciamento SaaS do EIP</a>
@@ -262,18 +308,26 @@
             <mat-checkbox formControlName="aceiteCobranca" color="primary">
               Autorizo a cobrança recorrente do plano contratado.
             </mat-checkbox>
+            <p class="accept-hint" *ngIf="submitAttempted && pagamento.invalid" role="alert">
+              Para continuar, aceite os três itens acima.
+            </p>
+          </div>
+
+          <div class="inline-error pay-error" *ngIf="payError" role="alert">
+            <mat-icon aria-hidden="true">error_outline</mat-icon>
+            <span>{{ payError }}</span>
           </div>
 
           <div class="step-actions submit-actions">
-            <button mat-stroked-button matStepperPrevious [disabled]="submitting">Voltar</button>
-            <button mat-flat-button color="primary" class="btn-submit"
-                    (click)="submit()" [disabled]="!canSubmit">
+            <button mat-stroked-button matStepperPrevious type="button" [disabled]="submitting">Voltar</button>
+            <button mat-flat-button color="primary" class="btn-submit" type="button"
+                    (click)="submit()" [disabled]="submitting" [attr.aria-busy]="submitting">
               <mat-spinner *ngIf="submitting" diameter="20" class="btn-spinner"></mat-spinner>
               <span *ngIf="!submitting">CONTRATAR E ATIVAR EIP</span>
               <span *ngIf="submitting">Processando...</span>
             </button>
           </div>
-        </form>
+        </div>
       </mat-step>
     </mat-stepper>
   </section>

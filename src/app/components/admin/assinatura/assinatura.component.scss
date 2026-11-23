@@ -220,6 +220,48 @@
 
 .creditos-footer {
   display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   justify-content: flex-start;
-  margin-top: 12px;
+  margin-top: 16px;
+}
+
+.cycle { margin: 0 0 16px; color: #607d8b; font-size: 0.88rem; }
+.empty-note { color: #607d8b; padding: 16px 0; margin: 0; }
+.table-scroll { overflow-x: auto; }
+.actions-cell { white-space: nowrap; text-align: right; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.plano-card .plan-price {
+  .regular-price { margin-left: 10px; text-decoration: line-through; color: #9e9e9e; }
+  .coupon-note {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    font-size: 0.82rem;
+    color: #2e7d32;
+    mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  }
+}
+
+.uso-card .usage-item {
+  .usage-hint { font-size: 0.78rem; color: #78909c; margin-top: 2px; }
+  .danger-bar {
+    --mdc-linear-progress-active-indicator-color: #c62828;
+    --mat-progress-bar-active-indicator-color: #c62828;
+  }
+  .warn-bar {
+    --mdc-linear-progress-active-indicator-color: #f57f17;
+    --mat-progress-bar-active-indicator-color: #f57f17;
+  }
+  .usage-percent.danger-text { color: #c62828; font-weight: 600; }
 }

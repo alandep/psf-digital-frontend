@@ -51,6 +51,9 @@ public class AdminSubscriptionEntity {
     @Column(name = "current_period_end")
     private OffsetDateTime currentPeriodEnd;
 
+    @Column(name = "trial_end")
+    private OffsetDateTime trialEnd;
+
     @Column(name = "cancel_at_period_end", nullable = false)
     private boolean cancelAtPeriodEnd;
 

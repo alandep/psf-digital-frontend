@@ -7,9 +7,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import com.eip.modules.subscription.domain.model.Subscription;
-import com.eip.modules.subscription.domain.model.SubscriptionStatus;
 import com.eip.modules.subscription.domain.port.out.SubscriptionRepositoryPort;
-import com.eip.platform.security.AccessPolicyService;
 import com.eip.platform.security.LicenseGate;
 import com.eip.platform.tenant.OrganizationContext;
 import com.eip.platform.tenant.OrganizationContextHolder;
@@ -19,7 +17,8 @@ import lombok.RequiredArgsConstructor;
 /**
  * Wires the platform {@link LicenseGate} to the real subscription state. This
  * @Primary override replaces the mock FULL default: it reads the current org's
- * subscription status and maps the domain license mode to the platform enum.
+ * subscription and maps {@link Subscription#licenseMode(OffsetDateTime)} (same
+ * rules as {@code AccessPolicyService#licenseModeOf}) to the platform enum.
  *
  * <p>When there is no organization context or no subscription (e.g. dev,
  * unauthenticated flows), it falls back to {@link LicenseMode#FULL} to stay
@@ -44,17 +43,7 @@ public class SubscriptionLicenseModeResolver extends LicenseGate {
         if (sub == null) {
             return LicenseMode.FULL;
         }
-        return map(sub);
-    }
-
-    private static LicenseMode map(Subscription sub) {
-        if (sub.status() == SubscriptionStatus.TRIALING
-                && AccessPolicyService.isTrialExpired(
-                        sub.trialEnd(), sub.currentPeriodEnd(), OffsetDateTime.now())) {
-            // Expired trial: only billing is reachable (consistent with AccessPolicyService).
-            return LicenseMode.BILLING_ONLY;
-        }
-        return switch (sub.licenseMode()) {
+        return switch (sub.licenseMode(OffsetDateTime.now())) {
             case FULL -> LicenseMode.FULL;
             case READ_ONLY -> LicenseMode.READ_ONLY;
             case BILLING_ONLY -> LicenseMode.BILLING_ONLY;

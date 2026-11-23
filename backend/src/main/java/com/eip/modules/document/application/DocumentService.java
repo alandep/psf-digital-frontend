@@ -2,6 +2,7 @@ package com.eip.modules.document.application;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.OptionalLong;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -15,6 +16,8 @@ import com.eip.modules.document.domain.port.in.UploadDocumentUseCase;
 import com.eip.modules.document.domain.port.out.DocumentJobPort;
 import com.eip.modules.document.domain.port.out.DocumentRepositoryPort;
 import com.eip.modules.document.api.StoragePort;
+import com.eip.platform.billing.UsageQuotaService;
+import com.eip.platform.error.BusinessRuleException;
 import com.eip.platform.error.ResourceNotFoundException;
 import com.eip.platform.outbox.OutboxPublisher;
 import com.eip.platform.tenant.OrganizationContextHolder;
@@ -35,6 +38,7 @@ public class DocumentService
     private final StoragePort storage;
     private final DocumentJobPort jobPort;
     private final OutboxPublisher outbox;
+    private final UsageQuotaService usageQuota;
 
     private static UUID currentOrg() {
         return OrganizationContextHolder.current().organizationId().value();
@@ -76,6 +80,11 @@ public class DocumentService
     @Transactional
     public UploadTicket iniciarUpload(IniciarUploadCommand cmd) {
         UUID org = currentOrg();
+        if (cmd.sizeBytes() != null && cmd.sizeBytes() > 0
+                && !usageQuota.hasStorageFor(org, cmd.sizeBytes())) {
+            throw new BusinessRuleException(
+                    "Limite de armazenamento do plano atingido. Faça upgrade em Administração > Assinatura.");
+        }
         UUID documentId = UUID.randomUUID();
         String storageKey = storage.buildKey(org, documentId, cmd.originalFilename());
         Document doc = Document.nova(
@@ -101,7 +110,10 @@ public class DocumentService
         Document doc = repo.porId(documentId, org)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Documento nao encontrado: " + documentId));
-        doc.markUploaded(sizeBytes, sha256);
+        // Tamanho real do objeto no storage (fonte da franquia); cai no declarado quando indisponível.
+        OptionalLong realSize = storage.objectSize(doc.storageKey());
+        Long effectiveSize = realSize.isPresent() ? Long.valueOf(realSize.getAsLong()) : sizeBytes;
+        doc.markUploaded(effectiveSize, sha256);
         Document salvo = repo.salvar(doc);
         jobPort.enqueue(org, salvo.id().value(), "OCR");
         outbox.record("Document", salvo.id().asString(), org, "DocumentoEnviado",

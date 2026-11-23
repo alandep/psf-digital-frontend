@@ -124,6 +124,38 @@ variable "super_admin_emails" {
   default     = ""
 }
 
+# --- Cobrança (Asaas). Secrets: apenas os NOMES; valores no Secret Manager. ---
+
+variable "asaas_api_key_secret_id" {
+  description = "secret_id (nome) do Secret Manager com a chave de API do Asaas."
+  type        = string
+  default     = "eip-asaas-api-key"
+}
+
+variable "asaas_webhook_token_secret_id" {
+  description = "secret_id (nome) do Secret Manager com o token de autenticação do webhook do Asaas."
+  type        = string
+  default     = "eip-asaas-webhook-token"
+}
+
+variable "asaas_base_url" {
+  description = "URL base da API do Asaas. Default = produção; sandbox = https://api-sandbox.asaas.com/v3."
+  type        = string
+  default     = "https://api.asaas.com/v3"
+}
+
+variable "billing_issuer_cnpj" {
+  description = "CNPJ do emissor da cobrança."
+  type        = string
+  default     = ""
+}
+
+variable "sales_email" {
+  description = "E-mail do comercial (contato de vendas)."
+  type        = string
+  default     = "comercial@iaexport.com.br"
+}
+
 variable "gcp_tenant_provisioning_enabled" {
   description = "\"false\" desliga a criação de tenant no Identity Platform."
   type        = string

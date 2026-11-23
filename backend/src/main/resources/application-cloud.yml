@@ -69,6 +69,10 @@ eip:
     allowed-origins: ${EIP_CORS_ALLOWED_ORIGINS:https://iaexport.com.br,https://eip-ai-prod.web.app,https://eip-ai-prod.firebaseapp.com}
   mail:
     enabled: ${EIP_MAIL_ENABLED:true}
+  # Real Asaas in cloud: startup fails when EIP_ASAAS_API_KEY / EIP_ASAAS_WEBHOOK_TOKEN
+  # (Secret Manager: eip-asaas-api-key / eip-asaas-webhook-token) are missing.
+  asaas:
+    enabled: ${EIP_ASAAS_ENABLED:true}
   app:
     base-url: ${EIP_APP_BASE_URL:https://iaexport.com.br}
   security:

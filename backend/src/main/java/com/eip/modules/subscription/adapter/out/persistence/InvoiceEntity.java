@@ -1,6 +1,7 @@
 package com.eip.modules.subscription.adapter.out.persistence;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -52,4 +53,34 @@ public class InvoiceEntity {
 
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
+
+    @Column(name = "asaas_payment_id")
+    private String asaasPaymentId;
+
+    @Column(name = "kind", nullable = false)
+    private String kind;
+
+    @Column(name = "description")
+    private String description;
+
+    @Column(name = "due_date")
+    private LocalDate dueDate;
+
+    @Column(name = "paid_at")
+    private OffsetDateTime paidAt;
+
+    @Column(name = "billing_type")
+    private String billingType;
+
+    @Column(name = "invoice_url")
+    private String invoiceUrl;
+
+    @Column(name = "bank_slip_url")
+    private String bankSlipUrl;
+
+    @Column(name = "net_value", precision = 18, scale = 2)
+    private BigDecimal netValue;
+
+    @Column(name = "updated_at")
+    private OffsetDateTime updatedAt;
 }

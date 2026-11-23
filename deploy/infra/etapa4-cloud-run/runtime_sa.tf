@@ -77,5 +77,20 @@ resource "google_secret_manager_secret_iam_member" "run_mail_password" {
   member    = "serviceAccount:${google_service_account.run.email}"
 }
 
+# secretAccessor POR SECRET para cobrança (Asaas): chave de API e token do webhook.
+resource "google_secret_manager_secret_iam_member" "run_asaas_api_key" {
+  project   = var.project_id
+  secret_id = var.asaas_api_key_secret_id # eip-asaas-api-key
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.run.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "run_asaas_webhook_token" {
+  project   = var.project_id
+  secret_id = var.asaas_webhook_token_secret_id # eip-asaas-webhook-token
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.run.email}"
+}
+
 # NOTA: o binding roles/iam.serviceAccountTokenCreator do eip-run SOBRE o eip-signer
 # (para IAM signBlob das URLs V4) está em signer.tf, junto da definição do signer.

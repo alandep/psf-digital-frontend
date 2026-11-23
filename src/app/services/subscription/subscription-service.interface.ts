@@ -1,32 +1,40 @@
 import { Observable } from 'rxjs';
 import {
-  Subscription,
-  UsageMetric,
-  Invoice,
-  SaasPlan,
-  AddonPack,
-  DataExportJob,
-  PlanCode
-} from '../../../types/saas-billing';
+  ActivateRequest,
+  ApiAddon,
+  ApiPlan,
+  CancelRequest,
+  ChangePlanRequest,
+  DownloadedFile,
+  InvoiceApi,
+  PackPurchaseRequest,
+  PackPurchaseResponse,
+  PagamentoPayload,
+  PixView,
+  SubscriptionView,
+  UsageEntry,
+  UsageFeature,
+  UsageResponse
+} from '../../../types/billing-api';
 
-// Gateway interface for the subscription/assinatura module. Method names and
-// return types mirror SaasBillingMockService EXACTLY (Observable vs sync) so
-// the in-app consumers (assinatura, exportar-dados) can swap the concrete
-// service without any other change.
+/** Gateway da área logada de assinatura (contrato docs/billing-asaas-contract.md §4.2 e §4.3). */
 export interface ISubscriptionService {
-  getCurrentSubscription(): Observable<Subscription>;
-  getUsage(): Observable<UsageMetric[]>;
-  getInvoices(): Observable<Invoice[]>;
+  current(): Observable<SubscriptionView>;
+  plans(): Observable<ApiPlan[]>;
+  addons(): Observable<ApiAddon[]>;
+  usage(): Observable<UsageResponse>;
+  statement(feature: Extract<UsageFeature, 'AI' | 'OCR'>, limit?: number): Observable<UsageEntry[]>;
+  invoices(): Observable<InvoiceApi[]>;
+  invoicePdf(id: string): Observable<Blob>;
+  invoicePix(id: string): Observable<PixView>;
 
-  // Static plan/addon catalog: SYNC in the mock (returns arrays).
-  getPlans(): SaasPlan[];
-  getAddons(): AddonPack[];
+  activate(body: ActivateRequest): Observable<SubscriptionView>;
+  changePlan(body: ChangePlanRequest): Observable<SubscriptionView>;
+  changePaymentMethod(body: PagamentoPayload): Observable<SubscriptionView>;
+  cancel(body: CancelRequest): Observable<SubscriptionView>;
+  reactivate(): Observable<SubscriptionView>;
+  purchasePack(body: PackPurchaseRequest): Observable<PackPurchaseResponse>;
 
-  changePlan(code: PlanCode): Observable<Subscription>;
-  purchaseAddon(code: AddonPack['code']): Observable<AddonPack>;
-  cancelSubscription(reason: string): Observable<Subscription>;
-  reactivate(): Observable<Subscription>;
-
-  requestDataExport(): Observable<DataExportJob>;
-  getDataExportJob(id: string): Observable<DataExportJob>;
+  /** GET /bff/admin/exportar-dados (zip). */
+  dataExport(): Observable<DownloadedFile>;
 }

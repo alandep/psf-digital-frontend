@@ -124,8 +124,9 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/login/**",
-                                // Inbound billing webhooks (e.g. Stripe): no session/auth;
-                                // authenticity is verified by signature + inbox idempotency.
+                                // Inbound billing webhooks (Asaas): no session/auth;
+                                // authenticity is verified by the asaas-access-token
+                                // header + inbox idempotency.
                                 "/webhooks/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex

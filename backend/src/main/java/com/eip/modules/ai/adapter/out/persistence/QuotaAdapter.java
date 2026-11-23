@@ -1,47 +1,45 @@
 package com.eip.modules.ai.adapter.out.persistence;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
 import com.eip.modules.ai.domain.port.out.QuotaPort;
+import com.eip.platform.billing.UsageQuotaService;
+import com.eip.platform.billing.UsageQuotaService.Meter;
+import com.eip.platform.billing.UsageQuotaService.UsageSnapshot;
 
 import lombok.RequiredArgsConstructor;
 
 /**
- * Quota adapter reading the shared {@code subscription_usage} table as a read
- * model (see {@link SubscriptionUsageReadEntity}). Keeps the AI module free of
- * any dependency on the Subscription module while still enforcing franquia.
+ * Quota adapter delegating to the platform {@link UsageQuotaService}, which
+ * measures the plan franquia plus purchased packs against the real ledger.
  */
 @Component
 @RequiredArgsConstructor
 public class QuotaAdapter implements QuotaPort {
 
-    private final SubscriptionUsageReadRepository jpa;
+    private final UsageQuotaService usage;
 
     @Override
     public List<Quota> forOrg(UUID org) {
-        return jpa.findByOrganizationId(org).stream()
-                .map(e -> new Quota(e.getFeature(), e.getUsed(), e.getIncluded()))
-                .toList();
+        UsageSnapshot snapshot = usage.snapshot(org);
+        return List.of(toQuota(snapshot.ai()), toQuota(snapshot.ocr()), toQuota(snapshot.storage()));
     }
 
-    /**
-     * Returns whether the feature meter still has room. Absence of a meter row
-     * is treated as "allow" (unmetered / not yet provisioned).
-     */
     @Override
     public boolean hasRemaining(UUID org, String feature) {
-        return jpa.findByOrganizationId(org).stream()
-                .filter(e -> feature.equalsIgnoreCase(e.getFeature()))
-                .findFirst()
-                .map(e -> {
-                    BigDecimal used = e.getUsed() != null ? e.getUsed() : BigDecimal.ZERO;
-                    BigDecimal included = e.getIncluded();
-                    return included == null || used.compareTo(included) < 0;
-                })
-                .orElse(true);
+        if ("AI".equalsIgnoreCase(feature)) {
+            return usage.hasAiRemaining(org);
+        }
+        if ("OCR".equalsIgnoreCase(feature)) {
+            return usage.hasOcrRemaining(org);
+        }
+        return true;
+    }
+
+    private static Quota toQuota(Meter m) {
+        return new Quota(m.feature(), m.label(), m.used(), m.included(), m.unit());
     }
 }

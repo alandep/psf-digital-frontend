@@ -32,7 +32,7 @@ export const environment: Environment = {
     // AI Hub now calls the real BFF (needs authenticated session + CSRF cookie), so identity must use the backend too for the E2E UI test
     auth: true,
     export: true,
-    subscription: false,
+    subscription: true,
     documents: false,
     logistics: false,
     finance: true,

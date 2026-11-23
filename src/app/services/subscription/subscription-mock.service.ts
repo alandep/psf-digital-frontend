@@ -1,66 +1,95 @@
-import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Injectable } from '@angular/core';
+import { Observable, of } from 'rxjs';
 import { ISubscriptionService } from './subscription-service.interface';
-import { SaasBillingMockService } from '../../../services/saasBillingMockService';
 import {
-  Subscription,
-  UsageMetric,
-  Invoice,
-  SaasPlan,
-  AddonPack,
-  DataExportJob,
-  PlanCode
-} from '../../../types/saas-billing';
+  ActivateRequest,
+  ApiAddon,
+  ApiPlan,
+  CancelRequest,
+  ChangePlanRequest,
+  DownloadedFile,
+  InvoiceApi,
+  PackPurchaseRequest,
+  PackPurchaseResponse,
+  PagamentoPayload,
+  PixView,
+  SubscriptionView,
+  UsageEntry,
+  UsageResponse
+} from '../../../types/billing-api';
 
-// Mock adapter: delegates every method to SaasBillingMockService so behavior
-// is identical to the pre-gateway state.
-@Injectable({
-  providedIn: 'root'
-})
+const SUBSCRIPTION: SubscriptionView = {
+  id: 'sub-local',
+  planCode: 'BUSINESS',
+  planName: 'Business',
+  billingInterval: 'MONTHLY',
+  amount: 2490,
+  status: 'ACTIVE',
+  currentPeriodStart: null,
+  currentPeriodEnd: null,
+  trialEnd: null,
+  nextDueDate: null,
+  cancelAtPeriodEnd: false,
+  canceledAt: null,
+  paymentMethod: null,
+  paymentBrand: null,
+  paymentLast4: null,
+  gatewayLinked: false,
+  coupon: null,
+  licenseMode: 'FULL'
+};
+
+const PLANS: ApiPlan[] = [
+  {
+    code: 'START', name: 'Start', description: 'Para começar', monthlyPrice: 1290, annualPrice: 12900,
+    highlighted: false, limits: { aiCredits: 500, ocrPages: 200, storageGb: 5, users: null }, modules: []
+  },
+  {
+    code: 'BUSINESS', name: 'Business', description: 'Para equipes em crescimento', monthlyPrice: 2490,
+    annualPrice: 24900, highlighted: true,
+    limits: { aiCredits: 5000, ocrPages: 2000, storageGb: 100, users: null }, modules: []
+  },
+  {
+    code: 'PRO', name: 'Pro', description: 'Para operações intensas', monthlyPrice: 4490, annualPrice: 44900,
+    highlighted: false, limits: { aiCredits: 20000, ocrPages: 10000, storageGb: 500, users: null }, modules: []
+  }
+];
+
+const ADDONS: ApiAddon[] = [
+  { code: 'AI_PACK', name: 'EIP AI Pack', description: 'Créditos extras de IA e OCR', amount: 390, aiCredits: 10000, ocrPages: 2000, highlighted: false },
+  { code: 'AI_PACK_PLUS', name: 'EIP AI Pack Plus', description: 'Mais créditos de IA e OCR', amount: 790, aiCredits: 30000, ocrPages: 6000, highlighted: true }
+];
+
+const USAGE: UsageResponse = {
+  periodStart: null,
+  periodEnd: null,
+  meters: [
+    { feature: 'AI', label: 'Créditos de IA', used: 0, included: 5000, fromPlan: 5000, fromPacks: 0, unit: 'créditos', percent: 0 },
+    { feature: 'OCR', label: 'Páginas OCR', used: 0, included: 2000, fromPlan: 2000, fromPacks: 0, unit: 'páginas', percent: 0 },
+    { feature: 'STORAGE', label: 'Armazenamento', used: 0, included: 100, fromPlan: 100, fromPacks: 0, unit: 'GB', percent: 0 }
+  ]
+};
+
+/** Adapter estático (realApis.subscription = false). Não persiste nada. */
+@Injectable({ providedIn: 'root' })
 export class SubscriptionMockAdapter implements ISubscriptionService {
-  private readonly mock = inject(SaasBillingMockService);
-
-  getCurrentSubscription(): Observable<Subscription> {
-    return this.mock.getCurrentSubscription();
+  current(): Observable<SubscriptionView> { return of(SUBSCRIPTION); }
+  plans(): Observable<ApiPlan[]> { return of(PLANS); }
+  addons(): Observable<ApiAddon[]> { return of(ADDONS); }
+  usage(): Observable<UsageResponse> { return of(USAGE); }
+  statement(): Observable<UsageEntry[]> { return of([]); }
+  invoices(): Observable<InvoiceApi[]> { return of([]); }
+  invoicePdf(): Observable<Blob> { return of(new Blob([], { type: 'application/pdf' })); }
+  invoicePix(): Observable<PixView> { return of({ encodedImage: '', payload: '', expirationDate: null }); }
+  activate(_body: ActivateRequest): Observable<SubscriptionView> { return of(SUBSCRIPTION); }
+  changePlan(_body: ChangePlanRequest): Observable<SubscriptionView> { return of(SUBSCRIPTION); }
+  changePaymentMethod(_body: PagamentoPayload): Observable<SubscriptionView> { return of(SUBSCRIPTION); }
+  cancel(_body: CancelRequest): Observable<SubscriptionView> { return of(SUBSCRIPTION); }
+  reactivate(): Observable<SubscriptionView> { return of(SUBSCRIPTION); }
+  purchasePack(_body: PackPurchaseRequest): Observable<PackPurchaseResponse> {
+    return of({ purchaseId: 'local', status: 'PAID', invoiceId: null, invoiceUrl: null, bankSlipUrl: null, pix: null });
   }
-
-  getUsage(): Observable<UsageMetric[]> {
-    return this.mock.getUsage();
-  }
-
-  getInvoices(): Observable<Invoice[]> {
-    return this.mock.getInvoices();
-  }
-
-  getPlans(): SaasPlan[] {
-    return this.mock.getPlans();
-  }
-
-  getAddons(): AddonPack[] {
-    return this.mock.getAddons();
-  }
-
-  changePlan(code: PlanCode): Observable<Subscription> {
-    return this.mock.changePlan(code);
-  }
-
-  purchaseAddon(code: AddonPack['code']): Observable<AddonPack> {
-    return this.mock.purchaseAddon(code);
-  }
-
-  cancelSubscription(reason: string): Observable<Subscription> {
-    return this.mock.cancelSubscription(reason);
-  }
-
-  reactivate(): Observable<Subscription> {
-    return this.mock.reactivate();
-  }
-
-  requestDataExport(): Observable<DataExportJob> {
-    return this.mock.requestDataExport();
-  }
-
-  getDataExportJob(id: string): Observable<DataExportJob> {
-    return this.mock.getDataExportJob(id);
+  dataExport(): Observable<DownloadedFile> {
+    return of({ blob: new Blob([], { type: 'application/zip' }), filename: 'eip-exportacao.zip' });
   }
 }

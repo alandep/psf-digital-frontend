@@ -1,33 +1,14 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
-import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { SaasBillingMockService } from '../../../../services/saasBillingMockService';
-import { SaasPlan } from '../../../../types/saas-billing';
-
-@Component({
-  selector: 'app-site-demo-dialog',
-  standalone: true,
-  imports: [CommonModule, MatButtonModule, MatIconModule, MatDialogModule],
-  template: `
-    <h2 mat-dialog-title>Agendar demonstração</h2>
-    <mat-dialog-content>
-      <p>Deixe seus dados e nossa equipe comercial entrará em contato para agendar uma demonstração do EIP.</p>
-      <p class="muted">Este é um fluxo de demonstração (mock).</p>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button (click)="ref.close()">Fechar</button>
-      <button mat-flat-button color="primary" (click)="ref.close()">Solicitar contato</button>
-    </mat-dialog-actions>
-  `,
-  styles: ['.muted{color:#6b7280;font-size:.85rem;}'],
-})
-export class SiteDemoDialogComponent {
-  ref = inject(MatDialogRef<SiteDemoDialogComponent>);
-}
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { PublicBillingService } from '../../../services/public-billing/public-billing.service';
+import { ApiPlan } from '../../../../types/billing-api';
+import { DemoDialogComponent } from '../demo-dialog/demo-dialog.component';
 
 @Component({
   selector: 'app-landing',
@@ -38,15 +19,26 @@ export class SiteDemoDialogComponent {
 })
 export class LandingComponent {
   private dialog = inject(MatDialog);
-  private billing = inject(SaasBillingMockService);
+  private billing = inject(PublicBillingService);
 
-  plans: SaasPlan[] = this.billing.getPlans().filter((p) => p.code !== 'ENTERPRISE');
+  /** Planos self-service (sem Enterprise), vindos da API pública. */
+  plans: ApiPlan[] = [];
 
   modules = ['Contratos', 'Exportações', 'Documentos', 'Logística', 'Financeiro', 'Compliance', 'IA', 'BI'];
 
   nowYear = new Date().getFullYear();
 
+  constructor() {
+    this.billing
+      .getPlans()
+      .pipe(takeUntilDestroyed())
+      .subscribe({
+        next: (plans) => (this.plans = plans.filter((p) => p.code !== 'ENTERPRISE')),
+        error: () => (this.plans = []),
+      });
+  }
+
   openDemo(): void {
-    this.dialog.open(SiteDemoDialogComponent, { width: '440px' });
+    this.dialog.open(DemoDialogComponent, { width: '520px', maxWidth: '95vw', data: { origem: 'SITE' } });
   }
 }

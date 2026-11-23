@@ -2,32 +2,37 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
+import { combineLatest, map } from 'rxjs';
 import { AuthProfileService } from '../../../../services/authProfileService';
+import { LicenseAccessMode } from '../../../../types/saas-billing';
 
-// Sticky in-app banner reflecting the SaaS subscription/license state.
-// - FULL         -> renders nothing (nominal state / mock ACTIVE).
-// - READ_ONLY    -> amber warning bar (suspended, data preserved).
-// - BILLING_ONLY / NONE -> stronger variant with the same actions.
+interface BannerView {
+  mode: LicenseAccessMode;
+  message: string;
+  actionLabel: string;
+  actionQuery: Record<string, string> | null;
+}
+
+// Banner fixo com o estado da licença. Não exibe nada em FULL.
+// A mensagem depende da causa (status da assinatura vindo de /bff/acesso/me).
 @Component({
   selector: 'app-license-banner',
   standalone: true,
   imports: [CommonModule, RouterModule, MatIconModule],
   template: `
-    <ng-container *ngIf="mode$ | async as mode">
+    <ng-container *ngIf="view$ | async as v">
       <div
-        *ngIf="mode !== 'FULL'"
+        *ngIf="v.mode !== 'FULL'"
         class="license-banner"
-        [class.warning]="mode === 'READ_ONLY'"
-        [class.blocked]="mode === 'BILLING_ONLY' || mode === 'NONE'"
+        [class.warning]="v.mode === 'READ_ONLY'"
+        [class.blocked]="v.mode === 'BILLING_ONLY' || v.mode === 'NONE'"
         role="alert">
-        <mat-icon class="lb-icon">{{ mode === 'READ_ONLY' ? 'lock_clock' : 'gpp_maybe' }}</mat-icon>
-        <span class="lb-text">
-          Assinatura pendente — para proteger seus dados, nada foi excluído.
-          Regularize para restaurar todas as funcionalidades.
-        </span>
+        <mat-icon class="lb-icon" aria-hidden="true">{{ v.mode === 'READ_ONLY' ? 'lock_clock' : 'gpp_maybe' }}</mat-icon>
+        <span class="lb-text">{{ v.message }}</span>
         <span class="lb-actions">
           <a class="lb-btn primary"
-             routerLink="/home-logged/admin/assinatura">Regularizar pagamento</a>
+             routerLink="/home-logged/admin/assinatura"
+             [queryParams]="v.actionQuery">{{ v.actionLabel }}</a>
           <a class="lb-btn ghost"
              routerLink="/home-logged/admin/exportar-dados">Exportar dados</a>
         </span>
@@ -99,4 +104,42 @@ import { AuthProfileService } from '../../../../services/authProfileService';
 export class LicenseBannerComponent {
   private authProfileService = inject(AuthProfileService);
   readonly mode$ = this.authProfileService.licenseMode$;
+
+  readonly view$ = combineLatest([this.authProfileService.licenseMode$, this.authProfileService.profile$]).pipe(
+    map(([mode]) => this.buildView(mode))
+  );
+
+  private buildView(mode: LicenseAccessMode): BannerView {
+    const status = (this.authProfileService.currentSubscription?.status ?? '').toUpperCase();
+    if (status === 'TRIALING') {
+      return {
+        mode,
+        message: 'Seu período de avaliação terminou. Escolha um plano para continuar usando o EIP.',
+        actionLabel: 'Assinar agora',
+        actionQuery: { ativar: '1' }
+      };
+    }
+    if (status === 'PAST_DUE' || status === 'GRACE_PERIOD') {
+      return {
+        mode,
+        message: 'Pagamento pendente — regularize para voltar a editar seus dados.',
+        actionLabel: 'Regularizar pagamento',
+        actionQuery: null
+      };
+    }
+    if (status === 'CANCELED') {
+      return {
+        mode,
+        message: 'Assinatura cancelada — acesso somente leitura. Seus dados continuam disponíveis para exportação.',
+        actionLabel: 'Reativar',
+        actionQuery: null
+      };
+    }
+    return {
+      mode,
+      message: 'Assinatura pendente — para proteger seus dados, nada foi excluído. Regularize para restaurar todas as funcionalidades.',
+      actionLabel: 'Regularizar pagamento',
+      actionQuery: null
+    };
+  }
 }

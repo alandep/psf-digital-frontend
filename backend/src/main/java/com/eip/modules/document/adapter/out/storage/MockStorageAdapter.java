@@ -1,6 +1,7 @@
 package com.eip.modules.document.adapter.out.storage;
 
 import java.time.OffsetDateTime;
+import java.util.OptionalLong;
 import java.util.UUID;
 
 import org.springframework.context.annotation.Profile;
@@ -52,6 +53,12 @@ public class MockStorageAdapter implements StoragePort {
         // mock AI gateway does not read the bytes. In cloud the GcsStorageAdapter
         // performs a real upload and returns a gs:// URI.
         return "mock://" + storageKey;
+    }
+
+    @Override
+    public OptionalLong objectSize(String storageKey) {
+        // DEV/mock: no real object store, so the real size is unknown.
+        return OptionalLong.empty();
     }
 
     private static String sanitize(String filename) {

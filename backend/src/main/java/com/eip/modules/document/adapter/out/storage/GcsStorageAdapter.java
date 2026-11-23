@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.OptionalLong;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 import com.eip.modules.document.api.StoragePort;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ImpersonatedCredentials;
+import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.HttpMethod;
@@ -119,6 +121,20 @@ public class GcsStorageAdapter implements StoragePort {
                 .build();
         storage.create(blob, content);
         return "gs://" + props.bucket() + "/" + storageKey;
+    }
+
+    @Override
+    public OptionalLong objectSize(String storageKey) {
+        try {
+            Blob blob = storage.get(BlobId.of(props.bucket(), storageKey));
+            if (blob == null || blob.getSize() == null) {
+                return OptionalLong.empty();
+            }
+            return OptionalLong.of(blob.getSize());
+        } catch (RuntimeException e) {
+            // Metadata lookup is best-effort: the caller falls back to the client-declared size.
+            return OptionalLong.empty();
+        }
     }
 
     private static String sanitize(String filename) {

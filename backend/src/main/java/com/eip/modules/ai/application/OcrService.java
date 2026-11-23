@@ -49,7 +49,7 @@ import lombok.RequiredArgsConstructor;
 public class OcrService implements OcrExtractionUseCase {
 
     private static final String AGGREGATE_TYPE = "AiUsage";
-    private static final String AI_FEATURE = "AI";
+    private static final String OCR_FEATURE = "OCR";
     /** Limiar de revisão humana: abaixo deste score a extração exige revisão. */
     private static final int REVIEW_THRESHOLD = 70;
     /** Número de campos-chave considerados no cálculo do score de completude. */
@@ -80,9 +80,9 @@ public class OcrService implements OcrExtractionUseCase {
         UUID userId = context.userId();
         AiTask task = AiTask.OCR_DOCUMENT;
 
-        if (!quota.hasRemaining(org, AI_FEATURE)) {
+        if (!quota.hasRemaining(org, OCR_FEATURE)) {
             throw new AiQuotaExceededException(
-                    "Franquia de IA esgotada. Adquira creditos de IA para continuar.");
+                    "Franquia de páginas OCR esgotada. Adquira um pacote para continuar.");
         }
 
         // Policy e prompt são resolvidos aqui, na camada de aplicação — nunca em

@@ -1,73 +1,48 @@
 <div class="exportar-container">
 
-  <!-- Header Premium (identidade Portos) -->
   <div class="page-header">
     <div class="header-main">
       <div class="title-section">
-        <mat-icon class="header-icon">cloud_download</mat-icon>
+        <mat-icon class="header-icon" aria-hidden="true">cloud_download</mat-icon>
         <div class="title-content">
           <h1>Exportar Dados da Empresa</h1>
-          <p class="subtitle">Gere um pacote completo com todos os dados da sua empresa</p>
+          <p class="subtitle">Baixe uma cópia dos dados da sua empresa a qualquer momento</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Card explicativo -->
   <mat-card class="info-card intro-card">
     <mat-card-content>
-      <h2 class="lead-title"><mat-icon>lock</mat-icon> Seus dados são seus. Sempre.</h2>
+      <h2 class="lead-title"><mat-icon aria-hidden="true">lock</mat-icon> Seus dados são seus. Sempre.</h2>
+      <p>
+        A exportação gera um arquivo ZIP com um arquivo JSON por tabela de dados da sua empresa,
+        mais um arquivo LEIA-ME.txt explicando o conteúdo.
+      </p>
       <p class="security-note">
-        O pacote poderá conter informações confidenciais da sua empresa. Por segurança,
-        somente administradores autorizados podem solicitar a exportação.
+        Dados sensíveis, como senhas, tokens e dados de cartão, não são incluídos na exportação.
+        O arquivo contém informações confidenciais da sua empresa: guarde-o em local seguro.
+        A exportação fica disponível mesmo com a assinatura cancelada ou pendente.
       </p>
 
       <mat-divider></mat-divider>
 
-      <p class="items-title">O pacote inclui:</p>
-      <div class="items-grid">
-        <span class="item-chip" *ngFor="let item of packageItems">
-          <mat-icon>folder_zip</mat-icon> {{ item }}
-        </span>
+      <mat-progress-bar *ngIf="loading" mode="indeterminate" class="job-progress"
+                        aria-label="Gerando exportação"></mat-progress-bar>
+
+      <div class="error-box" *ngIf="errorMessage" role="alert">
+        <mat-icon aria-hidden="true">error</mat-icon> {{ errorMessage }}
       </div>
 
       <div class="generate-row">
         <button mat-raised-button color="primary" class="generate-btn"
-                [disabled]="processing" (click)="gerarPacote()">
-          <mat-icon>inventory_2</mat-icon> GERAR PACOTE DE DADOS
+                [disabled]="loading" (click)="gerarEBaixar()">
+          <mat-icon aria-hidden="true">inventory_2</mat-icon>
+          {{ loading ? 'Gerando exportação...' : 'Gerar e baixar exportação' }}
         </button>
-      </div>
-    </mat-card-content>
-  </mat-card>
-
-  <!-- Status / timeline do job -->
-  <mat-card class="info-card status-card" *ngIf="job">
-    <mat-card-header>
-      <mat-card-title><mat-icon>timeline</mat-icon> Status da exportação</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <div class="job-meta">
-        <span><strong>ID:</strong> {{ job.id }}</span>
-        <span><strong>Solicitado por:</strong> {{ job.requestedBy }}</span>
-        <span><strong>Em:</strong> {{ job.requestedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
-      </div>
-
-      <div class="stepper">
-        <div class="step" *ngFor="let s of steps"
-             [class.done]="isStepDone(s)"
-             [class.active]="isStepActive(s)">
-          <div class="step-icon"><mat-icon>{{ s.icon }}</mat-icon></div>
-          <div class="step-label">{{ s.label }}</div>
-        </div>
-      </div>
-
-      <mat-progress-bar *ngIf="processing" mode="indeterminate" class="job-progress"></mat-progress-bar>
-
-      <div class="ready-box" *ngIf="job.status === 'READY'">
-        <button mat-raised-button color="primary" (click)="baixarPacote()">
-          <mat-icon>download</mat-icon> Baixar pacote (eip-export.zip)
-        </button>
-        <span class="expires-note"><mat-icon>schedule</mat-icon> Expira em 15 minutos</span>
+        <span class="last-file" *ngIf="lastFilename && !loading">
+          <mat-icon aria-hidden="true">check_circle</mat-icon> Último arquivo: {{ lastFilename }}
+        </span>
       </div>
     </mat-card-content>
   </mat-card>

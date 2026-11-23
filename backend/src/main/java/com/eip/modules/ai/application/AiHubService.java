@@ -48,6 +48,9 @@ public class AiHubService implements AnalyzeUseCase, UsageQueryUseCase {
 
     private static final String AGGREGATE_TYPE = "AiUsage";
     private static final String AI_FEATURE = "AI";
+    private static final String OCR_FEATURE = "OCR";
+    private static final String OCR_QUOTA_MESSAGE =
+            "Franquia de páginas OCR esgotada. Adquira um pacote para continuar.";
 
     private final ModelRouterPort router;
     private final AiExecutionPolicyResolver policyResolver;
@@ -64,6 +67,20 @@ public class AiHubService implements AnalyzeUseCase, UsageQueryUseCase {
 
     private static OrganizationContext ctx() {
         return OrganizationContextHolder.current();
+    }
+
+    /** Operações de OCR consomem a franquia de páginas; as demais, a de créditos de IA. */
+    private void checkQuota(UUID org, AiTask task) {
+        if (task == AiTask.OCR_DOCUMENT) {
+            if (!quota.hasRemaining(org, OCR_FEATURE)) {
+                throw new AiQuotaExceededException(OCR_QUOTA_MESSAGE);
+            }
+            return;
+        }
+        if (!quota.hasRemaining(org, AI_FEATURE)) {
+            throw new AiQuotaExceededException(
+                    "Franquia de IA esgotada. Adquira creditos de IA para continuar.");
+        }
     }
 
     private static AiTask parseTask(String task) {
@@ -85,10 +102,7 @@ public class AiHubService implements AnalyzeUseCase, UsageQueryUseCase {
         UUID userId = context.userId();
         AiTask task = parseTask(cmd.task());
 
-        if (!quota.hasRemaining(org, AI_FEATURE)) {
-            throw new AiQuotaExceededException(
-                    "Franquia de IA esgotada. Adquira creditos de IA para continuar.");
-        }
+        checkQuota(org, task);
 
         // Policy and prompt are resolved here, in the application layer — never in
         // controllers and never in the provider adapter (Requirements 5.3, 6.1).
@@ -150,10 +164,7 @@ public class AiHubService implements AnalyzeUseCase, UsageQueryUseCase {
         UUID userId = context.userId();
         AiTask task = parseTask(cmd.task());
 
-        if (!quota.hasRemaining(org, AI_FEATURE)) {
-            throw new AiQuotaExceededException(
-                    "Franquia de IA esgotada. Adquira creditos de IA para continuar.");
-        }
+        checkQuota(org, task);
 
         UUID jobId = jobs.enqueue(org, userId, task, cmd.input());
         return new JobView(jobId, "QUEUED");
@@ -174,8 +185,8 @@ public class AiHubService implements AnalyzeUseCase, UsageQueryUseCase {
     public List<UsageView> currentUsage() {
         UUID org = ctx().organizationId().value();
         return quota.forOrg(org).stream()
-                .map(q -> new UsageView(q.feature(), q.feature(), q.used(),
-                        q.included(), "credits", percent(q.used(), q.included())))
+                .map(q -> new UsageView(q.feature(), q.label(), q.used(),
+                        q.included(), q.unit(), percent(q.used(), q.included())))
                 .toList();
     }
 

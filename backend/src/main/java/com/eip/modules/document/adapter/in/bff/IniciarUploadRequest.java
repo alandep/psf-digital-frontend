@@ -15,10 +15,11 @@ public record IniciarUploadRequest(
         @NotBlank String originalFilename,
         String mediaType,
         UUID exportId,
-        UUID legalEntityId) {
+        UUID legalEntityId,
+        Long sizeBytes) {
 
     public IniciarUploadCommand toCommand() {
         return new IniciarUploadCommand(
-                type, title, originalFilename, mediaType, exportId, legalEntityId);
+                type, title, originalFilename, mediaType, exportId, legalEntityId, sizeBytes);
     }
 }

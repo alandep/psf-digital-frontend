@@ -19,6 +19,8 @@
 
     .lead { margin: 0 0 16px; color: #555; }
 
+    .comment { width: 100%; margin-top: 16px; }
+
     .reason-list {
       display: flex;
       flex-direction: column;
@@ -45,5 +47,7 @@
     padding: 0 24px 20px;
 
     .danger-text { color: #f44336; }
+    button { display: inline-flex; align-items: center; }
+    .btn-spinner { display: inline-block; margin-right: 8px; }
   }
 }

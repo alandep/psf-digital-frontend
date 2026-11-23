@@ -69,7 +69,32 @@
 }
 .inline-error mat-icon { font-size: 20px; width: 20px; height: 20px; }
 
-.mfa-toggle { display: block; margin: 8px 0 4px; }
+.info-note {
+  display: flex; align-items: center; gap: 8px;
+  background: #eef5ff; border-radius: 10px; padding: 10px 14px;
+  color: #1e40af; font-size: 0.9rem; margin: 8px 0 4px;
+}
+.info-note mat-icon { font-size: 20px; width: 20px; height: 20px; }
+
+.plans-state { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 24px; color: #4b5563; }
+.sales-link { text-align: center; margin: 0 0 12px; color: #4b5563; }
+.coupon-row { display: flex; align-items: flex-start; gap: 12px; }
+.coupon-row .coupon-field { flex: 1; }
+.coupon-row button { margin-top: 8px; }
+.coupon-feedback { min-height: 8px; }
+.muted { color: #6b7280; font-size: 0.85rem; }
+.pay-error { margin-top: 16px; }
+.accept-hint { color: #b3261e; font-size: 0.85rem; margin: 0; }
+
+.success-details {
+  display: grid; gap: 8px; margin: 18px auto 22px; max-width: 380px; text-align: left;
+}
+.success-details div {
+  display: flex; justify-content: space-between; gap: 12px;
+  padding: 6px 0; border-bottom: 1px dashed #e5e7eb;
+}
+.success-details dt { color: #6b7280; }
+.success-details dd { margin: 0; font-weight: 600; color: #111827; }
 
 /* Actions */
 .step-actions {

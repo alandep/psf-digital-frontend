@@ -90,20 +90,57 @@ class AccessPolicyRulesTest {
     }
 
     @Test
-    void trialLicenseDependsOnEndDate() {
+    void dataExportScreenAlwaysOpenForAdminOnly() {
+        for (LicenseMode mode : LicenseMode.values()) {
+            assertThat(AccessPolicyService.can(snap("ADMINISTRADOR", mode),
+                    "admin/exportar-dados", "view")).isTrue();
+        }
+        assertThat(AccessPolicyService.can(snap("ANALISTA", LicenseMode.FULL),
+                "admin/exportar-dados", "view")).isFalse();
+    }
+
+    private static SubscriptionInfo sub(String status, OffsetDateTime trialEnd,
+            OffsetDateTime periodEnd, boolean gatewayLinked) {
+        return new SubscriptionInfo(status, "BUSINESS", "EIP Business", trialEnd, periodEnd,
+                gatewayLinked, false);
+    }
+
+    @Test
+    void trialLicenseDependsOnEndDateAndGatewayLink() {
         OffsetDateTime now = OffsetDateTime.now();
-        SubscriptionInfo active = new SubscriptionInfo("TRIALING", "BUSINESS", "B",
-                now.plusDays(3), null);
-        SubscriptionInfo expired = new SubscriptionInfo("TRIALING", "BUSINESS", "B",
-                now.minusDays(1), null);
-        assertThat(AccessPolicyService.licenseModeOf(active, now)).isEqualTo(LicenseMode.FULL);
-        assertThat(AccessPolicyService.licenseModeOf(expired, now)).isEqualTo(LicenseMode.BILLING_ONLY);
-        assertThat(AccessPolicyService.licenseModeOf(null, now)).isEqualTo(LicenseMode.FULL);
-        assertThat(AccessPolicyService.licenseModeOf(
-                new SubscriptionInfo("PAST_DUE", "P", "P", null, null), now))
+        assertThat(AccessPolicyService.licenseModeOf(sub("TRIALING", now.plusDays(3), null, false), now))
+                .isEqualTo(LicenseMode.FULL);
+        assertThat(AccessPolicyService.licenseModeOf(sub("TRIALING", now.minusDays(1), null, false), now))
+                .isEqualTo(LicenseMode.BILLING_ONLY);
+        // Linked to the gateway: 3 more days of FULL, then READ_ONLY.
+        assertThat(AccessPolicyService.licenseModeOf(sub("TRIALING", now.minusDays(2), null, true), now))
+                .isEqualTo(LicenseMode.FULL);
+        assertThat(AccessPolicyService.licenseModeOf(sub("TRIALING", now.minusDays(4), null, true), now))
                 .isEqualTo(LicenseMode.READ_ONLY);
-        assertThat(AccessPolicyService.licenseModeOf(
-                new SubscriptionInfo("CANCELED", "P", "P", null, null), now))
+        // Trial end falls back to the period end.
+        assertThat(AccessPolicyService.licenseModeOf(sub("TRIALING", null, now.plusHours(1), false), now))
+                .isEqualTo(LicenseMode.FULL);
+        assertThat(AccessPolicyService.licenseModeOf(null, now)).isEqualTo(LicenseMode.FULL);
+    }
+
+    @Test
+    void statusLicenseModes() {
+        OffsetDateTime now = OffsetDateTime.now();
+        assertThat(AccessPolicyService.licenseModeOf(sub("ACTIVE", null, null, true), now))
+                .isEqualTo(LicenseMode.FULL);
+        assertThat(AccessPolicyService.licenseModeOf(sub("PAST_DUE", null, null, true), now))
+                .isEqualTo(LicenseMode.READ_ONLY);
+        assertThat(AccessPolicyService.licenseModeOf(sub("GRACE_PERIOD", null, null, true), now))
+                .isEqualTo(LicenseMode.READ_ONLY);
+        assertThat(AccessPolicyService.licenseModeOf(sub("SUSPENDED", null, null, true), now))
+                .isEqualTo(LicenseMode.BILLING_ONLY);
+        assertThat(AccessPolicyService.licenseModeOf(sub("CANCELED", null, now.plusDays(5), false), now))
+                .isEqualTo(LicenseMode.FULL);
+        assertThat(AccessPolicyService.licenseModeOf(sub("CANCELED", null, now.minusDays(1), false), now))
+                .isEqualTo(LicenseMode.READ_ONLY);
+        assertThat(AccessPolicyService.licenseModeOf(sub("CANCELED", null, null, false), now))
+                .isEqualTo(LicenseMode.READ_ONLY);
+        assertThat(AccessPolicyService.licenseModeOf(sub("TERMINATED", null, null, false), now))
                 .isEqualTo(LicenseMode.NONE);
     }
 }

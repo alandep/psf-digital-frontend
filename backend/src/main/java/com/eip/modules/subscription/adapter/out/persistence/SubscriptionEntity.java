@@ -1,6 +1,7 @@
 package com.eip.modules.subscription.adapter.out.persistence;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -68,6 +69,40 @@ public class SubscriptionEntity {
 
     @Column(name = "stripe_subscription_id")
     private String stripeSubscriptionId;
+
+    @Column(name = "asaas_customer_id")
+    private String asaasCustomerId;
+
+    @Column(name = "asaas_subscription_id")
+    private String asaasSubscriptionId;
+
+    @Column(name = "billing_type")
+    private String billingType;
+
+    /** Asaas creditCardToken (never a PAN). */
+    @Column(name = "card_token")
+    private String cardToken;
+
+    @Column(name = "next_due_date")
+    private LocalDate nextDueDate;
+
+    @Column(name = "canceled_at")
+    private OffsetDateTime canceledAt;
+
+    @Column(name = "cancel_reason")
+    private String cancelReason;
+
+    @Column(name = "coupon_code")
+    private String couponCode;
+
+    @Column(name = "coupon_price", precision = 18, scale = 2)
+    private BigDecimal couponPrice;
+
+    @Column(name = "coupon_cycles_remaining")
+    private Integer couponCyclesRemaining;
+
+    @Column(name = "invoices_synced_at")
+    private OffsetDateTime invoicesSyncedAt;
 
     @Version
     @Column(name = "version", nullable = false)

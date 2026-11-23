@@ -43,13 +43,22 @@ public class OnboardingService implements ConsultarOnboardingUseCase {
         if (sub == null) {
             return new TrialState(false, 0, null);
         }
-        boolean trialing = "TRIALING".equalsIgnoreCase(sub.getStatus());
+        // Trial end == current_period_end for TRIALING subscriptions (signup sets both;
+        // V40 backfilled trial_end from it).
         OffsetDateTime end = sub.getCurrentPeriodEnd();
-        long days = 0;
-        if (end != null) {
-            days = Math.max(0, ChronoUnit.DAYS.between(OffsetDateTime.now(), end));
+        OffsetDateTime now = OffsetDateTime.now();
+        boolean active = "TRIALING".equalsIgnoreCase(sub.getStatus())
+                && end != null && end.isAfter(now);
+        return new TrialState(active, daysRemaining(end, now), sub.getPlanName());
+    }
+
+    /** ceil(remaining hours / 24), never negative. */
+    static long daysRemaining(OffsetDateTime end, OffsetDateTime now) {
+        if (end == null || !end.isAfter(now)) {
+            return 0;
         }
-        return new TrialState(trialing, days, sub.getPlanName());
+        long seconds = ChronoUnit.SECONDS.between(now, end);
+        return (seconds + 86_399) / 86_400;
     }
 
     @Override

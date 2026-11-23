@@ -44,6 +44,33 @@ public final class EmailTemplates {
         return new Rendered(subject, text, wrap(body));
     }
 
+    /** Internal notification to the sales team about a demo request. */
+    public static Rendered demoRequest(String name, String email, String phone, String company,
+            String cnpj, String message, String origin) {
+        String subject = "Nova solicitação de demonstração EIP: " + safeName(company);
+        String text = "Nova solicitação de demonstração recebida.\n\n"
+                + "Nome: " + safeName(name) + "\n"
+                + "E-mail: " + safeName(email) + "\n"
+                + "Telefone: " + safeName(phone) + "\n"
+                + "Empresa: " + safeName(company) + "\n"
+                + "CNPJ: " + safeName(cnpj) + "\n"
+                + "Origem: " + safeName(origin) + "\n\n"
+                + "Mensagem:\n" + safeName(message);
+        String body = "<p>Nova solicita&ccedil;&atilde;o de demonstra&ccedil;&atilde;o recebida.</p>"
+                + "<table style=\"border-collapse:collapse\">"
+                + row("Nome", name) + row("E-mail", email) + row("Telefone", phone)
+                + row("Empresa", company) + row("CNPJ", cnpj) + row("Origem", origin)
+                + "</table>"
+                + "<p><strong>Mensagem:</strong><br>" + esc(safeName(message)).replace("\n", "<br>")
+                + "</p>";
+        return new Rendered(subject, text, wrap(body));
+    }
+
+    private static String row(String label, String value) {
+        return "<tr><td style=\"padding:4px 12px 4px 0;color:#666\">" + esc(label)
+                + "</td><td style=\"padding:4px 0\">" + esc(safeName(value)) + "</td></tr>";
+    }
+
     private static String wrap(String inner) {
         return "<div style=\"font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;"
                 + "padding:24px;color:#222\"><h2 style=\"color:#1565c0\">EIP</h2>" + inner + "</div>";

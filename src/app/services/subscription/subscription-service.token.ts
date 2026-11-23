@@ -6,9 +6,7 @@ import { environment } from '../../../environments/environment';
 
 export const SUBSCRIPTION_SERVICE = new InjectionToken<ISubscriptionService>('SubscriptionService');
 
-// Default (realApis.subscription === false) keeps the mock. Flip the flag to
-// route subscription reads/mutations to the backend BFF (unsupported methods
-// still fall back to mock).
+// realApis.subscription === true usa o BFF; false usa o adapter estático.
 export const subscriptionServiceProvider: Provider = {
   provide: SUBSCRIPTION_SERVICE,
   useClass: environment.realApis?.subscription ? SubscriptionHttpService : SubscriptionMockAdapter

@@ -23,7 +23,7 @@ export const environment = {
     // Mesmo conjunto habilitado hoje no dev (environment.ts): auth + ai reais.
     auth: true,
     export: true,
-    subscription: false,
+    subscription: true,
     documents: false,
     logistics: false,
     finance: true,

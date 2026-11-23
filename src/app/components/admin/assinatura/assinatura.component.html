@@ -1,159 +1,228 @@
 <div class="assinatura-container">
 
-  <mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+  @if (isLoading) {
+    <mat-progress-bar mode="indeterminate" class="loading-bar" aria-label="Carregando"></mat-progress-bar>
+  }
 
-  <!-- Header Premium (identidade Portos) -->
   <div class="page-header">
     <div class="header-main">
       <div class="title-section">
-        <mat-icon class="header-icon">credit_card</mat-icon>
+        <mat-icon class="header-icon" aria-hidden="true">credit_card</mat-icon>
         <div class="title-content">
           <h1>Assinatura e Faturamento</h1>
-          <p class="subtitle">Gerencie seu plano, pagamentos e faturas</p>
+          <p class="subtitle">Gerencie seu plano, pagamentos, uso e faturas</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Aviso de licença pendente (READ_ONLY) -->
-  <div class="license-note" *ngIf="isReadOnly">
-    <mat-icon>warning</mat-icon>
-    <span>Sua assinatura está pendente. Regularize o pagamento para restaurar o acesso completo.</span>
-    <button mat-raised-button color="primary" (click)="reactivate()">
-      <mat-icon>autorenew</mat-icon> Reativar (simular pagamento)
-    </button>
-  </div>
-
   <div class="cards-grid">
 
     <!-- Plano atual -->
-    <mat-card class="info-card plano-card" *ngIf="subscription as s">
+    <mat-card class="info-card plano-card">
       <mat-card-header>
-        <mat-card-title><mat-icon>workspace_premium</mat-icon> Plano atual</mat-card-title>
+        <mat-card-title><mat-icon aria-hidden="true">workspace_premium</mat-icon> Plano atual</mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <div class="plan-headline">
-          <div>
-            <div class="plan-name">{{ s.planName }}</div>
-            <div class="plan-price">
-              <strong>{{ s.amount | currency: 'BRL' }}</strong>
-              <span>/ {{ s.billingInterval === 'ANNUAL' ? 'ano' : 'mês' }}</span>
+        @if (subscription; as s) {
+          <div class="plan-headline">
+            <div>
+              <div class="plan-name">{{ s.planName }}</div>
+              <div class="plan-price">
+                @if (s.coupon; as c) {
+                  <strong>{{ c.price | currency: 'BRL' }}</strong>
+                  <span>/ {{ s.billingInterval === 'ANNUAL' ? 'ano' : 'mês' }}</span>
+                  <span class="regular-price">{{ s.amount | currency: 'BRL' }}</span>
+                  <div class="coupon-note">
+                    <mat-icon aria-hidden="true">sell</mat-icon>
+                    Cupom {{ c.code }}: {{ cyclesLabel(c.cyclesRemaining) }}
+                  </div>
+                } @else {
+                  <strong>{{ s.amount | currency: 'BRL' }}</strong>
+                  <span>/ {{ s.billingInterval === 'ANNUAL' ? 'ano' : 'mês' }}</span>
+                }
+              </div>
             </div>
+            <span class="status-chip"
+                  [style.color]="statusView(s).color"
+                  [style.background]="statusView(s).bg">
+              {{ statusView(s).label }}
+            </span>
           </div>
-          <span class="status-chip"
-                [style.color]="statusView(s.status).color"
-                [style.background]="statusView(s.status).bg">
-            {{ statusView(s.status).label }}
-          </span>
-        </div>
 
-        <mat-divider></mat-divider>
+          <mat-divider></mat-divider>
 
-        <div class="plan-detail">
-          <mat-icon>event</mat-icon>
-          <span>Próxima cobrança: <strong>{{ s.currentPeriodEnd | date: 'dd/MM/yyyy' }}</strong></span>
-        </div>
-        <div class="plan-detail">
-          <mat-icon>credit_card</mat-icon>
-          <span>{{ paymentBrand }} •••• {{ paymentLast4 }}</span>
-        </div>
+          <div class="plan-detail">
+            <mat-icon aria-hidden="true">event</mat-icon>
+            <span>
+              Próxima cobrança:
+              <strong>{{ s.nextDueDate ? (s.nextDueDate | date: 'dd/MM/yyyy') : '—' }}</strong>
+            </span>
+          </div>
+          <div class="plan-detail">
+            <mat-icon aria-hidden="true">credit_card</mat-icon>
+            <span>{{ paymentLine }}</span>
+          </div>
 
-        <div class="plan-actions">
-          <button mat-stroked-button color="primary" (click)="changePaymentMethod()">
-            <mat-icon>credit_card</mat-icon> Alterar forma de pagamento
-          </button>
-          <button mat-stroked-button color="primary" (click)="changePlan()">
-            <mat-icon>swap_horiz</mat-icon> Alterar plano
-          </button>
-          <button mat-button class="cancel-btn" (click)="cancelSubscription()">
-            <mat-icon>cancel</mat-icon> Cancelar assinatura
-          </button>
-        </div>
+          <div class="plan-actions">
+            @if (showActivate) {
+              <button mat-raised-button color="primary" (click)="openActivate()">
+                <mat-icon aria-hidden="true">rocket_launch</mat-icon> Ativar assinatura
+              </button>
+            }
+            @if (showChangeButtons) {
+              <button mat-stroked-button color="primary" (click)="changePaymentMethod()">
+                <mat-icon aria-hidden="true">credit_card</mat-icon> Alterar forma de pagamento
+              </button>
+              <button mat-stroked-button color="primary" (click)="changePlan()">
+                <mat-icon aria-hidden="true">swap_horiz</mat-icon> Alterar plano
+              </button>
+            }
+            @if (showReactivate) {
+              <button mat-raised-button color="primary" [disabled]="actionBusy" (click)="reactivate()">
+                <mat-icon aria-hidden="true">autorenew</mat-icon> Reativar assinatura
+              </button>
+            }
+            @if (showCancel) {
+              <button mat-button class="cancel-btn" (click)="cancelSubscription()">
+                <mat-icon aria-hidden="true">cancel</mat-icon> Cancelar assinatura
+              </button>
+            }
+          </div>
+        } @else if (!loadingSubscription) {
+          <p class="empty-note">Não foi possível carregar os dados da assinatura.</p>
+        }
       </mat-card-content>
     </mat-card>
 
     <!-- Uso do plano -->
     <mat-card class="info-card uso-card">
       <mat-card-header>
-        <mat-card-title><mat-icon>speed</mat-icon> Uso do plano</mat-card-title>
+        <mat-card-title><mat-icon aria-hidden="true">speed</mat-icon> Uso do plano</mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <div class="usage-item" *ngFor="let m of usage">
-          <div class="usage-label">
-            <span>{{ m.label }}</span>
-            <span class="usage-values">{{ m.used | number }}/{{ m.included | number }} {{ m.unit }}</span>
-          </div>
-          <mat-progress-bar
-            mode="determinate"
-            [value]="usagePercent(m)"
-            [class.warn-bar]="usageWarning(m)">
-          </mat-progress-bar>
-          <div class="usage-percent" [class.warn-text]="usageWarning(m)">{{ usagePercent(m) }}%</div>
-        </div>
+        @if (usage; as u) {
+          @if (u.periodStart && u.periodEnd) {
+            <p class="cycle">Ciclo de {{ u.periodStart | date: 'dd/MM' }} a {{ u.periodEnd | date: 'dd/MM' }}</p>
+          }
 
-        <div class="creditos-cta" *ngIf="nearLimit">
-          <mat-icon>bolt</mat-icon>
-          <div class="cta-text">
-            <span>Sua empresa está próxima do limite da franquia de IA/OCR.</span>
+          @for (m of u.meters; track m.feature) {
+            <div class="usage-item">
+              <div class="usage-label">
+                <span>{{ m.label }}</span>
+                <span class="usage-values">
+                  {{ m.used | number: '1.0-2' }} /
+                  @if (m.included === null) { Ilimitado } @else { {{ m.included | number: '1.0-2' }} }
+                  {{ m.unit }}
+                </span>
+              </div>
+              @if (m.included !== null) {
+                <mat-progress-bar
+                  mode="determinate"
+                  [value]="meterPercent(m)"
+                  [class.warn-bar]="meterLevel(m) === 'warn'"
+                  [class.danger-bar]="meterLevel(m) === 'danger'"
+                  [attr.aria-label]="m.label + ': ' + meterPercent(m) + '% usado'">
+                </mat-progress-bar>
+                <div class="usage-percent"
+                     [class.warn-text]="meterLevel(m) === 'warn'"
+                     [class.danger-text]="meterLevel(m) === 'danger'">{{ meterPercent(m) }}%</div>
+              }
+              @if (m.fromPacks && m.fromPacks > 0 && m.fromPlan !== null) {
+                <div class="usage-hint">
+                  inclui {{ m.fromPlan | number: '1.0-2' }} do plano + {{ m.fromPacks | number: '1.0-2' }} de pacotes
+                </div>
+              }
+            </div>
+          }
+        } @else if (!loadingUsage) {
+          <p class="empty-note">Não foi possível carregar o uso do plano.</p>
+        }
+
+        @if (nearLimit) {
+          <div class="creditos-cta" role="status">
+            <mat-icon aria-hidden="true">bolt</mat-icon>
+            <div class="cta-text">
+              <span>Sua empresa está próxima do limite (ou já atingiu) da franquia de IA/OCR.</span>
+            </div>
           </div>
-          <button mat-raised-button color="primary" (click)="comprarCreditos()">
-            <mat-icon>auto_awesome</mat-icon> Comprar créditos de IA
-          </button>
-        </div>
+        }
 
         <div class="creditos-footer">
-          <button mat-button color="primary" (click)="comprarCreditos()">
-            <mat-icon>add_shopping_cart</mat-icon> Comprar pacote de créditos
+          <button mat-stroked-button color="primary" (click)="openStatement()">
+            <mat-icon aria-hidden="true">list_alt</mat-icon> Ver extrato
+          </button>
+          <button mat-raised-button color="primary" (click)="buyCredits()">
+            <mat-icon aria-hidden="true">add_shopping_cart</mat-icon> Comprar pacote de créditos
           </button>
         </div>
       </mat-card-content>
     </mat-card>
   </div>
 
-  <!-- Histórico de faturas -->
+  <!-- Faturas -->
   <mat-card class="info-card faturas-card">
     <mat-card-header>
-      <mat-card-title><mat-icon>receipt_long</mat-icon> Histórico de faturas</mat-card-title>
+      <mat-card-title><mat-icon aria-hidden="true">receipt_long</mat-icon> Faturas</mat-card-title>
     </mat-card-header>
     <mat-card-content>
-      <table mat-table [dataSource]="invoices" class="faturas-table">
-        <ng-container matColumnDef="date">
-          <th mat-header-cell *matHeaderCellDef>Data</th>
-          <td mat-cell *matCellDef="let inv">{{ inv.date | date: 'dd/MM/yyyy' }}</td>
-        </ng-container>
-        <ng-container matColumnDef="period">
-          <th mat-header-cell *matHeaderCellDef>Período</th>
-          <td mat-cell *matCellDef="let inv">{{ inv.period }}</td>
-        </ng-container>
-        <ng-container matColumnDef="plan">
-          <th mat-header-cell *matHeaderCellDef>Plano</th>
-          <td mat-cell *matCellDef="let inv">{{ inv.planName }}</td>
-        </ng-container>
-        <ng-container matColumnDef="amount">
-          <th mat-header-cell *matHeaderCellDef>Valor</th>
-          <td mat-cell *matCellDef="let inv">{{ inv.amount | currency: 'BRL' }}</td>
-        </ng-container>
-        <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef>Status</th>
-          <td mat-cell *matCellDef="let inv">
-            <span class="status-chip small"
-                  [style.color]="invoiceStatusView(inv.status).color"
-                  [style.background]="invoiceStatusView(inv.status).bg">
-              {{ invoiceStatusView(inv.status).label }}
-            </span>
-          </td>
-        </ng-container>
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef></th>
-          <td mat-cell *matCellDef="let inv">
-            <button mat-icon-button class="download-btn" matTooltip="Baixar fatura" (click)="downloadInvoice(inv)">
-              <mat-icon>download</mat-icon>
-            </button>
-          </td>
-        </ng-container>
-        <tr mat-header-row *matHeaderRowDef="invoiceCols"></tr>
-        <tr mat-row *matRowDef="let row; columns: invoiceCols;"></tr>
-      </table>
+      @if (invoices.length === 0 && !loadingInvoices) {
+        <p class="empty-note">{{ emptyInvoicesMessage }}</p>
+      } @else {
+        <div class="table-scroll">
+          <table mat-table [dataSource]="invoices" class="faturas-table">
+            <ng-container matColumnDef="issuedAt">
+              <th mat-header-cell *matHeaderCellDef>Emissão</th>
+              <td mat-cell *matCellDef="let inv">{{ inv.issuedAt ? (inv.issuedAt | date: 'dd/MM/yyyy') : '—' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="dueDate">
+              <th mat-header-cell *matHeaderCellDef>Vencimento</th>
+              <td mat-cell *matCellDef="let inv">{{ inv.dueDate ? (inv.dueDate | date: 'dd/MM/yyyy') : '—' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="description">
+              <th mat-header-cell *matHeaderCellDef>Descrição</th>
+              <td mat-cell *matCellDef="let inv">{{ invoiceDescription(inv) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="amount">
+              <th mat-header-cell *matHeaderCellDef>Valor</th>
+              <td mat-cell *matCellDef="let inv">{{ inv.amount | currency: 'BRL' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Status</th>
+              <td mat-cell *matCellDef="let inv">
+                <span class="status-chip small"
+                      [style.color]="invoiceStatusView(inv.status).color"
+                      [style.background]="invoiceStatusView(inv.status).bg">
+                  {{ invoiceStatusView(inv.status).label }}
+                </span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef><span class="sr-only">Ações</span></th>
+              <td mat-cell *matCellDef="let inv" class="actions-cell">
+                @if (isPayable(inv) && inv.invoiceUrl) {
+                  <button mat-button color="primary" (click)="payInvoice(inv)">Pagar</button>
+                }
+                @if (canShowPix(inv)) {
+                  <button mat-button [disabled]="busyInvoiceId === inv.id" (click)="showPix(inv)">Pix</button>
+                }
+                @if (isPayable(inv) && inv.bankSlipUrl) {
+                  <button mat-button (click)="openBoleto(inv)">Boleto</button>
+                }
+                <button mat-icon-button class="download-btn"
+                        matTooltip="Baixar 2ª via (PDF)"
+                        aria-label="Baixar 2ª via (PDF)"
+                        [disabled]="busyInvoiceId === inv.id"
+                        (click)="downloadInvoice(inv)">
+                  <mat-icon aria-hidden="true">download</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="invoiceCols"></tr>
+            <tr mat-row *matRowDef="let row; columns: invoiceCols;"></tr>
+          </table>
+        </div>
+      }
     </mat-card-content>
   </mat-card>
 

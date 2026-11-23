@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Outbound port for the global plan catalog.
+ * Outbound port for the global plan catalog ({@code plan} + {@code plan_feature}).
  */
 public interface PlanRepositoryPort {
 
@@ -13,7 +13,14 @@ public interface PlanRepositoryPort {
 
     Optional<PlanData> byCode(String code);
 
+    /** Features (modules and limits) of a plan. */
+    List<PlanFeatureData> features(String planCode);
+
     record PlanData(String code, String name, String description,
             BigDecimal monthlyPrice, BigDecimal annualPrice, boolean highlighted) {
+    }
+
+    /** {@code limitValue} null means unlimited. */
+    record PlanFeatureData(String featureKey, boolean enabled, BigDecimal limitValue) {
     }
 }

@@ -58,6 +58,13 @@ public class GlobalExceptionHandler {
         return domain(HttpStatus.UNPROCESSABLE_ENTITY, ex);
     }
 
+    @ExceptionHandler(GatewayUnavailableException.class)
+    public ResponseEntity<ApiError> handleGatewayUnavailable(GatewayUnavailableException ex) {
+        log.warn("Gateway externo indisponivel: {}",
+                ex.getCause() != null ? ex.getCause().getClass().getSimpleName() : "sem causa");
+        return domain(HttpStatus.SERVICE_UNAVAILABLE, ex);
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex) {
         ApiError body = ApiError.of("ACCESS_DENIED", "Acesso negado", correlationId());

@@ -23,8 +23,23 @@
       gap: 16px;
     }
 
+    .interval-toggle { margin-bottom: 16px; }
+    .loading { display: flex; justify-content: center; padding: 24px; }
+    .note {
+      display: flex; gap: 8px; align-items: flex-start; margin: 16px 0 4px;
+      font-size: 0.85rem; color: #546e7a;
+      mat-icon { color: #1976d2; font-size: 18px; width: 18px; height: 18px; flex: none; }
+    }
+    .sales-link { padding-left: 0; }
+
     .plan-card {
       position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      text-align: left;
+      font: inherit;
+      background: #fff;
       border: 2px solid #e0e0e0;
       border-radius: 12px;
       padding: 18px;
@@ -44,12 +59,13 @@
       }
 
       .plan-price {
+        display: block;
         margin: 10px 0;
         strong { font-size: 1.5rem; color: #333; }
         span { color: #888; font-size: 0.85rem; }
       }
 
-      .plan-desc { margin: 0; font-size: 0.82rem; color: #666; line-height: 1.4; }
+      .plan-desc { display: block; margin: 0; font-size: 0.82rem; color: #666; line-height: 1.4; }
 
       .current-tag {
         display: inline-block;
@@ -68,5 +84,8 @@
     justify-content: flex-end;
     gap: 12px;
     padding: 0 24px 20px;
+
+    button { display: inline-flex; align-items: center; }
+    .btn-spinner { display: inline-block; margin-right: 8px; }
   }
 }

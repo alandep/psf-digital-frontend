@@ -1,22 +1,23 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { DemoDialogComponent } from '../../site/demo-dialog/demo-dialog.component';
 import { ONBOARDING_SERVICE } from '../../../services/onboarding/onboarding-service.token';
 import { IOnboardingService } from '../../../services/onboarding/onboarding-service.interface';
 import { TrialState } from '../../../../types/saas-billing';
 
-// Sticky in-app trial banner (MOCK). Shows the remaining trial days and two
-// actions: subscribe now, and request a demo (mock snackbar). Renders nothing
-// when there is no active trial.
+// Banner fixo da avaliação. Mostra os dias restantes, "Assinar agora" e
+// "Agendar demonstração". Não renderiza nada sem avaliação ativa.
 @Component({
   selector: 'app-trial-banner',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, MatButtonModule, MatSnackBarModule],
+  imports: [CommonModule, RouterModule, MatIconModule, MatButtonModule, MatDialogModule],
   template: `
-    <div *ngIf="trial && trial.active" class="trial-banner" role="status">
+    <div *ngIf="visible && trial" class="trial-banner" role="status">
       <mat-icon class="tb-icon">schedule</mat-icon>
       <span class="tb-text">
         Seu período de avaliação do {{ trial.planName }} termina em
@@ -24,7 +25,8 @@ import { TrialState } from '../../../../types/saas-billing';
       </span>
       <span class="tb-actions">
         <a class="tb-btn primary"
-           routerLink="/home-logged/admin/assinatura">Assinar agora</a>
+           routerLink="/home-logged/admin/assinatura"
+           [queryParams]="{ ativar: '1' }">Assinar agora</a>
         <button type="button" class="tb-btn ghost" (click)="requestDemo()">
           Agendar demonstração
         </button>
@@ -78,17 +80,27 @@ import { TrialState } from '../../../../types/saas-billing';
 })
 export class TrialBannerComponent implements OnInit {
   private billing = inject<IOnboardingService>(ONBOARDING_SERVICE);
-  private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
+  private destroyRef = inject(DestroyRef);
 
   trial: TrialState | null = null;
 
+  /** Visível apenas com avaliação ativa e ao menos 1 dia restante. */
+  get visible(): boolean {
+    return !!this.trial && this.trial.active && this.trial.daysRemaining > 0;
+  }
+
   ngOnInit(): void {
-    this.billing.getTrialState().subscribe((state) => (this.trial = state));
+    this.billing
+      .getTrialState()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (state) => (this.trial = state),
+        error: () => (this.trial = null)
+      });
   }
 
   requestDemo(): void {
-    this.snackBar.open('Solicitação de demonstração enviada. Nossa equipe entrará em contato.', 'Fechar', {
-      duration: 4000,
-    });
+    this.dialog.open(DemoDialogComponent, { width: '520px', data: { origem: 'TRIAL_BANNER' } });
   }
 }

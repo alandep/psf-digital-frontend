@@ -66,9 +66,22 @@ public class AccessPolicyService {
         MODULE_PREFIXES = Collections.unmodifiableMap(m);
     }
 
-    /** Subscription summary exposed to the client. */
+    /** Screens an ADMINISTRADOR can always use (even editing), whatever the license mode. */
+    static final Set<String> ALWAYS_OPEN_ADMIN_SCREENS =
+            Set.of("admin/assinatura", "admin/exportar-dados");
+
+    /** Grace after an expired trial for orgs already linked to the payment gateway. */
+    static final long LINKED_TRIAL_GRACE_DAYS = 3;
+
+    /**
+     * Subscription summary exposed to the client.
+     *
+     * @param gatewayLinked     whether a payment-gateway subscription exists
+     * @param cancelAtPeriodEnd whether access ends at the current period end
+     */
     public record SubscriptionInfo(String status, String planCode, String planName,
-            OffsetDateTime trialEndsAt, OffsetDateTime currentPeriodEnd) {
+            OffsetDateTime trialEndsAt, OffsetDateTime currentPeriodEnd,
+            boolean gatewayLinked, boolean cancelAtPeriodEnd) {
     }
 
     /**
@@ -173,15 +186,21 @@ public class AccessPolicyService {
 
     private SubscriptionInfo loadSubscription(UUID orgId) {
         var rows = jdbc.query(
-                "select status, plan_code, plan_name, trial_end, current_period_end "
+                "select status, plan_code, plan_name, trial_end, current_period_end, "
+                        + "asaas_subscription_id, cancel_at_period_end "
                         + "from subscription where organization_id = ? "
                         + "order by created_at desc limit 1",
-                (rs, i) -> new SubscriptionInfo(
-                        rs.getString("status"),
-                        rs.getString("plan_code"),
-                        rs.getString("plan_name"),
-                        rs.getObject("trial_end", OffsetDateTime.class),
-                        rs.getObject("current_period_end", OffsetDateTime.class)),
+                (rs, i) -> {
+                    String gatewayId = rs.getString("asaas_subscription_id");
+                    return new SubscriptionInfo(
+                            rs.getString("status"),
+                            rs.getString("plan_code"),
+                            rs.getString("plan_name"),
+                            rs.getObject("trial_end", OffsetDateTime.class),
+                            rs.getObject("current_period_end", OffsetDateTime.class),
+                            gatewayId != null && !gatewayId.isBlank(),
+                            rs.getBoolean("cancel_at_period_end"));
+                },
                 orgId);
         return rows.isEmpty() ? null : rows.get(0);
     }
@@ -218,7 +237,14 @@ public class AccessPolicyService {
     // ------------------------------------------------------------------ pure rules
 
     /**
-     * Maps a subscription to the license mode.
+     * Maps a subscription to the license mode (billing contract, section 5):
+     * <ul>
+     *   <li>TRIALING not expired: FULL. Expired: linked to the gateway, FULL until
+     *       trial end + 3 days and READ_ONLY afterwards; not linked, BILLING_ONLY.</li>
+     *   <li>ACTIVE: FULL. PAST_DUE / GRACE_PERIOD: READ_ONLY. SUSPENDED: BILLING_ONLY.</li>
+     *   <li>CANCELED: FULL while the paid period lasts, READ_ONLY afterwards.</li>
+     *   <li>TERMINATED: NONE.</li>
+     * </ul>
      *
      * @param sub the latest subscription, or {@code null} (legacy tenant -> FULL)
      * @param now reference instant
@@ -231,13 +257,26 @@ public class AccessPolicyService {
         String status = sub.status() == null ? "" : sub.status().toUpperCase(Locale.ROOT);
         return switch (status) {
             case "ACTIVE" -> LicenseMode.FULL;
-            case "TRIALING" -> isTrialExpired(sub.trialEndsAt(), sub.currentPeriodEnd(), now)
-                    ? LicenseMode.BILLING_ONLY : LicenseMode.FULL;
+            case "TRIALING" -> trialMode(sub, now);
             case "PAST_DUE", "GRACE_PERIOD" -> LicenseMode.READ_ONLY;
             case "SUSPENDED" -> LicenseMode.BILLING_ONLY;
-            case "CANCELED", "TERMINATED" -> LicenseMode.NONE;
+            case "CANCELED" -> sub.currentPeriodEnd() != null && sub.currentPeriodEnd().isAfter(now)
+                    ? LicenseMode.FULL : LicenseMode.READ_ONLY;
+            case "TERMINATED" -> LicenseMode.NONE;
             default -> LicenseMode.FULL;
         };
+    }
+
+    private static LicenseMode trialMode(SubscriptionInfo sub, OffsetDateTime now) {
+        if (!isTrialExpired(sub.trialEndsAt(), sub.currentPeriodEnd(), now)) {
+            return LicenseMode.FULL;
+        }
+        if (!sub.gatewayLinked()) {
+            return LicenseMode.BILLING_ONLY;
+        }
+        OffsetDateTime end = sub.trialEndsAt() != null ? sub.trialEndsAt() : sub.currentPeriodEnd();
+        return end.plusDays(LINKED_TRIAL_GRACE_DAYS).isAfter(now)
+                ? LicenseMode.FULL : LicenseMode.READ_ONLY;
     }
 
     /**
@@ -270,8 +309,7 @@ public class AccessPolicyService {
             return s.superAdmin();
         }
 
-        boolean billingScreen = "admin/assinatura".equals(screen);
-        if (billingScreen && ROLE_ADMIN.equals(role)) {
+        if (ALWAYS_OPEN_ADMIN_SCREENS.contains(screen) && ROLE_ADMIN.equals(role)) {
             return true;
         }
         LicenseMode mode = s.licenseMode() == null ? LicenseMode.FULL : s.licenseMode();

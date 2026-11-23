@@ -42,7 +42,8 @@ public class AccessBffController {
 
     /** JSON view of the subscription. */
     public record SubscriptionView(String status, String planCode, String planName,
-            OffsetDateTime trialEndsAt, OffsetDateTime currentPeriodEnd) {
+            OffsetDateTime trialEndsAt, OffsetDateTime currentPeriodEnd,
+            boolean gatewayLinked, boolean cancelAtPeriodEnd) {
     }
 
     /** @return the current user's access, or 401 when there is no user/organization context */
@@ -56,7 +57,7 @@ public class AccessBffController {
         SubscriptionInfo sub = s.subscription();
         SubscriptionView subView = sub == null ? null : new SubscriptionView(
                 sub.status(), sub.planCode(), sub.planName(), sub.trialEndsAt(),
-                sub.currentPeriodEnd());
+                sub.currentPeriodEnd(), sub.gatewayLinked(), sub.cancelAtPeriodEnd());
         return ResponseEntity.ok(new AccessResponse(s.userId(), s.organizationId(), s.name(),
                 s.email(), s.role(), s.superAdmin(), s.licenseMode().name(), subView,
                 s.modules(), s.limits(), AccessPolicyService.MODULE_PREFIXES, READ_ONLY_ROLES));

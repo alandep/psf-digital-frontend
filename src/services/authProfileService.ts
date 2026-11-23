@@ -30,6 +30,8 @@ export interface AcessoMeDto {
     planName: string;
     trialEndsAt: string | null;
     currentPeriodEnd: string | null;
+    gatewayLinked?: boolean;
+    cancelAtPeriodEnd?: boolean;
   } | null;
   modules: Record<string, boolean>;
   limits: Record<string, number | null>;
@@ -62,6 +64,8 @@ interface RawProfile {
 
 @Injectable({ providedIn: 'root' })
 export class AuthProfileService {
+  private static readonly ALWAYS_ALLOWED_ADMIN_SCREENS = ['admin/assinatura', 'admin/exportar-dados'];
+
   private http = inject(HttpClient);
   private catalogService = inject(PerfilAcessoMockService);
 
@@ -100,6 +104,11 @@ export class AuthProfileService {
   /** Dados brutos do acesso real (null no modo mock ou antes da carga). */
   get currentAccess(): AcessoMeDto | null {
     return this.access;
+  }
+
+  /** Assinatura do último GET /bff/acesso/me (null no modo mock ou sem assinatura). */
+  get currentSubscription(): AcessoMeDto['subscription'] {
+    return this.access?.subscription ?? null;
   }
 
   get currentProfile(): AccessProfile | null {
@@ -206,7 +215,8 @@ export class AuthProfileService {
     if (screen.startsWith('super-admin')) { return me.superAdmin === true; }
 
     const isAdmin = role === 'ADMINISTRADOR';
-    if (screen === 'admin/assinatura' || screen.startsWith('admin/assinatura/')) {
+    // Contrato §5: telas sempre liberadas ao ADMINISTRADOR em qualquer modo (inclusive edição).
+    if (AuthProfileService.ALWAYS_ALLOWED_ADMIN_SCREENS.some((s) => screen === s || screen.startsWith(s + '/'))) {
       if (isAdmin) { return true; }
     }
 
@@ -358,13 +368,15 @@ export class AuthProfileService {
   private isBillingScreen(screenId: string): boolean {
     // screenIds use the '/' -> '_' convention; routes use '/'. Accept both.
     const normalized = (screenId || '').replace(/_/g, '/');
-    return normalized.startsWith('admin/assinatura');
+    return AuthProfileService.ALWAYS_ALLOWED_ADMIN_SCREENS.some((s) => normalized.startsWith(s));
   }
 
   can(screenId: string, action: PermissionAction): boolean {
     if (this.realMode) {
       return this.access ? this.evaluate(this.access, this.currentLicenseMode, screenId, action) : false;
     }
+    // Contrato §5: assinatura e exportação de dados sempre liberadas ao administrador (qualquer modo).
+    if (this.fullAccess && this.isBillingScreen(screenId)) { return true; }
     // --- License gate (applied on top of RBAC; can only remove access) ---
     const mode = this.currentLicenseMode;
     const isWrite = action === 'create' || action === 'edit' || action === 'delete';

@@ -1,6 +1,7 @@
 package com.eip.modules.document.api;
 
 import java.time.OffsetDateTime;
+import java.util.OptionalLong;
 import java.util.UUID;
 
 /**
@@ -24,6 +25,13 @@ public interface StoragePort {
      * {@link #signedUpload}, the backend writes the bytes itself (no client PUT).
      */
     String upload(String storageKey, byte[] content, String mediaType);
+
+    /**
+     * Real size in bytes of the stored object, read from the storage metadata.
+     *
+     * @return the size, or empty when the object does not exist or the store cannot report it
+     */
+    OptionalLong objectSize(String storageKey);
 
     /** A signed, expiring URL. */
     record SignedUrl(String url, OffsetDateTime expiresAt) {

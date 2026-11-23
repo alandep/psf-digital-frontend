@@ -7,6 +7,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,19 +16,18 @@ import com.eip.modules.admin.adapter.out.persistence.AdminAppUserEntity;
 import com.eip.modules.admin.adapter.out.persistence.AdminAppUserJpaRepository;
 import com.eip.modules.admin.adapter.out.persistence.AdminMembershipEntity;
 import com.eip.modules.admin.adapter.out.persistence.AdminMembershipJpaRepository;
-import com.eip.modules.admin.adapter.out.persistence.AdminOrgEntitlementEntity;
 import com.eip.modules.admin.adapter.out.persistence.AdminOrgEntitlementJpaRepository;
 import com.eip.modules.admin.adapter.out.persistence.AdminOrganizationEntity;
 import com.eip.modules.admin.adapter.out.persistence.AdminOrganizationJpaRepository;
-import com.eip.modules.admin.adapter.out.persistence.AdminPlanFeatureEntity;
 import com.eip.modules.admin.adapter.out.persistence.AdminPlanFeatureJpaRepository;
-import com.eip.modules.admin.adapter.out.persistence.AdminSubscriptionEntity;
 import com.eip.modules.admin.adapter.out.persistence.AdminSubscriptionJpaRepository;
 import com.eip.modules.admin.adapter.out.persistence.AdminUserCredentialEntity;
 import com.eip.modules.admin.adapter.out.persistence.AdminUserCredentialJpaRepository;
 import com.eip.modules.admin.adapter.out.persistence.LegalEntityEntity;
 import com.eip.modules.admin.adapter.out.persistence.LegalEntityJpaRepository;
 import com.eip.modules.admin.domain.port.out.TenantProvisioningPort;
+import com.eip.modules.admin.domain.port.out.TenantSubscriptionPort;
+import com.eip.modules.admin.domain.port.out.TenantSubscriptionPort.InitialSubscription;
 import com.eip.platform.error.BusinessRuleException;
 import com.eip.platform.tenant.TenantScope;
 
@@ -42,7 +42,12 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <p>RLS: identity/organization tables are not RLS-scoped; the subscription and
  * entitlement rows are RLS-forced, so they are written while the thread''s org
- * context is bound to the new org (see {@link #applyTenantScopedData}).
+ * context is bound to the new org (see {@link #writeTenantScopedData}). The plan,
+ * interval, amount and trial length can be overridden by the billing checkout.
+ *
+ * <p>{@code subRepo}, {@code planFeatureRepo} and {@code orgEntitlementRepo} are
+ * no longer used here (writes go through {@link TenantSubscriptionPort}); they are
+ * kept only so the constructor stays identical to the frozen ArchUnit baseline.
  */
 @Service
 @RequiredArgsConstructor
@@ -51,6 +56,8 @@ public class SignupService {
 
     /** Plan assigned to self-service trials (14-day BUSINESS). */
     private static final String TRIAL_PLAN = "BUSINESS";
+    private static final String TRIAL_PLAN_NAME = "EIP Business";
+    private static final BigDecimal TRIAL_AMOUNT = new BigDecimal("2490.00");
     private static final int TRIAL_DAYS = 14;
 
     private final AdminAppUserJpaRepository userRepo;
@@ -65,11 +72,39 @@ public class SignupService {
     private final PasswordEncoder passwordEncoder;
     private final TenantScope tenantScope;
 
-    /** Input for a signup. */
+    /**
+     * Writes the RLS-scoped subscription + entitlements. Setter-injected on
+     * purpose: the constructor signature is part of the frozen ArchUnit baseline.
+     */
+    private TenantSubscriptionPort tenantSubscriptions;
+
+    @Autowired
+    void setTenantSubscriptions(TenantSubscriptionPort tenantSubscriptions) {
+        this.tenantSubscriptions = tenantSubscriptions;
+    }
+
+    /**
+     * Input for a signup. Plan fields default to the 14-day BUSINESS monthly trial
+     * when null (self-service "Experimentar Grátis").
+     */
     public record SignupCommand(
             String name, String cpf, String email, String phone, String password,
             String cnpj, String razaoSocial, String nomeFantasia, String segmento,
-            List<String> goals) {
+            List<String> goals, String planCode, String planName, String billingInterval,
+            BigDecimal amount, Integer trialDays, String companyEmail, String companyPhone) {
+
+        /** Self-service trial (BUSINESS, monthly, 14 days). */
+        public SignupCommand(String name, String cpf, String email, String phone, String password,
+                String cnpj, String razaoSocial, String nomeFantasia, String segmento,
+                List<String> goals) {
+            this(name, cpf, email, phone, password, cnpj, razaoSocial, nomeFantasia, segmento,
+                    goals, null, null, null, null, null, null, null);
+        }
+
+        @Override
+        public String toString() {
+            return "SignupCommand[email=" + email + ", cnpj=" + cnpj + ", plan=" + planCode + "]";
+        }
     }
 
     /** Result: the created tenant + user, for the controller to bind the session. */
@@ -94,16 +129,17 @@ public class SignupService {
 
         String email = c.email().trim().toLowerCase();
         if (userRepo.findByEmail(email).isPresent()) {
-            throw new BusinessRuleException("Ja existe uma conta com este e-mail.");
+            throw new BusinessRuleException("Já existe uma conta com este e-mail.");
         }
         if (!cnpjAvailable(c.cnpj())) {
-            throw new BusinessRuleException("Esta empresa (CNPJ) ja possui uma organizacao no EIP.");
+            throw new BusinessRuleException("Esta empresa (CNPJ) já possui uma organização no EIP.");
         }
 
         OffsetDateTime now = OffsetDateTime.now();
         UUID userId = UUID.randomUUID();
         UUID orgId = UUID.randomUUID();
-        OffsetDateTime trialEnd = now.plusDays(TRIAL_DAYS);
+        int trialDays = c.trialDays() != null && c.trialDays() > 0 ? c.trialDays() : TRIAL_DAYS;
+        OffsetDateTime trialEnd = now.plusDays(trialDays);
 
         // 1) User (identity, not RLS).
         AdminAppUserEntity user = new AdminAppUserEntity();
@@ -146,8 +182,8 @@ public class SignupService {
         legal.setSegmento(c.segmento());
         legal.setPais("Brasil");
         legal.setResponsavel(c.name());
-        legal.setEmail(email);
-        legal.setTelefone(digitsOnly(c.phone()));
+        legal.setEmail(isBlank(c.companyEmail()) ? email : c.companyEmail().trim().toLowerCase());
+        legal.setTelefone(digitsOnly(isBlank(c.companyPhone()) ? c.phone() : c.companyPhone()));
         legal.setCreatedAt(now);
         legalRepo.save(legal);
 
@@ -162,62 +198,45 @@ public class SignupService {
         membershipRepo.save(membership);
 
         // 5) Subscription (TRIALING) + entitlement snapshot (RLS-scoped).
-        applyTenantScopedData(orgId, now, trialEnd);
+        String planCode = isBlank(c.planCode()) ? TRIAL_PLAN : c.planCode().trim().toUpperCase();
+        String planName = isBlank(c.planName()) ? TRIAL_PLAN_NAME : c.planName();
+        String interval = isBlank(c.billingInterval()) ? "MONTHLY" : c.billingInterval();
+        BigDecimal amount = c.amount() != null ? c.amount() : TRIAL_AMOUNT;
+        writeTenantScopedData(new InitialSubscription(orgId, planCode, planName, interval, amount,
+                "TRIALING", now, trialEnd, trialEnd), userId, now);
 
         log.info("Signup concluido: user={} org={} plano={} gcpTenant={}",
-                userId, orgId, TRIAL_PLAN, gcpTenantId);
+                userId, orgId, planCode, gcpTenantId);
         return new SignupResult(orgId, userId, gcpTenantId, trialEnd);
     }
 
-    private void applyTenantScopedData(UUID orgId, OffsetDateTime now, OffsetDateTime trialEnd) {
-        tenantScope.runAs(orgId, null, () -> {
-            AdminSubscriptionEntity sub = new AdminSubscriptionEntity();
-            sub.setId(UUID.randomUUID());
-            sub.setOrganizationId(orgId);
-            sub.setPlanCode(TRIAL_PLAN);
-            sub.setPlanName("EIP Business");
-            sub.setBillingInterval("MONTHLY");
-            sub.setAmount(new BigDecimal("2490.00"));
-            sub.setStatus("TRIALING");
-            sub.setCurrentPeriodStart(now);
-            sub.setCurrentPeriodEnd(trialEnd);
-            sub.setCancelAtPeriodEnd(false);
-            sub.setCreatedAt(now);
-            sub.setUpdatedAt(now);
-            subRepo.save(sub);
-
-            List<AdminPlanFeatureEntity> features = planFeatureRepo.findByPlanCode(TRIAL_PLAN);
-            for (AdminPlanFeatureEntity f : features) {
-                AdminOrgEntitlementEntity e = new AdminOrgEntitlementEntity();
-                e.setOrganizationId(orgId);
-                e.setFeatureKey(f.getFeatureKey());
-                e.setEnabled(f.isEnabled());
-                e.setLimitValue(f.getLimitValue());
-                e.setAppliedPlan(TRIAL_PLAN);
-                e.setUpdatedAt(now);
-                orgEntitlementRepo.save(e);
-            }
+    private void writeTenantScopedData(InitialSubscription subscription, UUID userId,
+            OffsetDateTime now) {
+        UUID orgId = subscription.organizationId();
+        tenantScope.runAs(orgId, userId, () -> {
+            tenantSubscriptions.createSubscription(subscription);
+            tenantSubscriptions.applyPlanEntitlements(orgId, subscription.planCode(), now);
         });
     }
 
     private void validate(SignupCommand c) {
         if (isBlank(c.name())) {
-            throw new BusinessRuleException("Nome e obrigatorio.");
+            throw new BusinessRuleException("Nome é obrigatório.");
         }
         if (isBlank(c.email()) || !c.email().matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
-            throw new BusinessRuleException("E-mail invalido.");
+            throw new BusinessRuleException("E-mail inválido.");
         }
         if (isBlank(c.password()) || c.password().length() < 8) {
             throw new BusinessRuleException("A senha deve ter ao menos 8 caracteres.");
         }
         if (!isValidCpf(c.cpf())) {
-            throw new BusinessRuleException("CPF invalido.");
+            throw new BusinessRuleException("CPF inválido.");
         }
         if (!isValidCnpj(c.cnpj())) {
-            throw new BusinessRuleException("CNPJ invalido.");
+            throw new BusinessRuleException("CNPJ inválido.");
         }
         if (isBlank(c.razaoSocial())) {
-            throw new BusinessRuleException("Razao social e obrigatoria.");
+            throw new BusinessRuleException("Razão social é obrigatória.");
         }
     }
 

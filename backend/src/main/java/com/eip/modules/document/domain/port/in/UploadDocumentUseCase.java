@@ -28,7 +28,8 @@ public interface UploadDocumentUseCase {
             String originalFilename,
             String mediaType,
             UUID exportId,
-            UUID legalEntityId) {
+            UUID legalEntityId,
+            Long sizeBytes) {
     }
 
     /** The signed upload URL for a direct-to-storage PUT. */

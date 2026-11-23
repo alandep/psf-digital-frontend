@@ -194,6 +194,44 @@ resource "google_cloud_run_v2_service" "backend" {
         value = var.gcp_tenant_provisioning_enabled
       }
 
+      # --- Cobrança (Asaas) ---
+      # ATENÇÃO: o backend não sobe no profile cloud sem a chave de API e o token do webhook
+      # (fail-fast intencional). Os 2 secrets abaixo devem existir e ter versão antes do deploy.
+      env {
+        name  = "EIP_ASAAS_ENABLED"
+        value = "true"
+      }
+      env {
+        name  = "EIP_ASAAS_BASE_URL"
+        value = var.asaas_base_url
+      }
+      env {
+        name = "EIP_ASAAS_API_KEY"
+        value_source {
+          secret_key_ref {
+            secret  = var.asaas_api_key_secret_id # eip-asaas-api-key
+            version = "latest"
+          }
+        }
+      }
+      env {
+        name = "EIP_ASAAS_WEBHOOK_TOKEN"
+        value_source {
+          secret_key_ref {
+            secret  = var.asaas_webhook_token_secret_id # eip-asaas-webhook-token
+            version = "latest"
+          }
+        }
+      }
+      env {
+        name  = "EIP_BILLING_ISSUER_CNPJ"
+        value = var.billing_issuer_cnpj
+      }
+      env {
+        name  = "EIP_SALES_EMAIL"
+        value = var.sales_email
+      }
+
       # --- Probes (os grupos de health já existem no backend / Actuator) ---
       # startup_probe generoso: cold start (scale-to-zero) + Flyway podem demorar no 1º boot.
       startup_probe {
@@ -224,5 +262,7 @@ resource "google_cloud_run_v2_service" "backend" {
     google_secret_manager_secret_iam_member.run_mfa_encryption_key,
     google_secret_manager_secret_iam_member.run_mail_user,
     google_secret_manager_secret_iam_member.run_mail_password,
+    google_secret_manager_secret_iam_member.run_asaas_api_key,
+    google_secret_manager_secret_iam_member.run_asaas_webhook_token,
   ]
 }

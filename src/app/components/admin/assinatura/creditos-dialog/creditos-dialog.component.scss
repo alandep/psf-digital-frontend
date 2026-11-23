@@ -98,6 +98,11 @@
   font-size: 1.05rem;
 }
 
+.scroll-area { max-height: 60vh; overflow-y: auto; padding: 4px; }
+.loading { display: flex; justify-content: center; padding: 24px; }
+.pay-area { margin-top: 20px; }
+.btn-spinner { display: inline-block; margin-right: 8px; }
+
 .creditos-actions {
   display: flex;
   justify-content: flex-end;

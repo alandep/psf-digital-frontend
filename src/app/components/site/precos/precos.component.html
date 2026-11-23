@@ -12,14 +12,25 @@
   </header>
 
   <!-- Founder note -->
-  <div class="founder-note">
+  <div class="founder-note" *ngIf="founders as f">
     <mat-icon>star</mat-icon>
-    <span><strong>Programa Cliente Fundador EIP:</strong> Business por R$ 1.790/mês nos primeiros 12 meses,
-      para um grupo limitado de clientes fundadores.</span>
+    <span><strong>Programa Cliente Fundador EIP:</strong> Business por R$ {{ f.price | number:'1.0-0' }}/mês
+      nas primeiras {{ f.cycles }} cobranças, para um grupo limitado de clientes fundadores.</span>
   </div>
 
+  <!-- Estados de carregamento / erro -->
+  <section class="state" *ngIf="loading" role="status" aria-live="polite">
+    <mat-spinner diameter="36"></mat-spinner>
+    <p>Carregando planos...</p>
+  </section>
+  <section class="state error" *ngIf="!loading && error" role="alert">
+    <mat-icon>error_outline</mat-icon>
+    <p>Não foi possível carregar os planos agora.</p>
+    <button mat-stroked-button color="primary" (click)="load()">Tentar novamente</button>
+  </section>
+
   <!-- Plan cards -->
-  <section class="plan-cards">
+  <section class="plan-cards" *ngIf="!loading && !error">
     <mat-card class="plan-card" [class.highlight]="p.highlighted" *ngFor="let p of mainPlans">
       <span class="badge" *ngIf="p.highlighted">MAIS ESCOLHIDO</span>
       <h2>{{ p.name }}</h2>
@@ -30,6 +41,7 @@
       </div>
       <p class="users"><mat-icon>groups</mat-icon> Usuários ilimitados</p>
       <ul>
+        <li *ngFor="let b of p.limitBullets"><mat-icon>bolt</mat-icon>{{ b }}</li>
         <li *ngFor="let b of p.bullets"><mat-icon>check</mat-icon>{{ b }}</li>
       </ul>
       <a mat-flat-button color="primary" class="plan-cta"
@@ -38,22 +50,23 @@
     </mat-card>
 
     <!-- Enterprise -->
-    <mat-card class="plan-card enterprise">
-      <h2>{{ enterprise.name }}</h2>
-      <p class="desc">{{ enterprise.description }}</p>
+    <mat-card class="plan-card enterprise" *ngIf="enterprise as e">
+      <h2>{{ e.name }}</h2>
+      <p class="desc">{{ e.description }}</p>
       <div class="price sob">Sob consulta</div>
+      <p class="from" *ngIf="e.monthlyPrice > 0">A partir de R$ {{ e.monthlyPrice | number:'1.0-0' }}/mês</p>
       <p class="users"><mat-icon>groups</mat-icon> Usuários ilimitados</p>
       <ul>
-        <li *ngFor="let b of enterprise.bullets"><mat-icon>check</mat-icon>{{ b }}</li>
+        <li><mat-icon>bolt</mat-icon>Créditos de IA, OCR e armazenamento ilimitados</li>
+        <li *ngFor="let b of e.bullets"><mat-icon>check</mat-icon>{{ b }}</li>
       </ul>
-      <a mat-stroked-button color="primary" class="plan-cta"
-         [routerLink]="['/checkout']"
-         [queryParams]="{ plan: 'ENTERPRISE', interval: interval }">{{ enterprise.ctaLabel }}</a>
+      <button mat-stroked-button color="primary" class="plan-cta" type="button"
+              (click)="openEnterpriseDemo()">{{ e.ctaLabel }}</button>
     </mat-card>
   </section>
 
   <!-- Feature comparison matrix -->
-  <section class="matrix">
+  <section class="matrix" *ngIf="!loading && !error">
     <h2>Comparação de recursos</h2>
     <div class="matrix-scroll">
       <table class="matrix-table">

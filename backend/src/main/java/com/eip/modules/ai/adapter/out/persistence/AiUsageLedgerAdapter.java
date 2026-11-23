@@ -8,7 +8,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.eip.modules.ai.domain.model.AiCredits;
 import com.eip.modules.ai.domain.model.AiLedgerEntry;
+import com.eip.modules.ai.domain.model.AiOutcome;
 import com.eip.modules.ai.domain.model.AiResult;
 import com.eip.modules.ai.domain.model.AiTask;
 import com.eip.modules.ai.domain.port.out.AiUsageLedgerPort;
@@ -44,6 +46,8 @@ public class AiUsageLedgerAdapter implements AiUsageLedgerPort {
         entity.setTotalTokens(result.totalTokens());
         entity.setFinishReason(result.finishReason());
         entity.setLatencyMs(result.latencyMs()); // long auto-boxes to Long
+        // Créditos de IA (billing §1): record(...) só é chamado em chamadas bem-sucedidas.
+        entity.setEipCredits(AiCredits.of(result.inputUnits(), result.outputUnits(), result.thinkingTokens()));
         // FinOps: provider_cost is computed in the application/worker layer via
         // AiPriceCatalogPort (never in the Vertex adapter) and persisted here (Req 11.1, 11.2).
         entity.setProviderCost(providerCost);
@@ -93,6 +97,12 @@ public class AiUsageLedgerAdapter implements AiUsageLedgerPort {
             entity.setTotalTokens(result.totalTokens());
             entity.setFinishReason(result.finishReason());
             entity.setLatencyMs(result.latencyMs()); // long auto-boxes to Long
+            // Só desfechos de sucesso consomem créditos (a medição de UsageQuotaService
+            // descarta a linha duplicada quando record(...) já gravou o mesmo request_id).
+            if (entry.outcome() == AiOutcome.SUCCESS) {
+                entity.setEipCredits(AiCredits.of(
+                        result.inputUnits(), result.outputUnits(), result.thinkingTokens()));
+            }
         }
         // FinOps provider_cost is set regardless of telemetry presence (may be null).
         entity.setProviderCost(entry.providerCost());

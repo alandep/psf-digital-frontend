@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 
 import org.springframework.stereotype.Component;
 
+import com.eip.modules.subscription.domain.model.BillingDetails;
 import com.eip.modules.subscription.domain.model.BillingInterval;
 import com.eip.modules.subscription.domain.model.PlanCode;
 import com.eip.modules.subscription.domain.model.Subscription;
@@ -40,6 +41,18 @@ public class SubscriptionMapper {
         entity.setCancelAtPeriodEnd(domain.cancelAtPeriodEnd());
         entity.setPaymentBrand(domain.paymentBrand());
         entity.setPaymentLast4(domain.paymentLast4());
+        BillingDetails b = domain.billingDetails();
+        entity.setAsaasCustomerId(b.asaasCustomerId());
+        entity.setAsaasSubscriptionId(b.asaasSubscriptionId());
+        entity.setBillingType(b.billingType());
+        entity.setCardToken(b.cardToken());
+        entity.setNextDueDate(b.nextDueDate());
+        entity.setCanceledAt(b.canceledAt());
+        entity.setCancelReason(b.cancelReason());
+        entity.setCouponCode(b.couponCode());
+        entity.setCouponPrice(b.couponPrice());
+        entity.setCouponCyclesRemaining(b.couponCyclesRemaining());
+        entity.setInvoicesSyncedAt(b.invoicesSyncedAt());
         entity.setUpdatedAt(OffsetDateTime.now());
         return entity;
     }
@@ -61,6 +74,18 @@ public class SubscriptionMapper {
                 e.isCancelAtPeriodEnd(),
                 e.getPaymentBrand(),
                 e.getPaymentLast4(),
-                e.getVersion());
+                e.getVersion(),
+                new BillingDetails(
+                        e.getAsaasCustomerId(),
+                        e.getAsaasSubscriptionId(),
+                        e.getBillingType(),
+                        e.getCardToken(),
+                        e.getNextDueDate(),
+                        e.getCanceledAt(),
+                        e.getCancelReason(),
+                        e.getCouponCode(),
+                        e.getCouponPrice(),
+                        e.getCouponCyclesRemaining(),
+                        e.getInvoicesSyncedAt()));
     }
 }

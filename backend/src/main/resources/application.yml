@@ -147,6 +147,21 @@ eip:
       url: ${REPORTING_DATASOURCE_URL:${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/eip}}
       username: ${REPORTING_DB_USER:eip_report}
       password: ${REPORTING_DB_PASSWORD:eip_report}
+  # Payment gateway (Asaas). enabled=false uses the in-memory FakePaymentGateway.
+  # api-key / webhook-token are secrets (eip-asaas-api-key / eip-asaas-webhook-token).
+  asaas:
+    enabled: ${EIP_ASAAS_ENABLED:false}
+    base-url: ${EIP_ASAAS_BASE_URL:https://api-sandbox.asaas.com/v3}
+    api-key: ${EIP_ASAAS_API_KEY:}
+    webhook-token: ${EIP_ASAAS_WEBHOOK_TOKEN:}
+  billing:
+    trial-days: 14
+    sales-email: ${EIP_SALES_EMAIL:comercial@iaexport.com.br}
+    issuer:
+      name: ${EIP_BILLING_ISSUER_NAME:EIP - Export Intelligence Platform}
+      cnpj: ${EIP_BILLING_ISSUER_CNPJ:}
+      address: ${EIP_BILLING_ISSUER_ADDRESS:}
+      email: ${EIP_BILLING_ISSUER_EMAIL:financeiro@iaexport.com.br}
 
 ---
 spring:
